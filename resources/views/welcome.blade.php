@@ -17,8 +17,9 @@
         </a>
 
         <nav class="ml-auto flex items-center gap-1 text-sm">
-            <a href="#cara-kerja" class="hidden rounded-lg px-3 py-2 text-stone-600 hover:bg-stone-100 sm:block dark:text-stone-400 dark:hover:bg-stone-800">Cara kerja</a>
-            <a href="#fitur" class="hidden rounded-lg px-3 py-2 text-stone-600 hover:bg-stone-100 sm:block dark:text-stone-400 dark:hover:bg-stone-800">Fitur</a>
+            <a href="#cara-kerja" class="hidden rounded-lg px-3 py-2 text-stone-600 hover:bg-stone-100 md:block dark:text-stone-400 dark:hover:bg-stone-800">Cara kerja</a>
+            <a href="#untuk-developer" class="hidden rounded-lg px-3 py-2 text-stone-600 hover:bg-stone-100 md:block dark:text-stone-400 dark:hover:bg-stone-800">Developer</a>
+            <a href="{{ route('docs.index') }}" class="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800">Docs</a>
             @auth
                 <a href="{{ route('dashboard') }}" class="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700">Dashboard</a>
             @else
@@ -152,6 +153,43 @@
     </div>
 </section>
 
+<section id="untuk-developer" class="border-t border-stone-200 py-16 dark:border-stone-800">
+    <div class="mx-auto max-w-4xl px-5">
+        <h2 class="text-2xl font-semibold tracking-tight">Untuk developer</h2>
+        <p class="mt-2 text-stone-600 dark:text-stone-400">
+            HTTP dan JSON biasa. Tidak ada SDK yang wajib dipasang, tidak ada protokol khusus yang perlu dipelajari.
+        </p>
+
+        <div class="mt-8 grid gap-4 sm:grid-cols-3">
+            @php
+                $devPoin = [
+                    ['REST API', 'Satu endpoint untuk kirim teks, lampiran, pengiriman massal, dan template.'],
+                    ['Webhook', 'Balasan pelanggan diteruskan ke aplikasi Anda, lengkap dengan tanda tangan yang bisa diverifikasi.'],
+                    ['Contoh siap salin', 'Kode integrasi untuk PHP/Laravel, Node.js, dan Python.'],
+                ];
+            @endphp
+            @foreach ($devPoin as [$judul, $isi])
+                <div class="rounded-xl border border-stone-200 p-5 dark:border-stone-800">
+                    <h3 class="font-semibold">{{ $judul }}</h3>
+                    <p class="mt-1.5 text-sm text-stone-600 dark:text-stone-400">{{ $isi }}</p>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+            <a href="{{ route('docs.show', 'referensi-api') }}" class="rounded-lg bg-stone-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-700 dark:bg-stone-700 dark:hover:bg-stone-600">
+                Referensi API
+            </a>
+            <a href="{{ route('docs.show', 'contoh-integrasi') }}" class="rounded-lg border border-stone-300 px-5 py-2.5 text-sm font-medium hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-900">
+                Contoh integrasi
+            </a>
+            <a href="{{ route('docs.index') }}" class="rounded-lg border border-stone-300 px-5 py-2.5 text-sm font-medium hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-900">
+                Semua dokumentasi
+            </a>
+        </div>
+    </div>
+</section>
+
 <section class="py-16">
     <div class="mx-auto max-w-3xl px-5 text-center">
         <h2 class="text-2xl font-semibold tracking-tight">Siap mencoba?</h2>
@@ -165,6 +203,7 @@
 <footer class="border-t border-stone-200 py-8 dark:border-stone-800">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-5 text-sm text-stone-500">
         <span>&copy; {{ date('Y') }} Flustra</span>
+        <a href="{{ route('docs.index') }}" class="hover:text-stone-800 dark:hover:text-stone-300">Dokumentasi</a>
         <a href="https://flustra.id" class="hover:text-stone-800 dark:hover:text-stone-300">flustra.id</a>
         <a href="https://helpdesk.flustra.id" class="hover:text-stone-800 dark:hover:text-stone-300">Bantuan</a>
         <span class="ml-auto text-xs">Bukan produk resmi WhatsApp atau Meta.</span>

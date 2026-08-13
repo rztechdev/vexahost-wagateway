@@ -22,6 +22,11 @@
             </a>
 
             <div class="ml-auto flex items-center gap-3">
+                <a href="{{ route('docs.index') }}"
+                   class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800">
+                    Docs
+                </a>
+
                 @isset($availableTenants)
                     <form method="POST" action="#" x-data class="hidden sm:block">
                         <select

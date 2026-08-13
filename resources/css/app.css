@@ -15,3 +15,171 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Isi dokumentasi.
+
+   HTML-nya dihasilkan dari markdown, jadi tidak bisa diberi class Tailwind
+   satu per satu — penataannya dilakukan lewat pemilih elemen di dalam
+   .doc-body. Sengaja tidak memakai plugin typography agar tidak menambah
+   dependensi hanya untuk satu bagian aplikasi.
+   --------------------------------------------------------------------------- */
+.doc-body {
+    line-height: 1.75;
+    color: var(--color-stone-700);
+}
+
+@media (prefers-color-scheme: dark) {
+    .doc-body { color: var(--color-stone-300); }
+}
+
+.doc-body > * + * { margin-top: 1.25rem; }
+
+.doc-body h2,
+.doc-body h3,
+.doc-body h4 {
+    font-weight: 600;
+    color: var(--color-stone-900);
+    /* Offset agar judul tidak tertutup header yang menempel saat diklik dari
+       daftar isi. */
+    scroll-margin-top: 5.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .doc-body h2,
+    .doc-body h3,
+    .doc-body h4 { color: var(--color-stone-100); }
+}
+
+.doc-body h2 {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-stone-200);
+    font-size: 1.5rem;
+    letter-spacing: -0.015em;
+}
+
+.doc-body h3 { margin-top: 2.25rem; font-size: 1.15rem; }
+.doc-body h4 { margin-top: 1.75rem; font-size: 1rem; }
+
+@media (prefers-color-scheme: dark) {
+    .doc-body h2 { border-color: var(--color-stone-800); }
+}
+
+.doc-body a {
+    color: var(--color-emerald-700);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.doc-body a:hover { color: var(--color-emerald-600); }
+
+@media (prefers-color-scheme: dark) {
+    .doc-body a { color: var(--color-emerald-400); }
+}
+
+.doc-body strong { font-weight: 600; color: var(--color-stone-900); }
+
+@media (prefers-color-scheme: dark) {
+    .doc-body strong { color: var(--color-stone-100); }
+}
+
+.doc-body ul,
+.doc-body ol { padding-left: 1.5rem; }
+.doc-body ul { list-style: disc; }
+.doc-body ol { list-style: decimal; }
+.doc-body li + li { margin-top: 0.4rem; }
+.doc-body li > ul,
+.doc-body li > ol { margin-top: 0.4rem; }
+
+.doc-body code {
+    padding: 0.15em 0.4em;
+    border-radius: 0.3rem;
+    background: var(--color-stone-100);
+    font-size: 0.875em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-word;
+}
+
+@media (prefers-color-scheme: dark) {
+    .doc-body code { background: var(--color-stone-800); }
+}
+
+.doc-body pre {
+    /* Blok kode panjang menggulir sendiri, bukan melebarkan halaman. */
+    overflow-x: auto;
+    padding: 1.15rem;
+    border-radius: 0.75rem;
+    background: var(--color-stone-900);
+    color: var(--color-stone-200);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+}
+
+.doc-body pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    word-break: normal;
+}
+
+/* Tabel bisa jauh lebih lebar dari kolom teks; pembungkusnya digulirkan
+   mendatar agar badan halaman tidak ikut menggulir. */
+.doc-body table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.doc-body th,
+.doc-body td {
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--color-stone-200);
+    text-align: left;
+    vertical-align: top;
+}
+
+.doc-body th {
+    background: var(--color-stone-50);
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--color-stone-900);
+}
+
+@media (prefers-color-scheme: dark) {
+    .doc-body th,
+    .doc-body td { border-color: var(--color-stone-800); }
+    .doc-body th { background: var(--color-stone-900); color: var(--color-stone-100); }
+}
+
+.doc-body blockquote {
+    padding: 0.85rem 1.15rem;
+    border-left: 3px solid var(--color-amber-400);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--color-amber-50);
+    color: var(--color-amber-900);
+}
+
+.doc-body blockquote > * + * { margin-top: 0.75rem; }
+
+@media (prefers-color-scheme: dark) {
+    .doc-body blockquote {
+        background: color-mix(in oklab, var(--color-amber-950) 60%, transparent);
+        color: var(--color-amber-200);
+    }
+}
+
+.doc-body hr {
+    margin: 2.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-stone-200);
+}
+
+@media (prefers-color-scheme: dark) {
+    .doc-body hr { border-color: var(--color-stone-800); }
+}
+
+.doc-body input[type='checkbox'] { margin-right: 0.4rem; }

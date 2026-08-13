@@ -8,9 +8,21 @@ use App\Http\Controllers\Dashboard\SessionController;
 use App\Http\Controllers\Dashboard\TemplateController;
 use App\Http\Controllers\Dashboard\TenantController;
 use App\Http\Controllers\Dashboard\WebhookController;
+use App\Http\Controllers\DocsController;
+use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('welcome');
+
+/*
+| Dokumentasi. Terbuka untuk publik: isinya penjelasan cara kerja dan cara
+| memakai, bukan data pelanggan. Slug dibatasi daftar putih di DocsRepository,
+| jadi nilainya tidak pernah dipakai menyusun path berkas.
+*/
+Route::get('docs', [DocsController::class, 'index'])->name('docs.index');
+Route::get('docs/{slug}', [DocsController::class, 'show'])
+    ->whereIn('slug', array_keys(DocsRepository::flat()))
+    ->name('docs.show');
 
 /*
 | Autentikasi lokal. Setiap aplikasi Flustra memegang form login dan

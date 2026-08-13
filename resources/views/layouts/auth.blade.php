@@ -37,6 +37,12 @@
         </div>
 
         <p class="mt-5 text-center text-sm text-stone-500">@yield('footer')</p>
+
+        <p class="mt-3 text-center text-sm">
+            <a href="{{ route('docs.index') }}" class="text-stone-400 hover:text-stone-600 hover:underline dark:hover:text-stone-300">
+                Dokumentasi
+            </a>
+        </p>
     </main>
 </body>
 </html>

@@ -15,7 +15,16 @@ curl -X POST https://wa.flustra.id/api/v1/messages/text \
 
 ## Dokumentasi
 
-Peta lengkapnya ada di **[docs/README.md](docs/README.md)**. Yang paling sering dibuka:
+Ada **dua kumpulan yang terpisah**, dan penting untuk tidak tertukar:
+
+| | Untuk siapa | Lokasi | Tampil di web? |
+|---|---|---|---|
+| **Internal** | Tim pengembang | `docs/` | Tidak |
+| **Produk** | Pelanggan & developer yang memanggil API | `resources/docs/` | Ya, di `/docs` |
+
+Dokumentasi produk berisi cara memakai gateway dan contoh kode integrasi. Cara memasang source code, arsitektur, dan seluk-beluk internal **tidak pernah** muncul di sana — ada tes yang menjaganya (`DocsTest`).
+
+Peta dokumentasi internal ada di **[docs/README.md](docs/README.md)**. Yang paling sering dibuka:
 
 | Dokumen | Isi |
 |---|---|

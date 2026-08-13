@@ -1,6 +1,22 @@
-# Dokumentasi Flustra WA Gateway
+# Dokumentasi Internal — Flustra WA Gateway
 
-Peta seluruh dokumentasi. Semua Bahasa Indonesia.
+Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
+
+> ## Dua kumpulan dokumentasi, jangan tertukar
+>
+> **`docs/` (folder ini) — internal.** Arsitektur, referensi kode, referensi
+> database, deployment, operasional. **Tidak pernah disajikan lewat web.**
+> Isinya cara kerja bagian dalam sistem, termasuk cara memasang source code.
+>
+> **`resources/docs/` — publik.** Dokumentasi produk yang tampil di
+> `/docs` pada website: cara memakai gateway, dan contoh kode integrasi untuk
+> developer yang memanggil API kita.
+>
+> Pelanggan tidak perlu — dan tidak boleh — melihat isi dapur sistem yang
+> mereka sewa. Ada tes yang menjaga ini: `DocsTest` menolak frasa seperti
+> `git clone` dan `github.com` muncul di halaman publik.
+>
+> Kalau menambah dokumen baru, tanyakan dulu: **ini untuk siapa?**
 
 ---
 
@@ -79,9 +95,34 @@ Setiap pesan diberi jeda acak 3–8 detik. Mengirim beruntun tanpa jeda adalah c
 
 ---
 
-## Menulis dokumentasi di sini
+## Dokumentasi publik
 
+Yang tampil di website ada di `resources/docs/`, terdaftar di
+`app/Support/DocsRepository.php`:
+
+| Berkas | Halaman |
+|---|---|
+| `MULAI_CEPAT.md` | Dari mendaftar sampai pesan pertama terkirim |
+| `MENAUTKAN_NOMOR.md` | Menghubungkan, memantau, dan mengganti nomor |
+| `MENGIRIM_PESAN.md` | Teks, lampiran, pengiriman massal, status |
+| `TEMPLATE_PESAN.md` | Template dan placeholder |
+| `REFERENSI_API.md` | Setiap endpoint dengan contoh |
+| `CONTOH_INTEGRASI.md` | Kode PHP, Node.js, Python |
+| `WEBHOOK.md` | Menerima pesan masuk |
+| `API_KEY.md` | Membuat dan menjaga kunci akses |
+| `PRAKTIK_BAIK.md` | Menghindari pemblokiran nomor |
+| `BATAS_DAN_KUOTA.md` | Batas dan apa yang terjadi saat tercapai |
+| `FAQ.md`, `GLOSARIUM.md` | Pertanyaan umum dan istilah |
+
+Menambah halaman baru: buat berkasnya di `resources/docs/`, lalu daftarkan di
+katalog `DocsRepository`. Katalog itu sekaligus daftar putih — berkas yang
+tidak terdaftar tidak bisa dibuka lewat URL.
+
+## Menulis dokumentasi
+
+- **Tentukan sasarannya lebih dulu.** Untuk tim → `docs/`. Untuk pelanggan → `resources/docs/`.
 - **Bahasa Indonesia.** Istilah teknis tanpa padanan mapan (queue, webhook, endpoint, timestamp) boleh tetap bahasa Inggris.
 - **Jelaskan alasan, bukan hanya mekanisme.** Skema dan kode sudah menunjukkan *apa*; dokumentasi berguna saat menjelaskan *kenapa begitu* dan *apa akibatnya kalau tidak*.
+- **Di dokumentasi publik, tulis dari sudut pandang pengguna.** Mereka tidak peduli kelas mana yang menangani apa — mereka ingin tahu tombol mana yang ditekan dan endpoint mana yang dipanggil.
 - **Catat batasnya dengan jujur.** Yang belum dibuat lebih baik ditulis daripada dibiarkan ditemukan sendiri.
 - **Perbarui bersama kodenya**, dalam commit yang sama.
