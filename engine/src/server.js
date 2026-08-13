@@ -71,7 +71,7 @@ app.get('/sessions/:id/status', (req, res) => {
 });
 
 app.post('/sessions/:id/messages', async (req, res) => {
-    const { to, type, body, media } = req.body ?? {};
+    const { to, type, body, media, message_id: messageId } = req.body ?? {};
 
     if (!to) {
         return res.status(422).json({ error: 'Nomor tujuan wajib diisi.' });
@@ -82,7 +82,7 @@ app.post('/sessions/:id/messages', async (req, res) => {
     }
 
     try {
-        const result = await manager.send(req.params.id, { to, type, body, media });
+        const result = await manager.send(req.params.id, { to, type, body, media, messageId });
 
         res.json(result);
     } catch (error) {

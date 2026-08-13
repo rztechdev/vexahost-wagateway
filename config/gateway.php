@@ -8,8 +8,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | Engine berjalan sebagai resource Coolify terpisah tanpa domain publik.
-    | `url` memakai nama service internal Coolify, bukan localhost, karena
-    | Laravel dan engine ada di container berbeda.
+    | `url` memakai UUID resource Coolify, bukan localhost maupun nama tampilan
+    | resource, karena Laravel dan engine ada di container berbeda.
+    |
+    | `timeout` harus melampaui antrean anti-ban di engine, bukan sekadar lama
+    | pengiriman satu pesan. Engine menahan tiap pesan 3-8 detik dan mengantre
+    | per sesi, jadi pesan keempat dalam satu giliran bisa menunggu lebih dari
+    | 30 detik. Batas 15 detik dulu membuat Laravel menyerah lebih awal lalu
+    | mengulang job-nya — dan penerima menerima pesan yang sama tiga sampai
+    | empat kali.
     |
     */
 
@@ -17,7 +24,7 @@ return [
         'url' => env('ENGINE_URL', 'http://127.0.0.1:3100'),
         'token' => env('ENGINE_TOKEN'),
         'hmac_secret' => env('ENGINE_HMAC_SECRET'),
-        'timeout' => (int) env('ENGINE_TIMEOUT', 15),
+        'timeout' => (int) env('ENGINE_TIMEOUT', 60),
         'connect_timeout' => (int) env('ENGINE_CONNECT_TIMEOUT', 5),
     ],
 

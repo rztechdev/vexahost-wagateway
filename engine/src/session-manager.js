@@ -16,6 +16,23 @@ export class SessionManager {
     #store = new LaravelStore();
 
     /**
+     * Hasil pengiriman per message_id, untuk menangkal kiriman ganda.
+     *
+     * Laravel mengulang job-nya kalau permintaan HTTP-nya habis waktu — padahal
+     * habis waktu bukan berarti pesannya tidak terkirim. Antrean anti-ban di
+     * engine menahan tiap pesan 3-8 detik sebelum benar-benar dikirim, jadi
+     * pesan ketiga dalam satu giliran bisa menunggu lebih lama daripada batas
+     * waktu HTTP Laravel. Yang terjadi kemarin: satu pesan sampai ke penerima
+     * tiga sampai empat kali.
+     *
+     * Kunci map ini message_id milik Laravel, jadi percobaan ulang menerima
+     * hasil kiriman pertama alih-alih mengirim ulang. Nilainya Promise, bukan
+     * hasil jadi — percobaan ulang yang datang saat kiriman pertama masih
+     * berjalan ikut menunggu promise yang sama.
+     */
+    #kiriman = new Map();
+
+    /**
      * Menjalankan ulang seluruh sesi yang tercatat di Laravel.
      *
      * Inilah yang membuat redeploy tidak lagi memaksa scan QR: daftar sesi ada
@@ -164,7 +181,15 @@ export class SessionManager {
      * Mengantre satu pesan keluar. Menunggu giliran di antrean sesi, lalu
      * menunggu jeda anti-ban, baru benar-benar dikirim.
      */
-    async send(sessionId, { to, type, body, media }) {
+    async send(sessionId, { to, type, body, media, messageId }) {
+        const sebelumnya = messageId ? this.#kiriman.get(messageId) : undefined;
+
+        if (sebelumnya) {
+            logger.info({ sessionId, messageId }, 'Permintaan kirim diulang, memakai hasil kiriman pertama');
+
+            return sebelumnya.promise;
+        }
+
         const entry = this.#sessions.get(sessionId);
 
         if (!entry) {
@@ -179,7 +204,7 @@ export class SessionManager {
             throw error;
         }
 
-        return this.#queue.enqueue(sessionId, async () => {
+        const promise = this.#queue.enqueue(sessionId, async () => {
             const chatId = await this.#resolveChatId(entry.client, to);
 
             let sent;
@@ -193,6 +218,32 @@ export class SessionManager {
 
             return { wa_message_id: sent.id?._serialized ?? null, chat_id: chatId };
         });
+
+        if (messageId) {
+            this.#catatKiriman(messageId, promise);
+        }
+
+        return promise;
+    }
+
+    /**
+     * Hasil disimpan hanya kalau kirimannya berhasil. Kegagalan sengaja dilupakan:
+     * percobaan ulang Laravel memang seharusnya mencoba lagi.
+     */
+    #catatKiriman(messageId, promise) {
+        this.#kiriman.set(messageId, { promise, waktu: Date.now() });
+
+        promise.catch(() => this.#kiriman.delete(messageId));
+
+        // Dibersihkan berkala supaya map tidak tumbuh selamanya. Umurnya cukup
+        // melampaui seluruh jadwal percobaan ulang Laravel (10 + 60 + 300 detik).
+        const batas = Date.now() - 15 * 60 * 1000;
+
+        for (const [kunci, nilai] of this.#kiriman) {
+            if (nilai.waktu < batas) {
+                this.#kiriman.delete(kunci);
+            }
+        }
     }
 
     /**

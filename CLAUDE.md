@@ -67,6 +67,8 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Nixpacks memakai Node 18 kalau `NIXPACKS_NODE_VERSION` tidak diset.** Engine menuntut Node 20 lewat `engines` di `engine/package.json`, dan Node 18 sudah EOL. Env Laravel sudah memuatnya sejak awal; env engine dulu tidak.
 
+**Habis waktu bukan berarti tidak terkirim.** Engine menahan tiap pesan 3–8 detik (jeda anti-ban) dan mengantre per sesi, jadi pesan keempat dalam satu giliran bisa menunggu lebih dari 30 detik. Dengan `ENGINE_TIMEOUT=15`, Laravel menyerah lebih awal lalu mengulang job-nya — penerima menerima pesan yang sama tiga sampai empat kali, persis sejumlah `$tries`. Dua penjagaan sekarang: engine menyaring kiriman ganda berdasarkan `message_id` (`SessionManager#kiriman`), dan `ENGINE_TIMEOUT` dinaikkan ke 60. **Jangan menurunkannya lagi**, dan jangan menambah pemanggil engine yang tidak mengirim `message_id`.
+
 **Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
 
 **Istilah produk hanya satu: workspace.** Sampai ke nama tabel dan kolom (`workspaces`, `workspace_id`). `tenant` hanya boleh muncul sebagai istilah arsitektur (multi-tenant) di dokumentasi internal.
