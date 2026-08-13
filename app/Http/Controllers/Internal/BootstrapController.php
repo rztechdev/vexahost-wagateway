@@ -18,9 +18,19 @@ class BootstrapController extends Controller
         $sessions = WaSession::query()
             ->where('driver', 'wwebjs')
             ->where('auto_reconnect', true)
-            // Sesi yang belum pernah tersambung tidak ikut dijalankan otomatis:
-            // ia hanya akan memunculkan QR yang tidak ada yang men-scan.
-            ->whereIn('status', ['connected', 'connecting', 'disconnected'])
+            ->where(function ($query): void {
+                // Sesi yang belum pernah tersambung tidak ikut dijalankan
+                // otomatis: ia hanya akan memunculkan QR yang tidak ada yang
+                // men-scan.
+                $query->whereIn('status', ['connected', 'connecting', 'disconnected'])
+                    // Yang berstatus `failed` tapi pernah tersambung tetap
+                    // dipulihkan: kredensialnya masih ada di volume, dan status
+                    // itu paling sering tertinggal dari kegagalan sesaat —
+                    // engine yang sedang di-deploy ulang, bukan tautan nomor
+                    // yang benar-benar putus. Membiarkannya di luar daftar ini
+                    // berarti memaksa scan ulang untuk masalah yang sudah lewat.
+                    ->orWhere(fn ($q) => $q->where('status', 'failed')->whereNotNull('connected_at'));
+            })
             ->get(['id', 'name', 'status']);
 
         return response()->json([

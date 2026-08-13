@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Providers\ProviderManager;
+use Illuminate\Http\Client\ConnectionException;
 use RuntimeException;
 
 class SessionService
@@ -44,6 +45,15 @@ class SessionService
 
         try {
             $this->providers->for($session)->startSession($session);
+        } catch (ConnectionException $e) {
+            // Engine tidak terjangkau itu keadaan sementara — paling sering
+            // karena container-nya sedang di-deploy ulang. Menandainya `failed`
+            // membuat sesi dikeluarkan dari daftar pemulihan otomatis di
+            // BootstrapController, jadi nomor yang sebenarnya masih tertaut
+            // tampak putus dan seolah harus di-scan ulang setiap deploy.
+            $session->update(['status' => 'disconnected', 'last_error' => $e->getMessage()]);
+
+            throw $e;
         } catch (\Throwable $e) {
             $session->update(['status' => 'failed', 'last_error' => $e->getMessage()]);
 
