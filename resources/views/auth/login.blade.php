@@ -1,38 +1,87 @@
 @extends('layouts.auth')
 
-@section('title', 'Masuk')
-@section('heading', 'Masuk')
-@section('subheading', 'Kelola nomor WhatsApp, API key, dan riwayat pesan Anda.')
+@section('title', 'Masuk - Flustra')
 
-@section('form')
-    <form method="POST" action="{{ route('login') }}" class="mt-5 space-y-4">
-        @csrf
-
-        <div>
-            <label for="email" class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Email</label>
-            <input id="email" name="email" type="email" required autofocus autocomplete="email"
-                   value="{{ old('email') }}"
-                   class="w-full rounded-lg border-stone-300 text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100">
-        </div>
-
-        <div>
-            <label for="password" class="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">Kata sandi</label>
-            <input id="password" name="password" type="password" required autocomplete="current-password"
-                   class="w-full rounded-lg border-stone-300 text-sm dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100">
-        </div>
-
-        <label class="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-            <input type="checkbox" name="remember" value="1" class="rounded border-stone-300">
-            Ingat saya
-        </label>
-
-        <button class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">
-            Masuk
-        </button>
-    </form>
+@section('topbar_action')
+    <a href="{{ route('register') }}" class="auth-topbar-link">Daftar Akun</a>
 @endsection
 
-@section('footer')
-    Belum punya akun?
-    <a href="{{ route('register') }}" class="font-medium text-emerald-600 hover:underline">Daftar</a>
+@section('content')
+<div class="auth-card">
+    <div class="auth-card-header">
+        <h1>Selamat Datang Kembali</h1>
+        <p>Masuk menggunakan akun terdaftar Anda</p>
+    </div>
+
+    @if (session('status'))
+        <div class="auth-alert">{{ session('status') }}</div>
+    @endif
+
+    @if (session('success'))
+        <div class="auth-alert">{{ session('success') }}</div>
+    @endif
+
+    @if ($errors->any() && !$errors->has('email') && !$errors->has('password'))
+        <div class="auth-alert auth-alert--error">{{ $errors->first() }}</div>
+    @endif
+
+    <form class="auth-form" action="{{ route('login') }}" method="POST">
+        @csrf
+
+        <!-- Field Email -->
+        <div class="auth-field @error('email') is-error @enderror">
+            <label for="email">
+                <i class="bi bi-envelope"></i> Alamat Email
+            </label>
+            <input type="email" name="email" id="email" value="{{ old('email') }}" placeholder="nama@email.com" required autocomplete="email" autofocus>
+            @error('email')
+                <span class="auth-field-error"><i class="bi bi-exclamation-circle me-1"></i>{{ $message }}</span>
+            @enderror
+        </div>
+
+        <!-- Field Password -->
+        <div class="auth-field @error('password') is-error @enderror">
+            <label for="password">
+                <i class="bi bi-lock"></i> Kata Sandi
+            </label>
+            <div style="position: relative;">
+                <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px;">
+                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" title="Tampilkan/Sembunyikan Kata Sandi">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+            @error('password')
+                <span class="auth-field-error"><i class="bi bi-exclamation-circle me-1"></i>{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="auth-forgot">
+            @if (Route::has('password.request'))
+                <a href="{{ route('password.request') }}">Lupa kata sandi?</a>
+            @endif
+        </div>
+
+        <!-- Checkbox Persetujuan Syarat & Ketentuan -->
+        <div class="auth-checkbox @error('terms') is-error @enderror">
+            <input type="checkbox" name="terms" id="terms" value="1" required @checked(old('terms'))>
+            <label for="terms">
+                Saya menyetujui <a href="https://flustra.jagoankode.my.id/syarat-dan-ketentuan">Syarat & Ketentuan</a> serta <a href="https://flustra.jagoankode.my.id/kebijakan-privasi">Kebijakan Privasi</a> Flustra.
+            </label>
+            @error('terms')
+                <span class="auth-field-error d-block w-100"><i class="bi bi-exclamation-circle me-1"></i>{{ $message }}</span>
+            @enderror
+        </div>
+
+        <button type="submit" class="auth-submit">
+            Masuk Sekarang
+            <i class="bi bi-arrow-right"></i>
+        </button>
+    </form>
+
+
+
+    <p class="auth-footer-text">
+        Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a>
+    </p>
+</div>
 @endsection

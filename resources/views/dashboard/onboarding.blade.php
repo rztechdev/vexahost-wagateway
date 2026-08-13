@@ -9,10 +9,10 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium" for="name">Nama workspace</label>
                     <input id="name" name="name" required maxlength="80" value="{{ old('name', auth()->user()->name) }}"
-                           class="w-full rounded-lg border-stone-300 text-sm dark:border-stone-700 dark:bg-stone-800">
-                    <p class="mt-1 text-xs text-stone-500">Biasanya nama perusahaan atau tim Anda.</p>
+                           class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
+                    <p class="mt-1 text-xs text-muted-foreground">Biasanya nama perusahaan atau tim Anda.</p>
                 </div>
-                <button class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">
+                <button class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                     Buat workspace
                 </button>
             </form>

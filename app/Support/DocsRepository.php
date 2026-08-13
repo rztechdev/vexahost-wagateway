@@ -160,8 +160,8 @@ class DocsRepository
         $markdown = file_get_contents($path);
 
         // Judul halaman sudah ditampilkan terpisah oleh layout, jadi H1 pertama
-        // dibuang agar tidak muncul dua kali.
-        $markdown = preg_replace('/\A#\s+.*\R+/u', '', $markdown, 1);
+        // dibuang agar tidak muncul dua kali, termasuk garis pemisah (---) setelahnya.
+        $markdown = preg_replace('/\A#\s+[^\r\n]*\r?\n+(?:---\r?\n+)?/u', '', $markdown, 1);
 
         $html = Str::markdown($markdown);
 

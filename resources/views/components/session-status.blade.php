@@ -4,12 +4,12 @@
     // Warna dipilih supaya "butuh tindakan" (qr, failed) langsung menonjol
     // dibanding keadaan normal.
     $styles = [
-        'connected' => ['bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300', 'Terhubung'],
-        'qr' => ['bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300', 'Menunggu scan QR'],
-        'connecting' => ['bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300', 'Menghubungkan'],
-        'disconnected' => ['bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300', 'Terputus'],
-        'failed' => ['bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300', 'Gagal'],
-        'pending' => ['bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300', 'Belum dijalankan'],
+        'connected' => ['bg-primary/10 text-primary border border-primary/20', 'Terhubung'],
+        'qr' => ['bg-amber-500/10 text-amber-600 border border-amber-500/20', 'Menunggu scan QR'],
+        'connecting' => ['bg-sky-500/10 text-sky-600 border border-sky-500/20', 'Menghubungkan'],
+        'disconnected' => ['bg-muted text-muted-foreground border border-border', 'Terputus'],
+        'failed' => ['bg-destructive/10 text-destructive border border-destructive/20', 'Gagal'],
+        'pending' => ['bg-muted text-muted-foreground border border-border', 'Belum dijalankan'],
     ];
     [$class, $label] = $styles[$status] ?? $styles['pending'];
 @endphp

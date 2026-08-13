@@ -24,7 +24,7 @@
             @endphp
             @foreach ($rows as $label => $value)
                 <div>
-                    <dt class="text-xs uppercase text-stone-500">{{ $label }}</dt>
+                    <dt class="text-xs uppercase text-muted-foreground">{{ $label }}</dt>
                     <dd class="mt-0.5 break-all font-mono text-sm">{{ $value }}</dd>
                 </div>
             @endforeach
@@ -37,15 +37,15 @@
 
     @if ($message->error)
         <x-card title="Kesalahan" class="mt-4">
-            <p class="text-sm text-red-600 dark:text-red-400">{{ $message->error }}</p>
+            <p class="text-sm text-destructive">{{ $message->error }}</p>
         </x-card>
     @endif
 
     @if ($message->provider_response)
         <x-card title="Balasan provider" class="mt-4">
-            <pre class="overflow-x-auto rounded-lg bg-stone-100 p-3 text-xs dark:bg-stone-800">{{ json_encode($message->provider_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
+            <pre class="overflow-x-auto rounded-lg bg-muted p-3 text-xs">{{ json_encode($message->provider_response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
         </x-card>
     @endif
 
-    <a href="{{ route('messages.index') }}" class="mt-4 inline-block text-sm text-emerald-600 hover:underline">&larr; Kembali ke riwayat</a>
+    <a href="{{ route('messages.index') }}" class="mt-4 inline-block text-sm text-primary hover:underline">&larr; Kembali ke riwayat</a>
 @endsection

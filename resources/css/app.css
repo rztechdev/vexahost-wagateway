@@ -8,6 +8,99 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+    :root {
+        --background: oklch(0.9818 0.0054 95.0986);
+        --foreground: oklch(0.3438 0.0269 95.7226);
+        --card: oklch(0.9818 0.0054 95.0986);
+        --card-foreground: oklch(0.1908 0.0020 106.5859);
+        --popover: oklch(1.0000 0 0);
+        --popover-foreground: oklch(0.2671 0.0196 98.9390);
+        --primary: oklch(0.6171 0.1375 39.0427);
+        --primary-foreground: oklch(1.0000 0 0);
+        --secondary: oklch(0.9245 0.0138 92.9892);
+        --secondary-foreground: oklch(0.4334 0.0177 98.6048);
+        --muted: oklch(0.9341 0.0153 90.2390);
+        --muted-foreground: oklch(0.6059 0.0075 97.4233);
+        --accent: oklch(0.9245 0.0138 92.9892);
+        --accent-foreground: oklch(0.2671 0.0196 98.9390);
+        --destructive: oklch(0.1908 0.0020 106.5859);
+        --destructive-foreground: oklch(1.0000 0 0);
+        --border: oklch(0.8847 0.0069 97.3627);
+        --input: oklch(0.7621 0.0156 98.3528);
+        --ring: oklch(0.6171 0.1375 39.0427);
+        --radius: 0.5rem;
+    }
+
+    .dark {
+        --background: oklch(0.2679 0.0036 106.6427);
+        --foreground: oklch(0.8074 0.0142 93.0137);
+        --card: oklch(0.2679 0.0036 106.6427);
+        --card-foreground: oklch(0.9818 0.0054 95.0986);
+        --popover: oklch(0.3085 0.0035 106.6039);
+        --popover-foreground: oklch(0.9211 0.0040 106.4781);
+        --primary: oklch(0.6724 0.1308 38.7559);
+        --primary-foreground: oklch(1.0000 0 0);
+        --secondary: oklch(0.9818 0.0054 95.0986);
+        --secondary-foreground: oklch(0.3085 0.0035 106.6039);
+        --muted: oklch(0.2213 0.0038 106.7070);
+        --muted-foreground: oklch(0.7713 0.0169 99.0657);
+        --accent: oklch(0.2130 0.0078 95.4245);
+        --accent-foreground: oklch(0.9663 0.0080 98.8792);
+        --destructive: oklch(0.6368 0.2078 25.3313);
+        --destructive-foreground: oklch(1.0000 0 0);
+        --border: oklch(0.3618 0.0101 106.8928);
+        --input: oklch(0.4336 0.0113 100.2195);
+        --ring: oklch(0.6724 0.1308 38.7559);
+    }
+
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+        letter-spacing: 0em;
+    }
+
+    input:where(:not([type='checkbox'], [type='radio'], [type='hidden'], [type='submit'], [type='button'], [type='file'], [type='range'], [type='color'])),
+    textarea,
+    select {
+        @apply border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50;
+    }
 }
 
 /* x-cloak menyembunyikan elemen Alpine sampai Alpine sempat menjalankannya —
@@ -26,11 +119,7 @@
    --------------------------------------------------------------------------- */
 .doc-body {
     line-height: 1.75;
-    color: var(--color-stone-700);
-}
-
-@media (prefers-color-scheme: dark) {
-    .doc-body { color: var(--color-stone-300); }
+    color: var(--color-muted-foreground);
 }
 
 .doc-body > * + * { margin-top: 1.25rem; }
@@ -39,50 +128,36 @@
 .doc-body h3,
 .doc-body h4 {
     font-weight: 600;
-    color: var(--color-stone-900);
-    /* Offset agar judul tidak tertutup header yang menempel saat diklik dari
-       daftar isi. */
+    color: var(--color-foreground);
     scroll-margin-top: 5.5rem;
-}
-
-@media (prefers-color-scheme: dark) {
-    .doc-body h2,
-    .doc-body h3,
-    .doc-body h4 { color: var(--color-stone-100); }
 }
 
 .doc-body h2 {
     margin-top: 3rem;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--color-stone-200);
+    border-top: 1px solid var(--color-border);
     font-size: 1.5rem;
     letter-spacing: -0.015em;
+}
+
+.doc-body > h2:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .doc-body h3 { margin-top: 2.25rem; font-size: 1.15rem; }
 .doc-body h4 { margin-top: 1.75rem; font-size: 1rem; }
 
-@media (prefers-color-scheme: dark) {
-    .doc-body h2 { border-color: var(--color-stone-800); }
-}
-
 .doc-body a {
-    color: var(--color-emerald-700);
+    color: var(--color-primary);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
 
-.doc-body a:hover { color: var(--color-emerald-600); }
+.doc-body a:hover { opacity: 0.8; }
 
-@media (prefers-color-scheme: dark) {
-    .doc-body a { color: var(--color-emerald-400); }
-}
-
-.doc-body strong { font-weight: 600; color: var(--color-stone-900); }
-
-@media (prefers-color-scheme: dark) {
-    .doc-body strong { color: var(--color-stone-100); }
-}
+.doc-body strong { font-weight: 600; color: var(--color-foreground); }
 
 .doc-body ul,
 .doc-body ol { padding-left: 1.5rem; }
@@ -95,23 +170,19 @@
 .doc-body code {
     padding: 0.15em 0.4em;
     border-radius: 0.3rem;
-    background: var(--color-stone-100);
+    background: var(--color-muted);
+    color: var(--color-foreground);
     font-size: 0.875em;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     word-break: break-word;
 }
 
-@media (prefers-color-scheme: dark) {
-    .doc-body code { background: var(--color-stone-800); }
-}
-
 .doc-body pre {
-    /* Blok kode panjang menggulir sendiri, bukan melebarkan halaman. */
     overflow-x: auto;
     padding: 1.15rem;
     border-radius: 0.75rem;
-    background: var(--color-stone-900);
-    color: var(--color-stone-200);
+    background: #18181b;
+    color: #e4e4e7;
     font-size: 0.8125rem;
     line-height: 1.7;
 }
@@ -124,8 +195,6 @@
     word-break: normal;
 }
 
-/* Tabel bisa jauh lebih lebar dari kolom teks; pembungkusnya digulirkan
-   mendatar agar badan halaman tidak ikut menggulir. */
 .doc-body table {
     display: block;
     overflow-x: auto;
@@ -137,49 +206,32 @@
 .doc-body th,
 .doc-body td {
     padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid var(--color-stone-200);
+    border-bottom: 1px solid var(--color-border);
     text-align: left;
     vertical-align: top;
 }
 
 .doc-body th {
-    background: var(--color-stone-50);
+    background: var(--color-muted);
     font-weight: 600;
     white-space: nowrap;
-    color: var(--color-stone-900);
-}
-
-@media (prefers-color-scheme: dark) {
-    .doc-body th,
-    .doc-body td { border-color: var(--color-stone-800); }
-    .doc-body th { background: var(--color-stone-900); color: var(--color-stone-100); }
+    color: var(--color-foreground);
 }
 
 .doc-body blockquote {
     padding: 0.85rem 1.15rem;
-    border-left: 3px solid var(--color-amber-400);
+    border-left: 3px solid var(--color-primary);
     border-radius: 0 0.5rem 0.5rem 0;
-    background: var(--color-amber-50);
-    color: var(--color-amber-900);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-foreground);
 }
 
 .doc-body blockquote > * + * { margin-top: 0.75rem; }
 
-@media (prefers-color-scheme: dark) {
-    .doc-body blockquote {
-        background: color-mix(in oklab, var(--color-amber-950) 60%, transparent);
-        color: var(--color-amber-200);
-    }
-}
-
 .doc-body hr {
     margin: 2.5rem 0;
     border: 0;
-    border-top: 1px solid var(--color-stone-200);
-}
-
-@media (prefers-color-scheme: dark) {
-    .doc-body hr { border-color: var(--color-stone-800); }
+    border-top: 1px solid var(--color-border);
 }
 
 .doc-body input[type='checkbox'] { margin-right: 0.4rem; }
