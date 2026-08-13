@@ -1,0 +1,23 @@
+{
+    "name": "flustra-wa-engine",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Session engine whatsapp-web.js untuk Flustra WA Gateway",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "node --env-file=.env --watch src/server.js"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "archiver": "^7.0.1",
+        "express": "^4.21.2",
+        "pino": "^9.5.0",
+        "qrcode": "^1.5.4",
+        "unzipper": "^0.12.3",
+        "whatsapp-web.js": "^1.34.7"
+    }
+}

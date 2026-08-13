@@ -1,0 +1,46 @@
+*.log
+.DS_Store
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# --- Rahasia ---------------------------------------------------------------
+# Semua varian .env diabaikan, kecuali template yang memang tidak berisi nilai.
+.env
+.env.*
+!.env.example
+/engine/.env
+/engine/.env.*
+!/engine/.env.example
+
+# --- Engine ----------------------------------------------------------------
+/engine/node_modules
+
+# Kredensial sesi WhatsApp. Tidak boleh pernah masuk git: isinya setara dengan
+# akses penuh ke nomor yang bersangkutan. Di produksi tersimpan di persistent
+# volume, bukan di working directory.
+/engine/.wwebjs_auth
+/engine/.wwebjs_cache
+/engine/*.zip
+
+# --- Data runtime ----------------------------------------------------------
+/storage/app/private/session-backups
+/storage/app/private/media
+/database/*.sqlite
+/database/*.sqlite-journal

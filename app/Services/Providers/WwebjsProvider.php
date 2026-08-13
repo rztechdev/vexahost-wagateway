@@ -1,0 +1,120 @@
+<?php
+
+namespace App\Services\Providers;
+
+use App\Models\Message;
+use App\Models\WaSession;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * Driver whatsapp-web.js. Semua kerja beratnya ada di engine Node terpisah;
+ * kelas ini hanya klien HTTP tipis ke engine tersebut.
+ */
+class WwebjsProvider implements WhatsAppProvider
+{
+    public function startSession(WaSession $session): void
+    {
+        $this->request()->post("/sessions/{$session->id}/start", [
+            'kind' => $session->kind,
+        ])->throw();
+    }
+
+    public function stopSession(WaSession $session): void
+    {
+        $this->request()->post("/sessions/{$session->id}/stop")->throw();
+    }
+
+    public function logoutSession(WaSession $session): void
+    {
+        $this->request()->post("/sessions/{$session->id}/logout")->throw();
+    }
+
+    public function status(WaSession $session): array
+    {
+        try {
+            $response = $this->request()->get("/sessions/{$session->id}/status");
+        } catch (ConnectionException $e) {
+            // Engine mati bukan berarti sesi hilang — kredensialnya masih ada
+            // di volume. Laporkan sebagai disconnected, jangan failed.
+            return ['status' => 'disconnected', 'error' => $e->getMessage()];
+        }
+
+        if ($response->status() === 404) {
+            return ['status' => 'disconnected'];
+        }
+
+        $data = $response->throw()->json();
+
+        return [
+            'status' => $data['status'] ?? 'disconnected',
+            'phone_number' => $data['phone_number'] ?? null,
+            'push_name' => $data['push_name'] ?? null,
+        ];
+    }
+
+    public function send(WaSession $session, Message $message): array
+    {
+        if (! $session->isConnected()) {
+            throw new ProviderException("Sesi '{$session->name}' sedang tidak terhubung.");
+        }
+
+        $payload = [
+            'to' => $message->to_number,
+            'type' => $message->type,
+            'body' => $message->body,
+            'message_id' => $message->id,
+        ];
+
+        if ($message->media_path) {
+            // Media dikirim sebagai base64 supaya engine tidak perlu akses ke
+            // storage Laravel — keduanya container terpisah tanpa volume bersama.
+            $payload['media'] = [
+                'data' => base64_encode(Storage::disk('media')->get($message->media_path)),
+                'mimetype' => $message->media_mime,
+                'filename' => $message->media_filename,
+            ];
+        }
+
+        $response = $this->request()->post("/sessions/{$session->id}/messages", $payload);
+
+        if ($response->failed()) {
+            throw $this->toException($response);
+        }
+
+        $data = $response->json();
+
+        return [
+            'wa_message_id' => $data['wa_message_id'] ?? null,
+            'raw' => $data,
+        ];
+    }
+
+    private function toException(Response $response): ProviderException
+    {
+        $body = $response->json() ?? [];
+        $message = $body['error'] ?? $response->body();
+
+        // 422 dipakai engine untuk kegagalan yang tidak akan membaik: nomor
+        // tidak terdaftar di WhatsApp, tipe media tidak didukung.
+        if ($response->status() === 422) {
+            return ProviderException::permanent($message, $body);
+        }
+
+        return new ProviderException($message, retryable: true, context: $body);
+    }
+
+    private function request(): PendingRequest
+    {
+        $config = config('gateway.engine');
+
+        return Http::baseUrl(rtrim($config['url'], '/'))
+            ->withHeader('X-Engine-Token', $config['token'])
+            ->connectTimeout($config['connect_timeout'])
+            ->timeout($config['timeout'])
+            ->acceptJson();
+    }
+}

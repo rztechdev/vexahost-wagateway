@@ -1,0 +1,12 @@
+# Nixpacks untuk sisi Laravel.
+#
+# Sengaja TIDAK memuat apt package Chromium — Puppeteer hanya dibutuhkan engine,
+# yang berjalan sebagai resource terpisah (lihat engine/nixpacks.toml). Inilah
+# perbedaan pokoknya dengan flustra-erp yang dulu memikul keduanya dalam satu
+# container.
+#
+# Catatan Coolify: hanya aptPkgs dari file ini yang dipakai Nixpacks —
+# perintah install/build/start diatur lewat UI.
+
+[phases.setup]
+  aptPkgs = ['...']

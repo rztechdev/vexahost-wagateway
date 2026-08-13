@@ -1,0 +1,104 @@
+<?php
+
+namespace App\Http\Controllers\Dashboard;
+
+use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureTenantSelected;
+use App\Services\MessageDispatcher;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+class MessageController extends Controller
+{
+    public function __construct(private readonly MessageDispatcher $dispatcher) {}
+
+    public function index(Request $request): View
+    {
+        $tenant = EnsureTenantSelected::from($request);
+
+        $messages = $tenant->messages()
+            ->with('session')
+            ->when($request->query('session'), fn ($q, $v) => $q->where('wa_session_id', $v))
+            ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
+            ->when($request->query('direction'), fn ($q, $v) => $q->where('direction', $v))
+            ->when($request->query('q'), fn ($q, $v) => $q->where(function ($sub) use ($v): void {
+                $sub->where('to_number', 'like', "%{$v}%")
+                    ->orWhere('from_number', 'like', "%{$v}%")
+                    ->orWhere('body', 'like', "%{$v}%");
+            }))
+            ->latest()
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('dashboard.messages.index', [
+            'messages' => $messages,
+            'sessions' => $tenant->sessions()->orderBy('name')->get(),
+        ]);
+    }
+
+    public function compose(Request $request): View
+    {
+        return view('dashboard.messages.compose', [
+            'sessions' => EnsureTenantSelected::from($request)->sessions()
+                ->where('status', 'connected')
+                ->orderBy('name')
+                ->get(),
+            'templates' => EnsureTenantSelected::from($request)->templates()->where('is_active', true)->get(),
+        ]);
+    }
+
+    public function send(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'session_id' => ['required', 'string'],
+            'to' => ['required', 'string'],
+            'message' => ['required', 'string', 'max:4096'],
+        ]);
+
+        $tenant = EnsureTenantSelected::from($request);
+        $session = $tenant->sessions()->findOrFail($data['session_id']);
+
+        // Textarea "kirim ke" menerima banyak nomor dipisah baris atau koma,
+        // supaya uji coba broadcast bisa dilakukan tanpa lewat API.
+        $recipients = collect(preg_split('/[\s,;]+/', $data['to']))
+            ->filter()
+            ->values()
+            ->all();
+
+        if (count($recipients) === 1) {
+            try {
+                $message = $this->dispatcher->queue($session, $recipients[0], [
+                    'type' => 'text',
+                    'body' => $data['message'],
+                ]);
+            } catch (\RuntimeException $e) {
+                return back()->withErrors(['to' => $e->getMessage()])->withInput();
+            }
+
+            return redirect()->route('messages.index')
+                ->with('status', "Pesan diantre (ID {$message->id}).");
+        }
+
+        $result = $this->dispatcher->queueBulk($session, $recipients, [
+            'type' => 'text',
+            'body' => $data['message'],
+        ]);
+
+        $note = count($result['messages']).' pesan diantre.';
+
+        if ($result['rejected'] !== []) {
+            $note .= ' '.count($result['rejected']).' nomor ditolak: '
+                .implode(', ', array_column($result['rejected'], 'to'));
+        }
+
+        return redirect()->route('messages.index', ['batch' => $result['batch_id']])->with('status', $note);
+    }
+
+    public function show(Request $request, string $id): View
+    {
+        $message = EnsureTenantSelected::from($request)->messages()->with('session')->findOrFail($id);
+
+        return view('dashboard.messages.show', ['message' => $message]);
+    }
+}
