@@ -22,6 +22,25 @@ class AuthenticationTest extends TestCase
         $this->get('/dashboard')->assertRedirect(route('login'));
     }
 
+    /**
+     * Rute dashboard dan REST API sama-sama punya konsep "sessions". Kalau
+     * keduanya memakai nama rute yang sama, route('sessions.index') akan
+     * menghasilkan URL API dan pengguna yang baru mendaftar dilempar ke JSON,
+     * bukan ke dashboard. Assertion terhadap path harfiah di bawah menjaga itu.
+     */
+    public function test_pendaftaran_mengarahkan_ke_halaman_sesi_dashboard(): void
+    {
+        $this->post('/register', [
+            'name' => 'Citra',
+            'email' => 'citra@contoh.id',
+            'workspace' => 'Toko Citra',
+            'password' => 'rahasia12345',
+            'password_confirmation' => 'rahasia12345',
+        ])->assertRedirect('/sessions');
+
+        $this->assertSame(url('/sessions'), route('sessions.index'));
+    }
+
     public function test_pendaftaran_membuat_pengguna_workspace_dan_kepemilikannya(): void
     {
         $this->post('/register', [
@@ -30,7 +49,7 @@ class AuthenticationTest extends TestCase
             'workspace' => 'Toko Makmur',
             'password' => 'rahasia12345',
             'password_confirmation' => 'rahasia12345',
-        ])->assertRedirect(route('sessions.index'));
+        ])->assertRedirect('/sessions');
 
         $user = User::first();
 

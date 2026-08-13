@@ -20,9 +20,19 @@ Route::prefix('v1')->middleware('apikey')->group(function (): void {
     Route::get('health', HealthController::class);
 
     Route::middleware('throttle:api-key')->group(function (): void {
+        // Nama rute diberi awalan `api.` supaya tidak bertabrakan dengan rute
+        // dashboard yang memakai nama `sessions.index` dan seterusnya. Tanpa
+        // awalan ini, route('sessions.index') di controller dan layout akan
+        // menghasilkan URL API, bukan halaman dashboard.
         Route::apiResource('sessions', SessionController::class)
             ->only(['index', 'store', 'show', 'destroy'])
-            ->parameters(['sessions' => 'id']);
+            ->parameters(['sessions' => 'id'])
+            ->names([
+                'index' => 'api.sessions.index',
+                'store' => 'api.sessions.store',
+                'show' => 'api.sessions.show',
+                'destroy' => 'api.sessions.destroy',
+            ]);
 
         Route::post('sessions/{id}/connect', [SessionController::class, 'connect']);
         Route::post('sessions/{id}/disconnect', [SessionController::class, 'disconnect']);
