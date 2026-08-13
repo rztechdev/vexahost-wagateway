@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -167,7 +168,7 @@ class WhatsAppGateway
         return substr($phone, 0, 4).'****'.substr($phone, -4);
     }
 
-    private static function request(): \Illuminate\Http\Client\PendingRequest
+    private static function request(): PendingRequest
     {
         return Http::baseUrl(rtrim(config('whatsapp.url'), '/'))
             ->withHeader('X-Api-Key', config('whatsapp.key'))

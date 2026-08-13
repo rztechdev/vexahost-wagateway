@@ -13,6 +13,7 @@ class WaSession extends Model
     use HasUlids, SoftDeletes;
 
     public const KIND_PLATFORM = 'platform';
+
     public const KIND_TENANT = 'tenant';
 
     protected $fillable = [

@@ -13,6 +13,7 @@ class EngineCallbackTest extends TestCase
     use RefreshDatabase;
 
     private Tenant $tenant;
+
     private WaSession $session;
 
     protected function setUp(): void

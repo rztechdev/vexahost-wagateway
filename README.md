@@ -15,21 +15,22 @@ curl -X POST https://wa.flustra.id/api/v1/messages/text \
 
 ## Dokumentasi
 
-Mulai dari sini kalau Anda baru:
+Peta lengkapnya ada di **[docs/README.md](docs/README.md)**. Yang paling sering dibuka:
 
 | Dokumen | Isi |
 |---|---|
-| **[docs/PENGANTAR.md](docs/PENGANTAR.md)** | **Mulai di sini.** Apa itu flustra-wa, untuk apa, masalah apa yang diselesaikan, dan istilah-istilahnya |
-| [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md) | Bagaimana bagian-bagiannya bekerja sama, alur data, dan alasan di balik keputusannya |
-| [docs/PANDUAN_DEVELOPER.md](docs/PANDUAN_DEVELOPER.md) | Menyiapkan mesin, struktur kode, cara menambah fitur, menulis tes |
-| [docs/API.md](docs/API.md) | Referensi REST API v1 dan webhook |
-| [docs/INTEGRASI_APP.md](docs/INTEGRASI_APP.md) | Menyambungkan aplikasi Flustra lain ke gateway |
+| **[docs/PENGANTAR.md](docs/PENGANTAR.md)** | **Mulai di sini.** Apa itu, untuk apa, masalah yang diselesaikan, istilah |
+| [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md) | Cara bagian-bagiannya bekerja sama, alur data, alasan tiap keputusan |
+| [docs/PANDUAN_DEVELOPER.md](docs/PANDUAN_DEVELOPER.md) | Menyiapkan mesin, struktur kode, menambah fitur, menulis tes |
+| [docs/REFERENSI_KODE.md](docs/REFERENSI_KODE.md) | Setiap kelas penting: tanggung jawab & jebakannya |
+| [docs/REFERENSI_DATABASE.md](docs/REFERENSI_DATABASE.md) | Setiap tabel & kolom, dan alasan keberadaannya |
+| [docs/ENGINE.md](docs/ENGINE.md) | Seluk-beluk engine Node.js |
+| [docs/API.md](docs/API.md) | Referensi REST API v1 & webhook, dengan contoh |
 | [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Tiga tahap: development, staging, production |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy di Coolify, langkah demi langkah |
-| [docs/OPERASIONAL.md](docs/OPERASIONAL.md) | Menjalankan di produksi: pemantauan, pemulihan, pemecahan masalah |
-| [docs/PERBANDINGAN_PROVIDER.md](docs/PERBANDINGAN_PROVIDER.md) | whatsapp-web.js vs WhatsApp Business API resmi (Twilio/Meta) |
-| [docs/VERIFIKASI_NOMOR.md](docs/VERIFIKASI_NOMOR.md) | Alur OTP dan kenapa nomor wajib diverifikasi |
-| [docs/FAQ.md](docs/FAQ.md) | Pertanyaan yang sering muncul |
+| [docs/OPERASIONAL.md](docs/OPERASIONAL.md) | Pemantauan, pemulihan, pemecahan masalah |
+| [docs/KONTRIBUSI.md](docs/KONTRIBUSI.md) | Alur git, standar kode, daftar periksa |
+| [docs/FAQ.md](docs/FAQ.md) &middot; [docs/GLOSARIUM.md](docs/GLOSARIUM.md) | Pertanyaan umum & istilah |
 
 ## Ringkasan teknis
 
@@ -49,6 +50,8 @@ npm --prefix engine install
 ```
 
 Salin `.env.example` → `.env` di root **dan** di `engine/`. Isi `ENGINE_TOKEN` dan `ENGINE_HMAC_SECRET` dengan nilai acak yang **sama persis** di keduanya:
+
+> Untuk deploy ke server, pakai template per tahap: `.env.development.example`, `.env.staging.example`, `.env.production.example` (dan padanannya di `engine/`). Penjelasannya di [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
 ```bash
 php artisan key:generate

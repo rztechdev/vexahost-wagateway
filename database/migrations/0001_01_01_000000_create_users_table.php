@@ -13,17 +13,12 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            // uuid `sub` dari flustra-auth. Sumber kebenaran identitas ada di
-            // sana; baris di sini hanya cermin lokal hasil SSO callback.
-            $table->uuid('sso_id')->nullable()->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('phone', 20)->nullable();
-            $table->timestamp('phone_verified_at')->nullable();
-            $table->string('avatar_url')->nullable();
-            // Password nullable: user SSO tidak pernah punya password lokal.
-            $table->string('password')->nullable();
+            $table->string('password');
+            // Akses lintas tenant untuk keperluan dukungan. Tidak bisa diatur
+            // lewat antarmuka mana pun — hanya langsung di database.
             $table->boolean('is_super_admin')->default(false);
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();

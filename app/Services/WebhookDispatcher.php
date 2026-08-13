@@ -8,8 +8,11 @@ use App\Models\Tenant;
 class WebhookDispatcher
 {
     public const EVENT_MESSAGE_RECEIVED = 'message.received';
+
     public const EVENT_MESSAGE_STATUS = 'message.status';
+
     public const EVENT_SESSION_STATUS = 'session.status';
+
     public const EVENT_SESSION_QR = 'session.qr';
 
     /**

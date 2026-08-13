@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +15,7 @@ class Tenant extends Model
     protected $fillable = [
         'name',
         'slug',
-        'owner_sso_id',
+        'owner_id',
         'owner_email',
         'status',
         'plan_slug',
@@ -32,6 +33,11 @@ class Tenant extends Model
             'monthly_message_quota' => 'integer',
             'api_rate_limit_per_minute' => 'integer',
         ];
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function members(): BelongsToMany

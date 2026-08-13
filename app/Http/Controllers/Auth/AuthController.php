@@ -84,6 +84,7 @@ class AuthController extends Controller
         $tenant = Tenant::create([
             'name' => $data['workspace'],
             'slug' => $this->uniqueSlug($data['workspace']),
+            'owner_id' => $user->id,
             'owner_email' => $user->email,
             'max_sessions' => config('gateway.defaults.max_sessions'),
             'monthly_message_quota' => config('gateway.defaults.monthly_message_quota'),

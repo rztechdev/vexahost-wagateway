@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Message;
-use App\Models\MessageTemplate;
 use App\Models\WaSession;
 use App\Services\MessageDispatcher;
 use Illuminate\Http\JsonResponse;

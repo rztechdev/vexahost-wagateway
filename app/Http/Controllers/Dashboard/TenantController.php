@@ -53,7 +53,7 @@ class TenantController extends Controller
         $tenant = Tenant::create([
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name']),
-            'owner_sso_id' => $user->sso_id,
+            'owner_id' => $user->id,
             'owner_email' => $user->email,
             'max_sessions' => config('gateway.defaults.max_sessions'),
             'monthly_message_quota' => config('gateway.defaults.monthly_message_quota'),

@@ -21,13 +21,20 @@ Homestead.yaml
 Thumbs.db
 
 # --- Rahasia ---------------------------------------------------------------
-# Semua varian .env diabaikan, kecuali template yang memang tidak berisi nilai.
+# Semua varian .env diabaikan, KECUALI file *.example yang memang template
+# tanpa nilai. Pola `!*.example` ditulis terakhir supaya menang atas `.env.*`.
 .env
 .env.*
-!.env.example
 /engine/.env
 /engine/.env.*
+!.env.example
+!.env.development.example
+!.env.staging.example
+!.env.production.example
 !/engine/.env.example
+!/engine/.env.development.example
+!/engine/.env.staging.example
+!/engine/.env.production.example
 
 # --- Engine ----------------------------------------------------------------
 /engine/node_modules

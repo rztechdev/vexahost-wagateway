@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureTenantSelected;
 use App\Jobs\DeliverWebhookJob;
 use App\Models\AuditLog;
+use App\Models\WebhookDelivery;
 use App\Services\WebhookDispatcher;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ class WebhookController extends Controller
 
         return view('dashboard.webhooks.index', [
             'webhooks' => $tenant->webhooks()->latest()->get(),
-            'deliveries' => \App\Models\WebhookDelivery::whereIn('webhook_id', $tenant->webhooks()->pluck('id'))
+            'deliveries' => WebhookDelivery::whereIn('webhook_id', $tenant->webhooks()->pluck('id'))
                 ->latest()
                 ->limit(20)
                 ->get(),

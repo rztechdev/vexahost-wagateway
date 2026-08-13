@@ -11,13 +11,9 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
-        'sso_id',
         'name',
         'email',
         'email_verified_at',
-        'phone',
-        'phone_verified_at',
-        'avatar_url',
         'password',
         'is_super_admin',
         'last_login_at',
@@ -32,7 +28,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'phone_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'is_super_admin' => 'boolean',
             'password' => 'hashed',
@@ -51,6 +46,11 @@ class User extends Authenticatable
         return $this->tenants->firstWhere('id', $tenant->id)?->pivot->role;
     }
 
+    /**
+     * Boleh mengubah pengaturan tenant: menambah anggota, mengelola sesi,
+     * membuat dan mencabut API key. Member biasa hanya boleh melihat dan
+     * mengirim pesan.
+     */
     public function canManage(Tenant $tenant): bool
     {
         return $this->is_super_admin || in_array($this->roleIn($tenant), ['owner', 'admin'], true);

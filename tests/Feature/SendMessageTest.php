@@ -17,7 +17,9 @@ class SendMessageTest extends TestCase
     use RefreshDatabase;
 
     private Tenant $tenant;
+
     private WaSession $session;
+
     private string $key;
 
     protected function setUp(): void

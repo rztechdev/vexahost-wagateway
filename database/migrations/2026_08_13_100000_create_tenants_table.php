@@ -12,9 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            // sso_id pemilik, bukan users.id, supaya tenant tetap terikat ke
-            // identitas pusat meski baris user lokal dibuat ulang.
-            $table->uuid('owner_sso_id')->nullable()->index();
+            // Pemilik tenant. nullOnDelete, bukan cascade: menghapus akun
+            // pengguna tidak boleh ikut menghapus workspace beserta seluruh
+            // riwayat pesannya — kepemilikan cukup dipindahkan.
+            $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('owner_email')->nullable();
             $table->enum('status', ['active', 'suspended'])->default('active');
 
