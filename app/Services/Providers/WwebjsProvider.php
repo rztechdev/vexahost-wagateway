@@ -78,7 +78,11 @@ class WwebjsProvider implements WhatsAppProvider
             ];
         }
 
-        $response = $this->request()->post("/sessions/{$session->id}/messages", $payload);
+        // Batas waktu panjang khusus di sini: pesan bisa menunggu giliran di
+        // antrean anti-ban engine. Perintah sesi lain memakai batas pendek —
+        // di sana ada manusia yang menunggu tombolnya selesai.
+        $response = $this->request(config('gateway.engine.send_timeout'))
+            ->post("/sessions/{$session->id}/messages", $payload);
 
         if ($response->failed()) {
             throw $this->toException($response);
@@ -106,14 +110,14 @@ class WwebjsProvider implements WhatsAppProvider
         return new ProviderException($message, retryable: true, context: $body);
     }
 
-    private function request(): PendingRequest
+    private function request(?int $timeout = null): PendingRequest
     {
         $config = config('gateway.engine');
 
         return Http::baseUrl(rtrim($config['url'], '/'))
             ->withHeader('X-Engine-Token', $config['token'])
             ->connectTimeout($config['connect_timeout'])
-            ->timeout($config['timeout'])
+            ->timeout($timeout ?? $config['timeout'])
             ->acceptJson();
     }
 }
