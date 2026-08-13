@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 | REST API publik. Dipakai flustra-erp, flustra-web, flustra-pricing,
 | flustra-helpdesk, dan (nanti) pelanggan SaaS.
 |
-| Autentikasi memakai API key per tenant lewat header X-Api-Key.
+| Autentikasi memakai API key per workspace lewat header X-Api-Key.
 | Rate limit dibatasi per kunci, bukan per IP, supaya satu pelanggan tidak
 | bisa menghabiskan jatah pelanggan lain yang kebetulan sekantor.
 */

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,15 +12,15 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
-        $sessions = $tenant->sessions()->orderBy('name')->get();
+        $sessions = $workspace->sessions()->orderBy('name')->get();
 
         // Deret 7 hari dibangun dari hasil query yang dikelompokkan per tanggal,
         // lalu tanggal tanpa pesan diisi nol supaya grafik tidak bolong.
         $since = now()->subDays(6)->startOfDay();
 
-        $daily = $tenant->messages()
+        $daily = $workspace->messages()
             ->where('created_at', '>=', $since)
             ->selectRaw('DATE(created_at) as day, direction, COUNT(*) as total')
             ->groupBy('day', 'direction')
@@ -39,15 +39,15 @@ class DashboardController extends Controller
 
         return view('dashboard.index', [
             'sessions' => $sessions,
-            'usage' => $tenant->currentUsage(),
+            'usage' => $workspace->currentUsage(),
             'chart' => $chart,
             'chartMax' => max(1, $chart->max(fn ($d) => $d['outbound'] + $d['inbound'])),
-            'statusCounts' => $tenant->messages()
+            'statusCounts' => $workspace->messages()
                 ->where('created_at', '>=', $since)
                 ->select('status', DB::raw('COUNT(*) as total'))
                 ->groupBy('status')
                 ->pluck('total', 'status'),
-            'recentMessages' => $tenant->messages()->with('session')->latest()->limit(10)->get(),
+            'recentMessages' => $workspace->messages()->with('session')->latest()->limit(10)->get(),
         ]);
     }
 }

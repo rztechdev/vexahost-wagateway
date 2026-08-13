@@ -31,13 +31,13 @@
                     Docs
                 </a>
 
-                @isset($availableTenants)
+                @isset($availableWorkspaces)
                     <form method="POST" action="#" x-data class="hidden sm:block">
                         <select
                             class="rounded-lg border-border bg-background py-1.5 text-sm focus:border-primary focus:ring-primary"
-                            @change="$el.form.action = '{{ url('tenants') }}/' + $el.value + '/switch'; $el.form.submit()">
-                            @foreach ($availableTenants as $t)
-                                <option value="{{ $t->id }}" @selected($t->id === $currentTenant->id)>{{ $t->name }}</option>
+                            @change="$el.form.action = '{{ url('workspaces') }}/' + $el.value + '/switch'; $el.form.submit()">
+                            @foreach ($availableWorkspaces as $t)
+                                <option value="{{ $t->id }}" @selected($t->id === $currentWorkspace->id)>{{ $t->name }}</option>
                             @endforeach
                         </select>
                         @csrf

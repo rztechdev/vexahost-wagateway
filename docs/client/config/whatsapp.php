@@ -27,18 +27,6 @@ return [
     // Isi kalau aplikasi ini harus selalu mengirim dari nomor tertentu.
     'session' => env('WA_GATEWAY_SESSION'),
 
-    /*
-    | Nomor resmi Flustra, untuk pesan yang memang atas nama Flustra: OTP,
-    | undangan anggota, notifikasi billing, balasan tiket.
-    |
-    | Sengaja dipisah dari nomor milik tenant. Dokumen yang ditujukan ke pihak
-    | ketiga — invoice ke customer, PO ke vendor — harus keluar dari nomor
-    | perusahaan yang bersangkutan, bukan dari nomor Flustra: penerimanya tidak
-    | mengenal Flustra, dan volume kiriman semacam itu dari satu nomor platform
-    | memancing pemblokiran.
-    */
-    'platform_session' => env('WA_GATEWAY_PLATFORM_SESSION'),
-
     // Sengaja pendek. Notifikasi WhatsApp adalah pelengkap email, bukan
     // penggantinya — gateway yang lambat tidak boleh menahan request pengguna.
     'timeout' => (int) env('WA_GATEWAY_TIMEOUT', 5),
@@ -56,6 +44,11 @@ return [
     | Status verifikasi berasal dari flustra-auth dan dicerminkan ke kolom
     | users.phone_verified_at aplikasi ini lewat SSO. Jangan matikan opsi ini
     | di produksi.
+    |
+    | HAPUS baris ini kalau aplikasi Anda tidak punya kolom phone_verified_at
+    | dan tidak memeriksanya. Config yang menjanjikan pengaman yang tidak
+    | pernah dijalankan lebih berbahaya daripada tidak ada sama sekali —
+    | flustra-erp sempat begitu selama berbulan-bulan.
     */
     'require_verified_phone' => env('WA_GATEWAY_REQUIRE_VERIFIED_PHONE', true),
 

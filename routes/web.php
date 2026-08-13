@@ -6,8 +6,8 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\MessageController;
 use App\Http\Controllers\Dashboard\SessionController;
 use App\Http\Controllers\Dashboard\TemplateController;
-use App\Http\Controllers\Dashboard\TenantController;
 use App\Http\Controllers\Dashboard\WebhookController;
+use App\Http\Controllers\Dashboard\WorkspaceController;
 use App\Http\Controllers\DocsController;
 use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
@@ -39,13 +39,13 @@ Route::middleware('guest')->group(function (): void {
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 Route::middleware('auth')->group(function (): void {
-    // Pembuatan workspace ada di luar middleware `tenant`, karena middleware
+    // Pembuatan workspace ada di luar middleware `workspace`, karena middleware
     // itulah yang mengarahkan ke sini saat pengguna belum punya workspace.
-    Route::get('onboarding', [TenantController::class, 'createForm'])->name('onboarding.create');
-    Route::post('onboarding', [TenantController::class, 'create'])->name('onboarding.store');
-    Route::post('tenants/{id}/switch', [TenantController::class, 'switch'])->name('tenants.switch');
+    Route::get('onboarding', [WorkspaceController::class, 'createForm'])->name('onboarding.create');
+    Route::post('onboarding', [WorkspaceController::class, 'create'])->name('onboarding.store');
+    Route::post('workspaces/{id}/switch', [WorkspaceController::class, 'switch'])->name('workspaces.switch');
 
-    Route::middleware('tenant')->group(function (): void {
+    Route::middleware('workspace')->group(function (): void {
         Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         Route::get('sessions', [SessionController::class, 'index'])->name('sessions.index');
@@ -76,8 +76,8 @@ Route::middleware('auth')->group(function (): void {
         Route::post('webhooks/{id}/toggle', [WebhookController::class, 'toggle'])->name('webhooks.toggle');
         Route::delete('webhooks/{id}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
 
-        Route::get('settings', [TenantController::class, 'settings'])->name('settings');
-        Route::post('settings/members', [TenantController::class, 'addMember'])->name('settings.members.add');
-        Route::delete('settings/members/{userId}', [TenantController::class, 'removeMember'])->name('settings.members.remove');
+        Route::get('settings', [WorkspaceController::class, 'settings'])->name('settings');
+        Route::post('settings/members', [WorkspaceController::class, 'addMember'])->name('settings.members.add');
+        Route::delete('settings/members/{userId}', [WorkspaceController::class, 'removeMember'])->name('settings.members.remove');
     });
 });

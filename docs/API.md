@@ -51,7 +51,7 @@ Authorization: Bearer fwa_a1b2c3d4.PANJANGSEKALIRAHASIA
 Kunci dibuat di dashboard (**API Keys**) atau lewat CLI:
 
 ```bash
-php artisan gateway:setup-tenant "Nama Tenant" --key="nama kunci"
+Dashboard → API Keys → beri nama → Buat
 ```
 
 **Kunci hanya ditampilkan sekali.** Yang tersimpan di server hanya hash-nya. Kalau hilang, buat kunci baru dan cabut yang lama.
@@ -95,8 +95,8 @@ Bentuk ini konsisten di seluruh endpoint, termasuk galat validasi dan galat aute
 | 202 | Diterima untuk diproses | Telusuri statusnya lewat ULID atau webhook |
 | 204 | Berhasil, tanpa isi | |
 | 401 | API key tidak ada, salah, dicabut, atau kedaluwarsa | Periksa kunci — jangan diulang |
-| 403 | Tenant nonaktif, atau kunci tidak punya scope | Jangan diulang |
-| 404 | Sumber daya tidak ada, atau milik tenant lain | Jangan diulang |
+| 403 | Workspace nonaktif, atau kunci tidak punya scope | Jangan diulang |
+| 404 | Sumber daya tidak ada, atau milik workspace lain | Jangan diulang |
 | 422 | Data tidak valid, sesi tidak siap, atau kuota habis | Perbaiki datanya |
 | 429 | Melewati rate limit | Tunggu, lihat header `Retry-After` |
 | 500 | Galat server | Boleh diulang dengan jeda |
@@ -108,7 +108,7 @@ Bentuk ini konsisten di seluruh endpoint, termasuk galat validasi dan galat aute
 
 Dihitung **per API key**, bukan per IP. Beberapa aplikasi Flustra berjalan di VPS yang sama; limit per IP akan membuat mereka saling menghabiskan jatah.
 
-Bawaan 60 permintaan/menit, bisa diatur per tenant atau per kunci.
+Bawaan 60 permintaan/menit, bisa diatur per workspace atau per kunci.
 
 `GET /api/v1/health` dikecualikan, jadi aman dipanggil sesering apa pun untuk monitoring.
 
@@ -135,7 +135,7 @@ Untuk grup, kirim chat id lengkap berakhiran `@g.us`. Cara mendapatkannya: kirim
 
 ## `GET /health`
 
-Keadaan tenant dan pemakaian bulan berjalan. Tidak terkena rate limit.
+Keadaan workspace dan pemakaian bulan berjalan. Tidak terkena rate limit.
 
 ```bash
 curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
@@ -145,7 +145,7 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
 {
   "success": true,
   "data": {
-    "tenant": "Toko Makmur",
+    "workspace": "Toko Makmur",
     "status": "active",
     "sessions": { "total": 2, "connected": 1, "limit": 3 },
     "usage": {
@@ -159,7 +159,7 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
 }
 ```
 
-`usage.quota` bernilai `null` untuk tenant internal (tanpa batas).
+`usage.quota` bernilai `null` untuk workspace internal (tanpa batas).
 
 ---
 
@@ -174,7 +174,6 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
     {
       "id": "01K2B8XQZ4M7NPRT5VW9YC3FGH",
       "name": "CS Utama",
-      "kind": "tenant",
       "driver": "wwebjs",
       "status": "connected",
       "phone_number": "6281234567890",
@@ -203,7 +202,7 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
 
 | Parameter | Tipe | Wajib | Keterangan |
 |---|---|---|---|
-| `name` | string, maks 60 | ya | Unik dalam satu tenant |
+| `name` | string, maks 60 | ya | Unik dalam satu workspace |
 | `driver` | enum | tidak | `wwebjs` (bawaan), `cloud_api`, `fonnte` |
 
 ```bash
@@ -214,11 +213,11 @@ curl -X POST https://wa.flustra.id/api/v1/sessions \
 
 Balasan `201` dengan objek sesi.
 
-Galat `422`: nama sudah dipakai, atau jatah sesi tenant sudah habis.
+Galat `422`: nama sudah dipakai, atau jatah sesi workspace sudah habis.
 
 ### `GET /sessions/{id}`
 
-Objek sesi. `404` bila sesi milik tenant lain.
+Objek sesi. `404` bila sesi milik workspace lain.
 
 ### `POST /sessions/{id}/connect`
 
@@ -320,12 +319,12 @@ curl -X POST https://wa.flustra.id/api/v1/messages/text \
 
 Simpan `data.id` untuk menelusuri statusnya.
 
-**Pemilihan sesi otomatis:** bila `session_id` kosong, dipakai sesi `kind=tenant` pertama yang berstatus `connected`. Sesi platform tidak pernah dipilih otomatis.
+**Pemilihan sesi otomatis:** bila `session_id` kosong, dipakai sesi pertama yang berstatus `connected`. Isi `session_id` hanya kalau workspace punya beberapa nomor dan pengirimnya harus dikunci.
 
 Galat `422`:
 - `Nomor tujuan tidak valid: 123`
 - `Kuota pesan bulan ini sudah habis (1000 pesan).`
-- `Tenant sedang tidak aktif.`
+- `Workspace sedang tidak aktif.`
 - `Tidak ada sesi WhatsApp yang bisa dipakai. Hubungkan satu sesi terlebih dahulu.`
 
 ### `POST /messages/media`
@@ -510,7 +509,7 @@ Balasan `204`.
 
 Butuh scope `otp`. Dipakai flustra-auth untuk memverifikasi kepemilikan nomor.
 
-Jangan berikan scope ini ke kunci integrasi biasa: kunci yang bocor dengannya bisa dipakai membombardir nomor orang lain dan membuat nomor platform diblokir.
+Jangan berikan scope ini ke kunci integrasi biasa: kunci yang bocor dengannya bisa dipakai membombardir nomor orang lain dan membuat nomor pengirim diblokir.
 
 ### `POST /otp/send`
 

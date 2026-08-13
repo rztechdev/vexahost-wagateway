@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MessageTemplate extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'name',
         'slug',
         'body',
@@ -24,9 +24,9 @@ class MessageTemplate extends Model
         ];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     /**

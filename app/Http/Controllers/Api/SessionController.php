@@ -14,7 +14,7 @@ class SessionController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $sessions = $this->tenant($request)->sessions()->orderBy('name')->get();
+        $sessions = $this->workspace($request)->sessions()->orderBy('name')->get();
 
         return $this->ok($sessions->map(fn (WaSession $s) => $this->present($s)));
     }
@@ -26,10 +26,10 @@ class SessionController extends ApiController
             'driver' => ['nullable', Rule::in(['wwebjs', 'cloud_api', 'fonnte'])],
         ]);
 
-        $tenant = $this->tenant($request);
+        $workspace = $this->workspace($request);
 
         try {
-            $session = $this->sessions->create($tenant, $data['name'], $data['driver'] ?? 'wwebjs');
+            $session = $this->sessions->create($workspace, $data['name'], $data['driver'] ?? 'wwebjs');
         } catch (\RuntimeException $e) {
             return $this->fail($e->getMessage(), 422);
         }
@@ -107,7 +107,7 @@ class SessionController extends ApiController
 
     private function find(Request $request, string $id): WaSession
     {
-        return $this->tenant($request)->sessions()->findOrFail($id);
+        return $this->workspace($request)->sessions()->findOrFail($id);
     }
 
     private function present(WaSession $session): array
@@ -115,7 +115,6 @@ class SessionController extends ApiController
         return [
             'id' => $session->id,
             'name' => $session->name,
-            'kind' => $session->kind,
             'driver' => $session->driver,
             'status' => $session->status,
             'phone_number' => $session->phone_number,

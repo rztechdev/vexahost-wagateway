@@ -16,7 +16,7 @@ Dokumen ini menjelaskan bagaimana bagian-bagian flustra-wa bekerja sama, dan **k
         │  flustra-wa  (Laravel 12)                      │
         │                                                │
         │  • dashboard      • REST API v1                │
-        │  • tenant & user  • antrean pesan              │
+        │  • workspace & user  • antrean pesan              │
         │  • API key        • riwayat & status           │
         │  • webhook        • penyimpan cadangan sesi    │
         └────────────────────────────────────────────────┘
@@ -49,7 +49,7 @@ Pertanyaan yang wajar: kenapa tidak semuanya Node, atau semuanya PHP?
 
 **Kenapa engine harus Node.** `whatsapp-web.js` adalah library Node. Tidak ada padanan PHP yang setara — semua gateway WhatsApp non-resmi bertumpu pada library Node yang sama. Ini bukan pilihan, ini kenyataan.
 
-**Kenapa sisanya PHP.** Seluruh ekosistem Flustra adalah Laravel. Dashboard, tenant, billing, SSO, antrean — semua polanya sudah ada dan sudah terbukti. Menulis ulang semuanya dalam Node berarti membangun kembali dari nol hal-hal yang sudah selesai.
+**Kenapa sisanya PHP.** Seluruh ekosistem Flustra adalah Laravel. Dashboard, workspace, billing, SSO, antrean — semua polanya sudah ada dan sudah terbukti. Menulis ulang semuanya dalam Node berarti membangun kembali dari nol hal-hal yang sudah selesai.
 
 **Kenapa engine jadi container terpisah, bukan proses di dalam container Laravel.** Ini pelajaran langsung dari `flustra-erp`, di mana Node dijalankan di latar belakang di dalam container PHP:
 
@@ -68,7 +68,7 @@ Aturan pembagiannya satu kalimat: **Laravel memegang keadaan, engine memegang ko
 | Daftar sesi | ✅ sumber kebenaran | ❌ menanyakan saat boot |
 | Kredensial WhatsApp | ✅ menyimpan cadangan | ✅ memegang yang aktif |
 | Riwayat pesan | ✅ | ❌ |
-| Tenant & API key | ✅ | ❌ tidak tahu-menahu |
+| Workspace & API key | ✅ | ❌ tidak tahu-menahu |
 | Koneksi ke WhatsApp | ❌ | ✅ |
 | Jeda antar pesan | ❌ | ✅ |
 | Antrean & percobaan ulang | ✅ | ✅ (per sesi) |
@@ -85,7 +85,7 @@ Dua arah, dua mekanisme berbeda.
 
 Header `X-Engine-Token` pada setiap permintaan. Sederhana, karena Laravel yang memulai dan payload-nya tidak sensitif.
 
-Engine tidak punya domain publik di Coolify, tapi jaringan internal **tetap bukan batas keamanan yang cukup** — siapa pun yang bisa menjangkau port itu bisa mengirim WhatsApp atas nama semua tenant. Karena itu tokennya tetap wajib.
+Engine tidak punya domain publik di Coolify, tapi jaringan internal **tetap bukan batas keamanan yang cukup** — siapa pun yang bisa menjangkau port itu bisa mengirim WhatsApp atas nama semua workspace. Karena itu tokennya tetap wajib.
 
 ### Engine → Laravel: tanda tangan HMAC + timestamp
 
@@ -121,7 +121,7 @@ Laravel memverifikasi tanda tangan lebih dulu (murah), menulis file secara strea
 
 ```
 1. Aplikasi   POST /api/v1/messages/text  (X-Api-Key)
-2. Laravel    verifikasi kunci → cek tenant aktif → cek kuota
+2. Laravel    verifikasi kunci → cek workspace aktif → cek kuota
 3. Laravel    normalisasi nomor (0812… → 62812…)
 4. Laravel    simpan baris `messages` status=queued, naikkan pemakaian
 5. Laravel    balas 202 dengan ULID  ← permintaan selesai di sini
@@ -136,7 +136,7 @@ Laravel memverifikasi tanda tangan lebih dulu (murah), menulis file secara strea
 
 Dua hal yang perlu diperhatikan:
 
-**Kuota dihitung di langkah 4, saat diantre, bukan saat terkirim.** Kalau dihitung belakangan, satu tenant bisa mengantrekan puluhan ribu pesan lebih dulu dan baru ketahuan melewati batas setelah semuanya terlanjur terkirim.
+**Kuota dihitung di langkah 4, saat diantre, bukan saat terkirim.** Kalau dihitung belakangan, satu workspace bisa mengantrekan puluhan ribu pesan lebih dulu dan baru ketahuan melewati batas setelah semuanya terlanjur terkirim.
 
 **Permintaan selesai di langkah 5.** Pemanggil tidak menunggu pesan benar-benar terkirim — itu bisa memakan menit atau jam untuk broadcast. Status pengiriman ditelusuri lewat ULID atau webhook.
 
@@ -148,7 +148,7 @@ Dua hal yang perlu diperhatikan:
 3. Engine     callback bertanda tangan ke Laravel
 4. Laravel    simpan `messages` direction=inbound, naikkan hitungan
 5. Laravel    antrekan DeliverWebhookJob untuk tiap webhook aktif
-6. Worker     POST ke URL tenant dengan X-Flustra-Signature
+6. Worker     POST ke URL workspace dengan X-Flustra-Signature
 ```
 
 ### Menautkan nomor
@@ -203,7 +203,7 @@ Ada dua antrean berbeda, masing-masing dengan alasannya sendiri.
 
 **Antrean engine (dalam memori, per sesi).** Memberi jeda acak 3–8 detik antar pesan dalam satu sesi.
 
-Kenapa antrean kedua ada di engine dan bukan di Laravel? Karena isolasinya harus **per sesi**. Kalau jedanya diatur Laravel, broadcast 500 pesan milik satu tenant akan menahan satu pesan mendesak milik tenant lain. Dengan antrean per sesi di engine, keduanya berjalan paralel.
+Kenapa antrean kedua ada di engine dan bukan di Laravel? Karena isolasinya harus **per sesi**. Kalau jedanya diatur Laravel, broadcast 500 pesan milik satu workspace akan menahan satu pesan mendesak milik workspace lain. Dengan antrean per sesi di engine, keduanya berjalan paralel.
 
 Jeda itu sendiri bukan hiasan: mengirim beruntun tanpa jeda adalah pola paling khas robot, dan cara paling cepat membuat nomor diblokir.
 
@@ -250,7 +250,7 @@ Engine memberi sinyal ini lewat kode HTTP: `422` berarti permanen, selain itu se
 ## 9. Skema database
 
 ```
-users ──┬── tenant_members ──┬── tenants
+users ──┬── workspace_members ──┬── workspaces
         │                     ├── api_keys
         │                     ├── wa_sessions ──┬── session_backups
         │                     │                  └── messages
@@ -263,9 +263,9 @@ users ──┬── tenant_members ──┬── tenants
 
 Beberapa keputusan yang layak dijelaskan:
 
-**`wa_sessions.id` dan `messages.id` memakai ULID, bukan auto-increment.** Untuk sesi, id-nya ikut dipakai sebagai nama folder dan file zip di engine, jadi harus aman untuk nama file. Untuk pesan, id-nya dikembalikan ke pemanggil API — auto-increment akan membocorkan berapa banyak pesan yang lewat sistem, dan memungkinkan menebak id milik tenant lain.
+**`wa_sessions.id` dan `messages.id` memakai ULID, bukan auto-increment.** Untuk sesi, id-nya ikut dipakai sebagai nama folder dan file zip di engine, jadi harus aman untuk nama file. Untuk pesan, id-nya dikembalikan ke pemanggil API — auto-increment akan membocorkan berapa banyak pesan yang lewat sistem, dan memungkinkan menebak id milik workspace lain.
 
-**`usage_counters` menyimpan agregat bulanan terpisah.** Menghitung ulang dari tabel `messages` akan lambat (jutaan baris) dan salah (tabel itu dipangkas oleh retensi). Kolomnya dinaikkan dengan operasi increment mentah supaya aman dari race saat banyak worker memproses tenant yang sama.
+**`usage_counters` menyimpan agregat bulanan terpisah.** Menghitung ulang dari tabel `messages` akan lambat (jutaan baris) dan salah (tabel itu dipangkas oleh retensi). Kolomnya dinaikkan dengan operasi increment mentah supaya aman dari race saat banyak worker memproses workspace yang sama.
 
 **`api_keys` menyimpan `prefix` terpisah dari hash.** Prefix mempersempit pencarian ke satu baris sebelum verifikasi hash — tanpa itu, setiap permintaan API harus membandingkan hash ke seluruh isi tabel.
 
@@ -273,18 +273,18 @@ Beberapa keputusan yang layak dijelaskan:
 
 ---
 
-## 10. Isolasi antar tenant
+## 10. Isolasi antar workspace
 
-Semua kueri dashboard berangkat dari tenant yang sedang dipilih, bukan dari model global. Middleware `EnsureTenantSelected` menaruhnya di request, dan controller mengambilnya dari sana:
+Semua kueri dashboard berangkat dari workspace yang sedang dipilih, bukan dari model global. Middleware `EnsureWorkspaceSelected` menaruhnya di request, dan controller mengambilnya dari sana:
 
 ```php
-$tenant = EnsureTenantSelected::from($request);
-$session = $tenant->sessions()->findOrFail($id);   // ← bukan WaSession::find($id)
+$workspace = EnsureWorkspaceSelected::from($request);
+$session = $workspace->sessions()->findOrFail($id);   // ← bukan WaSession::find($id)
 ```
 
-Bedanya menentukan: `WaSession::find($id)` akan menemukan sesi milik siapa pun. `$tenant->sessions()->findOrFail($id)` hanya menemukan yang benar-benar milik tenant tersebut, dan melempar 404 untuk yang lain.
+Bedanya menentukan: `WaSession::find($id)` akan menemukan sesi milik siapa pun. `$workspace->sessions()->findOrFail($id)` hanya menemukan yang benar-benar milik workspace tersebut, dan melempar 404 untuk yang lain.
 
-Pola yang sama berlaku di REST API, di mana tenant berasal dari API key. Ada tes khusus untuk ini (`test_kunci_tenant_lain_tidak_bisa_melihat_sesi_kita`).
+Pola yang sama berlaku di REST API, di mana workspace berasal dari API key. Ada tes khusus untuk ini (`test_kunci_workspace_lain_tidak_bisa_melihat_sesi_kita`).
 
 ---
 

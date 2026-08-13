@@ -48,7 +48,7 @@ return [
         ],
 
         // Lampiran yang dikirim lewat API. Tidak pernah dipublikasikan lewat
-        // URL — isinya milik tenant dan hanya dibaca saat pengiriman.
+        // URL — isinya milik workspace dan hanya dibaca saat pengiriman.
         'media' => [
             'driver' => 'local',
             'root' => storage_path('app/private/media'),

@@ -16,7 +16,7 @@ Ada dua, dan keduanya berbeda tujuan.
 
 **Antrean Laravel** (tabel `jobs`) memisahkan pengiriman dari siklus permintaan dan memberi percobaan ulang.
 
-**Antrean engine** (dalam memori, per sesi) memberi jeda antar pesan supaya nomor tidak diblokir. Ada di engine, bukan Laravel, supaya isolasinya per sesi — broadcast satu tenant tidak menahan pesan tenant lain.
+**Antrean engine** (dalam memori, per sesi) memberi jeda antar pesan supaya nomor tidak diblokir. Ada di engine, bukan Laravel, supaya isolasinya per sesi — broadcast satu workspace tidak menahan pesan workspace lain.
 
 ### API key
 
@@ -48,25 +48,21 @@ Program Node.js terpisah yang benar-benar berbicara dengan WhatsApp. Menjalankan
 
 ### HMAC
 
-Tanda tangan berbasis secret bersama. Dipakai dua tempat: callback engine → Laravel, dan kiriman webhook → tenant. Membuktikan pengirimnya benar dan isinya tidak diubah di jalan.
+Tanda tangan berbasis secret bersama. Dipakai dua tempat: callback engine → Laravel, dan kiriman webhook → workspace. Membuktikan pengirimnya benar dan isinya tidak diubah di jalan.
 
 ### idempoten
 
-Operasi yang aman diulang tanpa mengubah hasil. `gateway:setup-tenant` dibuat idempoten supaya penyiapan server bisa dijalankan berulang.
+Operasi yang aman diulang tanpa mengubah hasil. Callback engine dibuat idempoten supaya percobaan ulang tidak menggandakan pesan.
 
-### kind (sesi)
+### kind (sesi) — sudah dihapus
 
-`platform` atau `tenant`.
+Kolom `kind` dulu membedakan sesi `platform` (nomor Flustra) dari `tenant` (nomor pelanggan). Dihapus 13 Agustus 2026: nilai `platform` hanya bisa lahir dari perintah CLI, tidak terlihat di antarmuka mana pun, dan membuat sesi yang tampak hijau di dashboard tidak pernah terpilih otomatis saat pemanggil API mengosongkan `session_id`.
 
-**Platform** — nomor resmi Flustra, untuk pesan atas nama Flustra: OTP, undangan anggota, notifikasi billing.
-
-**Tenant** — nomor milik pelanggan, untuk pesan atas nama pelanggan: invoice ke customer, PO ke vendor.
-
-Dipisah karena customer pelanggan tidak mengenal Flustra, dan trafik pihak ketiga dari satu nomor platform akan cepat membuatnya diblokir.
+Sekarang semua sesi setara. Pengirim OTP ditunjuk lewat `OTP_SESSION_ID`, yang boleh menunjuk sesi biasa mana pun.
 
 ### kuota
 
-Batas pesan keluar per bulan per tenant. Dihitung **saat pesan diantre**, bukan saat terkirim — kalau dihitung belakangan, satu tenant bisa mengantrekan puluhan ribu pesan sebelum ketahuan melewati batas.
+Batas pesan keluar per bulan per workspace. Dihitung **saat pesan diantre**, bukan saat terkirim — kalau dihitung belakangan, satu workspace bisa mengantrekan puluhan ribu pesan sebelum ketahuan melewati batas.
 
 ### LocalAuth / RemoteAuth
 
@@ -78,7 +74,7 @@ Dua cara whatsapp-web.js menyimpan kredensial sesi.
 
 ### multi-tenant
 
-Satu sistem melayani banyak pelanggan dengan data yang terpisah. Semua kueri berangkat dari tenant yang sedang aktif, bukan dari model global.
+Satu sistem melayani banyak pelanggan dengan data yang terpisah. Semua kueri berangkat dari workspace yang sedang aktif, bukan dari model global.
 
 ### normalisasi nomor
 
@@ -118,11 +114,11 @@ Satu nomor WhatsApp yang tertaut, beserta kredensialnya. Satu sesi = satu Chromi
 
 ### soft delete
 
-Menandai baris sebagai terhapus (`deleted_at`) tanpa benar-benar membuangnya. Dipakai `tenants` dan `wa_sessions`, memberi jeda sebelum penghapusan permanen.
+Menandai baris sebagai terhapus (`deleted_at`) tanpa benar-benar membuangnya. Dipakai `workspaces` dan `wa_sessions`, memberi jeda sebelum penghapusan permanen.
 
-### tenant (workspace)
+### workspace (workspace)
 
-Wadah yang memisahkan satu pelanggan dari yang lain. Nomor, API key, pesan, template, dan webhook semuanya milik satu tenant.
+Wadah yang memisahkan satu pelanggan dari yang lain. Nomor, API key, pesan, template, dan webhook semuanya milik satu workspace.
 
 ### ULID
 
@@ -130,7 +126,7 @@ Pengenal unik yang bisa diurutkan waktu, mirip UUID tapi lebih ringkas dan aman 
 
 ### webhook
 
-Kiriman HTTP dari gateway ke aplikasi tenant saat ada kejadian — pesan masuk, status berubah. Setiap kiriman ditandatangani HMAC.
+Kiriman HTTP dari gateway ke aplikasi workspace saat ada kejadian — pesan masuk, status berubah. Setiap kiriman ditandatangani HMAC.
 
 ### whatsapp-web.js
 

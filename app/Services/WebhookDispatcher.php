@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\DeliverWebhookJob;
-use App\Models\Tenant;
+use App\Models\Workspace;
 
 class WebhookDispatcher
 {
@@ -16,13 +16,13 @@ class WebhookDispatcher
     public const EVENT_SESSION_QR = 'session.qr';
 
     /**
-     * Mengantre pengiriman satu event ke semua webhook aktif milik tenant yang
-     * berlangganan event tersebut. Selalu lewat queue supaya endpoint tenant
+     * Mengantre pengiriman satu event ke semua webhook aktif milik workspace yang
+     * berlangganan event tersebut. Selalu lewat queue supaya endpoint workspace
      * yang lambat atau mati tidak menahan request yang sedang berjalan.
      */
-    public function dispatch(Tenant $tenant, string $event, array $payload): void
+    public function dispatch(Workspace $workspace, string $event, array $payload): void
     {
-        $webhooks = $tenant->webhooks()->where('is_active', true)->get()
+        $webhooks = $workspace->webhooks()->where('is_active', true)->get()
             ->filter(fn ($webhook) => $webhook->listensTo($event));
 
         foreach ($webhooks as $webhook) {

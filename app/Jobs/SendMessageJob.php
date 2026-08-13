@@ -35,7 +35,7 @@ class SendMessageJob implements ShouldQueue
 
     public function handle(ProviderManager $providers, MessageDispatcher $dispatcher, WebhookDispatcher $webhooks): void
     {
-        $message = Message::with('session.tenant')->find($this->messageId);
+        $message = Message::with('session.workspace')->find($this->messageId);
 
         if (! $message || $message->status !== 'queued') {
             // Sudah terkirim, dibatalkan, atau dipangkas retensi.
@@ -92,7 +92,7 @@ class SendMessageJob implements ShouldQueue
             'error' => null,
         ]);
 
-        $webhooks->dispatch($session->tenant, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
+        $webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
             'message_id' => $message->id,
             'status' => 'sent',
             'to' => $message->to_number,
@@ -103,10 +103,10 @@ class SendMessageJob implements ShouldQueue
     {
         $message->update(['status' => 'failed', 'error' => $error]);
 
-        if ($tenant = $message->tenant) {
-            $dispatcher->incrementUsage($tenant, 'messages_failed');
+        if ($workspace = $message->workspace) {
+            $dispatcher->incrementUsage($workspace, 'messages_failed');
 
-            $webhooks->dispatch($tenant, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
+            $webhooks->dispatch($workspace, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
                 'message_id' => $message->id,
                 'status' => 'failed',
                 'error' => $error,

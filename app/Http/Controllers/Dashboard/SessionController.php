@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
 use App\Models\WaSession;
 use App\Services\SessionService;
@@ -20,7 +20,7 @@ class SessionController extends Controller
     public function index(Request $request): View
     {
         return view('dashboard.sessions.index', [
-            'sessions' => EnsureTenantSelected::from($request)->sessions()->orderBy('name')->get(),
+            'sessions' => EnsureWorkspaceSelected::from($request)->sessions()->orderBy('name')->get(),
         ]);
     }
 
@@ -31,10 +31,10 @@ class SessionController extends Controller
             'driver' => ['required', Rule::in(['wwebjs', 'cloud_api', 'fonnte'])],
         ]);
 
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
         try {
-            $session = $this->sessions->create($tenant, $data['name'], $data['driver']);
+            $session = $this->sessions->create($workspace, $data['name'], $data['driver']);
         } catch (\RuntimeException $e) {
             return back()->withErrors(['name' => $e->getMessage()])->withInput();
         }
@@ -120,6 +120,6 @@ class SessionController extends Controller
 
     private function find(Request $request, string $id): WaSession
     {
-        return EnsureTenantSelected::from($request)->sessions()->findOrFail($id);
+        return EnsureWorkspaceSelected::from($request)->sessions()->findOrFail($id);
     }
 }

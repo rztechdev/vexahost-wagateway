@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateApiKey;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Http\Middleware\VerifyEngineSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'apikey' => AuthenticateApiKey::class,
-            'tenant' => EnsureTenantSelected::class,
+            'workspace' => EnsureWorkspaceSelected::class,
         ]);
 
         $middleware->group('internal', [

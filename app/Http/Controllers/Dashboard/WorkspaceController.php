@@ -3,36 +3,36 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class TenantController extends Controller
+class WorkspaceController extends Controller
 {
     public function settings(Request $request): View
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
         return view('dashboard.settings', [
-            'members' => $tenant->members()->orderBy('name')->get(),
-            'usage' => $tenant->currentUsage(),
-            'history' => $tenant->usageCounters()->orderByDesc('period')->limit(12)->get(),
+            'members' => $workspace->members()->orderBy('name')->get(),
+            'usage' => $workspace->currentUsage(),
+            'history' => $workspace->usageCounters()->orderByDesc('period')->limit(12)->get(),
         ]);
     }
 
     public function switch(Request $request, int $id): RedirectResponse
     {
-        // Hanya tenant yang benar-benar diikuti user yang boleh dipilih —
+        // Hanya workspace yang benar-benar diikuti user yang boleh dipilih —
         // tanpa cek ini, mengganti id di URL sama saja membuka data orang lain.
-        $tenant = $request->user()->tenants()->findOrFail($id);
+        $workspace = $request->user()->workspaces()->findOrFail($id);
 
-        session(['current_tenant_id' => $tenant->id]);
+        session(['current_workspace_id' => $workspace->id]);
 
         return redirect()->route('dashboard');
     }
@@ -50,7 +50,7 @@ class TenantController extends Controller
 
         $user = $request->user();
 
-        $tenant = Tenant::create([
+        $workspace = Workspace::create([
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name']),
             'owner_id' => $user->id,
@@ -60,11 +60,11 @@ class TenantController extends Controller
             'api_rate_limit_per_minute' => config('gateway.defaults.api_rate_limit_per_minute'),
         ]);
 
-        $tenant->members()->attach($user->id, ['role' => 'owner']);
+        $workspace->members()->attach($user->id, ['role' => 'owner']);
 
-        session(['current_tenant_id' => $tenant->id]);
+        session(['current_workspace_id' => $workspace->id]);
 
-        AuditLog::record('tenant.created', $tenant, ['name' => $tenant->name], $tenant->id);
+        AuditLog::record('workspace.created', $workspace, ['name' => $workspace->name], $workspace->id);
 
         return redirect()->route('sessions.index')
             ->with('status', 'Workspace dibuat. Langkah berikutnya: buat sesi dan scan QR.');
@@ -72,9 +72,9 @@ class TenantController extends Controller
 
     public function addMember(Request $request): RedirectResponse
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
-        if (! $request->user()->canManage($tenant)) {
+        if (! $request->user()->canManage($workspace)) {
             abort(403, 'Hanya owner atau admin yang bisa menambah anggota.');
         }
 
@@ -94,28 +94,28 @@ class TenantController extends Controller
             ]);
         }
 
-        $tenant->members()->syncWithoutDetaching([$user->id => ['role' => $data['role']]]);
+        $workspace->members()->syncWithoutDetaching([$user->id => ['role' => $data['role']]]);
 
-        AuditLog::record('tenant.member_added', $user, ['email' => $user->email], $tenant->id);
+        AuditLog::record('workspace.member_added', $user, ['email' => $user->email], $workspace->id);
 
         return back()->with('status', "{$user->name} ditambahkan sebagai {$data['role']}.");
     }
 
     public function removeMember(Request $request, int $userId): RedirectResponse
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
-        if (! $request->user()->canManage($tenant)) {
+        if (! $request->user()->canManage($workspace)) {
             abort(403);
         }
 
-        $role = $tenant->members()->where('users.id', $userId)->first()?->pivot->role;
+        $role = $workspace->members()->where('users.id', $userId)->first()?->pivot->role;
 
         if ($role === 'owner') {
             return back()->withErrors(['member' => 'Owner tidak bisa dikeluarkan dari workspace-nya sendiri.']);
         }
 
-        $tenant->members()->detach($userId);
+        $workspace->members()->detach($userId);
 
         return back()->with('status', 'Anggota dikeluarkan.');
     }
@@ -126,7 +126,7 @@ class TenantController extends Controller
         $slug = $base;
         $i = 2;
 
-        while (Tenant::withTrashed()->where('slug', $slug)->exists()) {
+        while (Workspace::withTrashed()->where('slug', $slug)->exists()) {
             $slug = "{$base}-{$i}";
             $i++;
         }

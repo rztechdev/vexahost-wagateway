@@ -11,7 +11,7 @@ class Message extends Model
     use HasUlids;
 
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'wa_session_id',
         'direction',
         'wa_message_id',
@@ -43,9 +43,9 @@ class Message extends Model
         ];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     public function session(): BelongsTo

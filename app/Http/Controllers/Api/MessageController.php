@@ -57,7 +57,7 @@ class MessageController extends ApiController
         }
 
         $file = $request->file('file');
-        $path = $file->store((string) $this->tenant($request)->id, 'media');
+        $path = $file->store((string) $this->workspace($request)->id, 'media');
 
         try {
             $message = $this->dispatcher->queue($session, $data['to'], [
@@ -113,7 +113,7 @@ class MessageController extends ApiController
             'variables' => ['nullable', 'array'],
         ]);
 
-        $template = $this->tenant($request)->templates()
+        $template = $this->workspace($request)->templates()
             ->where('slug', $data['template'])
             ->where('is_active', true)
             ->first();
@@ -142,7 +142,7 @@ class MessageController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $messages = $this->tenant($request)->messages()
+        $messages = $this->workspace($request)->messages()
             ->when($request->query('session_id'), fn ($q, $v) => $q->where('wa_session_id', $v))
             ->when($request->query('direction'), fn ($q, $v) => $q->where('direction', $v))
             ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
@@ -162,26 +162,29 @@ class MessageController extends ApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $message = $this->tenant($request)->messages()->findOrFail($id);
+        $message = $this->workspace($request)->messages()->findOrFail($id);
 
         return $this->ok($this->present($message));
     }
 
     /**
-     * Kalau pemanggil tidak menyebut sesi, dipilih satu sesi tenant yang sedang
+     * Kalau pemanggil tidak menyebut sesi, dipilih satu sesi workspace yang sedang
      * terhubung. Sesi platform tidak pernah dipilih otomatis — nomor itu hanya
-     * untuk pesan atas nama Flustra, bukan trafik tenant.
+     * untuk pesan atas nama Flustra, bukan trafik workspace.
      */
     private function resolveSession(Request $request, ?string $sessionId): ?WaSession
     {
-        $tenant = $this->tenant($request);
+        $workspace = $this->workspace($request);
 
         if ($sessionId) {
-            return $tenant->sessions()->find($sessionId);
+            return $workspace->sessions()->find($sessionId);
         }
 
-        return $tenant->sessions()
-            ->where('kind', WaSession::KIND_TENANT)
+        // Tanpa session_id, sesi terhubung tertua yang dipakai. Sengaja tidak
+        // ada penyaringan lain: penyaringan yang tak terlihat di dashboard
+        // pernah membuat pengirim yang sudah hijau tetap ditolak dengan pesan
+        // "tidak ada sesi yang bisa dipakai", tanpa petunjuk apa pun.
+        return $workspace->sessions()
             ->where('status', 'connected')
             ->orderBy('created_at')
             ->first();

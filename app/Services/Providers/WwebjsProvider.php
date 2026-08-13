@@ -19,7 +19,6 @@ class WwebjsProvider implements WhatsAppProvider
     public function startSession(WaSession $session): void
     {
         $this->request()->post("/sessions/{$session->id}/start", [
-            'kind' => $session->kind,
         ])->throw();
     }
 

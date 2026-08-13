@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApiKey;
-use App\Models\Tenant;
+use App\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 abstract class ApiController extends Controller
 {
-    protected function tenant(Request $request): Tenant
+    protected function workspace(Request $request): Workspace
     {
-        return $request->attributes->get('tenant');
+        return $request->attributes->get('workspace');
     }
 
     protected function apiKey(Request $request): ApiKey

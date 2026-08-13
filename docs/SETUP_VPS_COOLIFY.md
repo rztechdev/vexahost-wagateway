@@ -237,7 +237,7 @@ Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration
 | `DB_HOST`, `DB_PASSWORD` | dari Coolify |
 | `ENGINE_URL` | `http://<uuid-resource-engine>:3100` — UUID, bukan nama tampilan (lihat Bagian 7) |
 | `ENGINE_TOKEN`, `ENGINE_HMAC_SECRET` | dari Bagian 5 |
-| `PLATFORM_SESSION_ID` | dikosongkan dulu, diisi di Bagian 9 |
+| `OTP_SESSION_ID` | dikosongkan dulu, diisi di Bagian 9 |
 
 > **Pastikan `APP_DEBUG=false`.** Kalau `true`, halaman error menampilkan seluruh isi environment — termasuk password database dan secret HMAC.
 
@@ -358,34 +358,20 @@ Ini yang menjalankan sinkronisasi status sesi setiap menit (menyambungkan ulang 
 
 Buka terminal resource `flustra-wa` di Coolify.
 
-### 9.1 Tenant internal & sesi platform
+### 9.1 Akun, workspace, nomor, dan kunci
 
-Keduanya tidak bisa dibuat lewat dashboard — memang bukan sesuatu yang boleh diatur pelanggan.
+Penyiapan dilakukan lewat dashboard, sama persis seperti pelanggan mana pun — tidak ada jalur CLI istimewa. Perintah `gateway:setup-tenant` dulu ada dan sudah dihapus: ia membuat workspace **tanpa anggota**, sehingga tidak bisa dibuka dari dashboard oleh siapa pun, dan sesi bertipe `platform` yang tidak pernah terpilih otomatis saat pemanggil API mengosongkan `session_id`. Dua sifat itu tidak terlihat di antarmuka mana pun dan menghabiskan berjam-jam penelusuran.
 
-```bash
-php artisan gateway:setup-tenant "Flustra Internal" \
-  --internal \
-  --session="Platform" --platform \
-  --key="flustra-auth otp" --scopes=otp \
-  --max-sessions=5
-```
+1. Buka `https://wa.flustra.id`, daftar akun, isi nama workspace
+2. **Sesi WhatsApp** → Buat sesi → **Hubungkan** → scan QR dengan nomor resmi Flustra
+3. **API Keys** → buat satu kunci untuk tiap aplikasi konsumen (`flustra-erp produksi`, `flustra-web produksi`, dan seterusnya). Halaman itu langsung menampilkan cuplikan `.env` siap salin
+4. Untuk **flustra-auth**, buat kunci tersendiri dengan scope `otp` dicentang — scope ini tidak boleh diberikan ke kunci integrasi biasa
+5. Salin ID sesi dari kartu sesi (tombol **Salin ID**) ke `OTP_SESSION_ID` pada env `flustra-wa`, lalu redeploy. Ini satu-satunya tempat ID sesi masih perlu ditulis manual, karena endpoint OTP mengirim atas nama Flustra dan tidak bisa menebak pengirimnya dari pemanggil
 
-Keluarannya memuat ULID sesi dan API key penuh — **satu-satunya kesempatan membacanya**.
-
-1. Salin ULID ke `PLATFORM_SESSION_ID` pada env `flustra-wa`, lalu **redeploy**
-2. Salin API key ke `WA_GATEWAY_KEY` pada env **flustra-auth**
-
-### 9.2 Tautkan nomor platform
-
-Buka `https://wa.flustra.id`, daftar akun admin, lalu **Sesi WhatsApp** → **Hubungkan** → scan QR dengan nomor resmi Flustra.
-
-### 9.3 Kunci untuk tiap aplikasi
+Kunci hanya ditampilkan sekali. Bebas kuota untuk workspace internal disetel dari terminal bila perlu:
 
 ```bash
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-erp produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-web produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-pricing produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-helpdesk produksi"
+php artisan tinker --execute='App\Models\Workspace::find(1)->update(["is_internal" => true]);'
 ```
 
 Masukkan tiap kunci ke `WA_GATEWAY_KEY` aplikasi yang bersangkutan, beserta:
@@ -394,8 +380,7 @@ Masukkan tiap kunci ke `WA_GATEWAY_KEY` aplikasi yang bersangkutan, beserta:
 WA_GATEWAY_ENABLED=true
 WA_GATEWAY_URL=https://wa.flustra.id
 WA_GATEWAY_KEY=<kunci aplikasi ini>
-WA_GATEWAY_PLATFORM_SESSION=<ULID sesi platform>
-WA_GATEWAY_REQUIRE_VERIFIED_PHONE=true
+WA_GATEWAY_SESSION=
 ```
 
 **Jangan** berikan scope `otp` ke aplikasi selain flustra-auth. Lihat [INTEGRASI_APP.md](INTEGRASI_APP.md).

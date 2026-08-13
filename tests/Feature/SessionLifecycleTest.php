@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use App\Services\SessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +13,7 @@ use Tests\TestCase;
 /**
  * Daur hidup sesi: buat → hapus → buat lagi dengan nama yang sama.
  *
- * Sesi dihapus lunak, sedangkan indeks unik (tenant_id, name) tidak melihat
+ * Sesi dihapus lunak, sedangkan indeks unik (workspace_id, name) tidak melihat
  * deleted_at. Tanpa penjagaan di SessionService, memakai ulang nama sesi yang
  * sudah dihapus melempar galat duplikat mentah dari MySQL ke muka pengguna.
  */
@@ -21,7 +21,7 @@ class SessionLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Tenant $tenant;
+    private Workspace $workspace;
 
     protected function setUp(): void
     {
@@ -33,7 +33,7 @@ class SessionLifecycleTest extends TestCase
             'password' => Hash::make('rahasia12345'),
         ]);
 
-        $this->tenant = Tenant::create([
+        $this->workspace = Workspace::create([
             'name' => 'Toko Uji',
             'slug' => 'toko-uji',
             'owner_id' => $user->id,
@@ -46,10 +46,10 @@ class SessionLifecycleTest extends TestCase
     {
         $sessions = app(SessionService::class);
 
-        $pertama = $sessions->create($this->tenant, 'flustra.id');
+        $pertama = $sessions->create($this->workspace, 'flustra.id');
         $pertama->delete();
 
-        $kedua = $sessions->create($this->tenant, 'flustra.id');
+        $kedua = $sessions->create($this->workspace, 'flustra.id');
 
         $this->assertNotSame($pertama->id, $kedua->id);
         $this->assertSame('pending', $kedua->status);
@@ -62,11 +62,11 @@ class SessionLifecycleTest extends TestCase
     public function test_jatah_sesi_tidak_terpakai_oleh_sesi_yang_sudah_dihapus(): void
     {
         $sessions = app(SessionService::class);
-        $this->tenant->update(['max_sessions' => 1]);
+        $this->workspace->update(['max_sessions' => 1]);
 
-        $sessions->create($this->tenant, 'lama')->delete();
+        $sessions->create($this->workspace, 'lama')->delete();
 
-        $baru = $sessions->create($this->tenant, 'baru');
+        $baru = $sessions->create($this->workspace, 'baru');
 
         $this->assertInstanceOf(WaSession::class, $baru);
     }

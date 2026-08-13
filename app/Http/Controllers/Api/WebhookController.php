@@ -12,7 +12,7 @@ class WebhookController extends ApiController
     public function index(Request $request): JsonResponse
     {
         return $this->ok(
-            $this->tenant($request)->webhooks()->get()->map(fn (Webhook $w) => $this->present($w))
+            $this->workspace($request)->webhooks()->get()->map(fn (Webhook $w) => $this->present($w))
         );
     }
 
@@ -24,7 +24,7 @@ class WebhookController extends ApiController
             'events.*' => ['string', 'max:60'],
         ]);
 
-        $webhook = $this->tenant($request)->webhooks()->create([
+        $webhook = $this->workspace($request)->webhooks()->create([
             'url' => $data['url'],
             'events' => $data['events'] ?? null,
             'secret' => Str::random(48),
@@ -36,7 +36,7 @@ class WebhookController extends ApiController
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $this->tenant($request)->webhooks()->findOrFail($id)->delete();
+        $this->workspace($request)->webhooks()->findOrFail($id)->delete();
 
         return $this->ok(null, 204);
     }

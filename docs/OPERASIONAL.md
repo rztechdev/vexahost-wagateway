@@ -74,9 +74,9 @@ Satu sesi ≈ 300–500 MB. Pilihan:
 - Tambah RAM container
 - Pisahkan sebagian sesi ke instance engine kedua
 
-### Webhook tenant mati
+### Webhook workspace mati
 
-Setelah 50 kegagalan berturut-turut, webhook dinonaktifkan otomatis supaya antrean tidak terus terisi kiriman yang pasti gagal. Tenant menyalakannya lagi dari dashboard setelah endpoint mereka pulih.
+Setelah 50 kegagalan berturut-turut, webhook dinonaktifkan otomatis supaya antrean tidak terus terisi kiriman yang pasti gagal. Workspace menyalakannya lagi dari dashboard setelah endpoint mereka pulih.
 
 ## 4. Pemulihan
 
@@ -91,7 +91,7 @@ Engine akan menarik daftar sesi dari Laravel, mengunduh cadangan terakhir tiap s
 
 ### Cadangan sesi ikut hilang
 
-Sesi harus di-scan ulang. Data lain (riwayat, API key, tenant) tetap utuh di database.
+Sesi harus di-scan ulang. Data lain (riwayat, API key, workspace) tetap utuh di database.
 
 ### Database dipulihkan dari backup lama
 
@@ -113,7 +113,7 @@ Cek berurutan:
 | Otomatis, tiap menit | Sinkronisasi status sesi + sambung ulang |
 | Otomatis, 03:15 | Pemangkasan pesan & log webhook lama |
 | Bulanan | Tinjau API key yang `last_used_at`-nya kosong — cabut yang tidak terpakai |
-| Bulanan | Tinjau pemakaian tenant terhadap kuota |
+| Bulanan | Tinjau pemakaian workspace terhadap kuota |
 | Per kuartal | Perbarui `whatsapp-web.js` — versi lama bisa berhenti bekerja saat WhatsApp Web berubah |
 
 Memperbarui whatsapp-web.js:
@@ -154,4 +154,4 @@ Sisi Laravel jauh lebih ringan dan bisa di-scale mendatar seperti aplikasi web b
 - API key dengan scope `otp` diberikan ke aplikasi selain flustra-auth
 - Secret yang sama dipakai di dev dan produksi
 
-**Jejak audit** ada di tabel `audit_logs` — pembuatan/pencabutan API key, perubahan sesi, perubahan tenant.
+**Jejak audit** ada di tabel `audit_logs` — pembuatan/pencabutan API key, perubahan sesi, perubahan workspace.

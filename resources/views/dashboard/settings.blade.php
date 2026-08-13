@@ -7,13 +7,13 @@
             <dl class="space-y-3 text-sm">
                 @php
                     $rows = [
-                        'Nama' => $currentTenant->name,
-                        'Slug' => $currentTenant->slug,
-                        'Status' => $currentTenant->status,
-                        'Paket' => $currentTenant->plan_slug ?? '—',
-                        'Batas sesi' => $currentTenant->max_sessions,
-                        'Kuota pesan/bulan' => $currentTenant->is_internal ? 'tanpa batas (internal)' : number_format($currentTenant->monthly_message_quota),
-                        'Rate limit API' => $currentTenant->api_rate_limit_per_minute.' request/menit',
+                        'Nama' => $currentWorkspace->name,
+                        'Slug' => $currentWorkspace->slug,
+                        'Status' => $currentWorkspace->status,
+                        'Paket' => $currentWorkspace->plan_slug ?? '—',
+                        'Batas sesi' => $currentWorkspace->max_sessions,
+                        'Kuota pesan/bulan' => $currentWorkspace->is_internal ? 'tanpa batas (internal)' : number_format($currentWorkspace->monthly_message_quota),
+                        'Rate limit API' => $currentWorkspace->api_rate_limit_per_minute.' request/menit',
                     ];
                 @endphp
                 @foreach ($rows as $label => $value)

@@ -330,7 +330,7 @@ Tidak terkena batas permintaan, jadi aman dipanggil sesering apa pun untuk peman
 {
   "success": true,
   "data": {
-    "tenant": "Toko Makmur",
+    "workspace": "Toko Makmur",
     "status": "active",
     "sessions": { "total": 2, "connected": 1, "limit": 3 },
     "usage": {

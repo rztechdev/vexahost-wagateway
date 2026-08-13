@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -88,7 +88,7 @@ class AuthController extends Controller
         // Workspace dibuat sekalian saat mendaftar. Tanpa ini pengguna baru
         // mendarat di dashboard yang belum bisa dipakai apa-apa dan harus
         // melewati satu langkah lagi sebelum melihat hasil apa pun.
-        $tenant = Tenant::create([
+        $workspace = Workspace::create([
             'name' => $data['workspace'],
             'slug' => $this->uniqueSlug($data['workspace']),
             'owner_id' => $user->id,
@@ -98,13 +98,13 @@ class AuthController extends Controller
             'api_rate_limit_per_minute' => config('gateway.defaults.api_rate_limit_per_minute'),
         ]);
 
-        $tenant->members()->attach($user->id, ['role' => 'owner']);
+        $workspace->members()->attach($user->id, ['role' => 'owner']);
 
         event(new Registered($user));
 
         Auth::login($user);
         $request->session()->regenerate();
-        session(['current_tenant_id' => $tenant->id]);
+        session(['current_workspace_id' => $workspace->id]);
 
         return redirect()->route('sessions.index')
             ->with('status', 'Workspace dibuat. Langkah berikutnya: buat sesi lalu scan QR-nya.');
@@ -126,7 +126,7 @@ class AuthController extends Controller
         $slug = $base;
         $i = 2;
 
-        while (Tenant::withTrashed()->where('slug', $slug)->exists()) {
+        while (Workspace::withTrashed()->where('slug', $slug)->exists()) {
             $slug = "{$base}-{$i}";
             $i++;
         }

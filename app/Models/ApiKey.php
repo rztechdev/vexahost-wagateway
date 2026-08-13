@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 class ApiKey extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'name',
         'prefix',
         'key_hash',
@@ -35,9 +35,9 @@ class ApiKey extends Model
         ];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     /**
@@ -46,14 +46,14 @@ class ApiKey extends Model
      *
      * @return array{0: self, 1: string}
      */
-    public static function issue(Tenant $tenant, string $name, array $scopes = ['*'], ?int $createdBy = null): array
+    public static function issue(Workspace $workspace, string $name, array $scopes = ['*'], ?int $createdBy = null): array
     {
         $prefix = 'fwa_'.Str::lower(Str::random(8));
         $secret = Str::random(40);
         $plain = $prefix.'.'.$secret;
 
         $key = self::create([
-            'tenant_id' => $tenant->id,
+            'workspace_id' => $workspace->id,
             'name' => $name,
             'prefix' => $prefix,
             'key_hash' => Hash::make($secret),

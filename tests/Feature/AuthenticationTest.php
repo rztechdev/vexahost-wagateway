@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Tenant;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -60,9 +60,9 @@ class AuthenticationTest extends TestCase
         $this->assertSame('budi@contoh.id', $user->email);
         $this->assertAuthenticatedAs($user);
 
-        $tenant = Tenant::first();
-        $this->assertSame('Toko Makmur', $tenant->name);
-        $this->assertSame('owner', $user->fresh()->tenants->first()->pivot->role);
+        $workspace = Workspace::first();
+        $this->assertSame('Toko Makmur', $workspace->name);
+        $this->assertSame('owner', $user->fresh()->workspaces->first()->pivot->role);
     }
 
     /**
@@ -115,7 +115,7 @@ class AuthenticationTest extends TestCase
             $this->post('/logout');
         }
 
-        $slugs = Tenant::pluck('slug')->all();
+        $slugs = Workspace::pluck('slug')->all();
 
         $this->assertCount(2, $slugs);
         $this->assertSame($slugs, array_unique($slugs), 'Slug workspace bertabrakan.');

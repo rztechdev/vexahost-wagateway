@@ -22,7 +22,7 @@ Risiko yang harus jujur diakui:
 - **Berat.** Satu sesi = satu Chromium ≈ 300–500 MB RAM. Sepuluh nomor butuh server 4–5 GB.
 - **Tidak ada SLA.** Tidak ada siapa pun yang bisa dimintai pertanggungjawaban saat bermasalah.
 
-Yang gateway ini lakukan untuk menekan risikonya: jeda acak 3–8 detik antar pesan keluar per sesi, antrean terpisah per sesi, verifikasi nomor tujuan sebelum kirim, dan pemisahan nomor platform dari nomor tenant.
+Yang gateway ini lakukan untuk menekan risikonya: jeda acak 3–8 detik antar pesan keluar per sesi, antrean terpisah per sesi, verifikasi nomor tujuan sebelum kirim, dan pemisahan nomor platform dari nomor workspace.
 
 ### 2. WhatsApp Business Platform resmi (driver `cloud_api` — slot, belum diimplementasi)
 

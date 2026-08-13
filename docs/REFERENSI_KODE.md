@@ -8,11 +8,11 @@ Peta setiap kelas penting di sisi Laravel: apa tanggung jawabnya, apa yang boleh
 
 Empat hal ini berulang di seluruh kode. Melanggarnya menimbulkan bug yang sulit dilacak.
 
-### 1. Selalu berangkat dari tenant
+### 1. Selalu berangkat dari workspace
 
 ```php
 // Benar
-$session = EnsureTenantSelected::from($request)->sessions()->findOrFail($id);
+$session = EnsureWorkspaceSelected::from($request)->sessions()->findOrFail($id);
 
 // Salah — menemukan sesi milik siapa pun
 $session = WaSession::find($id);
@@ -22,7 +22,7 @@ Ini satu-satunya penjaga isolasi antar pelanggan. Tidak ada global scope yang me
 
 ### 2. Pesan keluar hanya lewat MessageDispatcher
 
-Jangan pernah `Message::create()` langsung untuk pesan keluar. `MessageDispatcher::queue()` yang mengurus normalisasi nomor, pemeriksaan tenant aktif, pemeriksaan kuota, pencatatan pemakaian, dan pengantrean sekaligus.
+Jangan pernah `Message::create()` langsung untuk pesan keluar. `MessageDispatcher::queue()` yang mengurus normalisasi nomor, pemeriksaan workspace aktif, pemeriksaan kuota, pencatatan pemakaian, dan pengantrean sekaligus.
 
 ### 3. Nomor selalu lewat PhoneNumber
 
@@ -42,20 +42,20 @@ Akun dashboard. Autentikasi lokal — flustra-wa punya form login dan register s
 
 | Method | Kegunaan |
 |---|---|
-| `tenants()` | BelongsToMany lewat `tenant_members`, membawa pivot `role` |
-| `roleIn(Tenant)` | Peran di tenant tertentu, `null` bila bukan anggota |
-| `canManage(Tenant)` | `true` untuk super admin, owner, atau admin |
+| `workspaces()` | BelongsToMany lewat `workspace_members`, membawa pivot `role` |
+| `roleIn(Workspace)` | Peran di workspace tertentu, `null` bila bukan anggota |
+| `canManage(Workspace)` | `true` untuk super admin, owner, atau admin |
 
-`canManage()` dipakai sebelum tindakan yang mengubah pengaturan. Ia membaca dari koleksi `tenants` yang sudah dimuat, jadi panggil `$user->load('tenants')` bila akan dipakai berulang dalam satu permintaan.
+`canManage()` dipakai sebelum tindakan yang mengubah pengaturan. Ia membaca dari koleksi `workspaces` yang sudah dimuat, jadi panggil `$user->load('workspaces')` bila akan dipakai berulang dalam satu permintaan.
 
-### `Tenant`
+### `Workspace`
 
 Batas isolasi. Semua relasi data menggantung di sini.
 
 | Method | Kegunaan |
 |---|---|
 | `currentUsage()` | Baris `usage_counters` bulan ini, dibuat bila belum ada |
-| `hasQuotaRemaining()` | `true` untuk tenant internal atau kuota `0` |
+| `hasQuotaRemaining()` | `true` untuk workspace internal atau kuota `0` |
 | `canAddSession()` | Membandingkan jumlah sesi dengan `max_sessions` |
 | `isActive()` | `status === 'active'` |
 
@@ -81,7 +81,7 @@ Ack dari WhatsApp bisa datang tidak berurutan. Tanpa penjagaan ini, pesan yang s
 
 | Method | Kegunaan |
 |---|---|
-| `ApiKey::issue(Tenant, name, scopes, createdBy)` | Static. Mengembalikan `[model, kunciPolos]` |
+| `ApiKey::issue(Workspace, name, scopes, createdBy)` | Static. Mengembalikan `[model, kunciPolos]` |
 | `isUsable()` | Belum dicabut dan belum kedaluwarsa |
 | `allows(string $scope)` | `true` bila punya scope itu atau `*` |
 
@@ -101,7 +101,7 @@ Placeholder tanpa pasangan dibiarkan apa adanya — kesalahan yang terlihat lebi
 Sebagian besar model data biasa. Dua yang punya perilaku:
 
 - `Webhook::listensTo(string $event)` — `events` bernilai `null` berarti berlangganan semua.
-- `AuditLog::record(action, subject, context, tenantId)` — static, membaca user dan IP dari permintaan yang sedang berjalan.
+- `AuditLog::record(action, subject, context, workspaceId)` — static, membaca user dan IP dari permintaan yang sedang berjalan.
 
 ---
 
@@ -120,7 +120,7 @@ $dispatcher->queue($session, '081234567890', [
 $dispatcher->queueBulk($session, ['0812…', '0813…'], ['body' => 'Pengumuman']);
 ```
 
-`queue()` melempar `RuntimeException` bila tenant nonaktif, kuota habis, atau nomor tidak valid.
+`queue()` melempar `RuntimeException` bila workspace nonaktif, kuota habis, atau nomor tidak valid.
 
 `queueBulk()` **tidak** melempar untuk nomor yang rusak — ia mengumpulkannya di `rejected` dan melanjutkan sisanya. Satu nomor salah ketik tidak boleh membatalkan broadcast 500 nomor.
 
@@ -139,13 +139,13 @@ Beda `disconnect` dan `logout` menentukan:
 
 ### `WebhookDispatcher`
 
-Menyiarkan satu event ke semua webhook aktif yang berlangganan. Selalu lewat antrean — endpoint tenant yang lambat tidak boleh menahan permintaan yang sedang berjalan.
+Menyiarkan satu event ke semua webhook aktif yang berlangganan. Selalu lewat antrean — endpoint workspace yang lambat tidak boleh menahan permintaan yang sedang berjalan.
 
 Konstanta event: `EVENT_MESSAGE_RECEIVED`, `EVENT_MESSAGE_STATUS`, `EVENT_SESSION_STATUS`, `EVENT_SESSION_QR`.
 
 ### `OtpService`
 
-`send()` dan `verify()`. Selalu memakai sesi platform — OTP adalah pesan atas nama Flustra.
+`send()` dan `verify()`. Memakai sesi yang ditunjuk `OTP_SESSION_ID` — OTP adalah pesan atas nama Flustra, jadi pengirimnya tidak bisa ditebak dari pemanggil.
 
 Pembatasan berlapis: jeda kirim ulang, batas harian per nomor, batas percobaan salah, masa berlaku. Kode disimpan ter-hash; kode lama untuk tujuan sama dimatikan setiap kode baru dibuat.
 
@@ -215,7 +215,7 @@ Media dihapus lewat `chunkById` sebelum barisnya dihapus — kalau barisnya lebi
 
 Menerima kunci dari `X-Api-Key` atau `Authorization: Bearer`.
 
-Alurnya: pisah prefix dan rahasia → cari baris berdasarkan prefix → verifikasi hash → cek belum dicabut → cek tenant aktif → cek scope → taruh `api_key` dan `tenant` di atribut permintaan.
+Alurnya: pisah prefix dan rahasia → cari baris berdasarkan prefix → verifikasi hash → cek belum dicabut → cek workspace aktif → cek scope → taruh `api_key` dan `workspace` di atribut permintaan.
 
 `last_used_at` ditulis paling sering sekali per menit (dijaga cache). Menulis di setiap permintaan berarti satu UPDATE per pesan terkirim, padahal kolom itu hanya untuk informasi di dashboard.
 
@@ -229,11 +229,11 @@ Punya dua mode:
 - Bawaan: menandatangani `timestamp + "." + body`
 - Bila header `X-Engine-Body-Sha256` ada: menandatangani `timestamp + "." + path + "." + sha256` — dipakai untuk unggahan cadangan sesi yang bisa puluhan MB
 
-### `EnsureTenantSelected`
+### `EnsureWorkspaceSelected`
 
-Menentukan tenant yang sedang dibuka, menaruhnya di permintaan, dan membagikannya ke view sebagai `$currentTenant` dan `$availableTenants`. Mengarahkan ke onboarding bila pengguna belum punya tenant.
+Menentukan workspace yang sedang dibuka, menaruhnya di permintaan, dan membagikannya ke view sebagai `$currentWorkspace` dan `$availableWorkspaces`. Mengarahkan ke onboarding bila pengguna belum punya workspace.
 
-`EnsureTenantSelected::from($request)` adalah cara baku mengambilnya di controller.
+`EnsureWorkspaceSelected::from($request)` adalah cara baku mengambilnya di controller.
 
 ---
 
@@ -241,7 +241,7 @@ Menentukan tenant yang sedang dibuka, menaruhnya di permintaan, dan membagikanny
 
 ### `Api\*`
 
-Semua mewarisi `ApiController` yang menyediakan `tenant()`, `apiKey()`, `ok()`, `fail()`. Bentuk respons dijaga seragam: `{success, data}` atau `{success, error}`.
+Semua mewarisi `ApiController` yang menyediakan `workspace()`, `apiKey()`, `ok()`, `fail()`. Bentuk respons dijaga seragam: `{success, data}` atau `{success, error}`.
 
 | Controller | Endpoint |
 |---|---|
@@ -251,7 +251,7 @@ Semua mewarisi `ApiController` yang menyediakan `tenant()`, `apiKey()`, `ok()`, 
 | `WebhookController` | daftar, tambah, hapus |
 | `OtpController` | kirim, verifikasi — butuh scope `otp` |
 
-`MessageController::resolveSession()` memilih sesi bila pemanggil tidak menyebutkannya: sesi `kind=tenant` pertama yang terhubung. Sesi platform **tidak pernah** dipilih otomatis.
+`MessageController::resolveSession()` memilih sesi bila pemanggil tidak menyebutkannya: sesi terhubung tertua di workspace itu. Sengaja tanpa penyaringan lain — penyaringan yang tidak terlihat di dashboard pernah membuat sesi hijau tetap ditolak tanpa petunjuk.
 
 ### `Internal\*`
 
@@ -269,7 +269,7 @@ Hanya dipanggil engine. Bukan bagian API publik.
 
 ### `Dashboard\*`
 
-Blade biasa. Semua mengambil tenant lewat `EnsureTenantSelected::from()`.
+Blade biasa. Semua mengambil workspace lewat `EnsureWorkspaceSelected::from()`.
 
 `SessionController::status()` adalah endpoint JSON yang dipanggil modal QR tiap 3 detik. Polling dipilih daripada websocket: satu permintaan kecil tiap 3 detik hanya selama modal terbuka jauh lebih murah daripada menjalankan Reverb khusus untuk satu kasus pakai.
 
@@ -297,17 +297,9 @@ Aturannya sengaja identik dengan `App\Support\WhatsAppLink` di flustra-web, supa
 
 Validasinya `62` + 9–13 digit. Lebih pendek dari itu pasti bukan nomor seluler, dan mengirim ke nomor sampah memancing laporan spam.
 
-### `Console\Commands\SetupTenantCommand`
+### `Console\Commands\*`
 
-```bash
-php artisan gateway:setup-tenant "Flustra Internal" \
-  --internal --session="Platform" --platform \
-  --key="flustra-auth otp" --scopes=otp
-```
-
-Ada karena tenant internal (`is_internal`) dan sesi platform (`kind=platform`) sengaja tidak bisa dibuat lewat dashboard — keduanya bukan sesuatu yang boleh diatur pelanggan. Tanpa command ini, penyiapan awal berarti mengedit database manual.
-
-Idempoten: dicocokkan lewat slug, aman dijalankan berulang.
+Kosong. `SetupTenantCommand` dihapus 13 Agustus 2026 — ia membuat workspace tanpa anggota, yang mustahil dibuka lewat dashboard oleh siapa pun. Seluruh penyiapan sekarang lewat dashboard, termasuk untuk Flustra sendiri.
 
 ---
 

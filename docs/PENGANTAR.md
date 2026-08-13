@@ -73,11 +73,11 @@ Karena itu sistem ini dibangun multi-tenant sejak baris pertama, bukan ditambahk
 
 Enam kata yang muncul di mana-mana. Memahami ini cukup untuk membaca sisa dokumentasi.
 
-### Tenant (workspace)
+### Workspace (workspace)
 
-Wadah yang memisahkan satu pelanggan dari pelanggan lain. Nomor, API key, pesan, template, webhook — semuanya milik satu tenant, dan tenant lain tidak bisa melihatnya.
+Wadah yang memisahkan satu pelanggan dari pelanggan lain. Nomor, API key, pesan, template, webhook — semuanya milik satu workspace, dan workspace lain tidak bisa melihatnya.
 
-Anggota tim bisa diundang ke satu tenant dengan peran `owner`, `admin`, atau `member`.
+Anggota tim bisa diundang ke satu workspace dengan peran `owner`, `admin`, atau `member`.
 
 ### Sesi
 
@@ -88,7 +88,7 @@ Ada dua jenis, dan pembedaannya penting:
 | Jenis | Nomor | Dipakai untuk |
 |---|---|---|
 | `platform` | Nomor resmi Flustra | OTP, undangan anggota, notifikasi billing — pesan **atas nama Flustra** |
-| `tenant` | Nomor pelanggan sendiri | Invoice ke customer, PO ke vendor — pesan **atas nama pelanggan** |
+| `workspace` | Nomor pelanggan sendiri | Invoice ke customer, PO ke vendor — pesan **atas nama pelanggan** |
 
 Kenapa dipisah? Customer sebuah perusahaan tidak mengenal Flustra. Invoice yang datang dari nomor asing terlihat seperti penipuan. Dan mengirim ratusan invoice per hari dari satu nomor platform adalah cara tercepat membuat nomor itu diblokir — kalau itu terjadi, OTP dan seluruh notifikasi Flustra ikut mati.
 

@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Jobs\SendMessageJob;
 use App\Models\ApiKey;
 use App\Models\Message;
-use App\Models\Tenant;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -16,7 +16,7 @@ class SendMessageTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Tenant $tenant;
+    private Workspace $workspace;
 
     private WaSession $session;
 
@@ -26,7 +26,7 @@ class SendMessageTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenant = Tenant::create([
+        $this->workspace = Workspace::create([
             'name' => 'Contoh',
             'slug' => 'contoh',
             'max_sessions' => 2,
@@ -34,13 +34,38 @@ class SendMessageTest extends TestCase
             'api_rate_limit_per_minute' => 1000,
         ]);
 
-        $this->session = $this->tenant->sessions()->create([
+        $this->session = $this->workspace->sessions()->create([
             'name' => 'CS',
             'status' => 'connected',
             'phone_number' => '6281111111111',
         ]);
 
-        [, $this->key] = ApiKey::issue($this->tenant, 'kunci uji');
+        [, $this->key] = ApiKey::issue($this->workspace, 'kunci uji');
+    }
+
+    /**
+     * Tanpa session_id, gateway harus memilih sendiri sesi yang terhubung.
+     *
+     * Ini pernah gagal di produksi: sesi terlihat hijau di dashboard, tapi
+     * penyaringan `kind` yang tidak tampak di antarmuka mana pun membuatnya
+     * tidak pernah terpilih, dan pemanggil hanya menerima "Tidak ada sesi
+     * WhatsApp yang bisa dipakai" tanpa petunjuk penyebabnya.
+     */
+    public function test_pesan_terkirim_tanpa_menyebut_sesi(): void
+    {
+        Queue::fake();
+
+        $response = $this->withHeader('X-Api-Key', $this->key)
+            ->postJson('/api/v1/messages/text', [
+                'to' => '081234567890',
+                'message' => 'Halo',
+            ])
+            ->assertStatus(202);
+
+        $this->assertSame(
+            $this->session->id,
+            Message::find($response->json('data.id'))->wa_session_id
+        );
     }
 
     public function test_pesan_teks_diantre_dan_nomor_dinormalisasi(): void
@@ -77,7 +102,7 @@ class SendMessageTest extends TestCase
 
     /**
      * Kuota dihitung saat pesan diantre, bukan saat terkirim. Kalau dihitung
-     * belakangan, satu tenant bisa mengantrekan puluhan ribu pesan lebih dulu
+     * belakangan, satu workspace bisa mengantrekan puluhan ribu pesan lebih dulu
      * dan baru ketahuan melewati batas setelah semuanya terlanjur terkirim.
      */
     public function test_kuota_habis_menolak_pesan_berikutnya(): void

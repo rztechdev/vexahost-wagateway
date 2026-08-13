@@ -21,14 +21,13 @@ class BootstrapController extends Controller
             // Sesi yang belum pernah tersambung tidak ikut dijalankan otomatis:
             // ia hanya akan memunculkan QR yang tidak ada yang men-scan.
             ->whereIn('status', ['connected', 'connecting', 'disconnected'])
-            ->get(['id', 'name', 'kind', 'status']);
+            ->get(['id', 'name', 'status']);
 
         return response()->json([
             'success' => true,
             'data' => $sessions->map(fn (WaSession $s) => [
                 'session_id' => $s->id,
                 'name' => $s->name,
-                'kind' => $s->kind,
                 'last_known_status' => $s->status,
             ]),
         ]);

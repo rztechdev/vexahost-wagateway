@@ -27,7 +27,7 @@ class OtpController extends ApiController
                 $data['phone'],
                 $data['purpose'] ?? 'phone_verification',
                 $request->ip(),
-                $this->tenant($request),
+                $this->workspace($request),
             );
         } catch (\RuntimeException $e) {
             return $this->fail($e->getMessage(), 429);

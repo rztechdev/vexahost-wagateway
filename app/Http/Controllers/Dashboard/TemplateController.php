@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\MessageTemplate;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,22 +16,22 @@ class TemplateController extends Controller
     public function index(Request $request): View
     {
         return view('dashboard.templates.index', [
-            'templates' => EnsureTenantSelected::from($request)->templates()->orderBy('name')->get(),
+            'templates' => EnsureWorkspaceSelected::from($request)->templates()->orderBy('name')->get(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
             'slug' => ['required', 'string', 'max:60', 'regex:/^[a-z0-9-]+$/',
-                Rule::unique('message_templates')->where('tenant_id', $tenant->id)],
+                Rule::unique('message_templates')->where('workspace_id', $workspace->id)],
             'body' => ['required', 'string', 'max:4096'],
         ]);
 
-        $template = $tenant->templates()->create([
+        $template = $workspace->templates()->create([
             'name' => $data['name'],
             'slug' => Str::slug($data['slug']),
             'body' => $data['body'],
@@ -45,7 +45,7 @@ class TemplateController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $template = EnsureTenantSelected::from($request)->templates()->findOrFail($id);
+        $template = EnsureWorkspaceSelected::from($request)->templates()->findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
@@ -65,7 +65,7 @@ class TemplateController extends Controller
 
     public function destroy(Request $request, int $id): RedirectResponse
     {
-        EnsureTenantSelected::from($request)->templates()->findOrFail($id)->delete();
+        EnsureWorkspaceSelected::from($request)->templates()->findOrFail($id)->delete();
 
         return back()->with('status', 'Template dihapus.');
     }

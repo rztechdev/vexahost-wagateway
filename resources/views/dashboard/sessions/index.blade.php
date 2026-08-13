@@ -45,13 +45,20 @@
                             @if ($session->push_name) &middot; {{ $session->push_name }} @endif
                         </p>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Driver {{ $session->driver }} &middot;
-                            @if ($session->kind === 'platform')
-                                <span class="font-medium text-amber-600">Nomor platform Flustra</span>
-                            @else
-                                Nomor tenant
-                            @endif
+                            Driver {{ $session->driver }}
                         </p>
+
+                        {{-- ID sesi ditampilkan supaya tidak perlu ada yang menelusuri
+                             URL atau memanggil API hanya untuk mengunci pengirim ke
+                             satu nomor tertentu lewat WA_GATEWAY_SESSION. --}}
+                        <div class="mt-2 flex items-center gap-1.5" x-data="{ disalin: false }">
+                            <code class="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
+                                  x-ref="id">{{ $session->id }}</code>
+                            <button type="button" title="Salin ID sesi"
+                                    @click="navigator.clipboard.writeText($refs.id.textContent.trim()); disalin = true; setTimeout(() => disalin = false, 2000)"
+                                    class="shrink-0 text-[11px] font-medium text-primary hover:underline"
+                                    x-text="disalin ? 'Tersalin' : 'Salin ID'"></button>
+                        </div>
                     </div>
                     <x-session-status :status="$session->status" />
                 </div>

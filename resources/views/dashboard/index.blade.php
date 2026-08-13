@@ -4,7 +4,7 @@
 @section('content')
     @php
         $connected = $sessions->where('status', 'connected')->count();
-        $quota = $currentTenant->is_internal ? null : $currentTenant->monthly_message_quota;
+        $quota = $currentWorkspace->is_internal ? null : $currentWorkspace->monthly_message_quota;
         $percent = $quota ? min(100, round($usage->messages_sent / max($quota, 1) * 100)) : null;
     @endphp
 

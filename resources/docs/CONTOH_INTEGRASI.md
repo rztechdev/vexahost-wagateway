@@ -11,7 +11,10 @@ Simpan kredensial di `.env`:
 ```env
 WA_GATEWAY_URL=https://wa.flustra.id
 WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxx
+WA_GATEWAY_SESSION=
 ```
+
+Blok itu bisa disalin langsung dari halaman **API Keys** setelah kunci dibuat. `WA_GATEWAY_SESSION` boleh tetap kosong — lihat [Mulai Cepat](MULAI_CEPAT.md#simpan-kuncinya-di-env-bukan-di-dalam-kode).
 
 `config/whatsapp.php`:
 
@@ -21,6 +24,10 @@ WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxx
 return [
     'url' => env('WA_GATEWAY_URL', 'https://wa.flustra.id'),
     'key' => env('WA_GATEWAY_KEY'),
+
+    // Kosong = kirim dari nomor yang sedang terhubung. Isi dengan ID sesi
+    // hanya kalau workspace Anda punya beberapa nomor.
+    'session' => env('WA_GATEWAY_SESSION'),
 
     // Sengaja pendek. Notifikasi WhatsApp adalah pelengkap, bukan pengganti
     // email — gateway yang lambat tidak boleh menahan permintaan pengguna.

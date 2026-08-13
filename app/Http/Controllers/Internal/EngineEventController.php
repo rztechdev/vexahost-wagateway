@@ -34,7 +34,7 @@ class EngineEventController extends Controller
             'payload' => ['nullable', 'array'],
         ]);
 
-        $session = WaSession::with('tenant')->find($data['session_id']);
+        $session = WaSession::with('workspace')->find($data['session_id']);
 
         if (! $session) {
             // Sesi sudah dihapus di dashboard tapi engine belum tahu. Balas 200
@@ -74,7 +74,7 @@ class EngineEventController extends Controller
             'qr_expires_at' => now()->addSeconds(config('gateway.qr_ttl_seconds')),
         ]);
 
-        $this->webhooks->dispatch($session->tenant, WebhookDispatcher::EVENT_SESSION_QR, [
+        $this->webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_SESSION_QR, [
             'session_id' => $session->id,
             'status' => 'qr',
         ]);
@@ -121,7 +121,7 @@ class EngineEventController extends Controller
     private function onIncomingMessage(WaSession $session, array $payload): void
     {
         $message = Message::create([
-            'tenant_id' => $session->tenant_id,
+            'workspace_id' => $session->workspace_id,
             'wa_session_id' => $session->id,
             'direction' => 'inbound',
             'wa_message_id' => $payload['wa_message_id'] ?? null,
@@ -133,9 +133,9 @@ class EngineEventController extends Controller
             'status' => 'delivered',
         ]);
 
-        $this->dispatcher->incrementUsage($session->tenant, 'messages_received');
+        $this->dispatcher->incrementUsage($session->workspace, 'messages_received');
 
-        $this->webhooks->dispatch($session->tenant, WebhookDispatcher::EVENT_MESSAGE_RECEIVED, [
+        $this->webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_MESSAGE_RECEIVED, [
             'message_id' => $message->id,
             'session_id' => $session->id,
             'from' => $message->from_number,
@@ -197,7 +197,7 @@ class EngineEventController extends Controller
             'read_at' => $status === 'read' ? now() : $message->read_at,
         ])->save();
 
-        $this->webhooks->dispatch($session->tenant, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
+        $this->webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
             'message_id' => $message->id,
             'status' => $status,
             'to' => $message->to_number,
@@ -206,7 +206,7 @@ class EngineEventController extends Controller
 
     private function notifySessionStatus(WaSession $session, string $status): void
     {
-        $this->webhooks->dispatch($session->tenant, WebhookDispatcher::EVENT_SESSION_STATUS, [
+        $this->webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_SESSION_STATUS, [
             'session_id' => $session->id,
             'name' => $session->name,
             'status' => $status,

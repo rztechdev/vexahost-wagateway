@@ -69,7 +69,7 @@ Sengaja gagal di awal, bukan saat permintaan pertama. Engine yang berjalan tanpa
 
 Pino dengan konfigurasi `redact` yang menyamarkan nomor telepon di semua jalur umum (`to`, `from`, `*.phone_number`).
 
-Log dikirim ke agregator dan disimpan lama, sementara isinya data pribadi pelanggan tenant. Penyamaran ini bukan formalitas.
+Log dikirim ke agregator dan disimpan lama, sementara isinya data pribadi pelanggan workspace. Penyamaran ini bukan formalitas.
 
 Format keluarannya JSON. Untuk membaca nyaman saat pengembangan:
 
@@ -235,7 +235,7 @@ Dua hal yang layak diperhatikan.
 
 **`.catch(() => {})` pada rantai yang disimpan.** Tanpa itu, satu pesan gagal akan membuat seluruh antrean sesi itu berhenti — dan Node juga akan melaporkan unhandled rejection. Yang dikembalikan ke pemanggil tetap Promise asli, jadi kegagalannya tidak hilang.
 
-**Jeda ada di sini, bukan di Laravel.** Isolasinya harus per sesi. Kalau jedanya diatur Laravel, broadcast 500 pesan milik satu tenant akan menahan satu pesan mendesak milik tenant lain. Dengan antrean per sesi, keduanya berjalan paralel.
+**Jeda ada di sini, bukan di Laravel.** Isolasinya harus per sesi. Kalau jedanya diatur Laravel, broadcast 500 pesan milik satu workspace akan menahan satu pesan mendesak milik workspace lain. Dengan antrean per sesi, keduanya berjalan paralel.
 
 Jeda acak 3–8 detik bukan hiasan: mengirim beruntun dengan jarak yang seragam adalah pola paling khas robot, dan cara paling cepat membuat nomor diblokir.
 

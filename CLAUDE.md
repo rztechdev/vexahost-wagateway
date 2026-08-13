@@ -12,7 +12,7 @@ Tiga proses, satu repo:
 
 | Proses | Bahasa | Tugas |
 |---|---|---|
-| root | Laravel 12 | Dashboard, REST API, tenant, antrean, webhook |
+| root | Laravel 12 | Dashboard, REST API, workspace, antrean, webhook |
 | `engine/` | Node 20 | `whatsapp-web.js` + Chromium — satu sesi = satu Chromium |
 | worker | Laravel | `queue:work` — pengiriman & webhook di latar belakang |
 
@@ -28,13 +28,13 @@ php artisan test     # seluruh tes
 ./vendor/bin/pint    # format PHP, jalankan sebelum commit
 ```
 
-`php artisan gateway:setup-tenant "Nama" --session="Sesi" --key="kunci"` untuk menyiapkan tenant/sesi/API key dari CLI.
+Tidak ada perintah CLI untuk menyiapkan workspace — semuanya lewat dashboard, termasuk untuk Flustra sendiri.
 
 ## Aturan yang berlaku di seluruh kode
 
 **Semua teks Bahasa Indonesia** — komentar, pesan galat, nama tes, dokumentasi, UI. Nama kelas/method/kolom tetap Inggris.
 
-**Selalu berangkat dari tenant.** `EnsureTenantSelected::from($request)->sessions()->findOrFail($id)`, bukan `WaSession::find($id)`. Tidak ada global scope yang menangkap kelalaian ini.
+**Selalu berangkat dari workspace.** `EnsureWorkspaceSelected::from($request)->sessions()->findOrFail($id)`, bukan `WaSession::find($id)`. Tidak ada global scope yang menangkap kelalaian ini.
 
 **Pesan keluar hanya lewat `MessageDispatcher::queue()`** — di situlah normalisasi nomor, pemeriksaan kuota, dan pencatatan pemakaian terjadi.
 
@@ -67,7 +67,11 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Nixpacks memakai Node 18 kalau `NIXPACKS_NODE_VERSION` tidak diset.** Engine menuntut Node 20 lewat `engines` di `engine/package.json`, dan Node 18 sudah EOL. Env Laravel sudah memuatnya sejak awal; env engine dulu tidak.
 
-**Hapus lunak bertabrakan dengan indeks unik.** `wa_sessions` unik pada `(tenant_id, name)` tanpa memandang `deleted_at`, jadi membuat ulang sesi dengan nama yang sama gagal dengan galat 1062. `SessionService::create()` membuang permanen baris tertrash bernama sama lebih dulu — permanen, bukan dipulihkan, supaya baris baru dapat ULID baru dan tidak mewarisi folder kredensial lama di engine.
+**Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
+
+**Istilah produk hanya satu: workspace.** Sampai ke nama tabel dan kolom (`workspaces`, `workspace_id`). `tenant` hanya boleh muncul sebagai istilah arsitektur (multi-tenant) di dokumentasi internal.
+
+**Hapus lunak bertabrakan dengan indeks unik.** `wa_sessions` unik pada `(workspace_id, name)` tanpa memandang `deleted_at`, jadi membuat ulang sesi dengan nama yang sama gagal dengan galat 1062. `SessionService::create()` membuang permanen baris tertrash bernama sama lebih dulu — permanen, bukan dipulihkan, supaya baris baru dapat ULID baru dan tidak mewarisi folder kredensial lama di engine.
 
 **`QR_TTL_SECONDS` jangan di bawah 60.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap sampai ~60 detik; masa berlaku lebih pendek membuat modal QR berkedip kosong.
 

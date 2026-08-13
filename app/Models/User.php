@@ -34,25 +34,25 @@ class User extends Authenticatable
         ];
     }
 
-    public function tenants(): BelongsToMany
+    public function workspaces(): BelongsToMany
     {
-        return $this->belongsToMany(Tenant::class, 'tenant_members')
+        return $this->belongsToMany(Workspace::class, 'workspace_members')
             ->withPivot('role')
             ->withTimestamps();
     }
 
-    public function roleIn(Tenant $tenant): ?string
+    public function roleIn(Workspace $workspace): ?string
     {
-        return $this->tenants->firstWhere('id', $tenant->id)?->pivot->role;
+        return $this->workspaces->firstWhere('id', $workspace->id)?->pivot->role;
     }
 
     /**
-     * Boleh mengubah pengaturan tenant: menambah anggota, mengelola sesi,
+     * Boleh mengubah pengaturan workspace: menambah anggota, mengelola sesi,
      * membuat dan mencabut API key. Member biasa hanya boleh melihat dan
      * mengirim pesan.
      */
-    public function canManage(Tenant $tenant): bool
+    public function canManage(Workspace $workspace): bool
     {
-        return $this->is_super_admin || in_array($this->roleIn($tenant), ['owner', 'admin'], true);
+        return $this->is_super_admin || in_array($this->roleIn($workspace), ['owner', 'admin'], true);
     }
 }

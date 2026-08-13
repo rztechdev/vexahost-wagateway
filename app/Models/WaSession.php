@@ -12,14 +12,9 @@ class WaSession extends Model
 {
     use HasUlids, SoftDeletes;
 
-    public const KIND_PLATFORM = 'platform';
-
-    public const KIND_TENANT = 'tenant';
-
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'name',
-        'kind',
         'driver',
         'status',
         'phone_number',
@@ -46,9 +41,9 @@ class WaSession extends Model
         ];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     public function messages(): HasMany

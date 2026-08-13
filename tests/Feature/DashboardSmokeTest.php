@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\ApiKey;
 use App\Models\Message;
-use App\Models\Tenant;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -25,7 +25,7 @@ class DashboardSmokeTest extends TestCase
 
     private User $user;
 
-    private Tenant $tenant;
+    private Workspace $workspace;
 
     protected function setUp(): void
     {
@@ -37,7 +37,7 @@ class DashboardSmokeTest extends TestCase
             'password' => Hash::make('rahasia12345'),
         ]);
 
-        $this->tenant = Tenant::create([
+        $this->workspace = Workspace::create([
             'name' => 'Toko Uji',
             'slug' => 'toko-uji',
             'owner_id' => $this->user->id,
@@ -47,10 +47,10 @@ class DashboardSmokeTest extends TestCase
             'api_rate_limit_per_minute' => 60,
         ]);
 
-        $this->tenant->members()->attach($this->user->id, ['role' => 'owner']);
+        $this->workspace->members()->attach($this->user->id, ['role' => 'owner']);
 
         $this->actingAs($this->user);
-        $this->withSession(['current_tenant_id' => $this->tenant->id]);
+        $this->withSession(['current_workspace_id' => $this->workspace->id]);
     }
 
     public function test_semua_halaman_dashboard_bisa_dibuka(): void
@@ -71,11 +71,29 @@ class DashboardSmokeTest extends TestCase
         }
     }
 
+    /**
+     * Kunci yang baru dibuat harus datang bersama cuplikan .env-nya.
+     *
+     * Menyerahkan kunci tanpa memberi tahu ditempel ke mana adalah titik henti
+     * paling umum saat menyambungkan aplikasi: pemakainya punya kunci, tapi
+     * tidak tahu nama variabelnya, dan tidak ada tempat bertanya.
+     */
+    public function test_kunci_baru_disertai_cuplikan_env(): void
+    {
+        $this->post(route('api-keys.store'), ['name' => 'Aplikasi Kasir', 'scopes' => ['*']])
+            ->assertRedirect();
+
+        $this->get(route('api-keys.index'))
+            ->assertOk()
+            ->assertSee('WA_GATEWAY_URL='.rtrim(config('app.url'), '/'))
+            ->assertSee('WA_GATEWAY_SESSION=');
+    }
+
     public function test_halaman_dashboard_menampilkan_isi_ketika_ada_data(): void
     {
         // Halaman kosong sering lolos padahal versi berisinya rusak — misalnya
         // relasi yang salah nama baru meledak saat barisnya benar-benar ada.
-        $session = $this->tenant->sessions()->create([
+        $session = $this->workspace->sessions()->create([
             'name' => 'CS Utama',
             'status' => 'connected',
             'phone_number' => '6281234567890',
@@ -84,7 +102,7 @@ class DashboardSmokeTest extends TestCase
         ]);
 
         $message = Message::create([
-            'tenant_id' => $this->tenant->id,
+            'workspace_id' => $this->workspace->id,
             'wa_session_id' => $session->id,
             'direction' => 'outbound',
             'to_number' => '6289999999999',
@@ -98,8 +116,8 @@ class DashboardSmokeTest extends TestCase
             'delivered_at' => now(),
         ]);
 
-        $this->tenant->messages()->create([
-            'tenant_id' => $this->tenant->id,
+        $this->workspace->messages()->create([
+            'workspace_id' => $this->workspace->id,
             'wa_session_id' => $session->id,
             'direction' => 'inbound',
             'from_number' => '6289999999999',
@@ -108,14 +126,14 @@ class DashboardSmokeTest extends TestCase
             'status' => 'delivered',
         ]);
 
-        $this->tenant->templates()->create([
+        $this->workspace->templates()->create([
             'name' => 'Pengingat Invoice',
             'slug' => 'pengingat-invoice',
             'body' => 'Halo {{ nama }}, faktur {{ nomor }} jatuh tempo.',
             'variables' => ['nama', 'nomor'],
         ]);
 
-        $webhook = $this->tenant->webhooks()->create([
+        $webhook = $this->workspace->webhooks()->create([
             'url' => 'https://contoh.id/webhook',
             'secret' => Str::random(48),
             'events' => ['message.received'],
@@ -129,7 +147,7 @@ class DashboardSmokeTest extends TestCase
             'delivered_at' => now(),
         ]);
 
-        ApiKey::issue($this->tenant, 'kunci uji');
+        ApiKey::issue($this->workspace, 'kunci uji');
 
         foreach ([
             route('dashboard'),
@@ -163,19 +181,19 @@ class DashboardSmokeTest extends TestCase
     }
 
     /**
-     * Halaman detail pesan mengambil dari relasi tenant, bukan model global.
-     * Tanpa itu, menebak ULID milik tenant lain akan menampilkan isinya.
+     * Halaman detail pesan mengambil dari relasi workspace, bukan model global.
+     * Tanpa itu, menebak ULID milik workspace lain akan menampilkan isinya.
      */
-    public function test_pesan_milik_tenant_lain_tidak_bisa_dibuka(): void
+    public function test_pesan_milik_workspace_lain_tidak_bisa_dibuka(): void
     {
-        $lain = Tenant::create(['name' => 'Tenant Lain', 'slug' => 'tenant-lain', 'max_sessions' => 1]);
+        $lain = Workspace::create(['name' => 'Workspace Lain', 'slug' => 'workspace-lain', 'max_sessions' => 1]);
 
         $pesan = Message::create([
-            'tenant_id' => $lain->id,
+            'workspace_id' => $lain->id,
             'direction' => 'outbound',
             'to_number' => '6281111111111',
             'type' => 'text',
-            'body' => 'Rahasia tenant lain',
+            'body' => 'Rahasia workspace lain',
             'status' => 'sent',
         ]);
 

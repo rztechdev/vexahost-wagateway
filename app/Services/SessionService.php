@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Tenant;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use App\Services\Providers\ProviderManager;
 use RuntimeException;
 
@@ -11,27 +11,26 @@ class SessionService
 {
     public function __construct(private readonly ProviderManager $providers) {}
 
-    public function create(Tenant $tenant, string $name, string $driver = 'wwebjs', string $kind = WaSession::KIND_TENANT): WaSession
+    public function create(Workspace $workspace, string $name, string $driver = 'wwebjs'): WaSession
     {
-        if (! $tenant->canAddSession()) {
+        if (! $workspace->canAddSession()) {
             throw new RuntimeException(
-                "Tenant sudah memakai seluruh jatah sesi ({$tenant->max_sessions})."
+                "Workspace sudah memakai seluruh jatah sesi ({$workspace->max_sessions})."
             );
         }
 
-        // Sesi dihapus lunak, tapi indeks unik (tenant_id, name) tidak peduli
+        // Sesi dihapus lunak, tapi indeks unik (workspace_id, name) tidak peduli
         // deleted_at — tanpa ini, memakai ulang nama sesi yang sudah dihapus
         // gagal dengan galat duplikat yang tidak bisa dipahami pengguna.
         // Dihapus permanen, bukan dipulihkan: baris baru mendapat ULID baru,
         // sehingga tidak mewarisi folder kredensial lama di engine kalau
         // logout sempat gagal saat penghapusan.
-        $tenant->sessions()->onlyTrashed()->where('name', $name)->get()
+        $workspace->sessions()->onlyTrashed()->where('name', $name)->get()
             ->each(fn (WaSession $stale) => $stale->forceDelete());
 
-        return $tenant->sessions()->create([
+        return $workspace->sessions()->create([
             'name' => $name,
             'driver' => $driver,
-            'kind' => $kind,
             'status' => 'pending',
         ]);
     }

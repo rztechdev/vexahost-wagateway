@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Message;
-use App\Models\Tenant;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,7 +12,7 @@ class EngineCallbackTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Tenant $tenant;
+    private Workspace $workspace;
 
     private WaSession $session;
 
@@ -20,8 +20,8 @@ class EngineCallbackTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenant = Tenant::create(['name' => 'Contoh', 'slug' => 'contoh', 'max_sessions' => 2]);
-        $this->session = $this->tenant->sessions()->create(['name' => 'CS', 'status' => 'connecting']);
+        $this->workspace = Workspace::create(['name' => 'Contoh', 'slug' => 'contoh', 'max_sessions' => 2]);
+        $this->session = $this->workspace->sessions()->create(['name' => 'CS', 'status' => 'connecting']);
     }
 
     /** Menandatangani body persis seperti yang dilakukan engine Node. */
@@ -175,7 +175,7 @@ class EngineCallbackTest extends TestCase
 
         $this->assertNotNull($message);
         $this->assertSame('6289999999999', $message->from_number);
-        $this->assertSame(1, $this->tenant->currentUsage()->messages_received);
+        $this->assertSame(1, $this->workspace->currentUsage()->messages_received);
     }
 
     /**
@@ -185,7 +185,7 @@ class EngineCallbackTest extends TestCase
     public function test_status_pesan_tidak_pernah_mundur(): void
     {
         $message = Message::create([
-            'tenant_id' => $this->tenant->id,
+            'workspace_id' => $this->workspace->id,
             'wa_session_id' => $this->session->id,
             'direction' => 'outbound',
             'wa_message_id' => 'true_628_ABC',
@@ -225,7 +225,7 @@ class EngineCallbackTest extends TestCase
     public function test_ack_tanpa_id_tidak_menyentuh_pesan_yang_masih_mengantre(): void
     {
         $mengantre = Message::create([
-            'tenant_id' => $this->tenant->id,
+            'workspace_id' => $this->workspace->id,
             'wa_session_id' => $this->session->id,
             'direction' => 'outbound',
             'wa_message_id' => null,

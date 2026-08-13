@@ -18,6 +18,31 @@
                 </button>
             </div>
         </div>
+
+        {{-- Kunci saja tidak cukup: yang paling sering ditanyakan justru
+             "ditempel ke mana". Blok ini menjawabnya sekali jalan. --}}
+        @php
+            $env = "WA_GATEWAY_URL=".rtrim(config('app.url'), '/')."\n"
+                ."WA_GATEWAY_KEY=".session('new_api_key')."\n"
+                ."WA_GATEWAY_SESSION=";
+        @endphp
+        <div class="mb-6 rounded-xl border border-border bg-card p-5" x-data="{ disalin: false }">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="font-semibold">Tempel ke <code>.env</code> aplikasi Anda</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Biarkan <code>WA_GATEWAY_SESSION</code> kosong — pesan akan dikirim dari sesi yang sedang
+                        terhubung. Isi dengan ID sesi hanya kalau Anda punya beberapa nomor dan ingin mengunci
+                        pengirimnya. ID sesi ada di halaman <a href="{{ route('sessions.index') }}" class="text-primary hover:underline">Sesi WhatsApp</a>.
+                    </p>
+                </div>
+                <button type="button"
+                        @click="navigator.clipboard.writeText($refs.env.textContent.trim()); disalin = true; setTimeout(() => disalin = false, 2000)"
+                        class="shrink-0 rounded-lg border border-input px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                        x-text="disalin ? 'Tersalin' : 'Salin'"></button>
+            </div>
+            <pre class="mt-3 overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs" x-ref="env">{{ $env }}</pre>
+        </div>
     @endif
 
     <x-card title="Buat API key" subtitle="Dipakai aplikasi lain untuk memanggil REST API gateway lewat header X-Api-Key.">

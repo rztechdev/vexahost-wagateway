@@ -48,8 +48,8 @@ WA_MIN_DELAY_MS=1000
 WA_MAX_DELAY_MS=2000
 
 # Batas longgar supaya pengujian tidak mentok kuota.
-TENANT_DEFAULT_MONTHLY_QUOTA=100000
-TENANT_DEFAULT_MAX_SESSIONS=3
+WORKSPACE_DEFAULT_MONTHLY_QUOTA=100000
+WORKSPACE_DEFAULT_MAX_SESSIONS=3
 
 # Retensi pendek — data uji tidak perlu disimpan lama.
 RETENTION_MESSAGES_DAYS=7
@@ -85,8 +85,8 @@ ENGINE_URL=http://<uuid-resource-flustra-wa-engine-staging>:3100
 WA_MIN_DELAY_MS=3000
 WA_MAX_DELAY_MS=8000
 
-TENANT_DEFAULT_MONTHLY_QUOTA=1000
-TENANT_DEFAULT_MAX_SESSIONS=1
+WORKSPACE_DEFAULT_MONTHLY_QUOTA=1000
+WORKSPACE_DEFAULT_MAX_SESSIONS=1
 
 RETENTION_MESSAGES_DAYS=30
 RETENTION_WEBHOOK_DAYS=14
@@ -117,8 +117,8 @@ ENGINE_URL=http://<uuid-resource-flustra-wa-engine>:3100
 WA_MIN_DELAY_MS=3000
 WA_MAX_DELAY_MS=8000
 
-TENANT_DEFAULT_MONTHLY_QUOTA=1000
-TENANT_DEFAULT_MAX_SESSIONS=1
+WORKSPACE_DEFAULT_MONTHLY_QUOTA=1000
+WORKSPACE_DEFAULT_MAX_SESSIONS=1
 
 RETENTION_MESSAGES_DAYS=90
 RETENTION_WEBHOOK_DAYS=30
@@ -148,7 +148,7 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 | `ENGINE_TOKEN` | `openssl rand -hex 32` |
 | `ENGINE_HMAC_SECRET` | `openssl rand -hex 32` — harus berbeda dari `ENGINE_TOKEN` |
 | `DB_PASSWORD` | dari Coolify |
-| API key tenant | `php artisan gateway:setup-tenant … --key="…"` |
+| API key workspace | Dashboard → API Keys → Buat |
 
 `ENGINE_TOKEN` dan `ENGINE_HMAC_SECRET` harus **identik antara Laravel dan engine dalam satu tahap**, dan **berbeda antar tahap**.
 

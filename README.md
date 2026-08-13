@@ -43,7 +43,7 @@ Peta dokumentasi internal ada di **[docs/README.md](docs/README.md)**. Yang pali
 
 ## Ringkasan teknis
 
-- **Laravel 12** (PHP 8.2+) — dashboard, REST API, tenant, antrean, webhook
+- **Laravel 12** (PHP 8.2+) — dashboard, REST API, workspace, antrean, webhook
 - **Node.js 20+** — engine `whatsapp-web.js` yang menjalankan Chromium
 - **MySQL** di produksi, SQLite untuk lokal
 - **Blade + Tailwind v4 + Alpine.js** — tanpa SPA

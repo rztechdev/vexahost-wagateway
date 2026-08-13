@@ -91,27 +91,27 @@ Komentar menjelaskan **alasan**, bukan mekanisme. Kode sudah menunjukkan apa yan
 ```php
 // Buruk — mengulang yang sudah jelas dari kodenya
 // Naikkan hitungan pemakaian
-$this->incrementUsage($tenant, 'messages_sent');
+$this->incrementUsage($workspace, 'messages_sent');
 
 // Baik — menjelaskan kenapa di titik ini, bukan nanti
 // Kuota dinaikkan saat antre, bukan saat terkirim: kalau dihitung
-// belakangan, satu tenant bisa mengantrekan puluhan ribu pesan dulu
+// belakangan, satu workspace bisa mengantrekan puluhan ribu pesan dulu
 // lalu baru ketahuan melewati batas.
-$this->incrementUsage($tenant, 'messages_sent');
+$this->incrementUsage($workspace, 'messages_sent');
 ```
 
 Komentar paling berharga adalah yang menjawab "kenapa tidak dengan cara yang lebih sederhana?" — karena itu pertanyaan yang pasti muncul di kepala pembaca berikutnya.
 
 ## Tes
 
-Wajib untuk: endpoint API baru, event engine baru, perubahan logika kuota atau isolasi tenant, dan setiap perbaikan bug.
+Wajib untuk: endpoint API baru, event engine baru, perubahan logika kuota atau isolasi workspace, dan setiap perbaikan bug.
 
 Nama method dalam Bahasa Indonesia, mendeskripsikan perilaku yang dijaga:
 
 ```php
 public function test_kuota_habis_menolak_pesan_berikutnya(): void
 public function test_status_pesan_tidak_pernah_mundur(): void
-public function test_kunci_tenant_lain_tidak_bisa_melihat_sesi_kita(): void
+public function test_kunci_workspace_lain_tidak_bisa_melihat_sesi_kita(): void
 ```
 
 Sertakan docblock yang menjelaskan kenapa perilaku itu penting:
@@ -148,7 +148,7 @@ Hindari kolom yang tidak dipakai apa pun. Kolom mati membingungkan pembaca berik
 - [ ] Tidak ada `dd()`, `dump()`, `console.log` yang tertinggal
 - [ ] Tidak ada rahasia di kode — semua lewat env
 - [ ] Nomor telepon tidak ditulis utuh ke log
-- [ ] Kueri baru berangkat dari tenant, bukan model global
+- [ ] Kueri baru berangkat dari workspace, bukan model global
 - [ ] Env baru didaftarkan di [ENVIRONMENT.md](ENVIRONMENT.md) **dan** diisikan di Coolify untuk ketiga tahap — tidak ada template di repo yang akan mengingatkanmu kalau terlewat
 - [ ] Endpoint API baru terdokumentasi di [API.md](API.md)
 - [ ] Perubahan perilaku terdokumentasi di dokumen yang relevan

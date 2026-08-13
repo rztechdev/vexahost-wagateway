@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Services\MessageDispatcher;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,9 +15,9 @@ class MessageController extends Controller
 
     public function index(Request $request): View
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
-        $messages = $tenant->messages()
+        $messages = $workspace->messages()
             ->with('session')
             ->when($request->query('session'), fn ($q, $v) => $q->where('wa_session_id', $v))
             ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
@@ -33,18 +33,18 @@ class MessageController extends Controller
 
         return view('dashboard.messages.index', [
             'messages' => $messages,
-            'sessions' => $tenant->sessions()->orderBy('name')->get(),
+            'sessions' => $workspace->sessions()->orderBy('name')->get(),
         ]);
     }
 
     public function compose(Request $request): View
     {
         return view('dashboard.messages.compose', [
-            'sessions' => EnsureTenantSelected::from($request)->sessions()
+            'sessions' => EnsureWorkspaceSelected::from($request)->sessions()
                 ->where('status', 'connected')
                 ->orderBy('name')
                 ->get(),
-            'templates' => EnsureTenantSelected::from($request)->templates()->where('is_active', true)->get(),
+            'templates' => EnsureWorkspaceSelected::from($request)->templates()->where('is_active', true)->get(),
         ]);
     }
 
@@ -56,8 +56,8 @@ class MessageController extends Controller
             'message' => ['required', 'string', 'max:4096'],
         ]);
 
-        $tenant = EnsureTenantSelected::from($request);
-        $session = $tenant->sessions()->findOrFail($data['session_id']);
+        $workspace = EnsureWorkspaceSelected::from($request);
+        $session = $workspace->sessions()->findOrFail($data['session_id']);
 
         // Textarea "kirim ke" menerima banyak nomor dipisah baris atau koma,
         // supaya uji coba broadcast bisa dilakukan tanpa lewat API.
@@ -97,7 +97,7 @@ class MessageController extends Controller
 
     public function show(Request $request, string $id): View
     {
-        $message = EnsureTenantSelected::from($request)->messages()->with('session')->findOrFail($id);
+        $message = EnsureWorkspaceSelected::from($request)->messages()->with('session')->findOrFail($id);
 
         return view('dashboard.messages.show', ['message' => $message]);
     }

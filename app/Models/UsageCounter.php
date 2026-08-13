@@ -8,15 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UsageCounter extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'period',
         'messages_sent',
         'messages_received',
         'messages_failed',
     ];
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Jobs\DeliverWebhookJob;
 use App\Models\AuditLog;
 use App\Models\WebhookDelivery;
@@ -18,11 +18,11 @@ class WebhookController extends Controller
 {
     public function index(Request $request): View
     {
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
         return view('dashboard.webhooks.index', [
-            'webhooks' => $tenant->webhooks()->latest()->get(),
-            'deliveries' => WebhookDelivery::whereIn('webhook_id', $tenant->webhooks()->pluck('id'))
+            'webhooks' => $workspace->webhooks()->latest()->get(),
+            'deliveries' => WebhookDelivery::whereIn('webhook_id', $workspace->webhooks()->pluck('id'))
                 ->latest()
                 ->limit(20)
                 ->get(),
@@ -48,7 +48,7 @@ class WebhookController extends Controller
             ])],
         ]);
 
-        $webhook = EnsureTenantSelected::from($request)->webhooks()->create([
+        $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->create([
             'url' => $data['url'],
             'events' => $data['events'] ?? null,
             'secret' => Str::random(48),
@@ -60,13 +60,13 @@ class WebhookController extends Controller
     }
 
     /**
-     * Mengirim payload contoh supaya tenant bisa memastikan endpoint mereka
+     * Mengirim payload contoh supaya workspace bisa memastikan endpoint mereka
      * menerima dan memverifikasi tanda tangan dengan benar sebelum ada trafik
      * sungguhan.
      */
     public function test(Request $request, int $id): RedirectResponse
     {
-        $webhook = EnsureTenantSelected::from($request)->webhooks()->findOrFail($id);
+        $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->findOrFail($id);
 
         DeliverWebhookJob::dispatch($webhook->id, 'webhook.test', [
             'message' => 'Ini kiriman uji coba dari Flustra WA Gateway.',
@@ -78,7 +78,7 @@ class WebhookController extends Controller
 
     public function toggle(Request $request, int $id): RedirectResponse
     {
-        $webhook = EnsureTenantSelected::from($request)->webhooks()->findOrFail($id);
+        $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->findOrFail($id);
 
         $webhook->update([
             'is_active' => ! $webhook->is_active,
@@ -92,7 +92,7 @@ class WebhookController extends Controller
 
     public function destroy(Request $request, int $id): RedirectResponse
     {
-        $webhook = EnsureTenantSelected::from($request)->webhooks()->findOrFail($id);
+        $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->findOrFail($id);
 
         AuditLog::record('webhook.deleted', $webhook, ['url' => $webhook->url]);
         $webhook->delete();

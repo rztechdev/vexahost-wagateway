@@ -2,12 +2,12 @@
 
 Klien-nya disalin per aplikasi, mengikuti pola yang sudah dipakai `CentralAuthClient` dan `SloNotifier`. Sumber aslinya ada di `docs/client/` repo ini — **ubah di sana dulu, lalu salin ulang**.
 
-## Nomor pengirim: platform vs tenant
+## Nomor pengirim: platform vs workspace
 
 | Jenis | Nomor | Dipakai untuk |
 |---|---|---|
 | **Platform** | Nomor resmi Flustra | OTP, undangan anggota, notifikasi billing, balasan tiket — pesan atas nama Flustra |
-| **Tenant** | Nomor perusahaan sendiri | Invoice ke customer, PO ke vendor, slip gaji — pesan atas nama perusahaan |
+| **Workspace** | Nomor perusahaan sendiri | Invoice ke customer, PO ke vendor, slip gaji — pesan atas nama perusahaan |
 
 Pemisahan ini bukan kerapian belaka. Customer sebuah perusahaan tidak mengenal Flustra; invoice dari nomor asing terlihat seperti penipuan. Dan ratusan invoice per hari dari satu nomor platform adalah pola yang paling cepat membuat nomor itu diblokir WhatsApp — kalau itu terjadi, OTP dan seluruh notifikasi Flustra ikut mati.
 
@@ -28,8 +28,9 @@ Karena itu, bila perusahaan belum menautkan nomornya sendiri, sistem **tidak** d
    WA_GATEWAY_URL=https://wa.flustra.id
    WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxxxxxx
    WA_GATEWAY_SESSION=
-   WA_GATEWAY_PLATFORM_SESSION=01K2B...
    ```
+
+   `WA_GATEWAY_SESSION` dibiarkan kosong: pesan dikirim dari sesi yang sedang terhubung di workspace milik kunci itu. Isi hanya kalau workspace punya beberapa nomor dan pengirimnya harus dikunci.
 
 3. Buat API key-nya di dashboard gateway, satu kunci per aplikasi per lingkungan.
 

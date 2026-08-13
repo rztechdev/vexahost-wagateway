@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Tenant extends Model
+class Workspace extends Model
 {
     use SoftDeletes;
 
@@ -42,7 +42,7 @@ class Tenant extends Model
 
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'tenant_members')
+        return $this->belongsToMany(User::class, 'workspace_members')
             ->withPivot('role')
             ->withTimestamps();
     }
@@ -83,7 +83,7 @@ class Tenant extends Model
     }
 
     /**
-     * Pemakaian bulan berjalan. Dibuat lazily supaya tenant baru tidak perlu
+     * Pemakaian bulan berjalan. Dibuat lazily supaya workspace baru tidak perlu
      * baris counter sampai benar-benar mengirim pesan pertamanya.
      *
      * Nilai awal ditulis eksplisit, bukan diserahkan ke default kolom di

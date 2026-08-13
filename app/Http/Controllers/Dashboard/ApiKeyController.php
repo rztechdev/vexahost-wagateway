@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnsureTenantSelected;
+use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\ApiKey;
 use App\Models\AuditLog;
 use Illuminate\Contracts\View\View;
@@ -15,7 +15,7 @@ class ApiKeyController extends Controller
     public function index(Request $request): View
     {
         return view('dashboard.api-keys.index', [
-            'keys' => EnsureTenantSelected::from($request)->apiKeys()->latest()->get(),
+            'keys' => EnsureWorkspaceSelected::from($request)->apiKeys()->latest()->get(),
         ]);
     }
 
@@ -27,10 +27,10 @@ class ApiKeyController extends Controller
             'scopes.*' => ['string', 'max:40'],
         ]);
 
-        $tenant = EnsureTenantSelected::from($request);
+        $workspace = EnsureWorkspaceSelected::from($request);
 
         [$key, $plain] = ApiKey::issue(
-            $tenant,
+            $workspace,
             $data['name'],
             $data['scopes'] ?: ['*'],
             $request->user()->id,
@@ -44,7 +44,7 @@ class ApiKeyController extends Controller
 
     public function destroy(Request $request, int $id): RedirectResponse
     {
-        $key = EnsureTenantSelected::from($request)->apiKeys()->findOrFail($id);
+        $key = EnsureWorkspaceSelected::from($request)->apiKeys()->findOrFail($id);
 
         // Dicabut, bukan dihapus: baris tetap ada supaya jejak "kunci ini pernah
         // dipakai sampai tanggal sekian" tidak ikut hilang.

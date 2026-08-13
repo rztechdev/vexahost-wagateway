@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Jobs\SendMessageJob;
 use App\Models\Message;
-use App\Models\Tenant;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,9 +23,9 @@ class MessageDispatcher
      */
     public function queue(WaSession $session, string $to, array $attributes = []): Message
     {
-        $tenant = $session->tenant;
+        $workspace = $session->workspace;
 
-        $this->guardTenant($tenant);
+        $this->guardWorkspace($workspace);
 
         $normalized = PhoneNumber::normalize($to);
 
@@ -34,7 +34,7 @@ class MessageDispatcher
         }
 
         $message = Message::create([
-            'tenant_id' => $tenant->id,
+            'workspace_id' => $workspace->id,
             'wa_session_id' => $session->id,
             'direction' => 'outbound',
             'chat_id' => PhoneNumber::toChatId($to),
@@ -49,9 +49,9 @@ class MessageDispatcher
         ]);
 
         // Kuota dinaikkan saat antre, bukan saat terkirim: kalau dihitung
-        // belakangan, satu tenant bisa mengantrekan puluhan ribu pesan dulu
+        // belakangan, satu workspace bisa mengantrekan puluhan ribu pesan dulu
         // lalu baru ketahuan melewati batas.
-        $this->incrementUsage($tenant, 'messages_sent');
+        $this->incrementUsage($workspace, 'messages_sent');
 
         SendMessageJob::dispatch($message->id);
 
@@ -84,38 +84,38 @@ class MessageDispatcher
         return ['batch_id' => $batchId, 'messages' => $messages, 'rejected' => $rejected];
     }
 
-    public function incrementUsage(Tenant $tenant, string $column, int $amount = 1): void
+    public function incrementUsage(Workspace $workspace, string $column, int $amount = 1): void
     {
         $period = now()->format('Y-m');
 
         // upsert + increment mentah supaya aman dari race saat banyak worker
-        // memproses pesan tenant yang sama secara bersamaan.
+        // memproses pesan workspace yang sama secara bersamaan.
         DB::table('usage_counters')->upsert(
             [[
-                'tenant_id' => $tenant->id,
+                'workspace_id' => $workspace->id,
                 'period' => $period,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]],
-            ['tenant_id', 'period'],
+            ['workspace_id', 'period'],
             ['updated_at']
         );
 
         DB::table('usage_counters')
-            ->where('tenant_id', $tenant->id)
+            ->where('workspace_id', $workspace->id)
             ->where('period', $period)
             ->increment($column, $amount);
     }
 
-    private function guardTenant(Tenant $tenant): void
+    private function guardWorkspace(Workspace $workspace): void
     {
-        if (! $tenant->isActive()) {
-            throw new RuntimeException('Tenant sedang tidak aktif.');
+        if (! $workspace->isActive()) {
+            throw new RuntimeException('Workspace sedang tidak aktif.');
         }
 
-        if (! $tenant->hasQuotaRemaining()) {
+        if (! $workspace->hasQuotaRemaining()) {
             throw new RuntimeException(
-                "Kuota pesan bulan ini sudah habis ({$tenant->monthly_message_quota} pesan)."
+                "Kuota pesan bulan ini sudah habis ({$workspace->monthly_message_quota} pesan)."
             );
         }
     }

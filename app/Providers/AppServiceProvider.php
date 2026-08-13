@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $perMinute = $key->rate_limit_per_minute
-                ?? $key->tenant->api_rate_limit_per_minute
+                ?? $key->workspace->api_rate_limit_per_minute
                 ?? config('gateway.defaults.api_rate_limit_per_minute');
 
             return Limit::perMinute($perMinute)->by("key:{$key->id}");

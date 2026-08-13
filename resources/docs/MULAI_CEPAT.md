@@ -78,6 +78,20 @@ Balasannya:
 
 `status: "queued"` berarti pesan sudah kami terima dan masuk antrean. Simpan `id`-nya untuk melacak status pengiriman.
 
+### Simpan kuncinya di `.env`, bukan di dalam kode
+
+Halaman **API Keys** menampilkan blok ini siap salin begitu kunci dibuat:
+
+```
+WA_GATEWAY_URL=https://wa.flustra.id
+WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxx
+WA_GATEWAY_SESSION=
+```
+
+`WA_GATEWAY_SESSION` sengaja dibiarkan kosong. Pesan akan dikirim dari nomor yang sedang terhubung — Anda tidak perlu menyalin ID sesi ke mana pun.
+
+Isi kolom itu hanya kalau workspace Anda punya beberapa nomor dan satu aplikasi harus selalu mengirim dari salah satunya. ID sesi ada di kartu sesi, tombol **Salin ID**.
+
 ---
 
 ## Langkah berikutnya

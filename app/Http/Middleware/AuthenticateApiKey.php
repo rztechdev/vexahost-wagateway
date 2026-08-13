@@ -27,7 +27,7 @@ class AuthenticateApiKey
 
         [$prefix, $secret] = explode('.', $plain, 2);
 
-        $key = ApiKey::with('tenant')->where('prefix', $prefix)->first();
+        $key = ApiKey::with('workspace')->where('prefix', $prefix)->first();
 
         if (! $key || ! Hash::check($secret, $key->key_hash)) {
             return $this->deny('API key tidak dikenali.', 401);
@@ -37,8 +37,8 @@ class AuthenticateApiKey
             return $this->deny('API key sudah dicabut atau kedaluwarsa.', 401);
         }
 
-        if (! $key->tenant || ! $key->tenant->isActive()) {
-            return $this->deny('Tenant pemilik API key sedang tidak aktif.', 403);
+        if (! $key->workspace || ! $key->workspace->isActive()) {
+            return $this->deny('Workspace pemilik API key sedang tidak aktif.', 403);
         }
 
         if ($scope && ! $key->allows($scope)) {
@@ -60,7 +60,7 @@ class AuthenticateApiKey
         }
 
         $request->attributes->set('api_key', $key);
-        $request->attributes->set('tenant', $key->tenant);
+        $request->attributes->set('workspace', $key->workspace);
 
         return $next($request);
     }

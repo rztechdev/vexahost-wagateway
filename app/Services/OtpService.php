@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\OtpCode;
-use App\Models\Tenant;
 use App\Models\WaSession;
+use App\Models\Workspace;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
@@ -15,13 +15,13 @@ use RuntimeException;
  * hasil verifikasinya di kolom users.phone_verified_at miliknya sendiri.
  *
  * Selalu dikirim dari sesi platform: OTP adalah pesan atas nama Flustra, bukan
- * atas nama tenant.
+ * atas nama workspace.
  */
 class OtpService
 {
     public function __construct(private readonly MessageDispatcher $dispatcher) {}
 
-    public function send(string $phone, string $purpose, ?string $ip = null, ?Tenant $tenant = null): OtpCode
+    public function send(string $phone, string $purpose, ?string $ip = null, ?Workspace $workspace = null): OtpCode
     {
         $normalized = PhoneNumber::normalize($phone);
 
@@ -46,12 +46,12 @@ class OtpService
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addSeconds(config('gateway.otp.ttl_seconds')),
             'requested_by_ip' => $ip,
-            'tenant_id' => $tenant?->id,
+            'workspace_id' => $workspace?->id,
         ]);
 
         $minutes = (int) ceil(config('gateway.otp.ttl_seconds') / 60);
 
-        $this->dispatcher->queue($this->platformSession(), $normalized, [
+        $this->dispatcher->queue($this->senderSession(), $normalized, [
             'type' => 'text',
             'body' => "*{$code}* adalah kode verifikasi Flustra Anda.\n\n"
                 ."Kode berlaku {$minutes} menit. Jangan bagikan kode ini kepada siapa pun, "
@@ -110,16 +110,16 @@ class OtpService
         }
     }
 
-    private function platformSession(): WaSession
+    private function senderSession(): WaSession
     {
-        $id = config('gateway.platform_session_id');
+        $id = config('gateway.otp_session_id');
 
         $session = $id ? WaSession::find($id) : null;
 
         if (! $session) {
             throw new RuntimeException(
-                'Sesi platform belum dikonfigurasi. Buat sesi kind=platform di dashboard, '
-                .'lalu isi PLATFORM_SESSION_ID di .env.'
+                'Sesi pengirim OTP belum dikonfigurasi. Hubungkan satu sesi di '
+                .'dashboard, salin ID sesinya, lalu isi OTP_SESSION_ID di .env.'
             );
         }
 

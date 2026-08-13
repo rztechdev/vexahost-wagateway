@@ -56,7 +56,7 @@ class DeliverWebhookJob implements ShouldQueue
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-                // Tenant memverifikasi header ini dengan secret mereka untuk
+                // Workspace memverifikasi header ini dengan secret mereka untuk
                 // memastikan payload benar-benar datang dari Flustra.
                 'X-Flustra-Signature' => hash_hmac('sha256', $json, $webhook->secret),
                 'X-Flustra-Event' => $this->event,

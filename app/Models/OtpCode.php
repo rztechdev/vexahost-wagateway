@@ -14,7 +14,7 @@ class OtpCode extends Model
         'expires_at',
         'verified_at',
         'requested_by_ip',
-        'tenant_id',
+        'workspace_id',
     ];
 
     protected $hidden = ['code_hash'];

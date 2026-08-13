@@ -18,6 +18,16 @@ fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 
 Kalau hilang: buat kunci baru, perbarui aplikasi Anda, lalu cabut yang lama.
 
+Bersama kuncinya, halaman itu menampilkan blok `.env` siap salin:
+
+```
+WA_GATEWAY_URL=https://wa.flustra.id
+WA_GATEWAY_KEY=fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+WA_GATEWAY_SESSION=
+```
+
+Biarkan `WA_GATEWAY_SESSION` kosong kecuali Anda punya beberapa nomor dan ingin mengunci pengirimnya ke salah satu. Rinciannya di [Mulai Cepat](MULAI_CEPAT.md).
+
 ## Memakainya
 
 Sertakan di setiap permintaan:

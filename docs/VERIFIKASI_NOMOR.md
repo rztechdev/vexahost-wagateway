@@ -92,4 +92,4 @@ Sampai pengguna benar-benar memverifikasi nomornya, `require_verified_phone` mem
 
 Ini disengaja. Alternatifnya — mengirim ke nomor yang belum terbukti — mempertaruhkan nomor platform yang jadi tumpuan seluruh ekosistem. Yang perlu didorong adalah adopsi verifikasinya, bukan mematikan pemeriksaannya.
 
-Catatan: pengiriman ke nomor yang diinput tenant sendiri (customer, vendor, karyawan di flustra-web dan flustra-erp) **tidak** terkena pembatasan ini. Nomor itu memang tanggung jawab tenant, dan dikirim dari nomor tenant sendiri.
+Catatan: pengiriman ke nomor yang diinput workspace sendiri (customer, vendor, karyawan di flustra-web dan flustra-erp) **tidak** terkena pembatasan ini. Nomor itu memang tanggung jawab workspace, dan dikirim dari nomor workspace sendiri.

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Webhook extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'url',
         'secret',
         'events',
@@ -29,9 +29,9 @@ class Webhook extends Model
         ];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     public function deliveries(): HasMany

@@ -160,31 +160,18 @@ Tambahkan juga **Scheduled Task** pada resource Laravel: `php artisan schedule:r
 
 ## 4. Penyiapan setelah deploy pertama
 
-Tenant internal dan sesi platform tidak bisa dibuat lewat dashboard — keduanya bukan sesuatu yang boleh diatur pelanggan. Jalankan dari terminal resource Laravel:
+Penyiapan dilakukan lewat dashboard, sama persis seperti pelanggan mana pun — tidak ada jalur CLI istimewa. Perintah `gateway:setup-tenant` dulu ada dan sudah dihapus: ia membuat workspace **tanpa anggota**, sehingga tidak bisa dibuka dari dashboard oleh siapa pun, dan sesi bertipe `platform` yang tidak pernah terpilih otomatis saat pemanggil API mengosongkan `session_id`. Dua sifat itu tidak terlihat di antarmuka mana pun dan menghabiskan berjam-jam penelusuran.
+
+1. Buka `https://wa.flustra.id`, daftar akun, isi nama workspace
+2. **Sesi WhatsApp** → Buat sesi → **Hubungkan** → scan QR dengan nomor resmi Flustra
+3. **API Keys** → buat satu kunci untuk tiap aplikasi konsumen (`flustra-erp produksi`, `flustra-web produksi`, dan seterusnya). Halaman itu langsung menampilkan cuplikan `.env` siap salin
+4. Untuk **flustra-auth**, buat kunci tersendiri dengan scope `otp` dicentang — scope ini tidak boleh diberikan ke kunci integrasi biasa
+5. Salin ID sesi dari kartu sesi (tombol **Salin ID**) ke `OTP_SESSION_ID` pada env `flustra-wa`, lalu redeploy. Ini satu-satunya tempat ID sesi masih perlu ditulis manual, karena endpoint OTP mengirim atas nama Flustra dan tidak bisa menebak pengirimnya dari pemanggil
+
+Kunci hanya ditampilkan sekali. Bebas kuota untuk workspace internal disetel dari terminal bila perlu:
 
 ```bash
-php artisan gateway:setup-tenant "Flustra Internal" \
-  --internal \
-  --session="Platform" --platform \
-  --key="flustra-auth otp" --scopes=otp \
-  --max-sessions=5
-```
-
-Command ini idempoten — aman dijalankan ulang.
-
-Keluarannya memuat ULID sesi platform dan API key penuh (satu-satunya kesempatan membacanya):
-
-1. Salin ULID sesi ke `PLATFORM_SESSION_ID` di env resource Laravel, lalu redeploy.
-2. Salin API key ke `WA_GATEWAY_KEY` di env **flustra-auth** — ini kunci ber-scope `otp`.
-3. Buka dashboard → **Sesi WhatsApp** → **Hubungkan**, lalu scan QR dengan nomor resmi Flustra.
-
-Lalu buat kunci terpisah untuk tiap aplikasi konsumen, **tanpa** scope `otp`:
-
-```bash
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-erp produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-web produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-pricing produksi"
-php artisan gateway:setup-tenant "Flustra Internal" --key="flustra-helpdesk produksi"
+php artisan tinker --execute='App\Models\Workspace::find(1)->update(["is_internal" => true]);'
 ```
 
 Masukkan tiap kunci ke `WA_GATEWAY_KEY` pada aplikasi yang bersangkutan. Lihat [INTEGRASI_APP.md](INTEGRASI_APP.md).

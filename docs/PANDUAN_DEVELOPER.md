@@ -70,7 +70,8 @@ npm --prefix engine run dev
 ## 2. Mencoba dari nol sampai terkirim
 
 ```bash
-php artisan gateway:setup-tenant "Uji Lokal" --session="Sesi Uji" --key="kunci uji"
+# Daftar akun di http://localhost:8070, isi nama workspace,
+# lalu buat sesi & API key lewat dashboard
 ```
 
 Keluarannya memuat ULID sesi dan API key penuh — **kunci hanya ditampilkan sekali**.
@@ -105,7 +106,7 @@ curl -X POST http://127.0.0.1:8070/api/v1/messages/text \
 ```
 app/
 ├─ Console/Commands/
-│  └─ SetupTenantCommand.php        Penyiapan tenant/sesi/API key dari CLI
+│  └─ SetupWorkspaceCommand.php        Penyiapan workspace/sesi/API key dari CLI
 ├─ Http/
 │  ├─ Controllers/
 │  │  ├─ Api/                       REST API publik v1
@@ -114,7 +115,7 @@ app/
 │  │  └─ Internal/                  Callback engine — bukan API publik
 │  └─ Middleware/
 │     ├─ AuthenticateApiKey.php     Verifikasi X-Api-Key + scope
-│     ├─ EnsureTenantSelected.php   Menentukan tenant aktif dashboard
+│     ├─ EnsureWorkspaceSelected.php   Menentukan workspace aktif dashboard
 │     └─ VerifyEngineSignature.php  HMAC + timestamp untuk /internal/*
 ├─ Jobs/
 │  ├─ SendMessageJob.php            Pengiriman + percobaan ulang
@@ -151,11 +152,11 @@ engine/src/
 
 Empat hal ini berulang. Melanggarnya menimbulkan bug yang sulit dilacak.
 
-### Selalu berangkat dari tenant
+### Selalu berangkat dari workspace
 
 ```php
-// Benar — hanya menemukan milik tenant ini
-$session = EnsureTenantSelected::from($request)->sessions()->findOrFail($id);
+// Benar — hanya menemukan milik workspace ini
+$session = EnsureWorkspaceSelected::from($request)->sessions()->findOrFail($id);
 
 // Salah — menemukan sesi milik siapa pun
 $session = WaSession::find($id);
@@ -218,7 +219,7 @@ Tes memakai SQLite di memori. Env pengujian ada di `phpunit.xml`, termasuk `ENGI
 | Berkas | Cakupan |
 |---|---|
 | `AuthenticationTest` | Login, register, landing, isolasi sesi pengguna |
-| `ApiAuthenticationTest` | API key, scope, isolasi tenant |
+| `ApiAuthenticationTest` | API key, scope, isolasi workspace |
 | `SendMessageTest` | Antre, normalisasi, kuota, broadcast, percobaan ulang |
 | `EngineCallbackTest` | HMAC, penolakan pemutaran ulang, event, urutan ack |
 

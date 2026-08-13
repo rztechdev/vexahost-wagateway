@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AuditLog extends Model
 {
     protected $fillable = [
-        'tenant_id',
+        'workspace_id',
         'user_id',
         'action',
         'subject_type',
@@ -22,9 +22,9 @@ class AuditLog extends Model
         return ['context' => 'array'];
     }
 
-    public function tenant(): BelongsTo
+    public function workspace(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(Workspace::class);
     }
 
     public function user(): BelongsTo
@@ -32,10 +32,10 @@ class AuditLog extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function record(string $action, ?Model $subject = null, array $context = [], ?int $tenantId = null): self
+    public static function record(string $action, ?Model $subject = null, array $context = [], ?int $workspaceId = null): self
     {
         return self::create([
-            'tenant_id' => $tenantId ?? session('current_tenant_id'),
+            'workspace_id' => $workspaceId ?? session('current_workspace_id'),
             'user_id' => auth()->id(),
             'action' => $action,
             'subject_type' => $subject ? $subject::class : null,

@@ -23,17 +23,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Sesi Platform
+    | Sesi Pengirim OTP
     |--------------------------------------------------------------------------
     |
-    | Nomor resmi Flustra yang dipakai untuk OTP, undangan anggota, notifikasi
-    | billing, dan balasan tiket. Sengaja dipisah dari sesi milik tenant supaya
-    | trafik pihak ketiga (invoice ke customer) tidak mengotori nomor ini —
-    | laporan spam dari orang asing bisa membuat nomor diblokir WhatsApp.
+    | Endpoint /api/v1/otp mengirim kode verifikasi atas nama Flustra sendiri,
+    | jadi ia butuh satu sesi yang ditunjuk secara eksplisit — tidak bisa
+    | menebak dari workspace pemanggil seperti endpoint pesan biasa.
+    |
+    | Isinya ID sesi biasa, sama seperti yang dibuat pelanggan lewat dashboard.
+    | Tidak ada tipe sesi khusus: sesi bertipe `platform` dulu pernah ada dan
+    | justru menjadi sumber kebingungan, karena hanya bisa dibuat lewat CLI dan
+    | tidak pernah terpilih otomatis saat session_id dikosongkan.
     |
     */
 
-    'platform_session_id' => env('PLATFORM_SESSION_ID'),
+    'otp_session_id' => env('OTP_SESSION_ID'),
 
     /*
     |--------------------------------------------------------------------------
@@ -50,14 +54,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Batas Bawaan Tenant
+    | Batas Bawaan Workspace
     |--------------------------------------------------------------------------
     */
 
     'defaults' => [
-        'max_sessions' => (int) env('TENANT_DEFAULT_MAX_SESSIONS', 1),
-        'monthly_message_quota' => (int) env('TENANT_DEFAULT_MONTHLY_QUOTA', 1000),
-        'api_rate_limit_per_minute' => (int) env('TENANT_DEFAULT_RATE_LIMIT', 60),
+        'max_sessions' => (int) env('WORKSPACE_DEFAULT_MAX_SESSIONS', 1),
+        'monthly_message_quota' => (int) env('WORKSPACE_DEFAULT_MONTHLY_QUOTA', 1000),
+        'api_rate_limit_per_minute' => (int) env('WORKSPACE_DEFAULT_RATE_LIMIT', 60),
     ],
 
     /*

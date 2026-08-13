@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\ApiKey;
-use App\Models\Tenant;
+use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,9 +11,9 @@ class ApiAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function tenant(): Tenant
+    private function workspace(): Workspace
     {
-        return Tenant::create([
+        return Workspace::create([
             'name' => 'Contoh',
             'slug' => 'contoh',
             'max_sessions' => 2,
@@ -31,12 +31,12 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_api_key_valid_diterima(): void
     {
-        [, $plain] = ApiKey::issue($this->tenant(), 'kunci uji');
+        [, $plain] = ApiKey::issue($this->workspace(), 'kunci uji');
 
         $this->withHeader('X-Api-Key', $plain)
             ->getJson('/api/v1/health')
             ->assertOk()
-            ->assertJsonPath('data.tenant', 'Contoh');
+            ->assertJsonPath('data.workspace', 'Contoh');
     }
 
     /**
@@ -44,9 +44,9 @@ class ApiAuthenticationTest extends TestCase
      * lolos, API menampilkan null ke pemanggil dan pemeriksaan kuota jadi
      * bergantung pada cara PHP membandingkan null dengan angka.
      */
-    public function test_pemakaian_tenant_baru_dilaporkan_nol_bukan_null(): void
+    public function test_pemakaian_workspace_baru_dilaporkan_nol_bukan_null(): void
     {
-        [, $plain] = ApiKey::issue($this->tenant(), 'kunci uji');
+        [, $plain] = ApiKey::issue($this->workspace(), 'kunci uji');
 
         $this->withHeader('X-Api-Key', $plain)
             ->getJson('/api/v1/health')
@@ -58,7 +58,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_api_key_bisa_dikirim_sebagai_bearer_token(): void
     {
-        [, $plain] = ApiKey::issue($this->tenant(), 'kunci uji');
+        [, $plain] = ApiKey::issue($this->workspace(), 'kunci uji');
 
         $this->withHeader('Authorization', "Bearer {$plain}")
             ->getJson('/api/v1/health')
@@ -67,7 +67,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_api_key_yang_dicabut_ditolak(): void
     {
-        [$key, $plain] = ApiKey::issue($this->tenant(), 'kunci uji');
+        [$key, $plain] = ApiKey::issue($this->workspace(), 'kunci uji');
         $key->update(['revoked_at' => now()]);
 
         $this->withHeader('X-Api-Key', $plain)
@@ -75,11 +75,11 @@ class ApiAuthenticationTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_tenant_yang_disuspend_ditolak(): void
+    public function test_workspace_yang_disuspend_ditolak(): void
     {
-        $tenant = $this->tenant();
-        [, $plain] = ApiKey::issue($tenant, 'kunci uji');
-        $tenant->update(['status' => 'suspended']);
+        $workspace = $this->workspace();
+        [, $plain] = ApiKey::issue($workspace, 'kunci uji');
+        $workspace->update(['status' => 'suspended']);
 
         $this->withHeader('X-Api-Key', $plain)
             ->getJson('/api/v1/health')
@@ -92,17 +92,17 @@ class ApiAuthenticationTest extends TestCase
      */
     public function test_kunci_tanpa_scope_otp_tidak_bisa_mengirim_otp(): void
     {
-        [, $plain] = ApiKey::issue($this->tenant(), 'kunci integrasi', ['messages']);
+        [, $plain] = ApiKey::issue($this->workspace(), 'kunci integrasi', ['messages']);
 
         $this->withHeader('X-Api-Key', $plain)
             ->postJson('/api/v1/otp/send', ['phone' => '081234567890'])
             ->assertStatus(403);
     }
 
-    public function test_kunci_tenant_lain_tidak_bisa_melihat_sesi_kita(): void
+    public function test_kunci_workspace_lain_tidak_bisa_melihat_sesi_kita(): void
     {
-        $a = $this->tenant();
-        $b = Tenant::create(['name' => 'Lain', 'slug' => 'lain', 'max_sessions' => 1]);
+        $a = $this->workspace();
+        $b = Workspace::create(['name' => 'Lain', 'slug' => 'lain', 'max_sessions' => 1]);
 
         $sessionA = $a->sessions()->create(['name' => 'CS', 'status' => 'connected']);
 
