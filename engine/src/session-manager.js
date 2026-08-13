@@ -216,7 +216,14 @@ export class SessionManager {
                 sent = await entry.client.sendMessage(chatId, body);
             }
 
-            return { wa_message_id: sent.id?._serialized ?? null, chat_id: chatId };
+            // `sent` kadang undefined walau pesannya benar-benar sampai —
+            // whatsapp-web.js tidak selalu berhasil menyusun objek Message
+            // balasannya. Sebelumnya baris ini melempar TypeError, Laravel
+            // menganggapnya gagal, dan mengulang job-nya: penerima menerima
+            // pesan yang sama tiga sampai empat kali. ID pesan cuma pelengkap
+            // untuk melacak status, jadi tidak boleh menentukan berhasil atau
+            // tidaknya pengiriman.
+            return { wa_message_id: sent?.id?._serialized ?? null, chat_id: chatId };
         });
 
         if (messageId) {
