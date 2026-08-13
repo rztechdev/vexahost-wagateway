@@ -229,7 +229,7 @@ php artisan migrate --force && php artisan optimize:clear && php artisan config:
 **Catatan Jaringan:**
 Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration → Advanced) agar container ini bisa menghubungi Engine.
 
-**Environment Variables** — salin dari `.env.production.example` di repo, lalu isi:
+**Environment Variables** — daftar lengkapnya di [ENVIRONMENT.md](ENVIRONMENT.md); yang wajib diperiksa:
 
 | Variabel | Nilai |
 |---|---|
@@ -280,7 +280,7 @@ npm start
 
 Tanpa volume ini, kredensial nomor tersimpan di dalam container yang dibuat ulang setiap deploy — dan **setiap deploy memaksa scan QR ulang**, persis masalah yang gateway ini dibuat untuk menyelesaikannya.
 
-**Environment Variables** — dari `engine/.env.production.example`:
+**Environment Variables** engine:
 
 ```env
 PORT=3100
@@ -459,7 +459,7 @@ Ulangi Bagian 6–9 dengan perbedaan berikut:
 | Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` |
 | Volume | `wa-sessions-dev` → `/data` | `wa-sessions-staging` → `/data` |
 | `WA_MAX_SESSIONS` | 2 | 3 |
-| Env template | `.env.development.example` | `.env.staging.example` |
+| Acuan env | Coolify resource `…-dev` | Coolify resource `…-staging` |
 
 > **Jangan pakai nomor produksi untuk uji coba di dev/staging.** Satu nomor hanya bisa tertaut ke satu sesi aktif — men-scan di sini akan memutus sesi produksinya dan menghentikan notifikasi pelanggan.
 

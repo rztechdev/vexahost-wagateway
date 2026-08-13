@@ -58,9 +58,9 @@ npm install
 npm --prefix engine install
 ```
 
-Salin `.env.example` → `.env` di root **dan** di `engine/`. Isi `ENGINE_TOKEN` dan `ENGINE_HMAC_SECRET` dengan nilai acak yang **sama persis** di keduanya:
+Buat `.env` di root **dan** di `engine/` — daftar variabelnya ada di [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md). Isi `ENGINE_TOKEN` dan `ENGINE_HMAC_SECRET` dengan nilai acak yang **sama persis** di keduanya:
 
-> Untuk deploy ke server, pakai template per tahap: `.env.development.example`, `.env.staging.example`, `.env.production.example` (dan padanannya di `engine/`). Penjelasannya di [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+> Nilai env untuk server tidak disimpan di repo. Acuannya ada di halaman Environment Variables tiap resource Coolify; daftar variabel dan artinya di [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
 ```bash
 php artisan key:generate

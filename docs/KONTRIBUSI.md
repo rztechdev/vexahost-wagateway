@@ -149,7 +149,7 @@ Hindari kolom yang tidak dipakai apa pun. Kolom mati membingungkan pembaca berik
 - [ ] Tidak ada rahasia di kode — semua lewat env
 - [ ] Nomor telepon tidak ditulis utuh ke log
 - [ ] Kueri baru berangkat dari tenant, bukan model global
-- [ ] Env baru ditambahkan ke **keempat** file: `.env.example`, `.env.development.example`, `.env.staging.example`, `.env.production.example`
+- [ ] Env baru didaftarkan di [ENVIRONMENT.md](ENVIRONMENT.md) **dan** diisikan di Coolify untuk ketiga tahap — tidak ada template di repo yang akan mengingatkanmu kalau terlewat
 - [ ] Endpoint API baru terdokumentasi di [API.md](API.md)
 - [ ] Perubahan perilaku terdokumentasi di dokumen yang relevan
 
@@ -173,10 +173,10 @@ Env baru harus ditambahkan ke **empat** file template sekaligus, dengan nilai ya
 
 | File | Nilai |
 |---|---|
-| `.env.example` | Nilai lokal |
-| `.env.development.example` | Boleh longgar |
-| `.env.staging.example` | Sama dengan production |
-| `.env.production.example` | Nilai konservatif |
+| `.env` lokal | Nilai lokal |
+| Coolify `flustra-wa-dev` | Boleh longgar |
+| Coolify `flustra-wa-staging` | Sama dengan production |
+| Coolify `flustra-wa` | Nilai konservatif |
 
 Lalu perbarui `ENV/flustra-wa.md` di repo utama, dan `docs/ENVIRONMENT.md` bila nilainya berbeda antar tahap.
 

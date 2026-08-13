@@ -27,8 +27,7 @@ composer install
 npm install
 npm --prefix engine install
 
-cp .env.example .env
-cp engine/.env.example engine/.env
+# Buat .env di root dan di engine/ — daftar variabelnya di docs/ENVIRONMENT.md
 
 php artisan key:generate
 php artisan migrate

@@ -163,7 +163,7 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 
 ## Menjalankan lokal
 
-Lokal adalah tahap keempat yang tidak ada di Coolify. Salin `.env.example` → `.env` (root dan `engine/`), lalu:
+Lokal adalah tahap keempat yang tidak ada di Coolify. Buat `.env` di root dan di `engine/` — daftar variabelnya ada di tabel atas — lalu:
 
 ```bash
 npm run all

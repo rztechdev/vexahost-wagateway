@@ -73,7 +73,7 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Laravel Pail tidak disertakan di `npm run all`** — butuh `pcntl` yang tidak ada di PHP Windows, dan `--kill-others` membuat matinya Pail menjatuhkan proses lain.
 
-**Template env harus diperbarui berempat sekaligus** (`.env.example` + tiga tahap), plus padanannya di `engine/`. `EnvTemplateTest` menjaganya — file-file ini pernah terhapus diam-diam karena ter-rename kehilangan akhiran `.example` lalu tertangkap `.gitignore`.
+**Tidak ada template env di repo.** Berkas `.env.*.example` dihapus atas permintaan Ryan (13 Agu 2026) supaya isian env tinggal disalin dari berkas `.env.<tahap>` di mesinnya ke Coolify tanpa komentar yang mengganggu; `EnvTemplateTest` ikut dihapus. Konsekuensinya: menambah variabel env **tidak** akan ketahuan terlewat oleh tes apa pun. Daftarkan variabel baru di `docs/ENVIRONMENT.md` dan isikan ke ketiga resource Coolify pada perubahan yang sama.
 
 ## Alur git
 
