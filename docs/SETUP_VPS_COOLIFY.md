@@ -218,6 +218,17 @@ php artisan serve --host=0.0.0.0 --port=80
 php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
+**Persistent Storage**
+
+| Name | Mount Path |
+|---|---|
+| `wa-storage` | `/app/storage/app/private` |
+
+*(Volume ini menyimpan cadangan sesi di `session-backups` agar tidak terhapus saat redeploy, serta untuk menyimpan media lampiran).*
+
+**Catatan Jaringan:**
+Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration → Advanced) agar container ini bisa menghubungi Engine.
+
 **Environment Variables** — salin dari `.env.production.example` di repo, lalu isi:
 
 | Variabel | Nilai |
@@ -287,6 +298,9 @@ LOG_LEVEL=info
 
 `HOST` harus `0.0.0.0`, bukan `127.0.0.1` — kalau tidak, container Laravel tidak bisa menjangkaunya.
 
+**Catatan Jaringan Internal:**
+Agar saling terhubung dengan nama resource, pastikan opsi **Connect To Predefined Network** diaktifkan di tab Configuration → Advanced pada **kedua resource** (Laravel dan Engine). Uji koneksi dari terminal Laravel dengan `curl http://flustra-wa-engine:3100/health`.
+
 Deploy, lalu periksa log. Yang diharapkan:
 
 ```
@@ -307,7 +321,17 @@ Baris kedua membuktikan engine berhasil menghubungi Laravel **dan** tanda tangan
 | Name | `flustra-wa-worker` |
 | Base Directory | `/` |
 | Domain | kosongkan |
-| Start Command | `php artisan queue:work --sleep=3 --tries=3 --timeout=240` |
+| Start Command | `php artisan queue:work --sleep=3 --tries=3 --timeout=240 --max-time=3600` |
+| Post-deployment Command | kosongkan |
+| Restart Policy | `always` |
+
+**Persistent Storage**
+
+| Name | Mount Path |
+|---|---|
+| `wa-storage` | `/app/storage/app/private` |
+
+> Volume harus **sama persis** (nama dan mount path) dengan resource aplikasi Laravel. Jika tidak, worker tidak akan bisa menemukan file media yang diunggah dari API.
 
 Environment variables **identik** dengan resource Laravel.
 

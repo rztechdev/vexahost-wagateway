@@ -88,6 +88,18 @@ php artisan serve --host=0.0.0.0 --port=80
 php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
+**Persistent storage**
+
+| Nama volume | Mount path |
+|---|---|
+| `wa-storage` | `/app/storage/app/private` |
+
+> Volume ini wajib untuk menyimpan cadangan sesi (`session-backups`) dan media. Jika terlewat, cadangan sesi terhapus setiap deploy.
+
+**Jaringan Internal (Penting)**
+
+Pastikan opsi **Connect To Predefined Network** diaktifkan di tab Configuration → Advanced agar Laravel bisa menghubungi Engine lewat nama service.
+
 Environment variables: salin dari `ENV/flustra-wa.md` bagian tahap yang sesuai.
 
 ## 2. Resource engine
@@ -125,8 +137,20 @@ Repo yang sama, base directory `/`, tanpa domain.
 **Start command**
 
 ```
-php artisan queue:work --sleep=3 --tries=3 --timeout=240
+php artisan queue:work --sleep=3 --tries=3 --timeout=240 --max-time=3600
 ```
+*(Catatan: `--max-time=3600` sengaja dipakai agar worker keluar tiap jam untuk melepas memori, dan Coolify akan menghidupkannya lagi karena Restart Policy always).*
+
+**Post-deployment command**
+*(Kosongkan, jangan jalankan migrate di sini agar tidak bentrok dengan resource web).*
+
+**Persistent storage**
+
+| Nama volume | Mount path |
+|---|---|
+| `wa-storage` | `/app/storage/app/private` |
+
+> Wajib memakai nama volume dan mount path yang sama persis dengan aplikasi Laravel agar worker bisa mengakses file media/lampiran.
 
 Environment variables identik dengan resource Laravel di tahap yang sama.
 
