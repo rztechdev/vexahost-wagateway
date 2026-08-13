@@ -18,15 +18,11 @@
 
 <header class="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
     <div class="mx-auto flex max-w-7xl items-center gap-3 px-5 py-3.5">
-        <button @click="sidebar = !sidebar"
-                class="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
-                aria-label="Daftar dokumen">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
 
         <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 font-semibold">
             <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
             <span class="hidden sm:inline">Flustra WA Gateway</span>
+            <span class="sm:hidden text-base">@yield('title', 'Dokumentasi')</span>
         </a>
 
         <a href="{{ route('docs.index') }}"
@@ -34,7 +30,7 @@
             Docs
         </a>
 
-        <nav class="ml-auto flex items-center gap-1 text-sm">
+        <nav class="ml-auto hidden lg:flex items-center gap-1 text-sm">
             <a href="{{ route('docs.show', 'mulai-cepat') }}"
                class="hidden rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground sm:block">
                 Mulai Cepat
@@ -60,14 +56,41 @@
                 <a href="{{ route('register') }}" class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Mulai</a>
             @endauth
         </nav>
+
+        <!-- Hamburger (Hanya Mobile, di sebelah kanan) -->
+        <button @click="sidebar = !sidebar"
+                class="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
+                aria-label="Daftar dokumen">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
     </div>
 </header>
 
 <div class="mx-auto flex max-w-7xl gap-8 px-5 py-8">
 
     {{-- Daftar dokumen --}}
-    <aside class="fixed inset-y-0 left-0 z-30 w-72 shrink-0 overflow-y-auto border-r border-border bg-background p-5 pt-20 lg:sticky lg:top-16 lg:z-0 lg:block lg:h-[calc(100vh-5rem)] lg:border-0 lg:bg-transparent lg:p-0"
-           :class="sidebar ? 'block' : 'hidden'">
+    <aside class="fixed inset-0 z-50 flex flex-col bg-background lg:sticky lg:top-16 lg:z-0 lg:block lg:h-[calc(100vh-5rem)] lg:w-72 lg:rounded-none lg:border-r lg:border-border lg:bg-transparent"
+           x-show="sidebar"
+           x-cloak
+           x-transition:enter="transition-transform duration-300 ease-in-out lg:!transition-none"
+           x-transition:enter-start="translate-y-full lg:translate-y-0"
+           x-transition:enter-end="translate-y-0 lg:translate-y-0"
+           x-transition:leave="transition-transform duration-300 ease-in-out lg:!transition-none"
+           x-transition:leave-start="translate-y-0 lg:translate-y-0"
+           x-transition:leave-end="translate-y-full lg:translate-y-0"
+           :class="sidebar ? 'block' : 'hidden lg:block'">
+        
+        <!-- Header Menu Mobile -->
+        <div class="flex items-center justify-between border-b border-border px-5 py-4 lg:hidden">
+            <span class="font-semibold text-lg">Dokumentasi</span>
+            <button @click="sidebar = false" class="rounded-md p-2 text-muted-foreground hover:bg-muted" aria-label="Tutup Menu">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-6 py-6 lg:p-0">
+        
+
         <nav class="space-y-6 text-sm">
             @foreach ($catalogue as $group => $pages)
                 <div>
@@ -87,11 +110,29 @@
                 </div>
             @endforeach
         </nav>
+
+        <!-- Ekstra menu di Mobile (Dark Mode, Auth) -->
+        <div class="mt-6 border-t border-border pt-4 space-y-1 lg:hidden">
+            <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
+                    class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+                <span>Tema Tampilan</span>
+                <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg class="block h-5 w-5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+            
+            <div class="pt-2">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="block text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground">Masuk</a>
+                    <a href="{{ route('register') }}" class="block text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground">Mulai Gratis</a>
+                @endauth
+            </div>
+        </div>
+        </div>
     </aside>
 
-    {{-- Penutup layar saat daftar dokumen terbuka di layar kecil --}}
-    <div x-show="sidebar" x-cloak @click="sidebar = false"
-         class="fixed inset-0 z-20 bg-black/40 lg:hidden"></div>
+
 
     <main class="min-w-0 flex-1">
         @yield('content')

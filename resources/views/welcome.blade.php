@@ -14,13 +14,13 @@
         }
     </script>
 </head>
-<body class="bg-background text-foreground antialiased">
+<body class="bg-background text-foreground antialiased" x-data="{ activeMenu: null, mobileMenu: false }">
 
-<header class="relative z-30 pt-4" x-data="{ activeMenu: null }">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-6 py-3.5">
+<header class="relative z-40 lg:pt-2">
+    <div class="mx-auto flex max-w-7xl items-center gap-3 px-5 py-4 lg:px-8">
         <a href="/" class="flex items-center gap-2.5 font-semibold">
             <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
-            <span>Flustra WA Gateway</span>
+            <span class="text-base">Flustra WA Gateway</span>
         </a>
 
         <nav class="ml-auto flex items-center gap-1 text-sm">
@@ -48,10 +48,8 @@
                 </button>
             </div>
 
-            <a href="{{ route('docs.index') }}" class="rounded-lg px-3 py-2 font-medium text-foreground hover:bg-muted">Docs</a>
-
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
-                    class="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ml-2" 
+                    class="hidden md:block rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ml-auto md:ml-2" 
                     aria-label="Toggle Dark Mode">
                 <!-- Ikon Matahari (Tampil saat Dark Mode) -->
                 <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -59,17 +57,24 @@
                 <svg class="block h-5 w-5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
 
+            <a href="{{ route('docs.index') }}" class="hidden md:block rounded-lg px-3 py-2 font-medium text-foreground hover:bg-muted">Docs</a>
+
             @auth
-                <a href="{{ route('dashboard') }}" class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="hidden md:block rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground">Masuk</a>
-                <a href="{{ route('register') }}" class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Mulai</a>
+                <a href="{{ route('login') }}" class="hidden md:block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground">Masuk</a>
+                <a href="{{ route('register') }}" class="hidden md:block rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Mulai</a>
             @endauth
+
+            <button @click="mobileMenu = !mobileMenu" class="rounded-md p-2 text-muted-foreground hover:bg-muted lg:hidden" aria-label="Menu Mobile">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
         </nav>
     </div>
+</header>
 
-    <!-- Collapsible Mega Menus -->
-    <div class="w-full bg-background/50 backdrop-blur-sm">
+<!-- Collapsible Mega Menus (Desktop) -->
+<div class="relative z-30 hidden w-full bg-background/95 backdrop-blur-md shadow-sm lg:block" x-show="activeMenu" @click.away="activeMenu = null" x-cloak x-collapse>
         
         <!-- Cara Kerja Content -->
         <div x-show="activeMenu === 'cara-kerja'" x-collapse.duration.300ms x-cloak class="border-b border-border/50">
@@ -137,12 +142,51 @@
             </div>
         </div>
 
-    </div>
-</header>
+</div>
 
-<section class="mx-auto max-w-6xl px-5 pb-16 pt-16 sm:pt-24">
+<!-- Fullscreen Mobile Menu -->
+<div x-show="mobileMenu" x-cloak 
+     x-transition:enter="transition-transform duration-300 ease-in-out"
+     x-transition:enter-start="translate-y-full"
+     x-transition:enter-end="translate-y-0"
+     x-transition:leave="transition-transform duration-300 ease-in-out"
+     x-transition:leave-start="translate-y-0"
+     x-transition:leave-end="translate-y-full"
+     class="fixed inset-0 z-50 flex flex-col bg-background lg:hidden">
+    
+    <div class="flex items-center justify-between border-b border-border px-5 py-4">
+        <span class="font-semibold text-lg">Menu</span>
+        <button @click="mobileMenu = false" class="rounded-md p-2 text-muted-foreground hover:bg-muted" aria-label="Tutup Menu">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <a href="#cara-kerja" @click="mobileMenu = false" class="block text-lg font-medium text-foreground">Cara kerja</a>
+        <a href="#fitur" @click="mobileMenu = false" class="block text-lg font-medium text-foreground">Fitur</a>
+        <a href="#untuk-developer" @click="mobileMenu = false" class="block text-lg font-medium text-foreground">Developer</a>
+        <a href="{{ route('docs.index') }}" class="block text-lg font-medium text-foreground">Docs</a>
+        
+        <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" class="flex w-full items-center justify-between text-lg font-medium text-foreground">
+            <span>Tema Tampilan</span>
+            <svg class="hidden h-6 w-6 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg class="block h-6 w-6 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+
+        <div class="pt-6 mt-6 border-t border-border flex flex-col gap-4">
+            @auth
+                <a href="{{ route('dashboard') }}" class="block text-center rounded-xl bg-primary px-4 py-3 text-lg font-medium text-primary-foreground">Dashboard</a>
+            @else
+                <a href="{{ route('login') }}" class="block text-center rounded-xl border border-input px-4 py-3 text-lg font-medium text-foreground">Masuk</a>
+                <a href="{{ route('register') }}" class="block text-center rounded-xl bg-primary px-4 py-3 text-lg font-medium text-primary-foreground">Mulai Gratis</a>
+            @endauth
+        </div>
+    </div>
+</div>
+
+<section class="mx-auto max-w-6xl px-8 lg:px-10 pb-16 pt-32 sm:pt-40">
     <div class="grid items-center gap-12 lg:grid-cols-2">
-        <div>
+        <div class="min-w-0">
             <span class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 Sesi bertahan saat server di-deploy ulang
             </span>
@@ -167,7 +211,7 @@
             </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-[#09090b] p-1 shadow-sm">
+        <div class="min-w-0 rounded-2xl border border-border bg-[#09090b] p-1 shadow-sm overflow-hidden">
             <div class="flex items-center gap-1.5 px-3 py-2.5">
                 <span class="h-2.5 w-2.5 rounded-full bg-red-400"></span>
                 <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
@@ -188,7 +232,7 @@
 </section>
 
 <section id="cara-kerja" class="py-16">
-    <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-6xl px-8 lg:px-10">
         <h2 class="text-2xl font-semibold tracking-tight">Tiga langkah</h2>
         <p class="mt-2 text-muted-foreground">Dari daftar sampai pesan pertama terkirim, biasanya di bawah lima menit.</p>
 
@@ -212,7 +256,7 @@
 </section>
 
 <section id="fitur" class="py-16">
-    <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-6xl px-8 lg:px-10">
         <h2 class="text-2xl font-semibold tracking-tight">Yang membedakan</h2>
 
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -237,7 +281,7 @@
 </section>
 
 <section class="py-16">
-    <div class="mx-auto max-w-3xl px-5">
+    <div class="mx-auto max-w-3xl px-8 lg:px-10">
         <h2 class="text-2xl font-semibold tracking-tight">Sebelum Anda mulai</h2>
         <p class="mt-2 text-muted-foreground">Dua hal yang sebaiknya diketahui sejak awal, supaya tidak ada kejutan.</p>
 
@@ -264,7 +308,7 @@
 </section>
 
 <section id="untuk-developer" class="py-16">
-    <div class="mx-auto max-w-4xl px-5">
+    <div class="mx-auto max-w-4xl px-8 lg:px-10">
         <h2 class="text-2xl font-semibold tracking-tight">Untuk developer</h2>
         <p class="mt-2 text-muted-foreground">
             HTTP dan JSON biasa. Tidak ada SDK yang wajib dipasang, tidak ada protokol khusus yang perlu dipelajari.
@@ -301,7 +345,7 @@
 </section>
 
 <section class="py-16">
-    <div class="mx-auto max-w-3xl px-5 text-center">
+    <div class="mx-auto max-w-3xl px-8 lg:px-10 text-center">
         <h2 class="text-2xl font-semibold tracking-tight">Siap mencoba?</h2>
         <p class="mt-3 text-muted-foreground">Buat akun, tautkan satu nomor, dan kirim pesan pertama Anda hari ini.</p>
         <a href="{{ route('register') }}" class="mt-7 inline-block rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90">
