@@ -235,7 +235,7 @@ Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration
 |---|---|
 | `APP_KEY` | dari `php artisan key:generate --show` |
 | `DB_HOST`, `DB_PASSWORD` | dari Coolify |
-| `ENGINE_URL` | `http://flustra-wa-engine:3100` |
+| `ENGINE_URL` | `http://<uuid-resource-engine>:3100` — UUID, bukan nama tampilan (lihat Bagian 7) |
 | `ENGINE_TOKEN`, `ENGINE_HMAC_SECRET` | dari Bagian 5 |
 | `PLATFORM_SESSION_ID` | dikosongkan dulu, diisi di Bagian 9 |
 
@@ -287,7 +287,7 @@ PORT=3100
 HOST=0.0.0.0
 ENGINE_TOKEN=<sama dengan Laravel>
 ENGINE_HMAC_SECRET=<sama dengan Laravel>
-LARAVEL_URL=http://flustra-wa:80
+LARAVEL_URL=http://<uuid-resource-flustra-wa>:80
 WA_DATA_PATH=/data/.wwebjs_auth
 WA_BACKUP_INTERVAL_MS=300000
 WA_MIN_DELAY_MS=3000
@@ -299,7 +299,11 @@ LOG_LEVEL=info
 `HOST` harus `0.0.0.0`, bukan `127.0.0.1` — kalau tidak, container Laravel tidak bisa menjangkaunya.
 
 **Catatan Jaringan Internal:**
-Agar saling terhubung dengan nama resource, pastikan opsi **Connect To Predefined Network** diaktifkan di tab Configuration → Advanced pada **kedua resource** (Laravel dan Engine). Uji koneksi dari terminal Laravel dengan `curl http://flustra-wa-engine:3100/health`.
+Agar saling terhubung, pastikan opsi **Connect To Predefined Network** diaktifkan di tab Configuration → Advanced pada **kedua resource** (Laravel dan Engine).
+
+Nama host yang bisa di-resolve adalah **UUID resource**, bukan nama tampilannya. `flustra-wa-engine` hanya label di antarmuka Coolify; DNS internal tidak mengenalnya. UUID ada di URL browser saat membuka resource (`.../application/<uuid>`) dan di domain generated-nya. Pola yang sama berlaku untuk `DB_HOST` — Coolify sudah mengisinya dengan UUID.
+
+Uji koneksi dari terminal Laravel: `curl http://<uuid-resource-engine>:3100/health`. Jawaban yang diharapkan `{"status":"ok",...}`. `Could not resolve host` berarti UUID salah atau predefined network belum aktif; `Connection refused` berarti nama sudah benar tapi engine belum jalan atau `HOST` bukan `0.0.0.0`.
 
 Deploy, lalu periksa log. Yang diharapkan:
 
@@ -500,7 +504,7 @@ Uji di development lebih dulu, lalu staging, baru produksi.
 | Sesi minta QR ulang tiap deploy | Volume belum ter-mount ke `/data` |
 | Pesan mentok `queued` | Resource worker tidak berjalan |
 | Engine restart berulang | Kehabisan memori — turunkan `WA_MAX_SESSIONS` atau tambah RAM/swap |
-| Laravel tidak bisa menghubungi engine | `ENGINE_URL` memakai `localhost`, bukan nama service internal |
+| `Could not resolve host` saat menghubungi engine | `ENGINE_URL` memakai nama tampilan resource, bukan UUID-nya |
 | Halaman error menampilkan isi environment | `APP_DEBUG` masih `true` |
 
 Panduan operasional harian: [OPERASIONAL.md](OPERASIONAL.md).

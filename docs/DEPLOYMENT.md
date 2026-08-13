@@ -232,7 +232,7 @@ Daftarkan webhook ke webhook.site, kirim pesan dari HP ke nomor tersebut, pastik
 | Sesi minta QR ulang tiap deploy | Volume belum ter-mount ke `/data`, atau `WA_DATA_PATH` tidak menunjuk ke sana |
 | Pesan mentok `queued` | Resource worker tidak berjalan |
 | Engine restart berulang | Kehabisan memori — turunkan `WA_MAX_SESSIONS` atau tambah RAM |
-| Laravel tidak bisa menghubungi engine | `ENGINE_URL` memakai `localhost`, bukan nama service internal |
+| `Could not resolve host` saat menghubungi engine | `ENGINE_URL` memakai nama tampilan resource, bukan UUID-nya |
 | Halaman error menampilkan isi environment | `APP_DEBUG` masih `true` — segera matikan |
 
 Panduan operasional lengkap: [OPERASIONAL.md](OPERASIONAL.md).

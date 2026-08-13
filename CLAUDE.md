@@ -63,6 +63,12 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Baris baru dari `firstOrCreate` tidak membaca nilai default database.** Tulis nilai awal secara eksplisit, kalau tidak counter terbaca `null` bukan `0`.
 
+**Hostname internal Coolify adalah UUID resource, bukan nama tampilannya.** `ENGINE_URL=http://flustra-wa-engine:3100` menghasilkan `cURL error 6: Could not resolve host` — nama itu cuma label di antarmuka. Pakai UUID dari URL resource (`.../application/<uuid>`), sama seperti yang sudah dipakai Coolify untuk `DB_HOST`. Berlaku dua arah: `ENGINE_URL` di Laravel + worker, `LARAVEL_URL` di engine.
+
+**Nixpacks memakai Node 18 kalau `NIXPACKS_NODE_VERSION` tidak diset.** Engine menuntut Node 20 lewat `engines` di `engine/package.json`, dan Node 18 sudah EOL. Env Laravel sudah memuatnya sejak awal; env engine dulu tidak.
+
+**Hapus lunak bertabrakan dengan indeks unik.** `wa_sessions` unik pada `(tenant_id, name)` tanpa memandang `deleted_at`, jadi membuat ulang sesi dengan nama yang sama gagal dengan galat 1062. `SessionService::create()` membuang permanen baris tertrash bernama sama lebih dulu — permanen, bukan dipulihkan, supaya baris baru dapat ULID baru dan tidak mewarisi folder kredensial lama di engine.
+
 **`QR_TTL_SECONDS` jangan di bawah 60.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap sampai ~60 detik; masa berlaku lebih pendek membuat modal QR berkedip kosong.
 
 **Laravel Pail tidak disertakan di `npm run all`** — butuh `pcntl` yang tidak ada di PHP Windows, dan `--kill-others` membuat matinya Pail menjatuhkan proses lain.

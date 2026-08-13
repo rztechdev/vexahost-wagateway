@@ -14,7 +14,8 @@ Setiap tahap adalah lingkungan yang berdiri sendiri: domain sendiri, database se
 | `APP_DEBUG` | `true` | `false` | `false` |
 | `LOG_LEVEL` | `debug` | `info` | `error` |
 | Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` | `db_flustra-wa` |
-| Nama service engine | `flustra-wa-engine-dev` | `flustra-wa-engine-staging` | `flustra-wa-engine` |
+| Nama resource engine | `flustra-wa-engine-dev` | `flustra-wa-engine-staging` | `flustra-wa-engine` |
+| Host engine di `ENGINE_URL` | UUID resource-nya, bukan nama di baris atas | idem | idem |
 | Volume engine | `wa-sessions-dev` | `wa-sessions-staging` | `wa-sessions` |
 | Batas sesi engine | 2 | 3 | 10 |
 | Nomor WhatsApp | nomor uji coba | nomor uji coba (boleh sama dengan dev, sesi terpisah) | nomor resmi Flustra |
@@ -39,7 +40,7 @@ LOG_LEVEL=debug
 
 DB_DATABASE=db_flustra-wa_dev
 
-ENGINE_URL=http://flustra-wa-engine-dev:3100
+ENGINE_URL=http://<uuid-resource-flustra-wa-engine-dev>:3100
 
 # Jeda dipendekkan agar pengujian tidak berlarut-larut.
 # Aman karena nomornya nomor uji coba, bukan nomor yang perlu dijaga.
@@ -59,7 +60,7 @@ Engine:
 
 ```env
 HOST=0.0.0.0
-LARAVEL_URL=http://flustra-wa-dev:80
+LARAVEL_URL=http://<uuid-resource-flustra-wa-dev>:80
 WA_DATA_PATH=/data/.wwebjs_auth
 WA_MAX_SESSIONS=2
 LOG_LEVEL=debug
@@ -77,7 +78,7 @@ LOG_LEVEL=info
 
 DB_DATABASE=db_flustra-wa_staging
 
-ENGINE_URL=http://flustra-wa-engine-staging:3100
+ENGINE_URL=http://<uuid-resource-flustra-wa-engine-staging>:3100
 
 # Sama dengan produksi. Jeda inilah yang menentukan berapa lama broadcast
 # berjalan; kalau staging lebih cepat, hasil ujinya menyesatkan.
@@ -95,7 +96,7 @@ Engine:
 
 ```env
 HOST=0.0.0.0
-LARAVEL_URL=http://flustra-wa-staging:80
+LARAVEL_URL=http://<uuid-resource-flustra-wa-staging>:80
 WA_DATA_PATH=/data/.wwebjs_auth
 WA_MAX_SESSIONS=3
 LOG_LEVEL=info
@@ -111,7 +112,7 @@ LOG_LEVEL=error
 
 DB_DATABASE=db_flustra-wa
 
-ENGINE_URL=http://flustra-wa-engine:3100
+ENGINE_URL=http://<uuid-resource-flustra-wa-engine>:3100
 
 WA_MIN_DELAY_MS=3000
 WA_MAX_DELAY_MS=8000
@@ -127,7 +128,7 @@ Engine:
 
 ```env
 HOST=0.0.0.0
-LARAVEL_URL=http://flustra-wa:80
+LARAVEL_URL=http://<uuid-resource-flustra-wa>:80
 WA_DATA_PATH=/data/.wwebjs_auth
 WA_MAX_SESSIONS=10
 LOG_LEVEL=info

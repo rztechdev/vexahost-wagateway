@@ -101,9 +101,9 @@ Sesi yang dibuat setelah titik backup akan hilang dari database, tapi kredensial
 
 Cek berurutan:
 
-1. `ENGINE_URL` menunjuk ke nama service internal yang benar (bukan `localhost`)
+1. `ENGINE_URL` menunjuk ke UUID resource engine (bukan `localhost`, bukan pula nama tampilan resource)
 2. Kedua container ada di jaringan Coolify yang sama
-3. `curl http://flustra-wa-engine:3100/health` dari container Laravel
+3. `curl http://<uuid-resource-engine>:3100/health` dari container Laravel
 4. `ENGINE_TOKEN` sama di kedua sisi
 
 ## 5. Rutin berkala

@@ -19,6 +19,15 @@ class SessionService
             );
         }
 
+        // Sesi dihapus lunak, tapi indeks unik (tenant_id, name) tidak peduli
+        // deleted_at — tanpa ini, memakai ulang nama sesi yang sudah dihapus
+        // gagal dengan galat duplikat yang tidak bisa dipahami pengguna.
+        // Dihapus permanen, bukan dipulihkan: baris baru mendapat ULID baru,
+        // sehingga tidak mewarisi folder kredensial lama di engine kalau
+        // logout sempat gagal saat penghapusan.
+        $tenant->sessions()->onlyTrashed()->where('name', $name)->get()
+            ->each(fn (WaSession $stale) => $stale->forceDelete());
+
         return $tenant->sessions()->create([
             'name' => $name,
             'driver' => $driver,
