@@ -36,6 +36,7 @@ class AuthenticationTest extends TestCase
             'workspace' => 'Toko Citra',
             'password' => 'rahasia12345',
             'password_confirmation' => 'rahasia12345',
+            'terms' => '1',
         ])->assertRedirect('/sessions');
 
         $this->assertSame(url('/sessions'), route('sessions.index'));
@@ -49,6 +50,7 @@ class AuthenticationTest extends TestCase
             'workspace' => 'Toko Makmur',
             'password' => 'rahasia12345',
             'password_confirmation' => 'rahasia12345',
+            'terms' => '1',
         ])->assertRedirect('/sessions');
 
         $user = User::first();
@@ -63,6 +65,25 @@ class AuthenticationTest extends TestCase
         $this->assertSame('owner', $user->fresh()->tenants->first()->pivot->role);
     }
 
+    /**
+     * Formulir menandai centang persetujuan sebagai wajib, tapi atribut
+     * `required` di HTML hanya berlaku di browser. Persetujuan ini harus
+     * benar-benar tercatat, jadi servernya yang menolak.
+     */
+    public function test_pendaftaran_ditolak_tanpa_menyetujui_syarat_dan_ketentuan(): void
+    {
+        $this->post('/register', [
+            'name' => 'Dewi',
+            'email' => 'dewi@contoh.id',
+            'workspace' => 'Toko Dewi',
+            'password' => 'rahasia12345',
+            'password_confirmation' => 'rahasia12345',
+        ])->assertSessionHasErrors('terms');
+
+        $this->assertGuest();
+        $this->assertSame(0, User::count());
+    }
+
     public function test_pendaftaran_menolak_email_yang_sudah_terpakai(): void
     {
         User::create(['name' => 'Ada', 'email' => 'ada@contoh.id', 'password' => Hash::make('rahasia12345')]);
@@ -73,6 +94,7 @@ class AuthenticationTest extends TestCase
             'workspace' => 'Workspace Lain',
             'password' => 'rahasia12345',
             'password_confirmation' => 'rahasia12345',
+            'terms' => '1',
         ])->assertSessionHasErrors('email');
 
         $this->assertGuest();
@@ -87,6 +109,7 @@ class AuthenticationTest extends TestCase
                 'workspace' => 'Toko Makmur',
                 'password' => 'rahasia12345',
                 'password_confirmation' => 'rahasia12345',
+                'terms' => '1',
             ]);
 
             $this->post('/logout');

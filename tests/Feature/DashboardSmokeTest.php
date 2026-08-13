@@ -1,0 +1,184 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\ApiKey;
+use App\Models\Message;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+/**
+ * Membuka setiap halaman dashboard sebagai pengguna sungguhan.
+ *
+ * Tes lain memeriksa logika; tes ini memeriksa bahwa halamannya benar-benar
+ * bisa dirender. Galat pada Blade — variabel yang tidak dikirim controller,
+ * relasi yang salah nama, komponen yang tidak ada — hanya muncul saat view
+ * dijalankan, dan tidak akan tertangkap tes yang berhenti di lapisan service.
+ */
+class DashboardSmokeTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+
+    private Tenant $tenant;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::create([
+            'name' => 'Ryan',
+            'email' => 'ryan@contoh.id',
+            'password' => Hash::make('rahasia12345'),
+        ]);
+
+        $this->tenant = Tenant::create([
+            'name' => 'Toko Uji',
+            'slug' => 'toko-uji',
+            'owner_id' => $this->user->id,
+            'owner_email' => $this->user->email,
+            'max_sessions' => 3,
+            'monthly_message_quota' => 1000,
+            'api_rate_limit_per_minute' => 60,
+        ]);
+
+        $this->tenant->members()->attach($this->user->id, ['role' => 'owner']);
+
+        $this->actingAs($this->user);
+        $this->withSession(['current_tenant_id' => $this->tenant->id]);
+    }
+
+    public function test_semua_halaman_dashboard_bisa_dibuka(): void
+    {
+        $halaman = [
+            'dashboard' => route('dashboard'),
+            'sessions.index' => route('sessions.index'),
+            'messages.index' => route('messages.index'),
+            'messages.compose' => route('messages.compose'),
+            'templates.index' => route('templates.index'),
+            'api-keys.index' => route('api-keys.index'),
+            'webhooks.index' => route('webhooks.index'),
+            'settings' => route('settings'),
+        ];
+
+        foreach ($halaman as $nama => $url) {
+            $this->get($url)->assertOk("Halaman {$nama} gagal dirender.");
+        }
+    }
+
+    public function test_halaman_dashboard_menampilkan_isi_ketika_ada_data(): void
+    {
+        // Halaman kosong sering lolos padahal versi berisinya rusak — misalnya
+        // relasi yang salah nama baru meledak saat barisnya benar-benar ada.
+        $session = $this->tenant->sessions()->create([
+            'name' => 'CS Utama',
+            'status' => 'connected',
+            'phone_number' => '6281234567890',
+            'push_name' => 'Toko Uji',
+            'connected_at' => now(),
+        ]);
+
+        $message = Message::create([
+            'tenant_id' => $this->tenant->id,
+            'wa_session_id' => $session->id,
+            'direction' => 'outbound',
+            'to_number' => '6289999999999',
+            'chat_id' => '6289999999999@c.us',
+            'type' => 'text',
+            'body' => 'Halo dari tes',
+            'status' => 'delivered',
+            'wa_message_id' => 'true_628_ABC',
+            'provider_response' => ['ok' => true],
+            'sent_at' => now(),
+            'delivered_at' => now(),
+        ]);
+
+        $this->tenant->messages()->create([
+            'tenant_id' => $this->tenant->id,
+            'wa_session_id' => $session->id,
+            'direction' => 'inbound',
+            'from_number' => '6289999999999',
+            'type' => 'text',
+            'body' => 'Balasan pelanggan',
+            'status' => 'delivered',
+        ]);
+
+        $this->tenant->templates()->create([
+            'name' => 'Pengingat Invoice',
+            'slug' => 'pengingat-invoice',
+            'body' => 'Halo {{ nama }}, faktur {{ nomor }} jatuh tempo.',
+            'variables' => ['nama', 'nomor'],
+        ]);
+
+        $webhook = $this->tenant->webhooks()->create([
+            'url' => 'https://contoh.id/webhook',
+            'secret' => Str::random(48),
+            'events' => ['message.received'],
+        ]);
+
+        $webhook->deliveries()->create([
+            'event' => 'message.received',
+            'payload' => ['data' => []],
+            'response_code' => 200,
+            'attempts' => 1,
+            'delivered_at' => now(),
+        ]);
+
+        ApiKey::issue($this->tenant, 'kunci uji');
+
+        foreach ([
+            route('dashboard'),
+            route('sessions.index'),
+            route('messages.index'),
+            route('messages.compose'),
+            route('messages.show', $message->id),
+            route('templates.index'),
+            route('api-keys.index'),
+            route('webhooks.index'),
+            route('settings'),
+        ] as $url) {
+            $this->get($url)->assertOk("Gagal merender {$url} saat ada data.");
+        }
+    }
+
+    public function test_pengguna_tanpa_workspace_diarahkan_ke_onboarding(): void
+    {
+        $baru = User::create([
+            'name' => 'Tanpa Workspace',
+            'email' => 'kosong@contoh.id',
+            'password' => Hash::make('rahasia12345'),
+        ]);
+
+        $this->actingAs($baru)
+            ->withSession([])
+            ->get(route('dashboard'))
+            ->assertRedirect(route('onboarding.create'));
+
+        $this->actingAs($baru)->get(route('onboarding.create'))->assertOk();
+    }
+
+    /**
+     * Halaman detail pesan mengambil dari relasi tenant, bukan model global.
+     * Tanpa itu, menebak ULID milik tenant lain akan menampilkan isinya.
+     */
+    public function test_pesan_milik_tenant_lain_tidak_bisa_dibuka(): void
+    {
+        $lain = Tenant::create(['name' => 'Tenant Lain', 'slug' => 'tenant-lain', 'max_sessions' => 1]);
+
+        $pesan = Message::create([
+            'tenant_id' => $lain->id,
+            'direction' => 'outbound',
+            'to_number' => '6281111111111',
+            'type' => 'text',
+            'body' => 'Rahasia tenant lain',
+            'status' => 'sent',
+        ]);
+
+        $this->get(route('messages.show', $pesan->id))->assertNotFound();
+    }
+}

@@ -68,7 +68,14 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:180', 'unique:users,email'],
             'workspace' => ['required', 'string', 'max:80'],
             'password' => ['required', 'confirmed', Password::min(8)],
-        ], [], [
+            // Formulir menandai centang ini wajib, tapi atribut `required` di
+            // HTML hanya berlaku di browser. Tanpa aturan di sini, pendaftaran
+            // lewat curl bisa melewatinya — padahal ini persetujuan yang
+            // seharusnya benar-benar tercatat.
+            'terms' => ['accepted'],
+        ], [
+            'terms.accepted' => 'Anda harus menyetujui Syarat & Ketentuan serta Kebijakan Privasi.',
+        ], [
             'workspace' => 'nama workspace',
         ]);
 

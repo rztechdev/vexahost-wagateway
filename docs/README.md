@@ -31,7 +31,10 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 **Cuma mau memanggil API-nya dari aplikasi lain?**
 → [API.md](API.md), atau [INTEGRASI_APP.md](INTEGRASI_APP.md) kalau aplikasinya bagian dari ekosistem Flustra
 
-**Mau men-deploy?**
+**Mau men-deploy dari VPS kosong?**
+→ [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) — panduan lengkap berurutan
+
+**Sudah punya Coolify, tinggal menambah resource?**
 → [ENVIRONMENT.md](ENVIRONMENT.md) → [DEPLOYMENT.md](DEPLOYMENT.md)
 
 **Ada yang bermasalah di produksi?**
@@ -75,8 +78,9 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 
 | Dokumen | Isi |
 |---|---|
+| [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) | **Dari VPS kosong sampai gateway melayani permintaan** — pasang Coolify, DNS, database, tiga resource, verifikasi |
 | [ENVIRONMENT.md](ENVIRONMENT.md) | Tiga tahap: development, staging, production |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy di Coolify langkah demi langkah, plus uji regresi wajib |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Rincian tiap resource Coolify, plus uji regresi wajib |
 | [OPERASIONAL.md](OPERASIONAL.md) | Pemantauan, pemulihan, pemecahan masalah, skala, keamanan |
 | [FAQ.md](FAQ.md) | Pertanyaan yang sering muncul |
 

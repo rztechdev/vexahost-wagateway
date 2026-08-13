@@ -154,10 +154,26 @@ class EngineEventController extends Controller
      */
     private function onAck(WaSession $session, array $payload): void
     {
+        $ourId = $payload['message_id'] ?? null;
+        $waId = $payload['wa_message_id'] ?? null;
+
+        // Tanpa penjagaan ini, `where('wa_message_id', null)` diterjemahkan
+        // Laravel menjadi `whereNull(...)` — dan itu cocok dengan pesan mana pun
+        // yang belum punya id WhatsApp, yaitu pesan yang masih mengantre. Satu
+        // ack tanpa id akan menandai pesan yang belum terkirim sebagai terbaca.
+        if ($ourId === null && $waId === null) {
+            return;
+        }
+
         $message = Message::where('wa_session_id', $session->id)
-            ->where(function ($q) use ($payload): void {
-                $q->where('id', $payload['message_id'] ?? null)
-                    ->orWhere('wa_message_id', $payload['wa_message_id'] ?? null);
+            ->where(function ($q) use ($ourId, $waId): void {
+                if ($ourId !== null) {
+                    $q->orWhere('id', $ourId);
+                }
+
+                if ($waId !== null) {
+                    $q->orWhere('wa_message_id', $waId);
+                }
             })
             ->first();
 

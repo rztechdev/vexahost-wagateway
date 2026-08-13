@@ -213,6 +213,41 @@ class EngineCallbackTest extends TestCase
         $this->assertSame('read', $message->fresh()->status);
     }
 
+    /**
+     * Engine mengirim `wa_message_id` dari `message.id?._serialized`, yang bisa
+     * bernilai null. Laravel menerjemahkan `orWhere('wa_message_id', null)`
+     * menjadi `orWhereNull(...)` — dan itu cocok dengan pesan mana pun yang
+     * belum punya id WhatsApp, yaitu pesan yang masih mengantre.
+     *
+     * Akibatnya satu ack tanpa id bisa menandai pesan yang belum terkirim
+     * sebagai sudah dibaca, dan pesan aslinya tidak pernah diperbarui.
+     */
+    public function test_ack_tanpa_id_tidak_menyentuh_pesan_yang_masih_mengantre(): void
+    {
+        $mengantre = Message::create([
+            'tenant_id' => $this->tenant->id,
+            'wa_session_id' => $this->session->id,
+            'direction' => 'outbound',
+            'wa_message_id' => null,
+            'to_number' => '6289999999999',
+            'type' => 'text',
+            'body' => 'Belum terkirim',
+            'status' => 'queued',
+        ]);
+
+        $this->postEvent([
+            'session_id' => $this->session->id,
+            'event' => 'message_ack',
+            'payload' => ['ack' => 3],
+        ])->assertOk();
+
+        $this->assertSame(
+            'queued',
+            $mengantre->fresh()->status,
+            'Pesan yang masih mengantre ikut ditandai terbaca oleh ack tanpa id.'
+        );
+    }
+
     public function test_event_untuk_sesi_yang_sudah_dihapus_meminta_engine_berhenti(): void
     {
         $this->postEvent([
