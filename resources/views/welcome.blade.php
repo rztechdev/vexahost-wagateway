@@ -6,11 +6,18 @@
     <title>{{ config('app.name') }} — Gateway WhatsApp untuk Aplikasi Anda</title>
     <meta name="description" content="Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
 <body class="bg-background text-foreground antialiased">
 
 <header class="relative z-30 pt-4" x-data="{ activeMenu: null }">
-    <div class="mx-auto flex max-w-6xl items-center gap-3 px-5 py-3.5">
+    <div class="mx-auto flex max-w-7xl items-center gap-3 px-6 py-3.5">
         <a href="/" class="flex items-center gap-2.5 font-semibold">
             <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
             <span>Flustra WA Gateway</span>
@@ -43,6 +50,15 @@
 
             <a href="{{ route('docs.index') }}" class="rounded-lg px-3 py-2 font-medium text-foreground hover:bg-muted">Docs</a>
 
+            <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
+                    class="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground ml-2" 
+                    aria-label="Toggle Dark Mode">
+                <!-- Ikon Matahari (Tampil saat Dark Mode) -->
+                <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Ikon Bulan (Tampil saat Light Mode) -->
+                <svg class="block h-5 w-5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+
             @auth
                 <a href="{{ route('dashboard') }}" class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90">Dashboard</a>
             @else
@@ -57,7 +73,7 @@
         
         <!-- Cara Kerja Content -->
         <div x-show="activeMenu === 'cara-kerja'" x-collapse.duration.300ms x-cloak class="border-b border-border/50">
-            <div class="mx-auto max-w-6xl px-5 py-8 grid gap-x-8 gap-y-6 md:grid-cols-3">
+            <div class="mx-auto max-w-7xl px-6 py-8 grid gap-x-8 gap-y-6 md:grid-cols-3">
                 <div>
                     <h3 class="flex items-center gap-2 font-semibold text-foreground"><span class="grid h-6 w-6 place-items-center rounded bg-primary/10 text-xs text-primary">1</span> Tautkan nomor</h3>
                     <p class="mt-2 text-sm text-muted-foreground">Buat sesi di dashboard, lalu scan QR-nya lewat menu Perangkat Tertaut di WhatsApp — sama seperti membuka WhatsApp Web.</p>
@@ -75,7 +91,7 @@
 
         <!-- Fitur Content -->
         <div x-show="activeMenu === 'fitur'" x-collapse.duration.300ms x-cloak class="border-b border-border/50">
-            <div class="mx-auto max-w-6xl px-5 py-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mx-auto max-w-7xl px-6 py-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                     <h3 class="font-semibold text-foreground">Sesi tangguh</h3>
                     <p class="mt-2 text-sm text-muted-foreground">Kredensial disimpan permanen. Deploy ulang server tidak memaksa Anda scan QR lagi.</p>
@@ -105,7 +121,7 @@
 
         <!-- Developer Content -->
         <div x-show="activeMenu === 'developer'" x-collapse.duration.300ms x-cloak class="border-b border-border/50">
-            <div class="mx-auto max-w-6xl px-5 py-8 grid gap-x-8 gap-y-6 md:grid-cols-3">
+            <div class="mx-auto max-w-7xl px-6 py-8 grid gap-x-8 gap-y-6 md:grid-cols-3">
                 <div>
                     <h3 class="font-semibold text-foreground">REST API</h3>
                     <p class="mt-2 text-sm text-muted-foreground">Satu endpoint untuk kirim teks, lampiran, pengiriman massal, dan template.</p>
@@ -295,7 +311,7 @@
 </section>
 
 <footer class="border-t border-border py-12 bg-background">
-    <div class="mx-auto max-w-6xl px-5">
+    <div class="mx-auto max-w-7xl px-6">
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div class="lg:col-span-2">
                 <a href="/" class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
