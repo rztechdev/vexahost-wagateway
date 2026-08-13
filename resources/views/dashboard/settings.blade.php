@@ -27,6 +27,27 @@
                 Batas paket dicerminkan dari flustra-pricing. Untuk mengubahnya, ubah langganan di sana —
                 bukan di sini — supaya tagihan dan batas pemakaian tidak pernah berbeda.
             </p>
+
+            @if (auth()->user()->canManage($currentWorkspace))
+                <form method="POST" action="{{ route('settings.update') }}" class="mt-5 border-t border-border pt-5">
+                    @csrf
+                    @method('PUT')
+                    <label class="mb-1 block text-sm font-medium" for="workspace-name">Ganti nama workspace</label>
+                    <div class="flex flex-wrap gap-2">
+                        <input id="workspace-name" name="name" required maxlength="80"
+                               value="{{ old('name', $currentWorkspace->name) }}"
+                               class="min-w-48 flex-1 rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
+                        <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Simpan</button>
+                    </div>
+                    @error('name')
+                        <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        Slug <code>{{ $currentWorkspace->slug }}</code> sengaja tidak ikut berubah — ia dipakai
+                        sebagai pengenal tetap di catatan audit. Tidak ada API key atau URL yang bergantung padanya.
+                    </p>
+                </form>
+            @endif
         </x-card>
 
         <x-card title="Pemakaian">
@@ -93,4 +114,35 @@
             @endforeach
         </div>
     </x-card>
+
+    @if (auth()->user()->is_super_admin || auth()->user()->roleIn($currentWorkspace) === 'owner')
+        <x-card title="Hapus workspace"
+                subtitle="Sesi, riwayat pesan, template, webhook, dan seluruh API key milik workspace ini ikut hilang."
+                class="mt-6 border-destructive/40">
+            <p class="text-sm text-muted-foreground">
+                Nomor yang sedang tertaut akan diputus lebih dulu, dan aplikasi mana pun yang memakai API key
+                workspace ini langsung berhenti bisa mengirim. Kalau yang kamu mau hanya mengganti nama,
+                pakai kolom di kartu <strong>Workspace</strong> di atas — tidak perlu menghapus apa pun.
+            </p>
+
+            <form method="POST" action="{{ route('settings.destroy') }}" class="mt-4">
+                @csrf
+                @method('DELETE')
+                <label class="mb-1 block text-sm font-medium" for="confirm">
+                    Ketik <code class="rounded bg-muted px-1">{{ $currentWorkspace->name }}</code> untuk memastikan
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    <input id="confirm" name="confirm" required autocomplete="off"
+                           placeholder="{{ $currentWorkspace->name }}"
+                           class="min-w-56 flex-1 rounded-lg border-input bg-background text-sm focus:border-destructive focus:ring-destructive">
+                    <button class="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+                        Hapus workspace
+                    </button>
+                </div>
+                @error('confirm')
+                    <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                @enderror
+            </form>
+        </x-card>
+    @endif
 @endsection

@@ -77,6 +77,8 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('webhooks/{id}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
 
         Route::get('settings', [WorkspaceController::class, 'settings'])->name('settings');
+        Route::put('settings', [WorkspaceController::class, 'update'])->name('settings.update');
+        Route::delete('settings', [WorkspaceController::class, 'destroy'])->name('settings.destroy');
         Route::post('settings/members', [WorkspaceController::class, 'addMember'])->name('settings.members.add');
         Route::delete('settings/members/{userId}', [WorkspaceController::class, 'removeMember'])->name('settings.members.remove');
     });

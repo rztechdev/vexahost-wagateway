@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\SessionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Illuminate\Validation\Rule;
 
 class WorkspaceController extends Controller
 {
+    public function __construct(private readonly SessionService $sessions) {}
+
     public function settings(Request $request): View
     {
         $workspace = EnsureWorkspaceSelected::from($request);
@@ -68,6 +71,79 @@ class WorkspaceController extends Controller
 
         return redirect()->route('sessions.index')
             ->with('status', 'Workspace dibuat. Langkah berikutnya: buat sesi dan scan QR.');
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        if (! $request->user()->canManage($workspace)) {
+            abort(403, 'Hanya owner atau admin yang bisa mengubah workspace.');
+        }
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:80'],
+        ]);
+
+        // Slug sengaja tidak ikut berubah. Ia dipakai sebagai pengenal yang
+        // tahan lama di log dan audit; nama boleh berubah kapan saja, slug
+        // tidak. Tidak ada satu pun URL atau API key yang bergantung padanya.
+        $workspace->update(['name' => $data['name']]);
+
+        AuditLog::record('workspace.renamed', $workspace, ['name' => $data['name']], $workspace->id);
+
+        return back()->with('status', 'Nama workspace diperbarui.');
+    }
+
+    /**
+     * Menghapus workspace beserta seluruh isinya.
+     *
+     * Diminta mengetik ulang namanya, bukan sekadar mengklik "yakin?": yang
+     * hilang di sini bukan cuma satu baris, tapi seluruh riwayat pesan, API
+     * key, dan tautan nomor — dan aplikasi yang memegang API key-nya akan
+     * berhenti bisa mengirim tanpa pesan galat yang menjelaskan kenapa.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+        $user = $request->user();
+
+        if (! $user->is_super_admin && $user->roleIn($workspace) !== 'owner') {
+            abort(403, 'Hanya owner yang bisa menghapus workspace.');
+        }
+
+        $request->validate([
+            'confirm' => ['required', 'string'],
+        ]);
+
+        if ($request->input('confirm') !== $workspace->name) {
+            return back()->withErrors([
+                'confirm' => 'Nama yang diketik tidak cocok. Workspace tidak jadi dihapus.',
+            ]);
+        }
+
+        // Sesi dihentikan lebih dulu supaya Chromium-nya benar-benar mati di
+        // engine. Tanpa ini, engine tetap memegang koneksi ke nomor yang
+        // workspace-nya sudah tidak ada — memakan memori sampai engine
+        // di-restart, dan pesan masuk tetap ditembakkan ke Laravel.
+        foreach ($workspace->sessions as $session) {
+            try {
+                $this->sessions->logout($session);
+            } catch (\Throwable) {
+                // Engine tidak terjangkau. Penghapusan tetap diteruskan —
+                // membiarkan workspace hidup hanya karena engine sedang
+                // bermasalah justru membuat pengguna terjebak.
+            }
+        }
+
+        $nama = $workspace->name;
+
+        AuditLog::record('workspace.deleted', $workspace, ['name' => $nama], $workspace->id);
+
+        $workspace->delete();
+        session()->forget('current_workspace_id');
+
+        return redirect()->route('dashboard')->with('status', "Workspace '{$nama}' dihapus.");
     }
 
     public function addMember(Request $request): RedirectResponse
