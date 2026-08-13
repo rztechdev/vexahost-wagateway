@@ -1,9 +1,9 @@
 :root {
-  /* Brown/Gold Accent Palette */
-  --color-brown: #8B5E3C;
-  --color-brown-10: rgba(139, 94, 60, 0.06);
-  --color-brown-20: rgba(139, 94, 60, 0.12);
-  --color-brown-80: rgba(139, 94, 60, 0.8);
+  /* Brown/Gold Accent Palette (Claude Terracotta Theme) */
+  --color-brown: #D97757;
+  --color-brown-10: rgba(217, 119, 87, 0.06);
+  --color-brown-20: rgba(217, 119, 87, 0.12);
+  --color-brown-80: rgba(217, 119, 87, 0.8);
 
   /* Cream/Espresso Color Palette */
   --color-cream-50: #FAF8F5;
@@ -27,6 +27,15 @@
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
 
+  /* Auth specific */
+  --auth-blur-bg: linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgba(243, 238, 228, 0.5) 50%, rgba(235, 229, 220, 0.6) 100%);
+  --auth-card-bg: rgba(255, 255, 255, 0.35);
+  --auth-card-border: rgba(255, 255, 255, 0.5);
+  --auth-input-bg: #ffffff;
+  --auth-google-bg: #ffffff;
+  --auth-autofill-bg: #ffffff;
+  --auth-autofill-text: #332D24;
+
   /* Typography */
   --font-outfit: 'Outfit', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
@@ -41,6 +50,25 @@
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-base: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark {
+  --color-cream-50: #09090b;
+  --color-cream-100: #18181b;
+  --color-cream-200: #27272a;
+  --color-cream-300: #3f3f46;
+  --color-cream-400: #52525b;
+  --color-cream-700: #a1a1aa;
+  --color-cream-800: #d4d4d8;
+  --color-cream-900: #fafafa;
+
+  --auth-blur-bg: linear-gradient(165deg, rgba(9, 9, 11, 0.6) 0%, rgba(24, 24, 27, 0.7) 50%, rgba(39, 39, 42, 0.8) 100%);
+  --auth-card-bg: rgba(24, 24, 27, 0.6);
+  --auth-card-border: rgba(255, 255, 255, 0.1);
+  --auth-input-bg: #09090b;
+  --auth-google-bg: #18181b;
+  --auth-autofill-bg: #09090b;
+  --auth-autofill-text: #fafafa;
 }
 
 html,
@@ -82,10 +110,7 @@ body {
   position: absolute;
   inset: 0;
   backdrop-filter: blur(4px);
-  background: linear-gradient(165deg,
-      rgba(255, 255, 255, 0.4) 0%,
-      rgba(243, 238, 228, 0.5) 50%,
-      rgba(235, 229, 220, 0.6) 100%);
+  background: var(--auth-blur-bg);
   pointer-events: none;
 }
 
@@ -149,12 +174,12 @@ body {
   width: 100%;
   max-width: 360px;
   padding: 1.4rem 1.75rem 1.15rem;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--auth-card-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--auth-card-border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 24px 60px rgba(93, 78, 68, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
 }
 
@@ -221,19 +246,28 @@ body {
   width: 100%;
   box-sizing: border-box;
   padding: 0.48rem 0.75rem;
-  font-size: 0.82rem;
+  font-size: 16px; /* Mencegah auto-zoom di iOS */
   font-family: var(--font-body), sans-serif;
   font-weight: 400;
   color: var(--color-cream-900);
-  background: #ffffff;
+  background: var(--auth-input-bg);
   border: 1px solid var(--color-cream-300);
   border-radius: var(--radius-md);
   outline: none;
   transition: all var(--transition-fast);
 }
 
+@media (min-width: 768px) {
+  .auth-field input[type="text"],
+  .auth-field input[type="email"],
+  .auth-field input[type="password"],
+  .auth-field input[type="tel"] {
+    font-size: 0.82rem; /* Kembali ke ukuran asli di desktop */
+  }
+}
+
 .auth-field input:focus {
-  background: #ffffff;
+  background: var(--auth-input-bg);
   border-color: var(--color-brown);
   box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.12);
 }
@@ -248,8 +282,8 @@ body {
 .auth-field input:-webkit-autofill,
 .auth-field input:-webkit-autofill:hover,
 .auth-field input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--color-cream-900);
-  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+  -webkit-text-fill-color: var(--auth-autofill-text);
+  -webkit-box-shadow: 0 0 0px 1000px var(--auth-autofill-bg) inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -358,7 +392,7 @@ body {
 }
 
 .auth-submit:hover {
-  background: #6f4a2f;
+  background: #C26245;
   color: #fff;
   transform: translateY(-1px);
 }
@@ -476,7 +510,7 @@ body {
   width: 100%;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
-  background: #FFFFFF;
+  background: var(--auth-google-bg);
   border: 1px solid var(--color-cream-300);
   color: var(--color-cream-900);
   font-family: var(--font-body);

@@ -20,6 +20,7 @@
     uniform float iTime;
     uniform vec2 iMouse;
     uniform vec3 u_color;
+    uniform float u_isDark;
 
     void mainImage(out vec4 fragColor, in vec2 fragCoord) {
       vec2 centeredUV = (2.0 * fragCoord - iResolution.xy) / min(iResolution.x, iResolution.y);
@@ -34,8 +35,11 @@
       float wave = abs(sin(distortion.x + distortion.y + time));
       float glow = smoothstep(0.9, 0.2, wave);
       
-      // Elegant light cream background mix
-      vec3 bgColor = vec3(250.0/255.0, 248.0/255.0, 245.0/255.0);
+      // Elegant light vs dark background mix
+      vec3 bgColorLight = vec3(250.0/255.0, 248.0/255.0, 245.0/255.0);
+      vec3 bgColorDark = vec3(9.0/255.0, 9.0/255.0, 11.0/255.0);
+      vec3 bgColor = mix(bgColorLight, bgColorDark, u_isDark);
+      
       vec3 finalColor = mix(bgColor, u_color, glow * 0.35);
       fragColor = vec4(finalColor, 1.0);
     }
@@ -97,6 +101,7 @@
   const iTime = gl.getUniformLocation(program, 'iTime');
   const iMouse = gl.getUniformLocation(program, 'iMouse');
   const uColor = gl.getUniformLocation(program, 'u_color');
+  const uIsDark = gl.getUniformLocation(program, 'u_isDark');
 
   const [r, g, b] = hexToRgb(colorHex);
   gl.uniform3f(uColor, r, g, b);
@@ -121,6 +126,10 @@
       hovering ? mouse.x : w / 2,
       hovering ? h - mouse.y : h / 2
     );
+    
+    const isDark = document.documentElement.classList.contains('dark') ? 1.0 : 0.0;
+    gl.uniform1f(uIsDark, isDark);
+    
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     requestAnimationFrame(render);
   }

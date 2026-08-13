@@ -31,12 +31,21 @@
     <!-- Vite CSS & JS -->
     @vite(['resources/css/auth.css', 'resources/js/app.js'])
     @yield('styles')
+
+    <!-- Theme Initialization Script -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
 <body>
     <div class="auth-page">
         <!-- WebGL Canvas untuk Latar Belakang Smoky. data-color diatur dinamis atau manual -->
         <div class="auth-canvas-wrap" aria-hidden="true">
-            <canvas id="auth-smokey-canvas" data-color="{{ $shader_color ?? '#8B5E3C' }}"></canvas>
+            <canvas id="auth-smokey-canvas" data-color="{{ $shader_color ?? '#D97757' }}"></canvas>
             <div class="auth-canvas-blur"></div>
         </div>
 
@@ -45,7 +54,19 @@
                 <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" style="height: 32px; width: auto; object-fit: contain;">
                 <span>Flustra WA Gateway</span>
             </a>
-            @yield('topbar_action')
+            
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button onclick="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
+                        title="Toggle Tema"
+                        style="background: transparent; border: none; cursor: pointer; color: var(--color-cream-800); display: flex; align-items: center; justify-content: center; padding: 0.2rem;">
+                    <!-- Ikon Matahari (Tampil saat Dark Mode) -->
+                    <svg class="h-5 w-5" style="display: none;" id="icon-sun" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <!-- Ikon Bulan (Tampil saat Light Mode) -->
+                    <svg class="h-5 w-5" style="display: block;" id="icon-moon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+                
+                @yield('topbar_action')
+            </div>
         </header>
 
         <main class="auth-main">
@@ -86,6 +107,30 @@
                 }
             }
         }
+
+        // Logic for icon visibility based on dark mode class on HTML element
+        function updateThemeIcons() {
+            var isDark = document.documentElement.classList.contains('dark');
+            var iconSun = document.getElementById('icon-sun');
+            var iconMoon = document.getElementById('icon-moon');
+            if (iconSun && iconMoon) {
+                iconSun.style.display = isDark ? 'block' : 'none';
+                iconMoon.style.display = isDark ? 'none' : 'block';
+            }
+        }
+        
+        // Initial setup
+        updateThemeIcons();
+
+        // Observe changes to 'class' attribute on HTML to switch icons instantly
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    updateThemeIcons();
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
     </script>
     @yield('scripts')
 </body>
