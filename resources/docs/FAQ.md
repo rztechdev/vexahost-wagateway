@@ -145,6 +145,8 @@ Bisa. Setiap workspace punya nomor, API key, dan riwayat pesannya sendiri yang t
 
 Berguna kalau Anda mengelola beberapa merek atau beberapa klien.
 
+Cara membuatnya: klik **+ Workspace** di sebelah pemilih workspace pada bagian atas halaman. Anda tidak perlu mendaftarkan akun kedua — berpindah antar workspace cukup lewat pemilih yang sama.
+
 ### Bagaimana mengundang rekan tim?
 
 Menu **Pengaturan** → bagian Anggota. Mereka harus sudah pernah membuat akun di sini lebih dulu.

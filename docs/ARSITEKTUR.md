@@ -224,17 +224,11 @@ interface WhatsAppProvider
 }
 ```
 
-Tiga implementasi:
+Satu implementasi: `WwebjsProvider`, lewat engine Node. Kolom `wa_sessions.driver` selalu berisi `wwebjs`; ia mencatat, bukan menawarkan pilihan.
 
-| Driver | Status | Keterangan |
-|---|---|---|
-| `wwebjs` | Aktif | Lewat engine Node |
-| `cloud_api` | Slot | Meta/Twilio resmi — belum diimplementasi |
-| `fonnte` | Aktif | Gateway berbayar pihak ketiga |
+**Kenapa hanya satu.** Dulu ada dua lagi: slot `cloud_api` yang tidak pernah diimplementasi, dan `fonnte` — layanan gateway berbayar milik pihak lain. Keduanya muncul sebagai pilihan di form pembuatan sesi, jadi halaman pertama yang dilihat pelanggan baru menawarkan produk orang lain dan sebuah janji yang belum ada. Produk ini menjual satu cara mengirim WhatsApp; nomor pelanggan tidak pernah melewati gateway selain milik kita sendiri.
 
-Driver dipilih per sesi lewat kolom `wa_sessions.driver`.
-
-**Kenapa abstraksi ini ada sejak awal, bukan ditambahkan nanti.** Karena kedua jalur akan hidup berdampingan: pelanggan kecil pakai `wwebjs` yang gratis, pelanggan enterprise nanti pindah ke `cloud_api` yang resmi. Kalau abstraksinya baru dibuat setelah ada pelanggan, memindahkan mereka berarti mengubah REST API publik — dan itu memutus semua integrasi yang sudah jalan.
+**Kenapa interface-nya tetap ada.** Bukan untuk menampung driver kedua, melainkan sebagai batas antara "apa yang dilakukan sebuah sesi" dan "bagaimana caranya" — batas itulah yang membuat `SendMessageJob` dan `SessionService` tidak perlu tahu apa pun soal Chromium.
 
 ### Kegagalan sementara vs permanen
 
@@ -292,8 +286,6 @@ Pola yang sama berlaku di REST API, di mana workspace berasal dari API key. Ada 
 
 Jujur mencatat batas, supaya tidak ada yang mengira ini sudah ada:
 
-- **Billing & langganan.** Kolom `plan_slug` dan `usage_counters` sudah disiapkan, tapi belum ada integrasi ke flustra-pricing.
-- **Driver `cloud_api`.** Slotnya ada, implementasinya belum.
+- **Billing & langganan.** Kolom `plan_slug` dan `usage_counters` sudah disiapkan, tapi belum ada penagihan otomatis — batas paket masih disetel manual.
 - **Realtime.** Dashboard memakai polling 3 detik saat modal QR terbuka. Reverb bisa ditambahkan, tapi belum sepadan untuk satu kasus pakai.
 - **Beberapa instance engine.** Saat ini satu engine per tahap. Untuk menyebar sesi ke banyak container perlu tabel pemetaan sesi→engine.
-- **Media pada driver Fonnte.** Baru teks.

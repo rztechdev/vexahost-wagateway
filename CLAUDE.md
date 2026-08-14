@@ -75,6 +75,12 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
 
+**Satu produk, satu cara mengirim.** Driver `fonnte` (layanan gateway berbayar milik pihak lain) dan slot `cloud_api` yang tidak pernah diimplementasi sudah dihapus sampai ke kelasnya. Keduanya dulu muncul sebagai pilihan di form pembuatan sesi — halaman pertama yang dilihat pelanggan baru menawarkan produk orang lain dan sebuah janji yang belum ada. `wa_sessions.driver` sekarang mencatat, bukan menawarkan pilihan; API menolak nilai selain `wwebjs`. Jangan menambahkan penyalur pihak ketiga ke sini lagi; kalau sebuah kebutuhan menuntut jalur resmi Meta, arahkan keluar — alasannya di [docs/PERBANDINGAN_PROVIDER.md](docs/PERBANDINGAN_PROVIDER.md).
+
+**OTP dikirim dari nomor workspace pemanggil.** Dulu seluruh OTP keluar dari satu sesi global (`OTP_SESSION_ID`) dengan teks yang menyebut "Flustra" — padahal endpoint-nya terbuka untuk API key mana pun ber-scope `otp`. Artinya pelanggan mengirim kode dari nomor kami, atas nama kami, memotong kuota kami, dan laporan spam atasnya jatuh ke nomor kami. Sekarang pengirimnya dipilih dengan aturan yang sama persis dengan pesan biasa, dan teksnya memakai nama workspace.
+
+**API key bisa dibuka lagi, dan itu disengaja.** `key_hash` tetap satu-satunya jalan verifikasi permintaan; `key_ciphertext` (cast `encrypted`) adalah salinan terpisah untuk ditampilkan ulang di dashboard kepada owner dan admin, dan dibuang saat kunci dicabut. Pertimbangannya: "hanya tampil sekali" tidak membuat orang lebih hati-hati, ia membuat mereka menyalin kunci ke catatan pribadi dan grup chat — tempat yang jauh lebih mudah bocor daripada tabel ini. Jangan menyatukan kedua kolom itu.
+
 **Istilah produk hanya satu: workspace.** Sampai ke nama tabel dan kolom (`workspaces`, `workspace_id`). `tenant` hanya boleh muncul sebagai istilah arsitektur (multi-tenant) di dokumentasi internal.
 
 **Hapus lunak bertabrakan dengan indeks unik.** `wa_sessions` unik pada `(workspace_id, name)` tanpa memandang `deleted_at`, jadi membuat ulang sesi dengan nama yang sama gagal dengan galat 1062. `SessionService::create()` membuang permanen baris tertrash bernama sama lebih dulu — permanen, bukan dipulihkan, supaya baris baru dapat ULID baru dan tidak mewarisi folder kredensial lama di engine.
@@ -97,4 +103,4 @@ Sudah ter-deploy penuh di Coolify (ketiga resource), **belum diuji end-to-end di
 
 Integrasi ke `flustra-erp`, `flustra-web`, `flustra-pricing`, `flustra-helpdesk` sudah ditulis (`app/Services/WhatsAppGateway.php` disalin identik ke keempatnya) tapi belum dijalankan dengan gateway produksi. Lihat [docs/INTEGRASI_APP.md](docs/INTEGRASI_APP.md).
 
-Yang sengaja belum dibuat: billing/langganan, driver `cloud_api` (Meta/Twilio resmi), realtime dashboard, beberapa instance engine. Rinciannya di [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md#11-yang-sengaja-belum-dibuat).
+Yang sengaja belum dibuat: billing/langganan, realtime dashboard, beberapa instance engine. Rinciannya di [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md#11-yang-sengaja-belum-dibuat).

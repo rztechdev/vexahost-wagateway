@@ -27,6 +27,21 @@ return [
     // Isi kalau aplikasi ini harus selalu mengirim dari nomor tertentu.
     'session' => env('WA_GATEWAY_SESSION'),
 
+    /*
+    | Kredensial workspace CS — nomor yang mengabari operator Flustra sendiri
+    | (bukti pembayaran baru, tiket baru), bukan pelanggan.
+    |
+    | Workspace terpisah dengan API key sendiri, bukan sesi kedua di workspace
+    | di atas: kuota dan riwayat pesan CS jadi tidak bercampur dengan trafik
+    | pelanggan, sehingga lonjakan di salah satunya tidak mendiamkan yang lain.
+    |
+    | Dikosongkan berarti kabar internal ikut kredensial platform di atas —
+    | mendarat di chat "Pesan ke Diri Sendiri" seperti perilaku lama.
+    */
+    'cs_key' => env('WA_CS_GATEWAY_KEY'),
+
+    'cs_session' => env('WA_CS_GATEWAY_SESSION'),
+
     // Sengaja pendek. Notifikasi WhatsApp adalah pelengkap email, bukan
     // penggantinya — gateway yang lambat tidak boleh menahan request pengguna.
     'timeout' => (int) env('WA_GATEWAY_TIMEOUT', 5),

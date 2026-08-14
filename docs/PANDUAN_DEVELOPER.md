@@ -74,7 +74,7 @@ npm --prefix engine run dev
 # lalu buat sesi & API key lewat dashboard
 ```
 
-Keluarannya memuat ULID sesi dan API key penuh — **kunci hanya ditampilkan sekali**.
+Keluarannya memuat ULID sesi dan API key penuh. Kunci juga bisa dibuka lagi kapan saja dari halaman API Keys.
 
 ```bash
 KEY="fwa_xxxxxxxx.xxxxxxxx"

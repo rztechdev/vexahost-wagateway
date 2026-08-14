@@ -22,12 +22,4 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    /*
-    | Provider WhatsApp berbayar. Hanya dipakai bila sebuah sesi diset
-    | driver=fonnte. Driver bawaan (wwebjs) tidak memerlukan ini.
-    */
-    'fonnte' => [
-        'token' => env('FONNTE_TOKEN'),
-    ],
-
 ];

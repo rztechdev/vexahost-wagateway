@@ -38,24 +38,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Sesi Pengirim OTP
-    |--------------------------------------------------------------------------
-    |
-    | Endpoint /api/v1/otp mengirim kode verifikasi atas nama Flustra sendiri,
-    | jadi ia butuh satu sesi yang ditunjuk secara eksplisit — tidak bisa
-    | menebak dari workspace pemanggil seperti endpoint pesan biasa.
-    |
-    | Isinya ID sesi biasa, sama seperti yang dibuat pelanggan lewat dashboard.
-    | Tidak ada tipe sesi khusus: sesi bertipe `platform` dulu pernah ada dan
-    | justru menjadi sumber kebingungan, karena hanya bisa dibuat lewat CLI dan
-    | tidak pernah terpilih otomatis saat session_id dikosongkan.
-    |
-    */
-
-    'otp_session_id' => env('OTP_SESSION_ID'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Masa Berlaku QR
     |--------------------------------------------------------------------------
     |

@@ -6,8 +6,9 @@ namespace App\Support;
  * Normalisasi nomor telepon Indonesia ke format E.164 tanpa tanda plus
  * (contoh: 6281234567890), format yang dipakai WhatsApp sebagai chat id.
  *
- * Aturannya dijaga sama persis dengan flustra-web/app/Support/WhatsAppLink.php
- * supaya nomor yang sudah tersimpan di aplikasi lain tidak berubah arti.
+ * Aturannya tidak boleh diperlonggar diam-diam: nomor yang sudah tersimpan di
+ * aplikasi pelanggan dinormalisasi dengan aturan yang sama, jadi perubahan di
+ * sini membuat nomor lama berubah arti dan pesan mendarat di orang lain.
  */
 class PhoneNumber
 {

@@ -22,14 +22,35 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppGateway
 {
     /**
+     * Nomor yang berbicara kepada pelanggan — ucapan terima kasih, pengingat
+     * invoice, perkembangan tiket, pengumuman maintenance. Ini nomor Flustra
+     * yang sudah dikenal publik, jadi pesannya tidak terbaca seperti spam.
+     */
+    public const CHANNEL_PLATFORM = 'platform';
+
+    /**
+     * Nomor CS — dipakai untuk kabar yang masuk ke operator Flustra sendiri
+     * (bukti pembayaran baru, tiket baru).
+     *
+     * Sengaja workspace terpisah dengan API key sendiri, bukan sesi kedua di
+     * workspace yang sama: kuota dan riwayat pesan CS jadi tidak bercampur
+     * dengan trafik pelanggan, sehingga lonjakan di salah satunya tidak
+     * mendiamkan yang lain.
+     */
+    public const CHANNEL_CS = 'cs';
+
+    /**
      * Mengirim satu pesan teks.
      *
+     * @param  string  $channel  Kredensial mana yang dipakai — lihat CHANNEL_*.
      * @return bool true kalau gateway menerima pesan untuk diantre. Status
      *              pengiriman sebenarnya menyusul lewat webhook, bukan di sini.
      */
-    public static function send(?string $phone, string $message, ?string $sessionId = null): bool
+    public static function send(?string $phone, string $message, ?string $sessionId = null, string $channel = self::CHANNEL_PLATFORM): bool
     {
-        if (! config('whatsapp.enabled') || ! config('whatsapp.key')) {
+        [$key, $defaultSession] = self::credentials($channel);
+
+        if (! config('whatsapp.enabled') || ! $key) {
             return false;
         }
 
@@ -40,14 +61,15 @@ class WhatsAppGateway
         }
 
         try {
-            $response = self::request()->post('/api/v1/messages/text', array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
+            $response = self::request($key)->post('/api/v1/messages/text', array_filter([
+                'session_id' => $sessionId ?? $defaultSession,
                 'to' => $phone,
                 'message' => $message,
             ]));
         } catch (\Throwable $e) {
             Log::warning('Gateway WhatsApp tidak bisa dihubungi', [
                 'phone' => self::mask($phone),
+                'channel' => $channel,
                 'error' => $e->getMessage(),
             ]);
 
@@ -60,6 +82,7 @@ class WhatsAppGateway
 
         Log::warning('Gateway WhatsApp menolak pesan', [
             'phone' => self::mask($phone),
+            'channel' => $channel,
             'status' => $response->status(),
             'error' => $response->json('error.message') ?? $response->body(),
         ]);
@@ -74,9 +97,11 @@ class WhatsAppGateway
      *
      * @param  array<int, string>  $phones
      */
-    public static function broadcast(array $phones, string $message, ?string $sessionId = null): bool
+    public static function broadcast(array $phones, string $message, ?string $sessionId = null, string $channel = self::CHANNEL_PLATFORM): bool
     {
-        if (! config('whatsapp.enabled') || ! config('whatsapp.key')) {
+        [$key, $defaultSession] = self::credentials($channel);
+
+        if (! config('whatsapp.enabled') || ! $key) {
             return false;
         }
 
@@ -87,15 +112,18 @@ class WhatsAppGateway
         }
 
         try {
-            $response = self::request()->post('/api/v1/messages/bulk', array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
+            $response = self::request($key)->post('/api/v1/messages/bulk', array_filter([
+                'session_id' => $sessionId ?? $defaultSession,
                 'to' => $targets,
                 'message' => $message,
             ]));
 
             return $response->successful();
         } catch (\Throwable $e) {
-            Log::warning('Broadcast WhatsApp gagal', ['error' => $e->getMessage()]);
+            Log::warning('Broadcast WhatsApp gagal', [
+                'channel' => $channel,
+                'error' => $e->getMessage(),
+            ]);
 
             return false;
         }
@@ -106,9 +134,11 @@ class WhatsAppGateway
      *
      * @param  array<string, string>  $variables
      */
-    public static function template(?string $phone, string $template, array $variables = [], ?string $sessionId = null): bool
+    public static function template(?string $phone, string $template, array $variables = [], ?string $sessionId = null, string $channel = self::CHANNEL_PLATFORM): bool
     {
-        if (! config('whatsapp.enabled') || ! config('whatsapp.key')) {
+        [$key, $defaultSession] = self::credentials($channel);
+
+        if (! config('whatsapp.enabled') || ! $key) {
             return false;
         }
 
@@ -119,8 +149,8 @@ class WhatsAppGateway
         }
 
         try {
-            $response = self::request()->post('/api/v1/messages/template', array_filter([
-                'session_id' => $sessionId ?? config('whatsapp.session'),
+            $response = self::request($key)->post('/api/v1/messages/template', array_filter([
+                'session_id' => $sessionId ?? $defaultSession,
                 'to' => $phone,
                 'template' => $template,
                 'variables' => $variables,
@@ -130,6 +160,7 @@ class WhatsAppGateway
         } catch (\Throwable $e) {
             Log::warning('Pengiriman template WhatsApp gagal', [
                 'template' => $template,
+                'channel' => $channel,
                 'error' => $e->getMessage(),
             ]);
 
@@ -163,15 +194,35 @@ class WhatsAppGateway
         return preg_match('/^62[1-9][0-9]{7,12}$/', $digits) === 1 ? $digits : null;
     }
 
+    /**
+     * API key dan sesi bawaan untuk sebuah kanal.
+     *
+     * Kanal CS jatuh kembali ke kredensial platform selama workspace CS belum
+     * didaftarkan. Notifikasi operator lalu mendarat di chat "Pesan ke Diri
+     * Sendiri" seperti perilaku lama — tidak ideal, tapi jauh lebih baik
+     * daripada bukti pembayaran yang hilang diam-diam karena satu env belum
+     * diisi.
+     *
+     * @return array{0: ?string, 1: ?string} [API key, id sesi bawaan]
+     */
+    private static function credentials(string $channel): array
+    {
+        if ($channel === self::CHANNEL_CS && config('whatsapp.cs_key')) {
+            return [config('whatsapp.cs_key'), config('whatsapp.cs_session')];
+        }
+
+        return [config('whatsapp.key'), config('whatsapp.session')];
+    }
+
     private static function mask(string $phone): string
     {
         return substr($phone, 0, 4).'****'.substr($phone, -4);
     }
 
-    private static function request(): PendingRequest
+    private static function request(string $apiKey): PendingRequest
     {
         return Http::baseUrl(rtrim(config('whatsapp.url'), '/'))
-            ->withHeader('X-Api-Key', config('whatsapp.key'))
+            ->withHeader('X-Api-Key', $apiKey)
             ->connectTimeout(config('whatsapp.connect_timeout'))
             ->timeout(config('whatsapp.timeout'))
             ->acceptJson();

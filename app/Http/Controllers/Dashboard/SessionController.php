@@ -11,7 +11,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class SessionController extends Controller
 {
@@ -28,13 +27,12 @@ class SessionController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
-            'driver' => ['required', Rule::in(['wwebjs', 'cloud_api', 'fonnte'])],
         ]);
 
         $workspace = EnsureWorkspaceSelected::from($request);
 
         try {
-            $session = $this->sessions->create($workspace, $data['name'], $data['driver']);
+            $session = $this->sessions->create($workspace, $data['name']);
         } catch (\RuntimeException $e) {
             return back()->withErrors(['name' => $e->getMessage()])->withInput();
         }

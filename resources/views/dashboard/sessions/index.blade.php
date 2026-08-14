@@ -22,14 +22,6 @@
                        placeholder="mis. CS Utama"
                        class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
             </div>
-            <div>
-                <label class="mb-1 block text-sm font-medium" for="driver">Driver</label>
-                <select id="driver" name="driver" class="rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
-                    <option value="wwebjs">WhatsApp Web (scan QR)</option>
-                    <option value="fonnte">Fonnte (berbayar)</option>
-                    <option value="cloud_api" disabled>Cloud API resmi — belum tersedia</option>
-                </select>
-            </div>
             <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Buat sesi</button>
         </form>
     </x-card>
@@ -43,9 +35,6 @@
                         <p class="mt-0.5 text-sm text-muted-foreground">
                             {{ $session->phone_number ? '+'.$session->phone_number : 'Belum tertaut ke nomor' }}
                             @if ($session->push_name) &middot; {{ $session->push_name }} @endif
-                        </p>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            Driver {{ $session->driver }}
                         </p>
 
                         {{-- ID sesi ditampilkan supaya tidak perlu ada yang menelusuri

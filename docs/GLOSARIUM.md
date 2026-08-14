@@ -20,7 +20,7 @@ Ada dua, dan keduanya berbeda tujuan.
 
 ### API key
 
-Kredensial untuk memanggil REST API, dikirim lewat header `X-Api-Key`. Format `fwa_<prefix>.<rahasia>`. Yang tersimpan di server hanya hash-nya, jadi nilai penuhnya hanya bisa dilihat sekali saat dibuat.
+Kredensial untuk memanggil REST API, dikirim lewat header `X-Api-Key`. Format `fwa_<prefix>.<rahasia>`. Disimpan dua kali: hash untuk memverifikasi permintaan, dan salinan terenkripsi (`key_ciphertext`, cast `encrypted`) supaya nilainya bisa ditampilkan lagi di dashboard kepada owner dan admin. Salinan terenkripsi dibuang saat kunci dicabut.
 
 ### backoff
 
@@ -40,7 +40,7 @@ Alamat percakapan di WhatsApp. Perorangan: `6281234567890@c.us`. Grup: `<id>@g.u
 
 ### driver
 
-Cara pesan dikirim. `wwebjs` (aktif), `cloud_api` (slot untuk Meta/Twilio resmi), `fonnte`. Dipilih per sesi lewat kolom `wa_sessions.driver`.
+Cara pesan dikirim. Hanya ada satu: `wwebjs`. Kolom `wa_sessions.driver` mencatatnya, tapi tidak pernah ditawarkan sebagai pilihan ke pelanggan maupun diterima lewat API.
 
 ### engine
 
@@ -58,7 +58,7 @@ Operasi yang aman diulang tanpa mengubah hasil. Callback engine dibuat idempoten
 
 Kolom `kind` dulu membedakan sesi `platform` (nomor Flustra) dari `tenant` (nomor pelanggan). Dihapus 13 Agustus 2026: nilai `platform` hanya bisa lahir dari perintah CLI, tidak terlihat di antarmuka mana pun, dan membuat sesi yang tampak hijau di dashboard tidak pernah terpilih otomatis saat pemanggil API mengosongkan `session_id`.
 
-Sekarang semua sesi setara. Pengirim OTP ditunjuk lewat `OTP_SESSION_ID`, yang boleh menunjuk sesi biasa mana pun.
+Sekarang semua sesi setara. OTP pun dikirim dari sesi terhubung milik workspace pemanggil, sama seperti pesan biasa — tidak ada nomor pengirim khusus dan tidak ada konfigurasi yang menunjuknya.
 
 ### kuota
 

@@ -165,10 +165,9 @@ Penyiapan dilakukan lewat dashboard, sama persis seperti pelanggan mana pun — 
 1. Buka `https://wa.flustra.id`, daftar akun, isi nama workspace
 2. **Sesi WhatsApp** → Buat sesi → **Hubungkan** → scan QR dengan nomor resmi Flustra
 3. **API Keys** → buat satu kunci untuk tiap aplikasi konsumen (`flustra-erp produksi`, `flustra-web produksi`, dan seterusnya). Halaman itu langsung menampilkan cuplikan `.env` siap salin
-4. Untuk **flustra-auth**, buat kunci tersendiri dengan scope `otp` dicentang — scope ini tidak boleh diberikan ke kunci integrasi biasa
-5. Salin ID sesi dari kartu sesi (tombol **Salin ID**) ke `OTP_SESSION_ID` pada env `flustra-wa`, lalu redeploy. Ini satu-satunya tempat ID sesi masih perlu ditulis manual, karena endpoint OTP mengirim atas nama Flustra dan tidak bisa menebak pengirimnya dari pemanggil
+4. Untuk **flustra-auth**, buat kunci tersendiri dengan scope `otp` dicentang — scope ini tidak boleh diberikan ke kunci integrasi biasa. Tidak ada langkah lanjutan: OTP dikirim dari sesi terhubung milik workspace pemegang kunci, sama seperti pesan biasa
 
-Kunci hanya ditampilkan sekali. Bebas kuota untuk workspace internal disetel dari terminal bila perlu:
+Kunci bisa dibuka lagi kapan saja dari halaman API Keys, jadi tidak perlu dicatat di tempat lain. Bebas kuota untuk workspace internal disetel dari terminal bila perlu:
 
 ```bash
 php artisan tinker --execute='App\Models\Workspace::find(1)->update(["is_internal" => true]);'

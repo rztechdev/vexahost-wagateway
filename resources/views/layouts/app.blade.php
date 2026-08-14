@@ -42,6 +42,15 @@
                         </select>
                         @csrf
                     </form>
+
+                    {{-- Satu-satunya jalan menuju workspace kedua. Tanpa tautan ini
+                         /onboarding hanya terjangkau lewat middleware, yaitu saat
+                         pengguna belum punya workspace sama sekali — sehingga "satu
+                         workspace per cabang" yang dijanjikan halaman onboarding
+                         mustahil dilakukan kecuali dengan membuat akun baru. --}}
+                    <a href="{{ route('onboarding.create') }}"
+                       class="rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                       title="Buat workspace baru">+ Workspace</a>
                 @endisset
 
                 <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
@@ -86,6 +95,27 @@
                 <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
                 <span>Flustra WA Gateway</span>
             </div>
+
+            {{-- Pemilih workspace versi mobile. Di layar kecil header hanya
+                 memuat logo dan hamburger, jadi tanpa blok ini pengguna ponsel
+                 tidak punya cara apa pun berpindah workspace. --}}
+            @isset($availableWorkspaces)
+                <div class="mb-6 border-b border-border pb-4 lg:hidden">
+                    <p class="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Workspace</p>
+                    @foreach ($availableWorkspaces as $t)
+                        <form method="POST" action="{{ route('workspaces.switch', $t->id) }}">
+                            @csrf
+                            <button class="block w-full rounded-lg px-3 py-2 text-left text-sm {{ $t->id === $currentWorkspace->id ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground' }}">
+                                {{ $t->name }}
+                            </button>
+                        </form>
+                    @endforeach
+                    <a href="{{ route('onboarding.create') }}"
+                       class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                        + Buat workspace baru
+                    </a>
+                </div>
+            @endisset
 
             <nav class="space-y-1 text-sm">
                 @php

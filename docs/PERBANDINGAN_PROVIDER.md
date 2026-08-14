@@ -1,10 +1,12 @@
-# Perbandingan Provider WhatsApp
+# Kenapa whatsapp-web.js, dan Apa Risikonya
 
-Dokumen ini menjawab pertanyaan: kalau ada layanan berbayar seperti Twilio, kenapa gateway ini dibangun di atas whatsapp-web.js — dan kapan sebaiknya pindah.
+Dokumen ini menjawab pertanyaan: kalau ada jalur resmi dari Meta dan layanan berbayar seperti Twilio, kenapa gateway ini dibangun di atas whatsapp-web.js — dan kapan sebuah kebutuhan sebaiknya tidak dilayani produk ini sama sekali.
+
+Jalur resmi di bawah **bukan bagian dari produk ini** dan tidak dijual di sini. Ia dijelaskan supaya kita tahu persis apa yang kita tawarkan dan apa yang tidak.
 
 ## Dua jalur yang berbeda secara mendasar
 
-### 1. whatsapp-web.js (driver `wwebjs` — aktif sekarang)
+### 1. whatsapp-web.js — yang dipakai produk ini
 
 Bukan API. Library ini menjalankan **WhatsApp Web di dalam browser Chromium** yang dikendalikan program, lalu menekan tombol-tombolnya secara otomatis. Dari sudut pandang WhatsApp, yang terlihat adalah perangkat tertaut biasa — persis seperti WhatsApp Web di laptop Anda.
 
@@ -22,9 +24,9 @@ Risiko yang harus jujur diakui:
 - **Berat.** Satu sesi = satu Chromium ≈ 300–500 MB RAM. Sepuluh nomor butuh server 4–5 GB.
 - **Tidak ada SLA.** Tidak ada siapa pun yang bisa dimintai pertanggungjawaban saat bermasalah.
 
-Yang gateway ini lakukan untuk menekan risikonya: jeda acak 3–8 detik antar pesan keluar per sesi, antrean terpisah per sesi, verifikasi nomor tujuan sebelum kirim, dan pemisahan nomor platform dari nomor workspace.
+Yang gateway ini lakukan untuk menekan risikonya: jeda acak 3–8 detik antar pesan keluar per sesi, antrean terpisah per sesi, verifikasi nomor tujuan sebelum kirim, dan kuota per workspace.
 
-### 2. WhatsApp Business Platform resmi (driver `cloud_api` — slot, belum diimplementasi)
+### 2. WhatsApp Business Platform resmi — bukan bagian produk ini
 
 Ini API sungguhan dari Meta. Bisa diakses langsung (Cloud API) atau lewat Business Solution Provider seperti Twilio, yang menambahkan tooling dan penagihan di atasnya.
 
@@ -56,23 +58,17 @@ Kategori template menentukan tarif: *marketing* paling mahal dan tidak punya dis
 | RAM per nomor | 300–500 MB | ~0 |
 | Cocok untuk | Notifikasi internal, UMKM, volume kecil–menengah | Enterprise, volume besar, komunikasi kritis |
 
-## Kenapa gateway ini multi-driver sejak awal
+## Siapa yang sebaiknya tidak memakai produk ini
 
-`wa_sessions.driver` dan interface `WhatsAppProvider` ada sejak baris pertama, bukan sebagai persiapan spekulatif, melainkan karena kedua jalur di atas akan hidup berdampingan:
+Menjual ke pelanggan yang salah lebih merugikan daripada tidak menjual sama sekali: mereka akan kecewa, dan nomor merekalah yang diblokir.
 
-- Pelanggan kecil dan seluruh notifikasi internal Flustra memakai `wwebjs` — gratis dan cukup.
-- Pelanggan enterprise yang butuh jaminan tinggal dipindahkan ke `cloud_api` dengan mengubah satu kolom, tanpa mengubah REST API publik atau integrasi mereka sama sekali.
+Arahkan ke jalur resmi Meta, bukan ke sini, kalau kebutuhannya:
 
-Ini juga jadi tingkatan paket yang wajar untuk dijual: paket dasar pakai QR, paket enterprise pakai nomor resmi.
+- Komunikasi yang tidak boleh gagal — OTP perbankan, notifikasi keselamatan, apa pun yang punya konsekuensi hukum bila tidak sampai.
+- Volume puluhan ribu pesan per bulan. Selain biaya RAM-nya menjadi tidak masuk akal, polanya juga paling cepat memancing pemblokiran.
+- Butuh SLA tertulis atau jaminan kepatuhan.
 
-## Yang perlu dikerjakan saat mengaktifkan `cloud_api`
-
-Sudah dicatat di `app/Services/Providers/CloudApiProvider.php`:
-
-1. Meta Business Manager terverifikasi + nomor khusus.
-2. Kolom baru di `wa_sessions`: `phone_number_id`, `waba_id`, dan token.
-3. Tabel template terpisah yang menyimpan status persetujuan Meta — `message_templates` yang sekarang bebas format tanpa proses persetujuan.
-4. Pelacakan jendela layanan 24 jam per nomor tujuan, untuk memilih antara pesan bebas atau template.
+Dulu ada rencana menampung keduanya lewat driver `cloud_api` di gateway yang sama. Rencana itu dibatalkan: syarat masuk jalur resmi (Business Manager terverifikasi, nomor khusus, template yang disetujui Meta, pelacakan jendela 24 jam) tidak cuma menambah satu implementasi provider — ia mengubah bentuk produknya. Menyatukan keduanya di satu antarmuka berarti setengah fiturnya tidak berlaku untuk setengah pelanggan.
 
 ## Sumber
 

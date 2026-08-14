@@ -181,6 +181,36 @@ class DashboardSmokeTest extends TestCase
     }
 
     /**
+     * Satu akun boleh memegang beberapa workspace — satu per cabang, atau satu
+     * nomor pelanggan dan satu nomor CS. Relasinya memang many-to-many sejak
+     * awal, tapi jalan masuknya sempat cuma lewat middleware "belum punya
+     * workspace", sehingga membuat yang kedua tampak mustahil dan orang beralih
+     * membuat akun baru — yang justru memecah kepemilikan dan tagihan.
+     */
+    public function test_pengguna_yang_sudah_punya_workspace_bisa_membuat_workspace_kedua(): void
+    {
+        $this->get(route('onboarding.create'))->assertOk();
+
+        $this->post(route('onboarding.store'), ['name' => 'Workspace CS'])
+            ->assertRedirect(route('sessions.index'));
+
+        $this->assertSame(2, $this->user->workspaces()->count());
+        $this->assertSame('Workspace CS', $this->user->fresh()->workspaces()->orderByDesc('workspaces.id')->first()->name);
+    }
+
+    /**
+     * Pemilih workspace di header adalah satu-satunya jalan berpindah, dan
+     * tautan "+ Workspace" di sebelahnya satu-satunya jalan menambah.
+     */
+    public function test_header_memuat_pemilih_workspace_dan_tautan_workspace_baru(): void
+    {
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Toko Uji')
+            ->assertSee(route('onboarding.create'));
+    }
+
+    /**
      * Halaman detail pesan mengambil dari relasi workspace, bukan model global.
      * Tanpa itu, menebak ULID milik workspace lain akan menampilkan isinya.
      */

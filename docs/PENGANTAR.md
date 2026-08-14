@@ -110,7 +110,7 @@ Kebalikan arah dari API. Kalau ada yang membalas pesan Anda, gateway mengirim PO
 
 ### Driver
 
-Cara pesan dikirim. Sekarang aktifnya `wwebjs` (WhatsApp Web). Ada slot `cloud_api` (Meta/Twilio resmi) dan `fonnte` yang bisa diaktifkan tanpa mengubah cara aplikasi Anda memanggil API.
+Cara pesan dikirim. Hanya ada satu: `wwebjs` (WhatsApp Web). Pelanggan tidak pernah diminta memilihnya — kolom `wa_sessions.driver` sekadar mencatat. Kenapa cuma satu, dan kapan sebuah kebutuhan sebaiknya tidak dilayani produk ini, ada di [PERBANDINGAN_PROVIDER.md](PERBANDINGAN_PROVIDER.md).
 
 ---
 

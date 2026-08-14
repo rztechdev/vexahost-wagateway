@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Workspace extends Model
 {
@@ -80,6 +81,31 @@ class Workspace extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Slug yang belum terpakai, termasuk oleh workspace yang sudah dihapus.
+     *
+     * `withTrashed()` bukan kehati-hatian berlebih: kolom `slug` unik tanpa
+     * memandang `deleted_at`, jadi memakai ulang slug milik workspace terhapus
+     * gagal dengan galat 1062 yang tidak menyebut slug sama sekali.
+     *
+     * Aturannya ditaruh di sini, bukan disalin ke tiap pemanggil, karena dua
+     * salinan yang berbeda sedikit saja akan menghasilkan galat itu di satu
+     * jalur pendaftaran tapi tidak di jalur lainnya.
+     */
+    public static function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'workspace';
+        $slug = $base;
+        $i = 2;
+
+        while (self::withTrashed()->where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$i}";
+            $i++;
+        }
+
+        return $slug;
     }
 
     /**

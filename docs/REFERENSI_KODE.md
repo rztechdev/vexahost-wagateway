@@ -145,7 +145,7 @@ Konstanta event: `EVENT_MESSAGE_RECEIVED`, `EVENT_MESSAGE_STATUS`, `EVENT_SESSIO
 
 ### `OtpService`
 
-`send()` dan `verify()`. Memakai sesi yang ditunjuk `OTP_SESSION_ID` — OTP adalah pesan atas nama Flustra, jadi pengirimnya tidak bisa ditebak dari pemanggil.
+`send()` dan `verify()`. Mengirim dari sesi terhubung milik workspace pemanggil, dengan aturan pemilihan yang sama persis dengan pesan biasa, dan menyebut nama workspace itu di teks kodenya. Batas laju melempar `OtpRateLimited` (dijawab 429); kegagalan lain melempar `RuntimeException` biasa (dijawab 422).
 
 Pembatasan berlapis: jeda kirim ulang, batas harian per nomor, batas percobaan salah, masa berlaku. Kode disimpan ter-hash; kode lama untuk tujuan sama dimatikan setiap kode baru dibuat.
 
@@ -166,10 +166,8 @@ interface WhatsAppProvider
 
 | Kelas | Keadaan |
 |---|---|
-| `WwebjsProvider` | Aktif. Klien HTTP tipis ke engine |
-| `CloudApiProvider` | Slot. Semua method melempar `ProviderException::permanent()` |
-| `FonnteProvider` | Aktif, teks saja |
-| `ProviderManager` | Memilih berdasarkan `wa_sessions.driver`, singleton |
+| `WwebjsProvider` | Satu-satunya implementasi. Klien HTTP tipis ke engine |
+| `ProviderManager` | Memetakan `wa_sessions.driver` ke implementasi; hanya mengenal `wwebjs` |
 
 `ProviderException` membedakan kegagalan sementara dari permanen lewat properti `retryable`. `WwebjsProvider` memetakan HTTP 422 dari engine menjadi permanen, selain itu sementara.
 

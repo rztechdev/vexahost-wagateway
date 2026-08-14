@@ -25,9 +25,8 @@ Route::get('docs/{slug}', [DocsController::class, 'show'])
     ->name('docs.show');
 
 /*
-| Autentikasi lokal. Setiap aplikasi Flustra memegang form login dan
-| register-nya sendiri; flustra-auth berperan menangkap sesi lintas aplikasi,
-| bukan menjadi satu-satunya pintu masuk.
+| Autentikasi lokal: gateway memegang form login dan register-nya sendiri,
+| tidak menumpang pintu masuk aplikasi lain.
 */
 Route::middleware('guest')->group(function (): void {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');

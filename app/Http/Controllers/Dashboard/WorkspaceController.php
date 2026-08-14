@@ -11,7 +11,6 @@ use App\Services\SessionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class WorkspaceController extends Controller
@@ -40,9 +39,15 @@ class WorkspaceController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function createForm(): View
+    public function createForm(Request $request): View
     {
-        return view('dashboard.onboarding');
+        // Halaman ini dipakai dua kali dengan arti berbeda: sambutan bagi
+        // pengguna baru yang belum punya workspace, dan penambahan workspace
+        // kedua bagi yang sudah lama memakai. Menyapa "selamat datang" pada
+        // pemakaian kedua membuat orang ragu apakah mereka salah halaman.
+        return view('dashboard.onboarding', [
+            'workspacePertama' => $request->user()->workspaces()->doesntExist(),
+        ]);
     }
 
     public function create(Request $request): RedirectResponse
@@ -55,7 +60,7 @@ class WorkspaceController extends Controller
 
         $workspace = Workspace::create([
             'name' => $data['name'],
-            'slug' => $this->uniqueSlug($data['name']),
+            'slug' => Workspace::uniqueSlug($data['name']),
             'owner_id' => $user->id,
             'owner_email' => $user->email,
             'max_sessions' => config('gateway.defaults.max_sessions'),
@@ -159,14 +164,16 @@ class WorkspaceController extends Controller
             'role' => ['required', Rule::in(['admin', 'member'])],
         ]);
 
-        // Anggota harus sudah punya akun Flustra ID: gateway tidak membuat
-        // identitas baru, itu wewenang flustra-auth.
+        // Undangan tidak membuat akun baru: yang diundang harus sudah pernah
+        // login sendiri. Membuatkan akun berarti menetapkan kata sandi untuk
+        // orang lain, dan alamat email yang salah ketik akan menghasilkan akun
+        // hantu yang tidak pernah bisa diklaim siapa pun.
         $user = User::where('email', $data['email'])->first();
 
         if (! $user) {
             return back()->withErrors([
-                'email' => 'Belum ada pengguna dengan email ini. Minta mereka login ke '
-                    .config('app.url').' sekali dulu lewat Flustra ID.',
+                'email' => 'Belum ada pengguna dengan email ini. Minta mereka mendaftar dan login ke '
+                    .config('app.url').' sekali dulu, baru undang lagi.',
             ]);
         }
 
@@ -194,19 +201,5 @@ class WorkspaceController extends Controller
         $workspace->members()->detach($userId);
 
         return back()->with('status', 'Anggota dikeluarkan.');
-    }
-
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'workspace';
-        $slug = $base;
-        $i = 2;
-
-        while (Workspace::withTrashed()->where('slug', $slug)->exists()) {
-            $slug = "{$base}-{$i}";
-            $i++;
-        }
-
-        return $slug;
     }
 }

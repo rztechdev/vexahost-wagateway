@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\OtpRateLimited;
 use App\Models\OtpCode;
 use App\Models\WaSession;
 use App\Models\Workspace;
@@ -10,18 +11,20 @@ use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /**
- * OTP lewat WhatsApp. Ditaruh di gateway karena hanya di sinilah kemampuan
- * mengirim WhatsApp berada — flustra-auth memanggil endpoint ini, lalu menyimpan
- * hasil verifikasinya di kolom users.phone_verified_at miliknya sendiri.
+ * OTP lewat WhatsApp: kirim kode, lalu cocokkan kodenya.
  *
- * Selalu dikirim dari sesi platform: OTP adalah pesan atas nama Flustra, bukan
- * atas nama workspace.
+ * Dikirim dari nomor workspace pemanggil, dan menyebut nama workspace itu.
+ * Sebelumnya seluruh OTP keluar dari satu sesi global (OTP_SESSION_ID) dengan
+ * teks yang menyebut "Flustra" — artinya pelanggan yang memakai endpoint ini
+ * mengirim kode dari nomor kami, atas nama kami, dan memakannya dari kuota
+ * kami. Pelanggan yang menerimanya pun melihat merek yang bukan merek yang
+ * mereka daftarkan, dan laporan spam atas kiriman itu jatuh ke nomor kami.
  */
 class OtpService
 {
     public function __construct(private readonly MessageDispatcher $dispatcher) {}
 
-    public function send(string $phone, string $purpose, ?string $ip = null, ?Workspace $workspace = null): OtpCode
+    public function send(string $phone, string $purpose, ?string $ip, Workspace $workspace): OtpCode
     {
         $normalized = PhoneNumber::normalize($phone);
 
@@ -46,16 +49,17 @@ class OtpService
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addSeconds(config('gateway.otp.ttl_seconds')),
             'requested_by_ip' => $ip,
-            'workspace_id' => $workspace?->id,
+            'workspace_id' => $workspace->id,
         ]);
 
         $minutes = (int) ceil(config('gateway.otp.ttl_seconds') / 60);
+        $pengirim = $workspace->name;
 
-        $this->dispatcher->queue($this->senderSession(), $normalized, [
+        $this->dispatcher->queue($this->senderSession($workspace), $normalized, [
             'type' => 'text',
-            'body' => "*{$code}* adalah kode verifikasi Flustra Anda.\n\n"
+            'body' => "*{$code}* adalah kode verifikasi {$pengirim} Anda.\n\n"
                 ."Kode berlaku {$minutes} menit. Jangan bagikan kode ini kepada siapa pun, "
-                .'termasuk yang mengaku dari Flustra.',
+                ."termasuk yang mengaku dari {$pengirim}.",
         ]);
 
         return $otp;
@@ -96,7 +100,7 @@ class OtpService
         if ($recent) {
             $seconds = config('gateway.otp.resend_cooldown_seconds');
 
-            throw new RuntimeException("Kode baru bisa diminta lagi setelah {$seconds} detik.");
+            throw new OtpRateLimited("Kode baru bisa diminta lagi setelah {$seconds} detik.");
         }
 
         $today = OtpCode::where('phone', $phone)
@@ -106,20 +110,27 @@ class OtpService
         // Batas harian menahan penyalahgunaan endpoint OTP untuk membombardir
         // nomor orang lain — pola yang cepat membuat nomor pengirim diblokir.
         if ($today >= config('gateway.otp.max_per_phone_per_day')) {
-            throw new RuntimeException('Batas permintaan kode untuk nomor ini sudah tercapai hari ini.');
+            throw new OtpRateLimited('Batas permintaan kode untuk nomor ini sudah tercapai hari ini.');
         }
     }
 
-    private function senderSession(): WaSession
+    /**
+     * Nomor pengirim diambil dari workspace pemanggil, dengan aturan yang sama
+     * persis dengan pesan biasa: sesi terhubung tertua. Tidak ada nomor khusus
+     * dan tidak ada konfigurasi tambahan — OTP hanyalah pesan teks biasa yang
+     * kebetulan berisi kode.
+     */
+    private function senderSession(Workspace $workspace): WaSession
     {
-        $id = config('gateway.otp_session_id');
-
-        $session = $id ? WaSession::find($id) : null;
+        $session = $workspace->sessions()
+            ->where('status', 'connected')
+            ->orderBy('created_at')
+            ->first();
 
         if (! $session) {
             throw new RuntimeException(
-                'Sesi pengirim OTP belum dikonfigurasi. Hubungkan satu sesi di '
-                .'dashboard, salin ID sesinya, lalu isi OTP_SESSION_ID di .env.'
+                'Belum ada nomor WhatsApp yang terhubung di workspace ini. '
+                .'Hubungkan satu nomor di dashboard lebih dulu.'
             );
         }
 

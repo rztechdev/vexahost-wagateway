@@ -8,13 +8,14 @@ use App\Models\WaSession;
 /**
  * Kontrak satu provider WhatsApp.
  *
- * Ada tiga jenis provider yang mungkin dipakai Flustra:
- *  - wwebjs    : otomasi WhatsApp Web (gratis, scan QR, tidak resmi)
- *  - cloud_api : Meta Cloud API / BSP seperti Twilio (resmi, berbayar, template)
- *  - fonnte    : gateway pihak ketiga berbayar
+ * Hanya ada satu implementasi: WwebjsProvider — otomasi WhatsApp Web lewat
+ * browser. Produk ini tidak menjual, menyalurkan, atau menawarkan layanan
+ * WhatsApp milik pihak lain; nomor pelanggan tidak pernah melewati gateway
+ * selain milik kita sendiri.
  *
- * Interface ini sengaja ada sejak awal supaya pelanggan bisa dipindah dari
- * wwebjs ke API resmi tanpa mengubah REST API publik atau integrasi mereka.
+ * Interface-nya dipertahankan sebagai batas yang jelas antara "apa yang
+ * dilakukan sebuah sesi" dan "bagaimana caranya" — batas itulah yang membuat
+ * SendMessageJob dan SessionService tidak perlu tahu soal Chromium sama sekali.
  */
 interface WhatsAppProvider
 {

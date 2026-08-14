@@ -54,7 +54,7 @@ Kunci dibuat di dashboard (**API Keys**) atau lewat CLI:
 Dashboard → API Keys → beri nama → Buat
 ```
 
-**Kunci hanya ditampilkan sekali.** Yang tersimpan di server hanya hash-nya. Kalau hilang, buat kunci baru dan cabut yang lama.
+**Kunci bisa dibuka lagi** dari halaman API Keys oleh owner atau admin workspace — tersimpan terenkripsi, bukan hanya hash. Nilai terenkripsinya dibuang begitu kunci dicabut.
 
 ### Scope
 
@@ -203,7 +203,6 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
 | Parameter | Tipe | Wajib | Keterangan |
 |---|---|---|---|
 | `name` | string, maks 60 | ya | Unik dalam satu workspace |
-| `driver` | enum | tidak | `wwebjs` (bawaan), `cloud_api`, `fonnte` |
 
 ```bash
 curl -X POST https://wa.flustra.id/api/v1/sessions \
@@ -350,7 +349,6 @@ curl -X POST https://wa.flustra.id/api/v1/messages/media \
 
 Balasan `202` dengan objek pesan.
 
-> Driver `fonnte` belum mendukung media — permintaan akan gagal permanen.
 
 ### `POST /messages/bulk`
 

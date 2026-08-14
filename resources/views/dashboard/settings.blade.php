@@ -24,8 +24,8 @@
                 @endforeach
             </dl>
             <p class="mt-4 text-xs text-muted-foreground">
-                Batas paket dicerminkan dari flustra-pricing. Untuk mengubahnya, ubah langganan di sana —
-                bukan di sini — supaya tagihan dan batas pemakaian tidak pernah berbeda.
+                Batas paket mengikuti langganan Anda dan tidak bisa diubah dari halaman ini, supaya tagihan dan
+                batas pemakaian tidak pernah berbeda. Butuh batas yang lebih besar? Hubungi kami.
             </p>
 
             @if (auth()->user()->canManage($currentWorkspace))
@@ -78,7 +78,7 @@
         </x-card>
     </div>
 
-    <x-card title="Anggota" subtitle="Anggota harus sudah pernah login ke gateway ini lewat Flustra ID sebelum bisa ditambahkan." class="mt-6">
+    <x-card title="Anggota" subtitle="Anggota harus sudah pernah login ke gateway ini sebelum bisa ditambahkan." class="mt-6">
         <form method="POST" action="{{ route('settings.members.add') }}" class="mb-5 flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-56 flex-1">

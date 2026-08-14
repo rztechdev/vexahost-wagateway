@@ -14,11 +14,13 @@ Kuncinya berbentuk seperti ini:
 fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
-**Ditampilkan satu kali saja.** Kami hanya menyimpan sidik jarinya, bukan kuncinya — jadi bahkan kami tidak bisa menampilkannya lagi. Salin saat itu juga dan simpan di tempat aman.
+**Bisa dilihat lagi kapan saja.** Kuncinya tampil tersamar seperti kolom kata sandi; klik ikon mata untuk menampilkannya. Anda tidak perlu mencatatnya di tempat lain — dan tempat lain itulah (catatan pribadi, chat, screenshot) yang paling sering menjadi jalan bocornya kunci.
 
-Kalau hilang: buat kunci baru, perbarui aplikasi Anda, lalu cabut yang lama.
+Yang perlu Anda jaga sebagai gantinya adalah **akun dashboard Anda**: siapa pun yang bisa masuk sebagai owner atau admin workspace juga bisa membuka kuncinya. Anggota dengan peran biasa tidak bisa.
 
-Bersama kuncinya, halaman itu menampilkan blok `.env` siap salin:
+Kunci disimpan dalam bentuk terenkripsi, dan begitu sebuah kunci dicabut, nilainya kami buang sekalian.
+
+Setiap kunci punya blok `.env` siap salin di halaman yang sama:
 
 ```
 WA_GATEWAY_URL=https://wa.flustra.id
@@ -27,6 +29,8 @@ WA_GATEWAY_SESSION=
 ```
 
 Biarkan `WA_GATEWAY_SESSION` kosong kecuali Anda punya beberapa nomor dan ingin mengunci pengirimnya ke salah satu. Rinciannya di [Mulai Cepat](MULAI_CEPAT.md).
+
+Kalau Anda punya lebih dari satu workspace, tiap workspace punya kunci sendiri dan kunci itu tidak berlaku lintas workspace. Halaman API Keys selalu menampilkan kunci milik workspace yang sedang dibuka — ganti workspace lewat pemilih di kanan atas untuk melihat yang lain.
 
 ## Memakainya
 

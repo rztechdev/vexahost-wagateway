@@ -11,21 +11,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Autentikasi lokal milik flustra-wa sendiri.
- *
- * Setiap aplikasi Flustra memegang form login dan register-nya masing-masing;
- * flustra-auth berperan menangkap sesi lintas aplikasi, bukan menjadi satu-satunya
- * pintu masuk. Jadi gateway ini punya tabel `users` dan alur autentikasinya
- * sendiri, sama seperti aplikasi lain di ekosistem.
+ * Autentikasi milik gateway ini sendiri: tabel `users` dan alur login/register
+ * sendiri, tanpa bergantung pada pintu masuk aplikasi lain.
  *
  * Bentuknya sengaja dijaga sederhana: cukup untuk dipakai dan diuji sekarang,
  * tanpa memutuskan lebih dulu hal-hal yang belum perlu diputuskan (verifikasi
- * email, dua faktor, penautan ke flustra-auth).
+ * email, dua faktor, masuk lewat penyedia identitas pihak ketiga).
  */
 class AuthController extends Controller
 {
@@ -90,7 +85,7 @@ class AuthController extends Controller
         // melewati satu langkah lagi sebelum melihat hasil apa pun.
         $workspace = Workspace::create([
             'name' => $data['workspace'],
-            'slug' => $this->uniqueSlug($data['workspace']),
+            'slug' => Workspace::uniqueSlug($data['workspace']),
             'owner_id' => $user->id,
             'owner_email' => $user->email,
             'max_sessions' => config('gateway.defaults.max_sessions'),
@@ -118,19 +113,5 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('welcome');
-    }
-
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'workspace';
-        $slug = $base;
-        $i = 2;
-
-        while (Workspace::withTrashed()->where('slug', $slug)->exists()) {
-            $slug = "{$base}-{$i}";
-            $i++;
-        }
-
-        return $slug;
     }
 }

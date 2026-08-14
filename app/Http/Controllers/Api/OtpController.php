@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\OtpRateLimited;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * OTP WhatsApp untuk seluruh ekosistem Flustra. Dipakai flustra-auth untuk
- * memverifikasi kepemilikan nomor sebelum aplikasi lain boleh mengirim
- * notifikasi ke nomor tersebut.
+ * Kirim dan cocokkan kode verifikasi lewat WhatsApp.
+ *
+ * Kodenya dikirim dari nomor workspace pemanggil dan memakai namanya, jadi
+ * penerima melihat merek yang memang mereka kenal. Butuh scope `otp` — lihat
+ * peringatan di halaman API Keys soal kenapa scope itu tidak diberikan ke
+ * kunci integrasi biasa.
  */
 class OtpController extends ApiController
 {
@@ -29,8 +33,14 @@ class OtpController extends ApiController
                 $request->ip(),
                 $this->workspace($request),
             );
-        } catch (\RuntimeException $e) {
+        } catch (OtpRateLimited $e) {
             return $this->fail($e->getMessage(), 429);
+        } catch (\RuntimeException $e) {
+            // Bukan soal terlalu sering, melainkan permintaan yang memang belum
+            // bisa dilayani — nomor tidak valid, atau workspace belum punya
+            // nomor terhubung. 429 di sini menyuruh pemanggil menunggu untuk
+            // keadaan yang tidak akan berubah hanya dengan menunggu.
+            return $this->fail($e->getMessage(), 422);
         }
 
         return $this->ok([

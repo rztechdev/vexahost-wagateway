@@ -6,7 +6,6 @@ use App\Models\WaSession;
 use App\Services\SessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class SessionController extends ApiController
 {
@@ -21,15 +20,18 @@ class SessionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        // `driver` sengaja tidak lagi diterima. Hanya ada satu cara mengirim di
+        // produk ini, jadi menerimanya berarti menjanjikan pilihan yang tidak
+        // ada — dan integrasi yang terlanjur mengirimkannya akan menyangka
+        // pilihannya dihormati.
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
-            'driver' => ['nullable', Rule::in(['wwebjs', 'cloud_api', 'fonnte'])],
         ]);
 
         $workspace = $this->workspace($request);
 
         try {
-            $session = $this->sessions->create($workspace, $data['name'], $data['driver'] ?? 'wwebjs');
+            $session = $this->sessions->create($workspace, $data['name']);
         } catch (\RuntimeException $e) {
             return $this->fail($e->getMessage(), 422);
         }

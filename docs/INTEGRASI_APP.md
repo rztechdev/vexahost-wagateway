@@ -28,11 +28,28 @@ Karena itu, bila perusahaan belum menautkan nomornya sendiri, sistem **tidak** d
    WA_GATEWAY_URL=https://wa.flustra.id
    WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxxxxxx
    WA_GATEWAY_SESSION=
+   WA_CS_GATEWAY_KEY=
+   WA_CS_GATEWAY_SESSION=
    ```
 
    `WA_GATEWAY_SESSION` dibiarkan kosong: pesan dikirim dari sesi yang sedang terhubung di workspace milik kunci itu. Isi hanya kalau workspace punya beberapa nomor dan pengirimnya harus dikunci.
 
+   Dua baris `WA_CS_*` mengisi kanal CS — lihat bagian berikutnya. Dikosongkan berarti kanal CS memakai kredensial di atasnya.
+
 3. Buat API key-nya di dashboard gateway, satu kunci per aplikasi per lingkungan.
+
+## Dua kanal: platform dan CS
+
+Aplikasi yang mengabari **operator Flustra sendiri** — bukti pembayaran baru di flustra-pricing, tiket baru di flustra-helpdesk — memakai kanal terpisah dari yang berbicara kepada pelanggan.
+
+| Kanal | Kredensial | Nomor pengirim | Dipakai untuk |
+|---|---|---|---|
+| `CHANNEL_PLATFORM` (bawaan) | `WA_GATEWAY_KEY` | nomor Flustra yang dikenal pelanggan | langganan aktif, pengingat invoice, perkembangan tiket, maintenance |
+| `CHANNEL_CS` | `WA_CS_GATEWAY_KEY` | nomor CS | bukti pembayaran baru, tiket baru — masuk ke `WA_GATEWAY_ADMIN_PHONE` |
+
+Nomor CS didaftarkan sebagai **workspace tersendiri dengan API key sendiri**, bukan sesi kedua di workspace platform: kuota dan riwayat pesannya jadi tidak bercampur dengan trafik pelanggan, sehingga lonjakan di salah satunya tidak mendiamkan yang lain.
+
+Sebelum ada kanal CS, `WA_GATEWAY_ADMIN_PHONE` diisi nomor gateway itu sendiri sehingga kabar internal mendarat di chat "Pesan ke Diri Sendiri" — satu tumpukan berisi kiriman ke pelanggan dan kabar untuk operator sekaligus. Kalau `WA_CS_GATEWAY_KEY` dikosongkan, perilaku lama itulah yang berlaku: kanal CS jatuh kembali ke kredensial platform, supaya notifikasi operator tidak hilang diam-diam gara-gara satu env belum diisi.
 
 ## Cara pakai
 
@@ -42,6 +59,9 @@ use App\Services\WhatsAppGateway;
 WhatsAppGateway::send($user->phone, "Halo {$user->name}, ...");
 WhatsAppGateway::broadcast($phones, 'Pengumuman');
 WhatsAppGateway::template($phone, 'pengingat-invoice', ['nomor' => 'INV-001']);
+
+// Kabar untuk operator Flustra sendiri, dikirim dari nomor CS.
+WhatsAppGateway::send($adminPhone, 'Bukti pembayaran baru.', channel: WhatsAppGateway::CHANNEL_CS);
 ```
 
 Semua method mengembalikan `bool` dan **tidak pernah melempar exception**. Notifikasi WhatsApp adalah pelengkap; invoice tetap harus tersimpan meski WhatsApp-nya gagal terkirim.

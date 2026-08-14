@@ -8,8 +8,9 @@ use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
-| REST API publik. Dipakai flustra-erp, flustra-web, flustra-pricing,
-| flustra-helpdesk, dan (nanti) pelanggan SaaS.
+| REST API publik — satu-satunya cara aplikasi pelanggan berbicara dengan
+| gateway. Tidak ada jalur istimewa untuk siapa pun, termasuk aplikasi kami
+| sendiri: semuanya masuk lewat pintu yang sama dengan kunci workspace sendiri.
 |
 | Autentikasi memakai API key per workspace lewat header X-Api-Key.
 | Rate limit dibatasi per kunci, bukan per IP, supaya satu pelanggan tidak

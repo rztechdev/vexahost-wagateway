@@ -121,7 +121,7 @@ Satu nomor WhatsApp yang tertaut.
 | `id` | **ULID** PK | Ikut dipakai sebagai nama folder & file zip di engine |
 | `workspace_id` | FK cascade | |
 | `name` | string | Label, mis. "CS Utama" |
-| `driver` | enum | `wwebjs`, `cloud_api`, `fonnte` |
+| `driver` | enum | selalu `wwebjs` |
 | `status` | enum | `pending`, `connecting`, `qr`, `connected`, `disconnected`, `failed` |
 | `phone_number` | string(20) null | Terisi setelah tersambung, format `62812…` |
 | `push_name` | string null | Nama profil WhatsApp |
@@ -210,7 +210,7 @@ Unik pada `(workspace_id, slug)`.
 
 **Placeholder tanpa pasangan dibiarkan apa adanya.** Kalau `{{ nama }}` tidak diberi nilai, ia tetap muncul sebagai `{{ nama }}` di pesan. Sengaja — kesalahan yang terlihat jelas lebih baik daripada kalimat yang diam-diam bolong.
 
-> Template di sini bebas format, berbeda dari template WhatsApp Business API resmi yang harus disetujui Meta. Kalau driver `cloud_api` diaktifkan nanti, ia butuh tabel template terpisah yang menyimpan status persetujuan.
+> Template di sini bebas format — tidak ada proses persetujuan seperti pada WhatsApp Business API resmi, yang memang bukan jalur yang dipakai produk ini.
 
 ## `webhooks`
 

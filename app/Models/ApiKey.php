@@ -14,6 +14,7 @@ class ApiKey extends Model
         'name',
         'prefix',
         'key_hash',
+        'key_ciphertext',
         'scopes',
         'rate_limit_per_minute',
         'last_used_at',
@@ -23,11 +24,15 @@ class ApiKey extends Model
         'created_by',
     ];
 
-    protected $hidden = ['key_hash'];
+    protected $hidden = ['key_hash', 'key_ciphertext'];
 
     protected function casts(): array
     {
         return [
+            // Dienkripsi dengan APP_KEY, bukan di-hash: kolom ini memang harus
+            // bisa dibaca balik untuk ditampilkan di dashboard. Verifikasi
+            // permintaan API tetap lewat key_hash yang tidak bisa dibalik.
+            'key_ciphertext' => 'encrypted',
             'scopes' => 'array',
             'last_used_at' => 'datetime',
             'expires_at' => 'datetime',
@@ -41,8 +46,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Membuat kunci baru dan mengembalikan nilai polosnya. Nilai ini satu-satunya
-     * kesempatan pemilik melihat kuncinya — setelah ini hanya hash yang tersimpan.
+     * Membuat kunci baru dan mengembalikan nilai polosnya.
      *
      * @return array{0: self, 1: string}
      */
@@ -57,11 +61,23 @@ class ApiKey extends Model
             'name' => $name,
             'prefix' => $prefix,
             'key_hash' => Hash::make($secret),
+            'key_ciphertext' => $plain,
             'scopes' => $scopes,
             'created_by' => $createdBy,
         ]);
 
         return [$key, $plain];
+    }
+
+    /**
+     * Nilai penuh kunci, untuk ditampilkan ulang di dashboard.
+     *
+     * null untuk kunci yang dibuat sebelum kolom terenkripsi ada — nilainya
+     * memang tidak tersimpan di mana pun dan tidak bisa dipulihkan dari hash.
+     */
+    public function plainKey(): ?string
+    {
+        return $this->key_ciphertext;
     }
 
     public function isUsable(): bool
