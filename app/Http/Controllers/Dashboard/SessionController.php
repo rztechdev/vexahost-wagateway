@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SessionController extends Controller
 {
@@ -106,12 +107,36 @@ class SessionController extends Controller
     public function status(Request $request, string $id): JsonResponse
     {
         $session = $this->find($request, $id);
+        $loadingPercent = null;
+
+        // Sesi yang belum selesai ditanyakan langsung ke engine, tidak cukup
+        // membaca baris database. Baris itu hanya seakurat callback terakhir
+        // yang berhasil sampai; satu event `ready` yang hilang membuat modal
+        // menampilkan "Menyiapkan sesi" tanpa akhir padahal nomornya sudah
+        // tertaut. Sesi yang sudah `connected` atau `failed` tidak perlu
+        // ditanyakan lagi — jawabannya tidak akan berubah tanpa ada aksi baru.
+        if (! in_array($session->status, ['connected', 'failed'], true)) {
+            try {
+                $state = $this->sessions->liveStatus($session);
+                $loadingPercent = $state['loading_percent'] ?? null;
+                $session->refresh();
+            } catch (\Throwable $e) {
+                // Engine tidak terjangkau bukan alasan menggagalkan polling —
+                // jawab dengan keadaan terakhir yang diketahui, dan biarkan
+                // percobaan tiga detik berikutnya mencoba lagi.
+                Log::debug('Gagal menanyakan status sesi ke engine', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json([
             'status' => $session->status,
             'qr' => $session->hasFreshQr() ? $session->qr_payload : null,
             'phone_number' => $session->phone_number,
             'push_name' => $session->push_name,
+            'loading_percent' => $loadingPercent,
             'error' => $session->last_error,
         ]);
     }

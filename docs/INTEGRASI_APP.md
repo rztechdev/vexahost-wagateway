@@ -66,11 +66,17 @@ WhatsAppGateway::send($adminPhone, 'Bukti pembayaran baru.', channel: WhatsAppGa
 
 Semua method mengembalikan `bool` dan **tidak pernah melempar exception**. Notifikasi WhatsApp adalah pelengkap; invoice tetap harus tersimpan meski WhatsApp-nya gagal terkirim.
 
-## Aturan wajib: hanya kirim ke nomor terverifikasi
+## Penyaring nomor terverifikasi — sekarang mati
 
-`config('whatsapp.require_verified_phone')` bernilai `true` dan **jangan dimatikan di produksi**.
+`config('whatsapp.require_verified_phone')` bernilai **`false`** di flustra-pricing dan flustra-helpdesk (14 Agu 2026), dan bawaannya di config pun `false`.
 
-Kolom `users.phone` di aplikasi Flustra hanya pernah divalidasi *formatnya*. Kalau ada salah ketik satu digit, pesan mendarat di HP orang asing — dan laporan spam dari mereka bisa membuat nomor platform diblokir. Status verifikasi berasal dari flustra-auth; lihat [VERIFIKASI_NOMOR.md](VERIFIKASI_NOMOR.md).
+Dokumen ini dulu menyatakan sebaliknya: `true`, dan "jangan dimatikan di produksi". Yang tidak diperhitungkan saat itu adalah bahwa **tidak ada apa pun yang pernah mengisi `users.phone_verified_at`**. Kolom itu hanya bisa terisi lewat SSO dari flustra-auth, mencerminkan claim `phone_verified` — sementara di flustra-auth tidak ada satu pun tautan atau alur pendaftaran yang mengantar pengguna ke halaman verifikasi nomor (`/account/phone`). Halamannya hidup, tapi tidak terjangkau.
+
+Akibatnya penyaring itu tidak menyaring sebagian, ia menolak **seluruhnya**: setiap notifikasi WhatsApp ke pengguna dilewati diam-diam, tanpa galat dan tanpa jejak di log. Pengaman yang menolak semuanya tanpa suara lebih berbahaya daripada risiko yang seharusnya ia cegah, karena tidak ada yang menyadarinya sampai ada pengguna mengeluh tidak pernah dikabari.
+
+Yang ditanggung sekarang: `users.phone` hanya pernah divalidasi *formatnya*. Salah ketik satu digit berarti pesan mendarat di HP orang asing, lengkap dengan nama pelanggan dan nomor invoice — dan laporan spam dari mereka bisa membuat nomor platform diblokir.
+
+**Nyalakan lagi begitu verifikasi nomor benar-benar dijalani pengguna** — yang dibutuhkan cuma jalur yang mengantar mereka ke halaman yang sudah ada. Lihat [VERIFIKASI_NOMOR.md](VERIFIKASI_NOMOR.md).
 
 ## Status per aplikasi
 

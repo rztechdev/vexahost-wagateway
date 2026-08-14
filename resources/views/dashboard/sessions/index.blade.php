@@ -118,9 +118,31 @@
                 </div>
             </template>
 
+            {{-- Tanpa penanda waktu dan petunjuk, layar ini tidak bisa dibedakan
+                 dari macet total: pengguna menatap kalimat yang sama selama
+                 berapa pun lamanya, tanpa tahu apakah ada kemajuan. Penarikan
+                 riwayat chat setelah QR ter-scan memang bisa memakan menit. --}}
             <template x-if="state.status !== 'connected' && !state.qr">
-                <div class="py-12">
-                    <p class="text-sm text-muted-foreground" x-text="state.error || 'Menyiapkan sesi, mohon tunggu…'"></p>
+                <div class="py-10">
+                    <p class="text-sm text-muted-foreground" x-text="pesanTunggu()"></p>
+
+                    <template x-if="state.loading_percent !== null && state.loading_percent !== undefined">
+                        <div class="mx-auto mt-4 w-56">
+                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                <div class="h-full rounded-full bg-primary transition-all" :style="`width: ${state.loading_percent}%`"></div>
+                            </div>
+                            <p class="mt-1.5 text-xs text-muted-foreground" x-text="`${state.loading_percent}% riwayat chat tersalin`"></p>
+                        </div>
+                    </template>
+
+                    <p class="mt-4 text-xs text-muted-foreground" x-text="`${detik} detik berjalan`"></p>
+
+                    <template x-if="detik >= 90">
+                        <p class="mx-auto mt-3 max-w-xs rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                            Lebih lama dari biasanya. Akun dengan banyak riwayat chat memang bisa memakan beberapa menit.
+                            Kalau lewat lima menit tetap begini, tutup modal ini lalu periksa log engine.
+                        </p>
+                    </template>
                 </div>
             </template>
 
@@ -135,7 +157,9 @@ function qrModal(autoOpenId) {
     return {
         sessionId: null,
         timer: null,
-        state: { status: 'pending', qr: null, phone_number: null, error: null },
+        jam: null,
+        detik: 0,
+        state: { status: 'pending', qr: null, phone_number: null, loading_percent: null, error: null },
 
         init() {
             // Setelah menekan "Hubungkan", controller menandai sesi mana yang
@@ -145,15 +169,32 @@ function qrModal(autoOpenId) {
 
         open(id) {
             this.sessionId = id;
-            this.state = { status: 'connecting', qr: null, phone_number: null, error: null };
+            this.detik = 0;
+            this.state = { status: 'connecting', qr: null, phone_number: null, loading_percent: null, error: null };
             this.poll();
             this.timer = setInterval(() => this.poll(), 3000);
+            this.jam = setInterval(() => this.detik++, 1000);
         },
 
         close() {
             this.sessionId = null;
             clearInterval(this.timer);
+            clearInterval(this.jam);
             this.timer = null;
+            this.jam = null;
+        },
+
+        pesanTunggu() {
+            if (this.state.error) return this.state.error;
+
+            // Dibedakan supaya pengguna tahu tahap mana yang sedang berjalan:
+            // menunggu QR terbit itu hitungan detik, sedangkan menunggu setelah
+            // QR ter-scan bisa jauh lebih lama karena riwayat chat ditarik dulu.
+            if (this.state.status === 'connecting' && this.detik > 5) {
+                return 'QR sudah diterima. Menarik riwayat chat dari WhatsApp…';
+            }
+
+            return 'Menyiapkan sesi, mohon tunggu…';
         },
 
         async poll() {

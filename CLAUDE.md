@@ -85,6 +85,14 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Hapus lunak bertabrakan dengan indeks unik.** `wa_sessions` unik pada `(workspace_id, name)` tanpa memandang `deleted_at`, jadi membuat ulang sesi dengan nama yang sama gagal dengan galat 1062. `SessionService::create()` membuang permanen baris tertrash bernama sama lebih dulu — permanen, bukan dipulihkan, supaya baris baru dapat ULID baru dan tidak mewarisi folder kredensial lama di engine.
 
+**Persistent volume TIDAK menyelamatkan sesi — store Laravel yang menyelamatkan.** `RemoteAuth.extractRemoteSession()` selalu menghapus isi `userDataDir` di volume setiap kali sesi dijalankan, lalu memulihkannya dari store. Kalau store bilang tidak ada backup, yang tersisa folder kosong dan WhatsApp meminta scan QR lagi. Volume cuma menampung file kerja Chromium di antara dua restart. Konsekuensinya: `LaravelStore.sessionExists()` **tidak boleh** menjawab `false` saat Laravel sekadar tidak terjangkau — jawaban itu memicu penghapusan kredensial yang masih sempurna. Ia harus melempar galat, supaya `start()` batal sebelum penghapusan terjadi.
+
+**Zip RemoteAuth ada di `dataPath`, bukan di working directory.** `compressSession()` menulis ke `path.join(this.dataPath, '<session>.zip')`. `LaravelStore.save()` dulu membacanya sebagai path relatif, jadi setiap upload berakhir ENOENT dan **tidak pernah ada satu pun backup tersimpan** — setiap redeploy menghapus kredensial lalu meminta scan QR ulang, persis masalah yang seluruh mekanisme ini dibuat untuk menghilangkan. Gejalanya diam: log cuma memuat satu baris warning, dan halaman sesi tampak normal sampai redeploy berikutnya. `engine/tests/laravel-store.test.js` menjaganya (`npm test` di dalam `engine/`).
+
+**`client.destroy()` tidak menyimpan apa pun pada RemoteAuth** — ia hanya menghentikan timer backup. Penyimpanan saat SIGTERM harus dipanggil eksplisit lewat `manager.persist()` sebelum `stop()`.
+
+**Dashboard tidak boleh mengandalkan callback saja untuk status sesi.** Satu event `ready` yang hilang membuat modal QR menampilkan "Menyiapkan sesi" tanpa akhir. Endpoint `sessions.status` menanyakan engine langsung selama sesi belum `connected`/`failed`, jadi keadaan sebenarnya muncul dalam hitungan detik tanpa menunggu `SyncSessionStatusJob` yang berjalan tiap menit — dan tanpa bergantung pada Scheduled Task Coolify yang bisa saja belum dipasang.
+
 **`QR_TTL_SECONDS` jangan di bawah 60.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap sampai ~60 detik; masa berlaku lebih pendek membuat modal QR berkedip kosong.
 
 **Laravel Pail tidak disertakan di `npm run all`** — butuh `pcntl` yang tidak ada di PHP Windows, dan `--kill-others` membuat matinya Pail menjatuhkan proses lain.

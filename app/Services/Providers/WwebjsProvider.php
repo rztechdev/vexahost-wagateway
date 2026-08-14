@@ -52,6 +52,9 @@ class WwebjsProvider implements WhatsAppProvider
             'status' => $data['status'] ?? 'disconnected',
             'phone_number' => $data['phone_number'] ?? null,
             'push_name' => $data['push_name'] ?? null,
+            // Persentase penarikan riwayat chat setelah QR ter-scan. Hanya ada
+            // di memori engine selama proses itu berlangsung.
+            'loading_percent' => $data['loading_percent'] ?? null,
         ];
     }
 

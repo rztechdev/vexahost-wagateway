@@ -101,7 +101,14 @@ export const laravel = {
     async backupExists(sessionId) {
         const res = await request('GET', `/internal/engine/session-backup/${sessionId}/exists`);
 
-        if (!res.ok) return false;
+        // Endpoint-nya selalu menjawab 200 dengan exists true/false, termasuk
+        // untuk sesi yang memang belum punya backup. Jadi status selain 200
+        // berarti gangguan, bukan "tidak ada" — dan membedakan keduanya penting:
+        // pemanggilnya memakai jawaban ini untuk memutuskan apakah kredensial
+        // sesi di volume boleh dihapus.
+        if (!res.ok) {
+            throw new Error(`Gagal memeriksa backup sesi: HTTP ${res.status}`);
+        }
 
         const json = await res.json();
 

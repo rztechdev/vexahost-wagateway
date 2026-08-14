@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { config } from '../config.js';
 import { laravel } from '../laravel.js';
 import { logger } from '../logger.js';
 
@@ -10,30 +12,40 @@ import { logger } from '../logger.js';
  * memindahkan file zip itu ke dan dari tempat penyimpanan. Kontrak yang wajib
  * dipenuhi: sessionExists, save, extract, delete.
  *
- * Ini pasangan dari persistent volume: volume menangani kasus umum (redeploy
- * biasa), store menangani kasus volume ikut hilang — server diganti, volume
- * terhapus, atau engine dipindah ke host lain.
+ * Store inilah satu-satunya yang menentukan sesi selamat atau tidak dari
+ * redeploy — bukan persistent volume. RemoteAuth SELALU menghapus isi
+ * userDataDir di volume setiap kali sesi dijalankan (lihat
+ * `extractRemoteSession()` di RemoteAuth.js), lalu memulihkannya dari store.
+ * Kalau store bilang tidak ada backup, yang tersisa adalah folder kosong dan
+ * WhatsApp meminta scan QR lagi. Volume hanya menampung file kerja Chromium di
+ * antara dua restart, bukan jaring pengaman.
  */
 export class LaravelStore {
+    /**
+     * Kegagalan sengaja dilempar, bukan dijawab "tidak ada".
+     *
+     * RemoteAuth memanggil ini sebelum menghapus userDataDir. Menjawab false
+     * saat Laravel sekadar tidak terjangkau membuat kredensial yang masih
+     * sempurna ikut terhapus, dan nomor harus di-scan ulang gara-gara gangguan
+     * jaringan sesaat. Melempar galat membatalkan seluruh proses start sebelum
+     * penghapusan itu terjadi, jadi kredensialnya utuh untuk percobaan
+     * berikutnya.
+     */
     async sessionExists({ session }) {
-        try {
-            return await laravel.backupExists(toSessionId(session));
-        } catch (error) {
-            logger.warn({ session, err: error.message }, 'Gagal memeriksa backup sesi');
-
-            // Menjawab "tidak ada" saat Laravel tidak bisa dihubungi lebih aman
-            // daripada "ada": RemoteAuth akan memunculkan QR baru, bukan
-            // menimpa kredensial yang masih valid di volume dengan file kosong.
-            return false;
-        }
+        return laravel.backupExists(toSessionId(session));
     }
 
     async save({ session }) {
         const sessionId = toSessionId(session);
 
-        // RemoteAuth menaruh zip hasil kompresinya di `<session>.zip` relatif
-        // terhadap working directory proses.
-        const buffer = await readFile(`${session}.zip`);
+        // RemoteAuth menulis zip-nya ke `<dataPath>/<session>.zip`
+        // (`compressSession()` memakai path.join(this.dataPath, ...)), bukan ke
+        // working directory proses. Membacanya sebagai path relatif dulu selalu
+        // berakhir ENOENT, sehingga TIDAK PERNAH ada satu pun backup yang
+        // terkirim — dan setiap redeploy menghapus kredensial lalu meminta scan
+        // QR ulang, persis masalah yang store ini dibuat untuk menghilangkan.
+        const zipPath = path.join(config.dataPath, `${session}.zip`);
+        const buffer = await readFile(zipPath);
         const digest = createHash('sha256').update(buffer).digest('hex');
 
         await laravel.uploadBackup(sessionId, buffer, digest);

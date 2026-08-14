@@ -100,7 +100,7 @@ export class SessionManager {
 
             this.#bindEvents(sessionId, client);
 
-            const entry = { client, status: 'connecting', phoneNumber: null, pushName: null };
+            const entry = { client, status: 'connecting', phoneNumber: null, pushName: null, loadingPercent: null };
             this.#sessions.set(sessionId, entry);
 
             // initialize() sengaja tidak di-await: memulihkan sesi bisa memakan
@@ -118,6 +118,31 @@ export class SessionManager {
         } finally {
             this.#starting.delete(sessionId);
         }
+    }
+
+    /**
+     * Memaksa RemoteAuth mengirim kredensial terbaru ke store sekarang juga.
+     *
+     * Dipanggil sebelum mematikan engine. `client.destroy()` tidak menyimpan
+     * apa pun pada RemoteAuth — ia cuma menghentikan timer backup berkala —
+     * jadi tanpa ini, semua perubahan sejak backup terakhir (sampai
+     * WA_BACKUP_INTERVAL_MS) hilang saat redeploy.
+     *
+     * Hanya untuk sesi yang benar-benar tersambung: menyimpan kredensial sesi
+     * yang sedang menampilkan QR atau baru saja terputus berarti menimpa backup
+     * yang masih baik dengan folder yang belum tentu bisa dipulihkan.
+     */
+    async persist(sessionId) {
+        const entry = this.#sessions.get(sessionId);
+
+        if (!entry || entry.status !== 'connected') return;
+
+        const strategy = entry.client.authStrategy;
+
+        if (typeof strategy?.storeRemoteSession !== 'function') return;
+
+        await strategy.storeRemoteSession();
+        logger.info({ sessionId }, 'Kredensial sesi disimpan sebelum engine berhenti');
     }
 
     async stop(sessionId) {
@@ -170,6 +195,7 @@ export class SessionManager {
             status: entry.status,
             phone_number: entry.phoneNumber,
             push_name: entry.pushName,
+            loading_percent: entry.loadingPercent,
         };
     }
 
@@ -294,6 +320,19 @@ export class SessionManager {
             await laravel.event(sessionId, 'authenticated');
         });
 
+        /**
+         * Antara QR ter-scan dan sesi siap, WhatsApp Web menarik riwayat chat
+         * lebih dulu. Untuk akun yang ramai, jeda itu bisa berupa menit-menit
+         * tanpa satu pun event lain — dan dashboard hanya bisa menampilkan
+         * "menyiapkan sesi" tanpa tahu apakah ada kemajuan atau memang macet.
+         * Persentasenya cukup disimpan di memori: ia hanya berguna selama ada
+         * orang menatap modalnya, dan status() yang menyajikannya.
+         */
+        client.on('loading_screen', (percent) => {
+            const entry = this.#sessions.get(sessionId);
+            if (entry) entry.loadingPercent = Number(percent);
+        });
+
         client.on('auth_failure', async (message) => {
             const entry = this.#sessions.get(sessionId);
             if (entry) entry.status = 'failed';
@@ -311,6 +350,7 @@ export class SessionManager {
                 entry.status = 'connected';
                 entry.phoneNumber = phoneNumber;
                 entry.pushName = pushName;
+                entry.loadingPercent = null;
             }
 
             logger.info({ sessionId }, 'Sesi siap');

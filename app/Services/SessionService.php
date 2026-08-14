@@ -98,6 +98,47 @@ class SessionService
      * Dipanggil terjadwal karena engine bisa saja mati tanpa sempat mengirim
      * callback disconnected (mis. container dibunuh).
      */
+    /**
+     * Keadaan sesi menurut engine, ditanyakan saat itu juga.
+     *
+     * Dipakai dashboard selama modal QR terbuka. Baris di database hanya
+     * seakurat callback terakhir yang berhasil sampai — satu event `ready` yang
+     * hilang (Laravel sedang restart, jaringan antar container tersendat)
+     * membuat modal menunggu selamanya padahal nomornya sudah tertaut sejak
+     * tadi. Bertanya langsung membuat keadaan sebenarnya muncul dalam hitungan
+     * detik, tanpa bergantung pada scheduled task yang berjalan tiap menit.
+     *
+     * @return array{status: string, phone_number?: ?string, push_name?: ?string, loading_percent?: ?int}
+     */
+    public function liveStatus(WaSession $session): array
+    {
+        $state = $this->providers->for($session)->status($session);
+        $status = $state['status'] ?? null;
+
+        // Hanya menulis kalau memang berbeda. Endpoint ini dipanggil tiap tiga
+        // detik selama ada orang menatap modal; menulis baris yang sama
+        // berulang kali membebani database tanpa mengubah apa pun.
+        if ($status !== null && $status !== $session->status) {
+            $perubahan = ['status' => $status];
+
+            if ($status === 'connected') {
+                $perubahan += [
+                    'phone_number' => $state['phone_number'] ?? $session->phone_number,
+                    'push_name' => $state['push_name'] ?? $session->push_name,
+                    'qr_payload' => null,
+                    'qr_expires_at' => null,
+                    'connected_at' => $session->connected_at ?? now(),
+                    'last_seen_at' => now(),
+                    'last_error' => null,
+                ];
+            }
+
+            $session->update($perubahan);
+        }
+
+        return $state;
+    }
+
     public function syncStatus(WaSession $session): WaSession
     {
         $state = $this->providers->for($session)->status($session);

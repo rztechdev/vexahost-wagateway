@@ -104,17 +104,41 @@ const server = app.listen(config.port, config.host, async () => {
 });
 
 /**
- * Coolify mengirim SIGTERM saat redeploy. Menutup client dengan rapi memberi
- * RemoteAuth kesempatan menuliskan kredensial terakhirnya ke volume — tanpa
- * ini, sesi bisa tertinggal dalam keadaan setengah tertulis dan gagal
- * dipulihkan setelah restart.
+ * Coolify mengirim SIGTERM saat redeploy.
+ *
+ * Kredensial disimpan dulu ke store, baru client-nya ditutup. Urutannya
+ * penting: `client.destroy()` tidak menyimpan apa pun pada RemoteAuth, ia cuma
+ * menghentikan timer backup — jadi menutup lebih dulu berarti membuang semua
+ * perubahan sejak backup berkala terakhir.
+ *
+ * Penyimpanan dibatasi waktu. Docker hanya memberi jeda beberapa detik sebelum
+ * SIGKILL, dan menggantung sampai dipaksa mati justru melewatkan penutupan
+ * client yang rapi — lebih baik kehilangan satu siklus backup daripada
+ * kehilangan keduanya.
  */
 async function shutdown(signal) {
     logger.info({ signal }, 'Mematikan engine');
 
     server.close();
 
-    await Promise.all(manager.listSessionIds().map((id) => manager.stop(id)));
+    const ids = manager.listSessionIds();
+
+    await Promise.all(
+        ids.map(async (id) => {
+            try {
+                await Promise.race([
+                    manager.persist(id),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('habis waktu')), 8000),
+                    ),
+                ]);
+            } catch (error) {
+                logger.warn({ sessionId: id, err: error.message }, 'Gagal menyimpan kredensial sesi saat berhenti');
+            }
+
+            await manager.stop(id);
+        }),
+    );
 
     process.exit(0);
 }
