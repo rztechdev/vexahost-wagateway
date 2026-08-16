@@ -63,6 +63,53 @@ rm -f "$TANDA_BERHENTI" "$PIDFILE_ENGINE"
 # Penantiannya dibatasi 120 detik supaya web yang benar-benar rusak tidak
 # membuat engine ikut diam selamanya; sesudah itu engine jalan apa adanya dan
 # `bootstrap()` di sisi Node punya percobaan ulangnya sendiri.
+#
+# Chromium diunduh Puppeteer saat `npm ci` di dalam engine/, dan secara bawaan
+# mendarat di $HOME/.cache/puppeteer — yaitu /root/.cache/puppeteer. Selama
+# engine punya resource sendiri, folder itu ikut masuk ke image akhir. Sejak
+# base directory-nya jadi `/`, yang dibawa Nixpacks ke image akhir hanya /app;
+# unduhan di /root/.cache hilang, dan engine baru menyadarinya saat sesi
+# pertama dijalankan.
+#
+# Gejalanya buruk untuk produk yang dijual: pesan Puppeteer berbahasa Inggris
+# muncul apa adanya di kartu sesi milik pelanggan ("Could not find Chrome ..."),
+# sementara log tidak menyebut apa-apa saat boot. Pemeriksaan di bawah
+# memindahkan kegagalan itu ke tempat yang benar — saat container menyala,
+# dengan perbaikannya disebutkan langsung.
+#
+# Sengaja TIDAK mengunduh sendiri sebagai penyelamat: itu menyembunyikan build
+# yang salah dan menambah ±170 MB unduhan pada setiap restart container.
+periksa_chromium() {
+    local jalur
+    jalur="$(cd engine && node -e 'console.log(require("puppeteer").executablePath())' 2>/dev/null)"
+
+    if [ -n "$jalur" ] && [ -x "$jalur" ]; then
+        echo "[start.sh] Chromium ditemukan: $jalur"
+        return 0
+    fi
+
+    cat >&2 <<'PERINGATAN'
+[start.sh] ============================================================
+[start.sh] CHROMIUM TIDAK DITEMUKAN. Seluruh sesi WhatsApp akan gagal.
+[start.sh]
+[start.sh] Web, API, dan dashboard tetap jalan — yang mati cuma kemampuan
+[start.sh] menyambung ke WhatsApp. Kredensial sesi yang sudah ada AMAN di
+[start.sh] cadangan Laravel; ia pulih sendiri begitu Chromium ada.
+[start.sh]
+[start.sh] Perbaikannya di Coolify, dua kolom:
+[start.sh]
+[start.sh]   Environment  : PUPPETEER_CACHE_DIR=/app/engine/.puppeteer
+[start.sh]   Install Cmd  : ... && PUPPETEER_CACHE_DIR=/app/engine/.puppeteer \
+[start.sh]                  npm --prefix engine ci --omit=dev
+[start.sh]
+[start.sh] Tanpa PUPPETEER_CACHE_DIR, Puppeteer mengunduh Chromium ke
+[start.sh] /root/.cache/puppeteer — folder yang TIDAK ikut ke image akhir.
+[start.sh] ============================================================
+PERINGATAN
+
+    return 1
+}
+
 supervisi_engine() {
     local tunggu=0
 
@@ -78,6 +125,8 @@ supervisi_engine() {
 
         sleep 1
     done
+
+    periksa_chromium || true
 
     while [ ! -f "$TANDA_BERHENTI" ]; do
         node engine/src/server.js &

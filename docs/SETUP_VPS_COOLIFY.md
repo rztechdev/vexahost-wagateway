@@ -197,7 +197,7 @@ Kalau token bocor lewat log, ia tidak boleh sekaligus memberi kemampuan memalsuk
 **Install Command**
 
 ```
-composer install --no-dev --optimize-autoloader && npm ci && npm --prefix engine ci --omit=dev
+composer install --no-dev --optimize-autoloader && npm ci && PUPPETEER_CACHE_DIR=/app/engine/.puppeteer npm --prefix engine ci --omit=dev
 ```
 
 > Bagian `npm --prefix engine ci` inilah yang dulu dikerjakan resource engine tersendiri. Di sinilah Puppeteer mengunduh Chromium (±170 MB), jadi build pertama setelah perubahan ini lebih lama dari biasanya.

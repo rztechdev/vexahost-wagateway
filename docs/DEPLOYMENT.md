@@ -74,10 +74,12 @@ Repo `flustratech-dev/flustra-wa` harus terlihat oleh GitHub App Coolify yang su
 **Install command**
 
 ```
-composer install --no-dev --optimize-autoloader && npm ci && npm --prefix engine ci --omit=dev
+composer install --no-dev --optimize-autoloader && npm ci && PUPPETEER_CACHE_DIR=/app/engine/.puppeteer npm --prefix engine ci --omit=dev
 ```
 
-> Bagian `npm --prefix engine ci` inilah yang dulu dikerjakan resource engine. Di sinilah Puppeteer mengunduh Chromium-nya (±170 MB), jadi build pertama setelah perubahan ini memang lebih lama dari biasanya. Build berikutnya memakai cache Nixpacks.
+> Bagian `npm --prefix engine ci` inilah yang dulu dikerjakan resource engine. Di sinilah Puppeteer mengunduh Chromium-nya (±170 MB), jadi build pertama setelah perubahan ini memang lebih lama dari biasanya.
+>
+> **`PUPPETEER_CACHE_DIR` di depannya bukan hiasan.** Tanpa itu Puppeteer mengunduh Chromium ke `$HOME/.cache/puppeteer` = `/root/.cache/puppeteer`. Selama engine punya resource sendiri, folder itu ikut ke image akhir. Sejak base directory-nya `/`, yang dibawa Nixpacks ke image akhir hanya `/app` — unduhannya hilang, dan baru ketahuan saat sesi pertama dijalankan, sebagai `Could not find Chrome` yang muncul apa adanya di kartu sesi pelanggan. Nilai yang sama harus ada juga di daftar environment variable, karena yang membaca variabel ini dua kali: saat mengunduh (build) dan saat mencari (runtime).
 
 **Build command**
 
@@ -246,6 +248,7 @@ Karena itu engine lama **dihentikan lebih dulu**, bukan belakangan. Ada jeda lay
 | Gejala | Kemungkinan penyebab |
 |---|---|
 | Sesi mentok `connecting` | Chromium gagal jalan — cek log; biasanya RAM kurang atau library sistem tidak lengkap |
+| `Could not find Chrome` di kartu sesi | `PUPPETEER_CACHE_DIR` belum diisi, atau belum ikut dipasang di Install Command. Log saat boot memuat blok `CHROMIUM TIDAK DITEMUKAN` beserta perbaikannya |
 | Semua callback ditolak 401 | `ENGINE_HMAC_SECRET` berbeda antara blok Laravel dan blok engine di env yang sama |
 | `Token engine tidak valid` | `ENGINE_TOKEN` berbeda antara keduanya |
 | Sesi minta QR ulang tiap deploy | Volume `wa-storage` belum ter-mount, atau `matikan()` di `start.sh` tidak sempat berjalan — naikkan grace period stop di Coolify |
