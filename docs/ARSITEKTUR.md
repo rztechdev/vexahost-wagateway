@@ -12,34 +12,41 @@ Dokumen ini menjelaskan bagaimana bagian-bagian flustra-wa bekerja sama, dan **k
         └─────────────┴──────────────┴─────────────────┴───────────────┘
                                      │
                       X-Api-Key  ▼  HTTPS
-        ┌────────────────────────────────────────────────┐
-        │  flustra-wa  (Laravel 12)                      │
-        │                                                │
-        │  • dashboard      • REST API v1                │
-        │  • workspace & user  • antrean pesan              │
-        │  • API key        • riwayat & status           │
-        │  • webhook        • penyimpan cadangan sesi    │
-        └────────────────────────────────────────────────┘
-              │ ▲                              │
-   X-Engine-  │ │  callback HMAC               │  jobs
-   Token      ▼ │  (qr, ready, pesan, ack)     ▼
-        ┌───────────────────────────┐   ┌──────────────────┐
-        │ flustra-wa-engine (Node)  │   │ worker antrean   │
-        │ whatsapp-web.js + Chrome  │   │ (php queue:work) │
-        │ volume: /data/.wwebjs_auth│   └──────────────────┘
-        └───────────────────────────┘
-              │
-              ▼
-          WhatsApp Web
+   ╔═════════════════════════════════════════════════════════════════════╗
+   ║  SATU container Coolify — start.sh                                  ║
+   ║                                                                     ║
+   ║  ┌────────────────────────────────────────────────┐                 ║
+   ║  │  web (Laravel 12, php artisan serve)           │                 ║
+   ║  │                                                │                 ║
+   ║  │  • dashboard      • REST API v1                │                 ║
+   ║  │  • workspace & user  • antrean pesan           │                 ║
+   ║  │  • API key        • riwayat & status           │                 ║
+   ║  │  • webhook        • penyimpan cadangan sesi    │                 ║
+   ║  └────────────────────────────────────────────────┘                 ║
+   ║        │ ▲                       │              │                   ║
+   ║   127.0│.0.1:3100                │ jobs         │ tiap menit        ║
+   ║   token│ │ callback HMAC         ▼              ▼                   ║
+   ║        ▼ │ (qr, ready, ack)  ┌──────────────┐ ┌──────────────┐      ║
+   ║  ┌───────────────────────┐   │ queue:work   │ │ schedule:work│      ║
+   ║  │ engine (Node)         │   └──────────────┘ └──────────────┘      ║
+   ║  │ whatsapp-web.js       │                                          ║
+   ║  │ + Chromium per sesi   │   volume: /data/.wwebjs_auth             ║
+   ║  └───────────────────────┘   volume: /app/storage/app/private       ║
+   ╚═════════│═══════════════════════════════════════════════════════════╝
+             ▼
+         WhatsApp Web
 ```
 
-Tiga proses, satu repo:
+Empat proses, satu repo, **satu container**:
 
 | Proses | Bahasa | Tugas |
 |---|---|---|
-| `flustra-wa` | PHP | Menerima permintaan, menyimpan keadaan, menyajikan dashboard |
-| `flustra-wa-engine` | Node.js | Berbicara dengan WhatsApp |
-| `flustra-wa-worker` | PHP | Menjalankan pengiriman & webhook di latar belakang |
+| web | PHP | Menerima permintaan, menyimpan keadaan, menyajikan dashboard |
+| engine | Node.js | Berbicara dengan WhatsApp |
+| worker | PHP | Menjalankan pengiriman & webhook di latar belakang |
+| penjadwal | PHP | Sinkronisasi status sesi tiap menit, pembersihan data lama |
+
+Pembagian tugas di bawah ini tetap berlaku apa adanya — yang berubah 17 Agustus 2026 hanya **di mana** keempatnya berjalan, bukan siapa mengerjakan apa. Engine tetap proses terpisah dengan batas yang sama tegasnya: ia tetap dijaga token, tetap tidak punya database, tetap bisa dibunuh dan dibangun ulang kapan saja.
 
 ---
 
@@ -51,11 +58,19 @@ Pertanyaan yang wajar: kenapa tidak semuanya Node, atau semuanya PHP?
 
 **Kenapa sisanya PHP.** Seluruh ekosistem Flustra adalah Laravel. Dashboard, workspace, billing, SSO, antrean — semua polanya sudah ada dan sudah terbukti. Menulis ulang semuanya dalam Node berarti membangun kembali dari nol hal-hal yang sudah selesai.
 
-**Kenapa engine jadi container terpisah, bukan proses di dalam container Laravel.** Ini pelajaran langsung dari `flustra-erp`, di mana Node dijalankan di latar belakang di dalam container PHP:
+**Kenapa engine jadi proses terpisah, bukan library di dalam PHP.** Karena bahasanya memang beda, dan batas prosesnya yang membuat engine bisa dibunuh, di-restart, dan dibangun ulang tanpa menyentuh keadaan apa pun.
 
-- Chromium memakan RAM besar dan sesekali crash. Kalau satu container, ia menjatuhkan aplikasi juga.
-- Container Laravel harus memasang belasan library sistem hanya untuk Chromium — memperlambat build dan memperbesar image.
-- Skala keduanya berbeda. Menambah kapasitas web tidak berarti perlu menambah kapasitas WhatsApp, dan sebaliknya.
+**Kenapa proses, bukan container sendiri.** Ini keputusan yang dibalik pada **17 Agustus 2026**. Sampai tanggal itu engine punya resource Coolify sendiri, dengan tiga alasan yang ditulis di sini. Ketiganya masih ditulis apa adanya di bawah, beserta apa yang terjadi pada masing-masing — supaya keputusan ini tidak dibongkar ulang tiap sesi baru, dan supaya yang membongkarnya tahu persis apa yang ia bayar.
+
+| Alasan lama | Keadaannya sekarang |
+|---|---|
+| "Chromium sesekali crash dan menjatuhkan aplikasi juga." | **Terjawab.** Engine berjalan di dalam loop pengawas di `start.sh`; matinya engine menjalankan engine lagi dalam 3 detik tanpa menyentuh proses web. Dijaga Uji 4 di [DEPLOYMENT.md](DEPLOYMENT.md#4-uji-regresi-wajib). |
+| "Container Laravel harus memasang belasan library sistem hanya untuk Chromium." | **Masih benar, dan memang dibayar.** Bedanya, biaya itu dibayar sekali per build image dan di-cache Nixpacks — sementara tiga resource membayar `composer install` + `npm ci` **tiga kali pada setiap deploy**. |
+| "Skala keduanya berbeda." | **Benar secara prinsip, tidak berlaku di sini.** Satu VPS 2 vCPU, satu mesin; tidak ada yang bisa diskalakan sendiri-sendiri. Alasan ini baru hidup lagi kalau gateway pindah ke mesin yang bisa menambah node. |
+
+Satu hal yang **tidak** terjawab dan harus disadari: di satu container, Chromium berebut RAM dengan PHP, dan yang dipilih OOM killer belum tentu Chromium. Penjagaannya bukan arsitektur melainkan angka — `WA_MAX_SESSIONS` yang disetel jujur terhadap RAM yang ada. Cara menghitungnya di [DEPLOYMENT.md §2](DEPLOYMENT.md#2-berapa-sesi-yang-muat).
+
+Kalau nanti gateway benar-benar perlu dipisah lagi, yang dipisah **engine**-nya saja. Worker dan penjadwal tidak pernah layak jadi resource sendiri: keduanya hampir tanpa biaya jalan, tapi masing-masing membawa satu build penuh.
 
 ---
 

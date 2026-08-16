@@ -78,7 +78,7 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 
 | Dokumen | Isi |
 |---|---|
-| [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) | **Dari VPS kosong sampai gateway melayani permintaan** — pasang Coolify, DNS, database, tiga resource, verifikasi |
+| [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) | **Dari VPS kosong sampai gateway melayani permintaan** — pasang Coolify, DNS, database, satu resource, verifikasi |
 | [ENVIRONMENT.md](ENVIRONMENT.md) | Tiga tahap: development, staging, production |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Rincian tiap resource Coolify, plus uji regresi wajib |
 | [OPERASIONAL.md](OPERASIONAL.md) | Pemantauan, pemulihan, pemecahan masalah, skala, keamanan |

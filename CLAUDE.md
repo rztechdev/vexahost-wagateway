@@ -8,13 +8,14 @@ Gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra, dirancang agar b
 
 ## Bentuknya
 
-Tiga proses, satu repo:
+Empat proses, satu repo, **satu container** ([`start.sh`](start.sh)):
 
 | Proses | Bahasa | Tugas |
 |---|---|---|
-| root | Laravel 12 | Dashboard, REST API, workspace, antrean, webhook |
+| web | Laravel 12 | Dashboard, REST API, workspace, antrean, webhook |
 | `engine/` | Node 20 | `whatsapp-web.js` + Chromium — satu sesi = satu Chromium |
 | worker | Laravel | `queue:work` — pengiriman & webhook di latar belakang |
+| penjadwal | Laravel | `schedule:work` — sinkronisasi status sesi tiap menit |
 
 Laravel memegang **keadaan**, engine memegang **koneksi**. Engine tidak punya database: saat boot ia menanyakan daftar sesi ke Laravel lewat `/internal/engine/bootstrap`.
 
@@ -63,7 +64,9 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Baris baru dari `firstOrCreate` tidak membaca nilai default database.** Tulis nilai awal secara eksplisit, kalau tidak counter terbaca `null` bukan `0`.
 
-**Hostname internal Coolify adalah UUID resource, bukan nama tampilannya.** `ENGINE_URL=http://flustra-wa-engine:3100` menghasilkan `cURL error 6: Could not resolve host` — nama itu cuma label di antarmuka. Pakai UUID dari URL resource (`.../application/<uuid>`), sama seperti yang sudah dipakai Coolify untuk `DB_HOST`. Berlaku dua arah: `ENGINE_URL` di Laravel + worker, `LARAVEL_URL` di engine.
+**Hostname internal Coolify adalah UUID resource, bukan nama tampilannya.** `DB_HOST=flustra-mysql` menghasilkan `cURL error 6: Could not resolve host` — nama itu cuma label di antarmuka. Pakai UUID dari URL resource (`.../application/<uuid>`); Coolify sudah mengisinya begitu untuk `DB_HOST`. Sejak penyatuan container ini tidak lagi berlaku untuk `ENGINE_URL`/`LARAVEL_URL` — keduanya `127.0.0.1` sekarang, dan satu kelas kegagalan ikut hilang bersamanya.
+
+**Env engine dan env Laravel berbagi satu ruang nama.** Tiga nama bertabrakan dan harus berawalan: `ENGINE_PORT`, `ENGINE_HOST`, `ENGINE_LOG_LEVEL`. `PORT` dan `HOST` polos dipakai Coolify untuk proses web; `LOG_LEVEL` polos dipakai Laravel dengan skala nilai berbeda — `error` di produksi, yang di engine berarti kehilangan baris `Backup sesi terkirim`, satu-satunya bukti cadangan sesi tersimpan dan patokan uji regresi utamanya. Nama lama tetap diterima sebagai cadangan supaya `npm --prefix engine run dev` masih jalan di lokal. `engine/tests/config.test.js` menjaganya.
 
 **Nixpacks memakai Node 18 kalau `NIXPACKS_NODE_VERSION` tidak diset.** Engine menuntut Node 20 lewat `engines` di `engine/package.json`, dan Node 18 sudah EOL. Env Laravel sudah memuatnya sejak awal; env engine dulu tidak.
 
@@ -97,7 +100,7 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Laravel Pail tidak disertakan di `npm run all`** — butuh `pcntl` yang tidak ada di PHP Windows, dan `--kill-others` membuat matinya Pail menjatuhkan proses lain.
 
-**Tidak ada template env di repo.** Berkas `.env.*.example` dihapus atas permintaan Ryan (13 Agu 2026) supaya isian env tinggal disalin dari berkas `.env.<tahap>` di mesinnya ke Coolify tanpa komentar yang mengganggu; `EnvTemplateTest` ikut dihapus. Konsekuensinya: menambah variabel env **tidak** akan ketahuan terlewat oleh tes apa pun. Daftarkan variabel baru di `docs/ENVIRONMENT.md` dan isikan ke ketiga resource Coolify pada perubahan yang sama.
+**Tidak ada template env di repo.** Berkas `.env.*.example` dihapus atas permintaan Ryan (13 Agu 2026) supaya isian env tinggal disalin dari berkas `.env.<tahap>` di mesinnya ke Coolify tanpa komentar yang mengganggu; `EnvTemplateTest` ikut dihapus. Konsekuensinya: menambah variabel env **tidak** akan ketahuan terlewat oleh tes apa pun. Daftarkan variabel baru di `docs/ENVIRONMENT.md` dan isikan ke resource Coolify pada perubahan yang sama — sejak 17 Agu 2026 cuma satu resource per tahap, jadi satu tempat saja.
 
 ## Alur git
 
@@ -107,7 +110,11 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 ## Keadaan sekarang
 
-Sudah ter-deploy penuh di Coolify (ketiga resource), **belum diuji end-to-end di produksi**. Uji regresi wajib ada di [docs/SETUP_VPS_COOLIFY.md](docs/SETUP_VPS_COOLIFY.md) Bagian 10 — yang terpenting: redeploy engine lalu pastikan sesi tersambung sendiri tanpa scan QR.
+Sudah ter-deploy di Coolify, **belum diuji end-to-end di produksi**. Uji regresi wajib ada di [docs/SETUP_VPS_COOLIFY.md](docs/SETUP_VPS_COOLIFY.md) Bagian 10 — yang terpenting: redeploy lalu pastikan sesi tersambung sendiri tanpa scan QR.
+
+**Penyatuan tiga resource jadi satu (17 Agu 2026).** Sampai tanggal itu tiap tahap punya tiga resource Coolify (`flustra-wa`, `-engine`, `-worker`) yang masing-masing membangun ulang aplikasinya sendiri tiap deploy — tiga kali `composer install` + `npm ci` di VPS 2 vCPU yang menampung tujuh aplikasi Flustra lain. Sekarang satu container menjalankan keempat prosesnya lewat `start.sh`, mengikuti pola `flustra-erp` dan `flustra-clientportal`. Perubahannya **belum dijalankan di server**; langkah pindahnya ada di [docs/DEPLOYMENT.md §5](docs/DEPLOYMENT.md).
+
+Alasan lama untuk memisahkan engine masih tertulis di [docs/ARSITEKTUR.md §2](docs/ARSITEKTUR.md) beserta apa yang terjadi pada masing-masing — baca itu dulu sebelum mengusulkan memisahkannya lagi. Yang tidak terjawab dan harus dijaga dengan angka, bukan arsitektur: Chromium berebut RAM dengan PHP, jadi `WA_MAX_SESSIONS` diturunkan dari 10 ke 3.
 
 Integrasi ke `flustra-erp`, `flustra-web`, `flustra-pricing`, `flustra-helpdesk` sudah ditulis (`app/Services/WhatsAppGateway.php` disalin identik ke keempatnya) tapi belum dijalankan dengan gateway produksi. Lihat [docs/INTEGRASI_APP.md](docs/INTEGRASI_APP.md).
 

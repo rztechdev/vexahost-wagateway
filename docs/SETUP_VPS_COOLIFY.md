@@ -181,7 +181,7 @@ Kalau token bocor lewat log, ia tidak boleh sekaligus memberi kemampuan memalsuk
 
 ---
 
-## Bagian 6 — Resource 1: aplikasi Laravel
+## Bagian 6 — Resource aplikasi (satu-satunya)
 
 **+ New** → **Public/Private Repository** → pilih `flustratech-dev/flustra-wa`.
 
@@ -197,8 +197,10 @@ Kalau token bocor lewat log, ia tidak boleh sekaligus memberi kemampuan memalsuk
 **Install Command**
 
 ```
-composer install --no-dev --optimize-autoloader && npm ci
+composer install --no-dev --optimize-autoloader && npm ci && npm --prefix engine ci --omit=dev
 ```
+
+> Bagian `npm --prefix engine ci` inilah yang dulu dikerjakan resource engine tersendiri. Di sinilah Puppeteer mengunduh Chromium (±170 MB), jadi build pertama setelah perubahan ini lebih lama dari biasanya.
 
 **Build Command**
 
@@ -209,8 +211,10 @@ npm run build
 **Start Command**
 
 ```
-php artisan serve --host=0.0.0.0 --port=80
+bash ./start.sh
 ```
+
+> **Bukan** `php artisan serve` langsung. Sejak 17 Agustus 2026 satu container menjalankan empat proses — web, engine WhatsApp, worker antrean, dan penjadwal — dan `start.sh` yang mengaturnya. Kalau Start Command-nya cuma menjalankan web, gejalanya menyesatkan: dashboard terbuka normal, tapi tidak ada sesi yang pulih dan setiap pesan mentok di status `queued`.
 
 **Post-deployment Command**
 
@@ -218,16 +222,17 @@ php artisan serve --host=0.0.0.0 --port=80
 php artisan migrate --force && php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
-**Persistent Storage**
+**Persistent Storage — dua volume**
 
-| Name | Mount Path |
-|---|---|
-| `wa-storage` | `/app/storage/app/private` |
+| Name | Mount Path | Untuk apa |
+|---|---|---|
+| `wa-storage` | `/app/storage/app/private` | Cadangan sesi (`session-backups`) dan media lampiran |
+| `wa-sessions` | `/data` | Berkas kerja Chromium antar-restart |
 
-*(Volume ini menyimpan cadangan sesi di `session-backups` agar tidak terhapus saat redeploy, serta untuk menyimpan media lampiran).*
+> Yang benar-benar menyelamatkan nomor dari scan ulang adalah `wa-storage`, bukan `/data`. `RemoteAuth.extractRemoteSession()` selalu mengosongkan isi `/data` setiap sesi dijalankan lalu memulihkannya dari cadangan di Laravel.
 
 **Catatan Jaringan:**
-Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration → Advanced) agar container ini bisa menghubungi Engine.
+Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration → Advanced) agar container ini bisa menghubungi MySQL. Engine tidak lagi butuh jaringan ini — ia ada di container yang sama, dijangkau lewat `127.0.0.1`.
 
 **Environment Variables** — daftar lengkapnya di [ENVIRONMENT.md](ENVIRONMENT.md); yang wajib diperiksa:
 
@@ -235,8 +240,12 @@ Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration
 |---|---|
 | `APP_KEY` | dari `php artisan key:generate --show` |
 | `DB_HOST`, `DB_PASSWORD` | dari Coolify |
-| `ENGINE_URL` | `http://<uuid-resource-engine>:3100` — UUID, bukan nama tampilan (lihat Bagian 7) |
-| `ENGINE_TOKEN`, `ENGINE_HMAC_SECRET` | dari Bagian 5 |
+| `ENGINE_URL` | `http://127.0.0.1:3100` |
+| `ENGINE_TOKEN`, `ENGINE_HMAC_SECRET` | dari Bagian 5 — sekarang cukup diisi sekali, bukan disamakan antar dua resource |
+| `ENGINE_PORT`, `ENGINE_HOST`, `ENGINE_LOG_LEVEL` | `3100`, `127.0.0.1`, `info` — berawalan karena `PORT`/`HOST`/`LOG_LEVEL` polos sudah dipakai Laravel & Coolify |
+| `LARAVEL_URL` | `http://127.0.0.1:80` |
+| `WA_DATA_PATH` | `/data/.wwebjs_auth` |
+| `WA_MAX_SESSIONS` | `3` di produksi, `1` di dev/staging — lihat Bagian 8 |
 
 > **Pastikan `APP_DEBUG=false`.** Kalau `true`, halaman error menampilkan seluruh isi environment — termasuk password database dan secret HMAC.
 
@@ -244,112 +253,75 @@ Deploy. Buka `https://wa.flustra.id` — halaman utama harus muncul dengan HTTPS
 
 ---
 
-## Bagian 7 — Resource 2: engine
+## Bagian 7 — Empat proses dalam satu container
 
-**+ New** → repo yang sama.
+**Tidak ada Resource 2 dan Resource 3.** Sampai 16 Agustus 2026 bagian ini berisi cara membuat resource `flustra-wa-engine` dan `flustra-wa-worker`. Keduanya dihapus pada 17 Agustus 2026; engine, worker, dan penjadwal sekarang berjalan sebagai proses di dalam container yang sama, diatur [`start.sh`](../start.sh).
 
-| Pengaturan | Nilai |
-|---|---|
-| Name | `flustra-wa-engine` |
-| Branch | `main` |
-| Build Pack | Nixpacks |
-| Base Directory | `/engine` |
-| Domain | **kosongkan** |
-| Health Check Path | `/health` |
-| Restart Policy | `always` |
+Alasannya bukan beban proses — worker yang menganggur puluhan MB, engine tanpa sesi sekitar 80 MB. Alasannya biaya build: **setiap resource Coolify membangun ulang aplikasinya sendiri.** Tiga resource berarti tiga kali `composer install` + `npm ci` pada setiap deploy di VPS 2 vCPU yang juga menampung tujuh aplikasi Flustra lain. Pola yang sama sudah dipakai `flustra-erp` dan `flustra-clientportal`.
 
-**Install Command**
+Yang dijalankan `start.sh`:
 
-```
-npm ci
-```
+| Proses | Perintah | Kalau ia mati |
+|---|---|---|
+| web | `php artisan serve --host=0.0.0.0 --port=80` | Container ikut berhenti; Coolify menghidupkannya lagi |
+| engine | `node engine/src/server.js` | Dijalankan ulang dalam 3 detik, web tidak tersentuh |
+| worker | `php artisan queue:work … --max-time=3600` | Dijalankan ulang dalam 2 detik |
+| penjadwal | `php artisan schedule:work` | Dijalankan ulang dalam 2 detik |
 
-**Start Command**
+**Scheduled Task di Coolify: jangan dipasang.** Penjadwal sudah jadi proses di atas. Kalau resource lama masih punya Scheduled Task `php artisan schedule:run`, **hapus** — kalau tidak, `SyncSessionStatusJob` berjalan dua kali tiap menit.
 
-```
-npm start
-```
+**Restart Policy** resource: `always`.
 
-**Persistent Storage** — inilah bagian terpenting seluruh panduan ini:
+Dua hal yang membuat urutan boot-nya benar, dan keduanya gampang dianggap berlebihan sampai gagal:
 
-| | Nilai |
-|---|---|
-| Name | `wa-sessions` |
-| Mount Path | `/data` |
+1. **Engine menunggu web menjawab `/up` sebelum jalan** (maksimal 120 detik). Engine menanyakan daftar sesi ke Laravel saat boot dan dulu tidak pernah mengulang kalau gagal. Selama engine punya container sendiri hal itu jarang menggigit karena Laravel sudah lama hidup; dalam satu container keduanya lahir berbarengan.
+2. **Engine dikirimi SIGTERM lebih dulu saat container berhenti**, lalu ditunggu sampai 10 detik. `client.destroy()` tidak menyimpan apa pun pada RemoteAuth — SIGTERM ke proses Node adalah satu-satunya kesempatan menyimpan kredensial yang berubah sejak cadangan berkala terakhir.
 
-Tanpa volume ini, kredensial nomor tersimpan di dalam container yang dibuat ulang setiap deploy — dan **setiap deploy memaksa scan QR ulang**, persis masalah yang gateway ini dibuat untuk menyelesaikannya.
-
-**Environment Variables** engine:
-
-```env
-PORT=3100
-HOST=0.0.0.0
-ENGINE_TOKEN=<sama dengan Laravel>
-ENGINE_HMAC_SECRET=<sama dengan Laravel>
-LARAVEL_URL=http://<uuid-resource-flustra-wa>:80
-WA_DATA_PATH=/data/.wwebjs_auth
-WA_BACKUP_INTERVAL_MS=300000
-WA_MIN_DELAY_MS=3000
-WA_MAX_DELAY_MS=8000
-WA_MAX_SESSIONS=10
-LOG_LEVEL=info
-```
-
-`HOST` harus `0.0.0.0`, bukan `127.0.0.1` — kalau tidak, container Laravel tidak bisa menjangkaunya.
-
-**Catatan Jaringan Internal:**
-Agar saling terhubung, pastikan opsi **Connect To Predefined Network** diaktifkan di tab Configuration → Advanced pada **kedua resource** (Laravel dan Engine).
-
-Nama host yang bisa di-resolve adalah **UUID resource**, bukan nama tampilannya. `flustra-wa-engine` hanya label di antarmuka Coolify; DNS internal tidak mengenalnya. UUID ada di URL browser saat membuka resource (`.../application/<uuid>`) dan di domain generated-nya. Pola yang sama berlaku untuk `DB_HOST` — Coolify sudah mengisinya dengan UUID.
-
-Uji koneksi dari terminal Laravel: `curl http://<uuid-resource-engine>:3100/health`. Jawaban yang diharapkan `{"status":"ok",...}`. `Could not resolve host` berarti UUID salah atau predefined network belum aktif; `Connection refused` berarti nama sudah benar tapi engine belum jalan atau `HOST` bukan `0.0.0.0`.
-
-Deploy, lalu periksa log. Yang diharapkan:
+Setelah deploy, log Coolify harus memuat, berurutan:
 
 ```
+[start.sh] Menyalakan web, engine WhatsApp, worker, dan penjadwal dalam satu container.
 {"level":30,"msg":"Engine WhatsApp berjalan","port":3100}
 {"level":30,"msg":"Memulihkan sesi tersimpan","count":0}
 ```
 
-Baris kedua membuktikan engine berhasil menghubungi Laravel **dan** tanda tangan HMAC-nya diterima. Kalau yang muncul `Bootstrap gagal`, berarti `ENGINE_HMAC_SECRET` berbeda antara kedua resource.
+Baris ketiga membuktikan engine berhasil menghubungi Laravel **dan** tanda tangan HMAC-nya diterima. Kalau yang muncul `Bootstrap belum berhasil` berulang lalu `Bootstrap gagal`, berarti `ENGINE_HMAC_SECRET` di blok Laravel dan blok engine tidak sama — sekarang keduanya di daftar env yang sama, jadi ini seharusnya tidak bisa terjadi lagi kecuali salah ketik.
+
+Memastikan keempatnya benar-benar hidup:
+
+```bash
+sudo docker exec -it <container-flustra-wa> ps -eo comm,rss --sort=-rss | head -20
+```
+
+Harus terlihat tiga `php` dan satu `node`.
 
 ---
 
-## Bagian 8 — Resource 3: worker
+## Bagian 8 — Berapa sesi yang muat
 
-**+ New** → repo yang sama.
+Tiap sesi WhatsApp = satu Chromium, ±300-500 MB. Ini pos pengeluaran RAM terbesar di seluruh gateway, jauh melampaui PHP dan Node-nya sendiri.
 
-| Pengaturan | Nilai |
+| Proses | RAM saat tenang |
 |---|---|
-| Name | `flustra-wa-worker` |
-| Base Directory | `/` |
-| Domain | kosongkan |
-| Start Command | `php artisan queue:work --sleep=3 --tries=3 --timeout=240 --max-time=3600` |
-| Post-deployment Command | kosongkan |
-| Restart Policy | `always` |
+| `php artisan serve` (+ worker PHP-nya) | ±120 MB |
+| `queue:work` | ±80 MB |
+| `schedule:work` | ±60 MB |
+| Engine Node tanpa sesi | ±80 MB |
+| **Tiap sesi WhatsApp** | **±300-500 MB** |
 
-**Persistent Storage**
+Cara menyetel `WA_MAX_SESSIONS`: sisakan minimal 1,5 GB untuk sistem, Coolify, MySQL, dan aplikasi Flustra lain, lalu bagi sisanya dengan 500 MB.
 
-| Name | Mount Path |
+| RAM VPS | `WA_MAX_SESSIONS` |
 |---|---|
-| `wa-storage` | `/app/storage/app/private` |
+| 4 GB | 1 |
+| 8 GB | 3 |
+| 16 GB | 8 |
 
-> Volume harus **sama persis** (nama dan mount path) dengan resource aplikasi Laravel. Jika tidak, worker tidak akan bisa menemukan file media yang diunggah dari API.
+Angka bawaannya **3**, turun dari 10 pada 17 Agustus 2026. Sepuluh sesi berarti sampai 5 GB hanya untuk Chromium — dan yang dipilih OOM killer belum tentu Chromium-nya, bisa saja MySQL.
 
-Environment variables **identik** dengan resource Laravel.
+Dev dan staging cukup `WA_MAX_SESSIONS=1`. Keduanya hanya perlu membuktikan satu sesi berfungsi, dan tiap sesi tambahan di sana memakan RAM yang seharusnya melayani produksi.
 
-Tanpa worker, pesan berhenti di status `queued` selamanya.
-
-### Scheduled Task
-
-Pada resource `flustra-wa`, tambahkan **Scheduled Task**:
-
-| | Nilai |
-|---|---|
-| Command | `php artisan schedule:run` |
-| Frequency | `* * * * *` |
-
-Ini yang menjalankan sinkronisasi status sesi setiap menit (menyambungkan ulang sesi yang putus) dan pembersihan data lama.
+**Swap wajib ada.** Tanpa swap, satu Chromium yang melewati batas membuat kernel membunuh proses — dan pilihannya sering jatuh ke MySQL, yang menjatuhkan seluruh aplikasi di VPS ini sekaligus. Cek dengan `free -h`; kalau baris `Swap` nol, ikuti Langkah 7 di `PANDUAN_SETUP_VPS_COOLIFY_FLUSTRA.md`.
 
 ---
 
@@ -389,14 +361,26 @@ WA_GATEWAY_SESSION=
 
 Jangan anggap selesai sebelum kelimanya lulus.
 
+### Uji 0 — keempat proses hidup
+
+Kalau ini gagal, sisanya tidak perlu dijalankan.
+
+```bash
+sudo docker exec -it <container-flustra-wa> ps -eo comm,rss --sort=-rss | head -20
+```
+
+Harus terlihat tiga `php` (serve, queue:work, schedule:work) dan satu `node`.
+
 ### Uji 1 — sesi selamat dari deploy ulang
 
 Ini uji terpenting.
 
 1. Pastikan satu sesi berstatus **Terhubung**
-2. Tunggu ±5 menit sampai log engine memuat `Backup sesi terkirim`
-3. Redeploy resource `flustra-wa-engine`
+2. Tunggu ±5 menit sampai log memuat `Backup sesi terkirim`
+3. Redeploy resource `flustra-wa`
 4. Sesi harus kembali **Terhubung sendiri, tanpa scan QR**
+
+> Uji ini lebih berarti daripada sebelumnya. Dulu redeploy engine tidak menyentuh Laravel; sekarang keduanya restart bersamaan, jadi yang dibuktikan sekaligus adalah penghentian rapi engine **dan** penantian boot-nya.
 
 ### Uji 2 — selamat meski volume hilang
 
@@ -413,6 +397,16 @@ Sesi tetap harus pulih — kali ini dari cadangan di database.
 **Putus tautan / ganti nomor** → **Hubungkan** → scan dengan nomor berbeda. Sesi tersambung dengan nomor baru, sementara riwayat pesan dan API key tetap utuh.
 
 Uji 1 dan 2 membuktikan nomor tidak terputus sendiri. Uji 3 membuktikan nomor tidak terkunci.
+
+### Uji 3b — engine mati sendiri tidak menjatuhkan dashboard
+
+Ini yang menggantikan jaminan lama "Chromium crash tidak menyentuh aplikasi", satu-satunya hal yang benar-benar hilang saat ketiga resource disatukan.
+
+```bash
+sudo docker exec -it <container-flustra-wa> pkill -f 'node engine/src/server.js'
+```
+
+Dashboard harus tetap terbuka. Dalam ±3 detik log memuat `[start.sh] engine berhenti, dijalankan ulang dalam 3 detik.`, lalu sesi kembali terhubung sendiri.
 
 ### Uji 4 — pengiriman
 
@@ -432,16 +426,16 @@ Daftarkan alamat dari webhook.site, kirim pesan dari HP ke nomor gateway, pastik
 
 ## Bagian 11 — Dev & staging
 
-Ulangi Bagian 6–9 dengan perbedaan berikut:
+Ulangi Bagian 6–9 dengan perbedaan berikut — satu resource per tahap, jadi tiga resource untuk seluruh gateway, bukan sembilan:
 
 | | Development | Staging |
 |---|---|---|
 | Branch | `dev` | `staging` |
 | Domain | `wa-dev.flustra.tech` | `wa-staging.flustra.tech` |
-| Nama resource | `flustra-wa-dev`, `flustra-wa-engine-dev`, `flustra-wa-worker-dev` | `…-staging` |
+| Nama resource | `flustra-wa-dev` | `flustra-wa-staging` |
 | Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` |
-| Volume | `wa-sessions-dev` → `/data` | `wa-sessions-staging` → `/data` |
-| `WA_MAX_SESSIONS` | 2 | 3 |
+| Volume | `wa-sessions-dev` → `/data`, `wa-storage-dev` → `/app/storage/app/private` | `…-staging` |
+| `WA_MAX_SESSIONS` | 1 | 1 |
 | Acuan env | Coolify resource `…-dev` | Coolify resource `…-staging` |
 
 > **Jangan pakai nomor produksi untuk uji coba di dev/staging.** Satu nomor hanya bisa tertaut ke satu sesi aktif — men-scan di sini akan memutus sesi produksinya dan menghentikan notifikasi pelanggan.
@@ -457,7 +451,8 @@ Ulangi Bagian 6–9 dengan perbedaan berikut:
 | Sesi masih terhubung | Dashboard → Sesi WhatsApp |
 | Pesan gagal tidak melonjak | Dashboard → Ringkasan |
 | Antrean tidak menumpuk | `php artisan queue:failed` |
-| RAM engine | Coolify → resource engine |
+| RAM per proses | `docker exec <container> ps -eo comm,rss --sort=-rss \| head` |
+| RAM seluruh VPS | `free -h` — baris `available` di bawah 500 MB berarti `WA_MAX_SESSIONS` terlalu tinggi |
 
 ### Cadangan
 

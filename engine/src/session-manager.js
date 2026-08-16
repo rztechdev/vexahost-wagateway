@@ -45,7 +45,7 @@ export class SessionManager {
         let sessions;
 
         try {
-            sessions = await laravel.bootstrap();
+            sessions = await this.#ambilDaftarSesi();
         } catch (error) {
             logger.error({ err: error.message }, 'Bootstrap gagal; engine tetap jalan tanpa sesi');
 
@@ -61,6 +61,40 @@ export class SessionManager {
             } catch (error) {
                 // Satu sesi rusak tidak boleh menahan pemulihan sesi lainnya.
                 logger.error({ sessionId, err: error.message }, 'Gagal memulihkan sesi');
+            }
+        }
+    }
+
+    /**
+     * Menanyakan daftar sesi ke Laravel, dengan percobaan ulang.
+     *
+     * Kegagalan di sini tidak punya jaring pengaman lain: `bootstrap()` cuma
+     * dipanggil sekali seumur hidup proses, dan sesi yang tidak ikut dipulihkan
+     * baru akan disentuh lagi kalau `SyncSessionStatusJob` kebetulan
+     * menemukannya berstatus `disconnected` — sesi yang tercatat `failed`
+     * tidak pernah tersentuh sama sekali.
+     *
+     * Sejak engine berbagi container dengan Laravel, keduanya lahir berbarengan
+     * dan percobaan pertama memang wajar gagal. `start.sh` sudah menunggu web
+     * menjawab /up sebelum menjalankan engine; percobaan ulang di sini
+     * menangani sisanya — web yang menjawab /up tapi belum siap melayani rute
+     * `/internal/*`, atau database yang belum menerima koneksi.
+     */
+    async #ambilDaftarSesi() {
+        const percobaan = 5;
+
+        for (let ke = 1; ke <= percobaan; ke++) {
+            try {
+                return await laravel.bootstrap();
+            } catch (error) {
+                if (ke === percobaan) throw error;
+
+                logger.warn(
+                    { percobaan: ke, err: error.message },
+                    'Bootstrap belum berhasil, mencoba lagi dalam 5 detik',
+                );
+
+                await new Promise((resolve) => setTimeout(resolve, 5000));
             }
         }
     }

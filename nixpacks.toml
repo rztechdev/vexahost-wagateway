@@ -1,12 +1,41 @@
-# Nixpacks untuk sisi Laravel.
+# Nixpacks untuk container tunggal flustra-wa.
 #
-# Sengaja TIDAK memuat apt package Chromium — Puppeteer hanya dibutuhkan engine,
-# yang berjalan sebagai resource terpisah (lihat engine/nixpacks.toml). Inilah
-# perbedaan pokoknya dengan flustra-erp yang dulu memikul keduanya dalam satu
-# container.
+# Sejak 17 Agustus 2026 satu container menjalankan Laravel DAN engine
+# whatsapp-web.js (lihat start.sh). Karena itu daftar di bawah memuat library
+# sistem untuk Chromium — sesuatu yang dulu sengaja hanya ada di
+# engine/nixpacks.toml.
 #
-# Catatan Coolify: hanya aptPkgs dari file ini yang dipakai Nixpacks —
-# perintah install/build/start diatur lewat UI.
+# Ini biaya yang disadari: image jadi lebih besar dan setup phase lebih lama.
+# Yang ditukar dengannya jauh lebih mahal — tiga resource Coolify berarti tiga
+# kali `composer install` + `npm ci` pada SETIAP deploy, sementara daftar apt di
+# bawah hanya dipasang sekali per build image dan di-cache Nixpacks.
+#
+# `curl` dipakai start.sh untuk menunggu Laravel siap sebelum engine boot.
+#
+# Catatan Coolify: hanya aptPkgs dari berkas ini yang dipakai Nixpacks —
+# perintah install/build/start diatur lewat UI. `'...'` berarti "pertahankan
+# paket bawaan Nixpacks", bukan placeholder yang lupa diisi.
 
 [phases.setup]
-  aptPkgs = ['...']
+  aptPkgs = [
+    '...',
+    'curl',
+    'libnss3',
+    'libatk1.0-0',
+    'libatk-bridge2.0-0',
+    'libxss1',
+    'libasound2t64',
+    'libgbm1',
+    'libx11-xcb1',
+    'libxcomposite1',
+    'libxcursor1',
+    'libxdamage1',
+    'libxi6',
+    'libxtst6',
+    'libcups2',
+    'libxrandr2',
+    'libgtk-3-0',
+    'libpango-1.0-0',
+    'libpangocairo-1.0-0',
+    'fonts-liberation',
+  ]

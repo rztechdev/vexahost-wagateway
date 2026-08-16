@@ -14,11 +14,16 @@ Setiap tahap adalah lingkungan yang berdiri sendiri: domain sendiri, database se
 | `APP_DEBUG` | `true` | `false` | `false` |
 | `LOG_LEVEL` | `debug` | `info` | `error` |
 | Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` | `db_flustra-wa` |
-| Nama resource engine | `flustra-wa-engine-dev` | `flustra-wa-engine-staging` | `flustra-wa-engine` |
-| Host engine di `ENGINE_URL` | UUID resource-nya, bukan nama di baris atas | idem | idem |
-| Volume engine | `wa-sessions-dev` | `wa-sessions-staging` | `wa-sessions` |
-| Batas sesi engine | 2 | 3 | 10 |
+| Nama resource | `flustra-wa-dev` | `flustra-wa-staging` | `flustra-wa` |
+| `ENGINE_URL` | `http://127.0.0.1:3100` | idem | idem |
+| Volume sesi | `wa-sessions-dev` | `wa-sessions-staging` | `wa-sessions` |
+| Volume cadangan | `wa-storage-dev` | `wa-storage-staging` | `wa-storage` |
+| `WA_MAX_SESSIONS` | 1 | 1 | 3 |
 | Nomor WhatsApp | nomor uji coba | nomor uji coba (boleh sama dengan dev, sesi terpisah) | nomor resmi Flustra |
+
+> **Satu resource per tahap sejak 17 Agustus 2026.** Engine dan worker tidak lagi punya resource sendiri; keduanya proses di dalam container yang sama (lihat [DEPLOYMENT.md](DEPLOYMENT.md)). Akibatnya untuk berkas ini: **variabel Laravel dan engine berada di satu daftar env yang sama**, dan tiga nama harus diberi awalan supaya tidak bertabrakan — `ENGINE_PORT`, `ENGINE_HOST`, `ENGINE_LOG_LEVEL`. `PORT`, `HOST`, dan `LOG_LEVEL` polos sekarang milik Laravel dan Coolify.
+>
+> Nama lama masih diterima sebagai cadangan supaya engine tetap bisa dijalankan sendiri saat pengembangan lokal. Yang tidak boleh terjadi diam-diam: `ENGINE_LOG_LEVEL` yang lupa diisi membuat engine mengikuti `LOG_LEVEL=error` milik Laravel, dan baris `Backup sesi terkirim` — satu-satunya bukti cadangan sesi tersimpan — berhenti muncul. `engine/tests/config.test.js` menjaga keempat aturan ini.
 
 > **Nomor tidak boleh dipakai bersama antar tahap.** Satu nomor WhatsApp hanya bisa tertaut ke satu sesi aktif. Kalau nomor produksi dipakai men-scan di staging, sesi produksinya akan terputus — dan notifikasi pelanggan ikut berhenti. Sediakan nomor terpisah untuk dev/staging.
 
@@ -40,7 +45,7 @@ LOG_LEVEL=debug
 
 DB_DATABASE=db_flustra-wa_dev
 
-ENGINE_URL=http://<uuid-resource-flustra-wa-engine-dev>:3100
+ENGINE_URL=http://127.0.0.1:3100
 
 # Jeda dipendekkan agar pengujian tidak berlarut-larut.
 # Aman karena nomornya nomor uji coba, bukan nomor yang perlu dijaga.
@@ -56,14 +61,15 @@ RETENTION_MESSAGES_DAYS=7
 RETENTION_WEBHOOK_DAYS=7
 ```
 
-Engine:
+Blok engine, di daftar env yang sama:
 
 ```env
-HOST=0.0.0.0
-LARAVEL_URL=http://<uuid-resource-flustra-wa-dev>:80
+ENGINE_PORT=3100
+ENGINE_HOST=127.0.0.1
+ENGINE_LOG_LEVEL=debug
+LARAVEL_URL=http://127.0.0.1:80
 WA_DATA_PATH=/data/.wwebjs_auth
-WA_MAX_SESSIONS=2
-LOG_LEVEL=debug
+WA_MAX_SESSIONS=1
 ```
 
 ## Staging — `wa-staging.flustra.tech`
@@ -78,7 +84,7 @@ LOG_LEVEL=info
 
 DB_DATABASE=db_flustra-wa_staging
 
-ENGINE_URL=http://<uuid-resource-flustra-wa-engine-staging>:3100
+ENGINE_URL=http://127.0.0.1:3100
 
 # Sama dengan produksi. Jeda inilah yang menentukan berapa lama broadcast
 # berjalan; kalau staging lebih cepat, hasil ujinya menyesatkan.
@@ -92,14 +98,15 @@ RETENTION_MESSAGES_DAYS=30
 RETENTION_WEBHOOK_DAYS=14
 ```
 
-Engine:
+Blok engine, di daftar env yang sama:
 
 ```env
-HOST=0.0.0.0
-LARAVEL_URL=http://<uuid-resource-flustra-wa-staging>:80
+ENGINE_PORT=3100
+ENGINE_HOST=127.0.0.1
+ENGINE_LOG_LEVEL=info
+LARAVEL_URL=http://127.0.0.1:80
 WA_DATA_PATH=/data/.wwebjs_auth
-WA_MAX_SESSIONS=3
-LOG_LEVEL=info
+WA_MAX_SESSIONS=1
 ```
 
 ## Production — `wa.flustra.id`
@@ -112,7 +119,7 @@ LOG_LEVEL=error
 
 DB_DATABASE=db_flustra-wa
 
-ENGINE_URL=http://<uuid-resource-flustra-wa-engine>:3100
+ENGINE_URL=http://127.0.0.1:3100
 
 WA_MIN_DELAY_MS=3000
 WA_MAX_DELAY_MS=8000
@@ -124,14 +131,19 @@ RETENTION_MESSAGES_DAYS=90
 RETENTION_WEBHOOK_DAYS=30
 ```
 
-Engine:
+Blok engine, di daftar env yang sama:
 
 ```env
-HOST=0.0.0.0
-LARAVEL_URL=http://<uuid-resource-flustra-wa>:80
+ENGINE_PORT=3100
+ENGINE_HOST=127.0.0.1
+ENGINE_LOG_LEVEL=info
+LARAVEL_URL=http://127.0.0.1:80
 WA_DATA_PATH=/data/.wwebjs_auth
-WA_MAX_SESSIONS=10
-LOG_LEVEL=info
+
+# Tiap sesi = satu Chromium (±300-500 MB). Turun dari 10 pada 17 Agu 2026:
+# RAM-nya sekarang dibagi dengan PHP, worker, penjadwal, MySQL, dan tujuh
+# aplikasi Flustra lain di VPS yang sama. Cara menghitungnya di DEPLOYMENT.md §2.
+WA_MAX_SESSIONS=3
 ```
 
 > `APP_DEBUG=true` di produksi akan menampilkan isi environment — termasuk password database dan secret HMAC — di halaman error. Pastikan tetap `false`.
@@ -156,14 +168,14 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 
 1. Migrasi berjalan bersih di tahap sebelumnya (`php artisan migrate --force`).
 2. `php artisan test` hijau.
-3. Deploy ulang engine di tahap tersebut, lalu pastikan sesi kembali tersambung **tanpa scan QR** — ini uji regresi utamanya.
+3. Deploy ulang resource di tahap tersebut, lalu pastikan sesi kembali tersambung **tanpa scan QR** — ini uji regresi utamanya. Sejak penyatuan, redeploy ikut me-restart web, jadi uji ini sekaligus membuktikan penghentian rapi engine dan penantian boot-nya.
 4. Kirim satu pesan uji dan pastikan statusnya sampai `delivered`.
 5. Webhook uji coba menerima kiriman dan tanda tangannya lolos verifikasi.
 6. Baru merge ke branch berikutnya.
 
 ## Menjalankan lokal
 
-Lokal adalah tahap keempat yang tidak ada di Coolify. Buat `.env` di root dan di `engine/` — daftar variabelnya ada di tabel atas — lalu:
+Lokal adalah tahap keempat yang tidak ada di Coolify, dan satu-satunya tempat engine masih dijalankan sebagai proses yang benar-benar terpisah (`npm --prefix engine run dev` membaca `engine/.env` sendiri). Buat `.env` di root dan di `engine/` — daftar variabelnya ada di tabel atas — lalu:
 
 ```bash
 npm run all

@@ -60,7 +60,7 @@ Tidak ada cara memulihkan dari sisi sistem. Yang bisa dilakukan:
 
 Urutan pemeriksaan:
 
-1. Worker jalan? Cek resource `flustra-wa-worker` di Coolify.
+1. Worker jalan? `docker exec <container-flustra-wa> pgrep -af queue:work` — harus ada satu. Kosong berarti Start Command resource-nya bukan `bash ./start.sh`.
 2. Sesi terhubung? Pesan untuk sesi yang putus memang sengaja ditahan, bukan dibuang.
 3. Broadcast besar? Dengan jeda 3–8 detik, 500 pesan wajar memakan 30–60 menit. Ini bukan kemacetan.
 
@@ -70,9 +70,12 @@ Urutan pemeriksaan:
 
 Satu sesi ≈ 300–500 MB. Pilihan:
 
-- Turunkan `WA_MAX_SESSIONS` agar engine menolak sesi berlebih alih-alih kehabisan memori
-- Tambah RAM container
-- Pisahkan sebagian sesi ke instance engine kedua
+- Turunkan `WA_MAX_SESSIONS` agar engine menolak sesi berlebih alih-alih kehabisan memori. Ini yang pertama dicoba, dan hampir selalu cukup — patokan angkanya di [DEPLOYMENT.md §2](DEPLOYMENT.md#2-berapa-sesi-yang-muat)
+- Isi `WA_CHROME_HEAP_MB` (mis. `512`) untuk membatasi heap V8 di dalam Chromium. Hati-hati: terlalu rendah membuat sesi mati sendiri, dan gejalanya tidak menyebut memori sama sekali
+- Tambah RAM VPS
+- Pisahkan engine jadi resource Coolify sendiri lagi — pilihan terakhir, dan yang dibayar adalah satu build penuh tambahan tiap deploy
+
+Sejak engine berbagi container dengan Laravel, kehabisan memori punya akibat baru yang harus disadari: yang dipilih OOM killer belum tentu Chromium. Kalau `dmesg -T | grep -i oom` menunjuk `mysqld` atau `php`, sumber masalahnya tetap `WA_MAX_SESSIONS`.
 
 ### Webhook workspace mati
 
