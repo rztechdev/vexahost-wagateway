@@ -177,9 +177,21 @@ matikan() {
 # hidup sebagai PID 1 dan bisa menangkap SIGTERM untuk `matikan()` di atas.
 # (flustra-erp dan flustra-clientportal memakai `exec` karena tidak punya proses
 # yang butuh penghentian rapi; di sini engine punya.)
+#
+# `--no-reload` bukan sekadar mematikan pengawas berkas. Laravel MENOLAK
+# menghormati PHP_CLI_SERVER_WORKERS tanpa flag ini — `ServeCommand::initialize()`
+# mengembalikan `false` dan mencetak peringatan yang hanya muncul sekali di awal
+# log, lalu server bawaan PHP jalan dengan satu proses seperti biasa. Gejalanya
+# tidak ada: aplikasinya berfungsi normal, cuma melayani satu permintaan pada
+# satu waktu, dan callback engine (qr, ready, pesan masuk, ack) antre di
+# belakang halaman dashboard yang sedang dibuka orang.
+#
+# Yang dilepas dengan mematikan pengawas itu: server tidak lagi restart sendiri
+# saat `.env` berubah. Di produksi berkas itu memang tidak pernah berubah saat
+# container hidup — perubahan env datang lewat redeploy Coolify.
 echo "[start.sh] Menyalakan web, engine WhatsApp, worker, dan penjadwal dalam satu container."
 
-php artisan serve --host=0.0.0.0 --port="$PORT_WEB" &
+php artisan serve --host=0.0.0.0 --port="$PORT_WEB" --no-reload &
 PID_WEB=$!
 
 supervisi_engine &
