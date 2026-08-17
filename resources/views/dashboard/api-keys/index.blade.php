@@ -71,7 +71,7 @@
                             </p>
                         @elseif ($key->plainKey() === null)
                             {{-- Kunci lama, dibuat ketika yang tersimpan hanya hash-nya. --}}
-                            <p class="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
+                            <p class="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                                 <span class="font-mono">{{ $key->prefix }}…</span> — kunci ini dibuat sebelum nilai penuhnya ikut disimpan,
                                 jadi tidak bisa ditampilkan lagi. Kalau catatannya hilang, cabut kunci ini lalu buat yang baru.
                             </p>

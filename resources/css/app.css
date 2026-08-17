@@ -66,55 +66,122 @@
     --color-input: var(--input);
     --color-ring: var(--ring);
 
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 }
 
+/* ---------------------------------------------------------------------------
+   Palet: tema "Nature" dari tweakcn, dipilih karena logo Flustra berwarna
+   hijau — warna aplikasi mengikuti logonya, bukan sebaliknya.
+
+   Nilainya disalin apa adanya dari preset supaya bisa dibandingkan langsung
+   dengan sumbernya. Yang sengaja TIDAK diikuti: font. Preset itu memakai
+   Montserrat/Merriweather, sedangkan Flustra memakai Anthropic Serif dan itu
+   tidak berubah.
+   --------------------------------------------------------------------------- */
 @layer base {
     :root {
-        --background: oklch(0.9818 0.0054 95.0986);
-        --foreground: oklch(0.3438 0.0269 95.7226);
-        --card: oklch(0.9818 0.0054 95.0986);
-        --card-foreground: oklch(0.1908 0.0020 106.5859);
-        --popover: oklch(1.0000 0 0);
-        --popover-foreground: oklch(0.2671 0.0196 98.9390);
-        --primary: oklch(0.6171 0.1375 39.0427);
-        --primary-foreground: oklch(1.0000 0 0);
-        --secondary: oklch(0.9245 0.0138 92.9892);
-        --secondary-foreground: oklch(0.4334 0.0177 98.6048);
-        --muted: oklch(0.9341 0.0153 90.2390);
-        --muted-foreground: oklch(0.6059 0.0075 97.4233);
-        --accent: oklch(0.9245 0.0138 92.9892);
-        --accent-foreground: oklch(0.2671 0.0196 98.9390);
-        --destructive: oklch(0.1908 0.0020 106.5859);
-        --destructive-foreground: oklch(1.0000 0 0);
-        --border: oklch(0.8847 0.0069 97.3627);
-        --input: oklch(0.7621 0.0156 98.3528);
-        --ring: oklch(0.6171 0.1375 39.0427);
+        --background: #f8f5f0;
+        --foreground: #3e2723;
+        --card: #f8f5f0;
+        --card-foreground: #3e2723;
+        --popover: #f8f5f0;
+        --popover-foreground: #3e2723;
+        --primary: #2e7d32;
+        --primary-foreground: #ffffff;
+        --secondary: #e8f5e9;
+        --secondary-foreground: #1b5e20;
+        --muted: #f0e9e0;
+        --muted-foreground: #6d4c41;
+        --accent: #c8e6c9;
+        --accent-foreground: #1b5e20;
+        --destructive: #c62828;
+        --destructive-foreground: #ffffff;
+        --border: #e0d6c9;
+        --input: #e0d6c9;
+        --ring: #2e7d32;
         --radius: 0.5rem;
+
+        --chart-1: #4caf50;
+        --chart-2: #388e3c;
+        --chart-3: #2e7d32;
+        --chart-4: #1b5e20;
+        --chart-5: #0a1f0c;
+
+        --sidebar: #f0e9e0;
+        --sidebar-foreground: #3e2723;
+        --sidebar-primary: #2e7d32;
+        --sidebar-primary-foreground: #ffffff;
+        --sidebar-accent: #c8e6c9;
+        --sidebar-accent-foreground: #1b5e20;
+        --sidebar-border: #e0d6c9;
+        --sidebar-ring: #2e7d32;
     }
 
     .dark {
-        --background: oklch(0.17 0.005 95);
-        --foreground: oklch(0.90 0.005 95);
-        --card: oklch(0.19 0.005 95);
-        --card-foreground: oklch(0.90 0.005 95);
-        --popover: oklch(0.21 0.005 95);
-        --popover-foreground: oklch(0.90 0.005 95);
-        --primary: oklch(0.6724 0.1308 38.7559);
-        --primary-foreground: oklch(1.0000 0 0);
-        --secondary: oklch(0.23 0.005 95);
-        --secondary-foreground: oklch(0.90 0.005 95);
-        --muted: oklch(0.21 0.005 95);
-        --muted-foreground: oklch(0.65 0.005 95);
-        --accent: oklch(0.23 0.005 95);
-        --accent-foreground: oklch(0.90 0.005 95);
-        --destructive: oklch(0.50 0.15 25);
-        --destructive-foreground: oklch(1.0000 0 0);
-        --border: oklch(0.27 0.005 95);
-        --input: oklch(0.27 0.005 95);
-        --ring: oklch(0.6724 0.1308 38.7559);
+        --background: #1c2a1f;
+        --foreground: #f0ebe5;
+        --card: #2d3a2e;
+        --card-foreground: #f0ebe5;
+        --popover: #2d3a2e;
+        --popover-foreground: #f0ebe5;
+        --primary: #4caf50;
+        --primary-foreground: #0a1f0c;
+        --secondary: #3e4a3d;
+        --secondary-foreground: #d7e0d6;
+        --muted: #252f26;
+        --muted-foreground: #d7cfc4;
+        --accent: #388e3c;
+        --accent-foreground: #f0ebe5;
+        --destructive: #c62828;
+        --destructive-foreground: #f0ebe5;
+        --border: #3e4a3d;
+        --input: #3e4a3d;
+        --ring: #4caf50;
+
+        --chart-1: #81c784;
+        --chart-2: #66bb6a;
+        --chart-3: #4caf50;
+        --chart-4: #43a047;
+        --chart-5: #388e3c;
+
+        --sidebar: #1c2a1f;
+        --sidebar-foreground: #f0ebe5;
+        --sidebar-primary: #4caf50;
+        --sidebar-primary-foreground: #0a1f0c;
+        --sidebar-accent: #388e3c;
+        --sidebar-accent-foreground: #f0ebe5;
+        --sidebar-border: #3e4a3d;
+        --sidebar-ring: #4caf50;
+    }
+
+    /* Blok kode selalu gelap di kedua mode — ia meniru terminal, bukan
+       mengikuti tema halaman. Warnanya tetap diambil dari keluarga hijau
+       yang sama supaya tidak terlihat seperti tempelan dari tema lain. */
+    :root,
+    .dark {
+        --code-chrome: #071609;
+        --code-bg: #0a1f0c;
+        --code-foreground: #d7e0d6;
+        --code-muted: #7d9b82;
+        --code-string: #a5d6a7;
+        --code-payload: #ffcc80;
     }
 
     * {
@@ -136,6 +203,55 @@
    tanpa ini modal QR berkedip terbuka sesaat setiap kali halaman dimuat. */
 [x-cloak] {
     display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Tirai — dipakai panel dropdown di header halaman depan.
+
+   Panelnya tidak meluncur atau membesar, melainkan tersingkap dari atas ke
+   bawah: kotaknya sudah pada ukuran akhirnya sejak awal, yang bergerak cuma
+   batas potongnya. Isinya jadi tidak ikut bergeser, jadi mata pembaca tidak
+   perlu mengejar tulisan yang sedang berpindah.
+   --------------------------------------------------------------------------- */
+@keyframes tirai-turun {
+    from { clip-path: inset(0 0 100% 0); opacity: 0; }
+    to { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes tirai-naik {
+    from { clip-path: inset(0 0 0 0); opacity: 1; }
+    to { clip-path: inset(0 0 100% 0); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .tirai-masuk { animation: tirai-turun 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .tirai-keluar { animation: tirai-naik 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
+
+/* ---------------------------------------------------------------------------
+   Muncul saat digulir — dipakai di halaman depan.
+
+   Setelah kartu dilepas, tidak ada lagi garis yang memisahkan satu blok dari
+   blok berikutnya. Pemisahnya dipindahkan ke waktu: tiap blok masuk sedikit
+   terlambat dari yang di atasnya.
+
+   Keadaan tersembunyinya hanya berlaku di bawah .animasi-muncul, dan kelas
+   itu dipasang oleh skrip di <head> — hanya kalau IntersectionObserver ada
+   dan pengguna tidak meminta gerak seminimal mungkin. Tanpa penjagaan itu,
+   JavaScript yang gagal dimuat akan menyembunyikan seluruh isi halaman
+   selamanya, menunggu pemicu yang tidak akan pernah datang.
+   --------------------------------------------------------------------------- */
+.animasi-muncul .muncul {
+    opacity: 0;
+    transform: translateY(18px);
+}
+
+.animasi-muncul .muncul.terlihat {
+    opacity: 1;
+    transform: none;
+    transition:
+        opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--tunda, 0ms),
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--tunda, 0ms);
 }
 
 /* ---------------------------------------------------------------------------
@@ -210,8 +326,8 @@
     overflow-x: auto;
     padding: 1.15rem;
     border-radius: 0.75rem;
-    background: #18181b;
-    color: #e4e4e7;
+    background: var(--code-bg);
+    color: var(--code-foreground);
     font-size: 0.8125rem;
     line-height: 1.7;
 }

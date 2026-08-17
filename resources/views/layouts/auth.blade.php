@@ -9,7 +9,7 @@
     <!-- Primary Meta Tags & Favicon Configuration -->
     <meta name="description" content="Masuk atau daftar ke Flustra WA Gateway - Layanan Notifikasi WhatsApp Terbaik.">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#FDFBF7">
+    <meta name="theme-color" content="#f8f5f0">
     
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
@@ -45,7 +45,7 @@
     <div class="auth-page">
         <!-- WebGL Canvas untuk Latar Belakang Smoky. data-color diatur dinamis atau manual -->
         <div class="auth-canvas-wrap" aria-hidden="true">
-            <canvas id="auth-smokey-canvas" data-color="{{ $shader_color ?? '#D97757' }}"></canvas>
+            <canvas id="auth-smokey-canvas" data-color="{{ $shader_color ?? '#2e7d32' }}"></canvas>
             <div class="auth-canvas-blur"></div>
         </div>
 

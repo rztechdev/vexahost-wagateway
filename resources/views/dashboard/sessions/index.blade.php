@@ -75,7 +75,7 @@
                           onsubmit="return confirm('Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.')">
                         @csrf
                         <button title="Putus tautan, lalu Hubungkan lagi untuk memakai nomor lain"
-                                class="rounded-lg border border-amber-500/50 px-3 py-1.5 text-sm text-amber-600 hover:bg-amber-500/10">
+                                class="rounded-lg border border-amber-500/50 px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                             Putus tautan / ganti nomor
                         </button>
                     </form>

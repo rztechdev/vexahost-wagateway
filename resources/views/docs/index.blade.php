@@ -54,7 +54,7 @@
         <p class="mt-2 text-sm text-muted-foreground">
             Satu permintaan HTTP, itu saja yang dibutuhkan aplikasi Anda.
         </p>
-        <pre class="mt-4 overflow-x-auto rounded-lg bg-[#18181b] p-4 text-[13px] leading-relaxed text-zinc-300"><code>curl -X POST {{ config('app.url') }}/api/v1/messages/text \
+        <pre class="mt-4 overflow-x-auto rounded-lg bg-[var(--code-bg)] p-4 text-[13px] leading-relaxed text-[var(--code-foreground)]"><code>curl -X POST {{ config('app.url') }}/api/v1/messages/text \
   -H "X-Api-Key: fwa_xxxxxxxx.xxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{"to":"081234567890","message":"Halo!"}'</code></pre>

@@ -1,40 +1,53 @@
+/* Halaman auth berdiri sendiri dari app.css: ia punya latar WebGL dan efek
+   kaca yang butuh warna solid, bukan token Tailwind. Nama variabelnya sengaja
+   dipertahankan (--color-brown, --color-cream-*) supaya seluruh aturan di
+   bawah tidak perlu ikut berubah — yang berganti hanya nilainya, mengikuti
+   tema Nature yang dipakai app.css. Font tetap Outfit + Plus Jakarta Sans. */
 :root {
-  /* Brown/Gold Accent Palette (Claude Terracotta Theme) */
-  --color-brown: #D97757;
-  --color-brown-10: rgba(217, 119, 87, 0.06);
-  --color-brown-20: rgba(217, 119, 87, 0.12);
-  --color-brown-80: rgba(217, 119, 87, 0.8);
+  /* Aksen utama — hijau daun, sewarna logo Flustra */
+  --color-brown: #2e7d32;
+  --color-brown-10: rgba(46, 125, 50, 0.06);
+  --color-brown-20: rgba(46, 125, 50, 0.12);
+  --color-brown-80: rgba(46, 125, 50, 0.8);
+  --color-brown-hover: #1b5e20;
+  --auth-submit-fg: #ffffff;
 
-  /* Cream/Espresso Color Palette */
-  --color-cream-50: #FAF8F5;
+  /* Netral hangat, sama dengan tema Nature */
+  --color-cream-50: #f8f5f0;
   /* Latar belakang warm off-white */
   --color-cream-100: #FFFFFF;
-  /* Putih solid */
-  --color-cream-200: #F3EEE4;
+  /* Putih solid untuk permukaan input */
+  --color-cream-200: #f0e9e0;
   /* Beige hangat untuk hover/interaksi */
-  --color-cream-300: #EBE5DC;
+  --color-cream-300: #e0d6c9;
   /* Border tipis */
-  --color-cream-400: #DDD5C9;
-  --color-cream-700: #80776E;
+  --color-cream-400: #cbbda9;
+  --color-cream-700: #6d4c41;
   /* Teks sekunder/muted */
-  --color-cream-800: #544E48;
+  --color-cream-800: #56413a;
   /* Teks body default */
-  --color-cream-900: #332D24;
+  --color-cream-900: #3e2723;
   /* Teks judul/espresso */
 
   /* Semantic Colors */
-  --color-success: #10B981;
+  --color-success: #2e7d32;
   --color-warning: #F59E0B;
-  --color-danger: #EF4444;
+  --color-danger: #c62828;
 
   /* Auth specific */
-  --auth-blur-bg: linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgba(243, 238, 228, 0.5) 50%, rgba(235, 229, 220, 0.6) 100%);
+  --auth-blur-bg: linear-gradient(165deg, rgba(255, 255, 255, 0.4) 0%, rgba(240, 233, 224, 0.5) 50%, rgba(224, 214, 201, 0.6) 100%);
   --auth-card-bg: rgba(255, 255, 255, 0.35);
   --auth-card-border: rgba(255, 255, 255, 0.5);
   --auth-input-bg: #ffffff;
   --auth-google-bg: #ffffff;
   --auth-autofill-bg: #ffffff;
-  --auth-autofill-text: #332D24;
+  --auth-autofill-text: #3e2723;
+
+  /* Meter kekuatan sandi di halaman daftar — dipakai lewat inline style,
+     jadi harus berupa variabel agar ikut berganti saat mode gelap. */
+  --auth-meter-empty: #e0d6c9;
+  --auth-meter-idle: #a1887f;
+  --auth-meter-strong: #2e7d32;
 
   /* Typography */
   --font-outfit: 'Outfit', sans-serif;
@@ -53,22 +66,36 @@
 }
 
 .dark {
-  --color-cream-50: #09090b;
-  --color-cream-100: #18181b;
-  --color-cream-200: #27272a;
-  --color-cream-300: #3f3f46;
-  --color-cream-400: #52525b;
-  --color-cream-700: #a1a1aa;
-  --color-cream-800: #d4d4d8;
-  --color-cream-900: #fafafa;
+  --color-brown: #4caf50;
+  --color-brown-10: rgba(76, 175, 80, 0.08);
+  --color-brown-20: rgba(76, 175, 80, 0.16);
+  --color-brown-80: rgba(76, 175, 80, 0.8);
+  --color-brown-hover: #66bb6a;
+  --auth-submit-fg: #0a1f0c;
 
-  --auth-blur-bg: linear-gradient(165deg, rgba(9, 9, 11, 0.6) 0%, rgba(24, 24, 27, 0.7) 50%, rgba(39, 39, 42, 0.8) 100%);
-  --auth-card-bg: rgba(24, 24, 27, 0.6);
-  --auth-card-border: rgba(255, 255, 255, 0.1);
-  --auth-input-bg: #09090b;
-  --auth-google-bg: #18181b;
-  --auth-autofill-bg: #09090b;
-  --auth-autofill-text: #fafafa;
+  --color-cream-50: #1c2a1f;
+  --color-cream-100: #2d3a2e;
+  --color-cream-200: #252f26;
+  --color-cream-300: #3e4a3d;
+  --color-cream-400: #55654f;
+  --color-cream-700: #b7b0a6;
+  --color-cream-800: #d7cfc4;
+  --color-cream-900: #f0ebe5;
+
+  --color-success: #4caf50;
+  --color-danger: #ef5350;
+
+  --auth-blur-bg: linear-gradient(165deg, rgba(28, 42, 31, 0.6) 0%, rgba(37, 47, 38, 0.7) 50%, rgba(45, 58, 46, 0.8) 100%);
+  --auth-card-bg: rgba(45, 58, 46, 0.6);
+  --auth-card-border: rgba(240, 235, 229, 0.12);
+  --auth-input-bg: #1c2a1f;
+  --auth-google-bg: #2d3a2e;
+  --auth-autofill-bg: #1c2a1f;
+  --auth-autofill-text: #f0ebe5;
+
+  --auth-meter-empty: #3e4a3d;
+  --auth-meter-idle: #8d9d8b;
+  --auth-meter-strong: #66bb6a;
 }
 
 html,
@@ -269,7 +296,7 @@ body {
 .auth-field input:focus {
   background: var(--auth-input-bg);
   border-color: var(--color-brown);
-  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.12);
+  box-shadow: 0 0 0 3px var(--color-brown-20);
 }
 
 .auth-field input::placeholder {
@@ -289,7 +316,7 @@ body {
 
 .auth-field.is-error input {
   border-color: var(--color-danger);
-  background: rgba(239, 68, 68, 0.02);
+  background: rgba(198, 40, 40, 0.04);
 }
 
 .auth-field-error {
@@ -383,7 +410,7 @@ body {
   font-family: var(--font-outfit);
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-cream-100);
+  color: var(--auth-submit-fg);
   background: var(--color-brown);
   border: none;
   border-radius: var(--radius-md);
@@ -392,8 +419,8 @@ body {
 }
 
 .auth-submit:hover {
-  background: #C26245;
-  color: #fff;
+  background: var(--color-brown-hover);
+  color: var(--auth-submit-fg);
   transform: translateY(-1px);
 }
 
@@ -428,22 +455,36 @@ body {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
   font-size: 0.85rem;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #065f46;
+  background: rgba(46, 125, 50, 0.08);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+  color: #1b5e20;
 }
 
 .auth-alert--error {
-  background: rgba(239, 68, 68, 0.06);
-  border-color: rgba(239, 68, 68, 0.25);
-  color: #991b1b;
+  background: rgba(198, 40, 40, 0.06);
+  border-color: rgba(198, 40, 40, 0.25);
+  color: #b71c1c;
+}
+
+/* Kartu auth tembus pandang, jadi teks alert harus dicerahkan sendiri di mode
+   gelap — warna terang di atas kaca gelap, bukan sebaliknya. */
+.dark .auth-alert {
+  background: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #a5d6a7;
+}
+
+.dark .auth-alert--error {
+  background: rgba(239, 83, 80, 0.12);
+  border-color: rgba(239, 83, 80, 0.3);
+  color: #ef9a9a;
 }
 
 .auth-demo {
   margin-top: 1.25rem;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
-  background: rgba(93, 78, 68, 0.04);
+  background: var(--color-brown-10);
   border: 1px solid var(--color-cream-300);
 }
 
@@ -525,7 +566,7 @@ body {
 .auth-google-btn:hover {
   background: var(--color-cream-50);
   border-color: var(--color-cream-400);
-  box-shadow: 0 4px 12px rgba(139, 94, 60, 0.08);
+  box-shadow: 0 4px 12px var(--color-brown-10);
   color: var(--color-cream-900);
   text-decoration: none;
   transform: translateY(-1px);

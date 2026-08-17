@@ -41,16 +41,16 @@
                         <div class="flex w-full flex-col-reverse items-stretch gap-0.5" style="height: 140px">
                             {{-- Tinggi batang relatif terhadap hari tersibuk, bukan nilai mutlak,
                                  supaya bentuk grafik tetap terbaca pada volume kecil maupun besar. --}}
-                            <div class="rounded-t bg-primary" style="height: {{ round($day['outbound'] / $chartMax * 100) }}%" title="Keluar: {{ $day['outbound'] }}"></div>
-                            <div class="rounded-t bg-sky-400" style="height: {{ round($day['inbound'] / $chartMax * 100) }}%" title="Masuk: {{ $day['inbound'] }}"></div>
+                            <div class="rounded-t bg-chart-3" style="height: {{ round($day['outbound'] / $chartMax * 100) }}%" title="Keluar: {{ $day['outbound'] }}"></div>
+                            <div class="rounded-t bg-chart-1" style="height: {{ round($day['inbound'] / $chartMax * 100) }}%" title="Masuk: {{ $day['inbound'] }}"></div>
                         </div>
                         <span class="text-xs text-muted-foreground">{{ $day['label'] }}</span>
                     </div>
                 @endforeach
             </div>
             <div class="mt-3 flex gap-4 text-xs text-muted-foreground">
-                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-primary"></span> Keluar</span>
-                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-400"></span> Masuk</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-chart-3"></span> Keluar</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-chart-1"></span> Masuk</span>
             </div>
         </x-card>
 

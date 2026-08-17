@@ -16,7 +16,7 @@
 </head>
 <body class="bg-background text-foreground antialiased" x-data="{ sidebar: false }">
 
-<header class="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+<header class="sticky top-0 z-40 bg-background/90 backdrop-blur">
     <div class="mx-auto flex max-w-7xl items-center gap-3 px-5 py-3.5">
 
         <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 font-semibold">
@@ -141,7 +141,7 @@
 
 <footer class="border-t border-border py-12 bg-background">
     <div class="mx-auto max-w-6xl px-5">
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
             <div class="lg:col-span-2">
                 <a href="/" class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                     <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
@@ -153,14 +153,24 @@
             </div>
             
             <div>
-                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Produk</h3>
+                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Gateway ini</h3>
                 <ul class="mt-4 space-y-3 text-sm">
                     <li><a href="{{ route('welcome') }}#fitur" class="text-muted-foreground hover:text-foreground">Fitur</a></li>
+                    <li><a href="{{ route('welcome') }}#harga" class="text-muted-foreground hover:text-foreground">Harga</a></li>
                     <li><a href="{{ route('docs.index') }}" class="text-muted-foreground hover:text-foreground">Dokumentasi</a></li>
-                    <li><a href="https://flustra.id" class="text-muted-foreground hover:text-foreground">flustra.id</a></li>
+                    <li><a href="{{ route('login') }}" class="text-muted-foreground hover:text-foreground">Masuk</a></li>
                 </ul>
             </div>
-            
+
+            <div>
+                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Produk Flustra</h3>
+                <ul class="mt-4 space-y-3 text-sm">
+                    @foreach (config('flustra.produk') as $nama => $alamat)
+                        <li><a href="{{ $alamat }}" class="text-muted-foreground hover:text-foreground">{{ $nama }}</a></li>
+                    @endforeach
+                </ul>
+            </div>
+
             <div>
                 <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Perusahaan</h3>
                 <ul class="mt-4 space-y-3 text-sm">
@@ -172,7 +182,7 @@
         </div>
         
         <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-            <p class="text-sm text-muted-foreground">&copy; {{ date('Y') }} Flustra WA Gateway. Bukan bagian dari WhatsApp/Meta.</p>
+            <p class="text-sm text-muted-foreground">&copy; {{ date('Y') }} Flustra WA Gateway.</p>
             
             <div class="flex items-center gap-4 text-muted-foreground">
                 <a href="https://www.instagram.com/flustra.id" class="hover:text-foreground">

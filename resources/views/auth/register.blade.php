@@ -68,7 +68,7 @@
                 </label>
                 <div style="position: relative;">
                     <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="new-password" style="padding-right: 70px;">
-                    <span id="password-length-badge" style="position: absolute; right: 36px; top: 50%; transform: translateY(-50%); padding: 2px 6px; font-size: 10px; font-weight: bold; border-radius: 4px; background-color: #cbd5e1; color: white; transition: all 0.3s;">0</span>
+                    <span id="password-length-badge" style="position: absolute; right: 36px; top: 50%; transform: translateY(-50%); padding: 2px 6px; font-size: 10px; font-weight: bold; border-radius: 4px; background-color: var(--auth-meter-idle); color: white; transition: all 0.3s;">0</span>
                     <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" title="Tampilkan/Sembunyikan Kata Sandi">
                         <i class="bi bi-eye"></i>
                     </button>
@@ -76,17 +76,17 @@
 
                 <!-- 5-Segment Progress Bar -->
                 <div style="display: flex; gap: 4px; margin-top: 6px;">
-                    <div style="height: 4px; flex: 1; background-color: #e2e8f0; border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-1"></div>
-                    <div style="height: 4px; flex: 1; background-color: #e2e8f0; border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-2"></div>
-                    <div style="height: 4px; flex: 1; background-color: #e2e8f0; border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-3"></div>
-                    <div style="height: 4px; flex: 1; background-color: #e2e8f0; border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-4"></div>
-                    <div style="height: 4px; flex: 1; background-color: #e2e8f0; border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-5"></div>
+                    <div style="height: 4px; flex: 1; background-color: var(--auth-meter-empty); border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-1"></div>
+                    <div style="height: 4px; flex: 1; background-color: var(--auth-meter-empty); border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-2"></div>
+                    <div style="height: 4px; flex: 1; background-color: var(--auth-meter-empty); border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-3"></div>
+                    <div style="height: 4px; flex: 1; background-color: var(--auth-meter-empty); border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-4"></div>
+                    <div style="height: 4px; flex: 1; background-color: var(--auth-meter-empty); border-radius: 4px; transition: background-color 0.3s;" id="pass-bar-5"></div>
                 </div>
 
                 <!-- Strength Label -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; margin-top: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--color-cream-700); margin-top: 4px;">
                     <span>Kekuatan:</span>
-                    <span id="password-strength-text" style="font-weight: bold; color: #94a3b8;">-</span>
+                    <span id="password-strength-text" style="font-weight: bold; color: var(--auth-meter-idle);">-</span>
                 </div>
 
                 @error('password')
@@ -146,13 +146,21 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('pass-bar-5')
         ];
 
-        const STRENGTH_LEVELS = [
-            { score: 0, label: '-', color: '#e2e8f0' },
-            { score: 1, label: 'Sangat Lemah', color: '#ef4444' },
-            { score: 2, label: 'Lemah', color: '#f97316' },
-            { score: 3, label: 'Sedang', color: '#eab308' },
-            { score: 4, label: 'Kuat', color: '#84cc16' },
-            { score: 5, label: 'Sangat Kuat', color: '#22c55e' }
+        // Warna netral dan warna "aman" diambil dari CSS, dan dibaca ulang tiap
+        // ketikan supaya meternya ikut berganti kalau tema diubah saat form
+        // sedang diisi. Gradasi merah→kuning sengaja dipertahankan apa adanya:
+        // ini meter, dan orang membacanya seperti lampu lalu lintas, bukan
+        // lewat palet aplikasi.
+        const warna = (nama, cadangan) =>
+            getComputedStyle(document.documentElement).getPropertyValue(nama).trim() || cadangan;
+
+        const tingkatan = () => [
+            { label: '-', color: warna('--auth-meter-empty', '#e0d6c9') },
+            { label: 'Sangat Lemah', color: '#ef4444' },
+            { label: 'Lemah', color: '#f97316' },
+            { label: 'Sedang', color: '#eab308' },
+            { label: 'Kuat', color: '#84cc16' },
+            { label: 'Sangat Kuat', color: warna('--auth-meter-strong', '#2e7d32') },
         ];
 
         passwordInput.addEventListener('input', function() {
@@ -168,10 +176,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const isRepeatedChar = /^(\x20|.)\1+$/.test(val);
             const isFullyValid = (len >= 8 && hasLower && hasUpper && hasNumber && hasSymbol);
 
+            const skala = tingkatan();
+
             if (lengthBadge) {
                 if (isFullyValid) {
                     lengthBadge.textContent = '8+';
-                    lengthBadge.style.backgroundColor = '#22c55e';
+                    lengthBadge.style.backgroundColor = warna('--auth-meter-strong', '#2e7d32');
                     lengthBadge.style.color = '#ffffff';
                 } else if (len >= 8) {
                     lengthBadge.textContent = len;
@@ -179,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     lengthBadge.style.color = '#ffffff';
                 } else {
                     lengthBadge.textContent = len;
-                    lengthBadge.style.backgroundColor = '#cbd5e1';
+                    lengthBadge.style.backgroundColor = warna('--auth-meter-idle', '#a1887f');
                     lengthBadge.style.color = '#ffffff';
                 }
             }
@@ -197,17 +207,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            const current = STRENGTH_LEVELS[score];
+            const current = skala[score];
+            const kosong = skala[0].color;
 
             bars.forEach((bar, index) => {
                 if (bar) {
-                    bar.style.backgroundColor = (index < score) ? current.color : '#e2e8f0';
+                    bar.style.backgroundColor = (index < score) ? current.color : kosong;
                 }
             });
 
             if (strengthText) {
                 strengthText.textContent = current.label;
-                strengthText.style.color = (score === 0) ? '#94a3b8' : current.color;
+                strengthText.style.color = (score === 0) ? warna('--auth-meter-idle', '#a1887f') : current.color;
             }
         });
     }

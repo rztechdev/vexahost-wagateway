@@ -5,7 +5,7 @@
   const canvas = document.getElementById('auth-smokey-canvas');
   if (!canvas) return;
 
-  const colorHex = canvas.dataset.color || '#8B5E3C';
+  const colorHex = canvas.dataset.color || '#2e7d32';
 
   const vertexSource = `
     attribute vec4 a_position;
