@@ -38,6 +38,13 @@ class ApiKeyController extends Controller
 
         $workspace = EnsureWorkspaceSelected::from($request);
 
+        if (! $workspace->canAddApiKey()) {
+            return back()->withErrors([
+                'name' => 'Paket '.$workspace->plan()->name().' hanya mengizinkan '
+                    .$workspace->plan()->maxApiKeys().' API key aktif. Cabut salah satu, atau naikkan paket.',
+            ]);
+        }
+
         // `?? []` bukan hiasan: checkbox yang tidak dicentang tidak dikirim sama
         // sekali, jadi kunci 'scopes' bisa tidak ada di hasil validasi. Tanpa
         // ini, membuat kunci sambil melepas centang "Semua" berakhir dengan

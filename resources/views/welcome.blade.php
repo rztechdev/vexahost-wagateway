@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name') }} — Gateway WhatsApp untuk Aplikasi Anda</title>
     <meta name="description" content="Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -207,18 +210,18 @@
 </div>
 
 {{-- ===================== Hero ===================== --}}
-<section class="mx-auto max-w-6xl px-8 pb-16 pt-28 lg:px-10 sm:pt-36">
+<section class="mx-auto max-w-6xl px-8 pb-20 pt-28 lg:px-10 sm:pt-40">
     <div class="grid items-center gap-12 lg:grid-cols-2">
         <div class="min-w-0">
             <span class="muncul inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 Sesi bertahan saat server di-deploy ulang
             </span>
 
-            <h1 class="muncul mt-5 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl" style="--tunda: 60ms">
+            <h1 class="muncul mt-6 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.4rem]" style="--tunda: 60ms">
                 Kirim WhatsApp dari aplikasi Anda lewat satu API
             </h1>
 
-            <p class="muncul mt-5 text-lg leading-relaxed text-muted-foreground" style="--tunda: 120ms">
+            <p class="muncul mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground" style="--tunda: 120ms">
                 Tautkan nomor sekali, lalu kirim notifikasi dari aplikasi mana pun
                 dengan satu panggilan HTTP.
             </p>
@@ -232,8 +235,8 @@
                 </a>
             </div>
 
-            <p class="muncul mt-5 text-sm text-muted-foreground" style="--tunda: 240ms">
-                Dipakai sendiri oleh produk Flustra lainnya.
+            <p class="muncul mt-6 text-sm text-muted-foreground" style="--tunda: 240ms">
+                Nomor Anda tidak terkunci di sini — putuskan tautannya kapan saja.
             </p>
         </div>
 
@@ -257,59 +260,138 @@
     </div>
 </section>
 
-{{-- ===================== Cara kerja =====================
+{{-- ===================== Bukti pemakaian =====================
 
-     Kartu di halaman ini sengaja tidak berlatar: warnanya sama persis dengan
-     halaman, hanya garis tepinya yang membedakan. Kotak berlatar bertumpuk
-     membuat halaman terasa penuh padahal isinya sedikit.
-     ======================================================= --}}
-<section id="cara-kerja" class="py-16">
-    <div class="mx-auto max-w-6xl px-8 lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Tiga langkah</h2>
-
-        <div class="mt-8 grid gap-5 md:grid-cols-3">
-            @php
-                $langkah = [
-                    ['1', 'Tautkan nomor', 'Sekali scan QR di dashboard. Setelah itu sesinya tersimpan permanen.'],
-                    ['2', 'Ambil API key', 'Satu kunci per aplikasi, bisa dicabut kapan saja.'],
-                    ['3', 'Panggil API-nya', 'Satu permintaan HTTP untuk mengirim.'],
-                ];
-            @endphp
-            @foreach ($langkah as $i => [$no, $judul, $isi])
-                <div class="muncul rounded-xl border border-border p-5" style="--tunda: {{ $i * 90 }}ms">
-                    <span class="grid h-8 w-8 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">{{ $no }}</span>
-                    <h3 class="mt-4 font-semibold">{{ $judul }}</h3>
-                    <p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
-                </div>
+     Pita tipis, bukan kartu. Halaman ini sebelumnya menumpuk tiga belas kotak
+     berukuran sama berturut-turut; matanya kehilangan pegangan dan tidak ada
+     satu pun bagian yang terasa lebih penting dari yang lain. Sekarang kartu
+     hanya dipakai di satu tempat — harga — dan sisanya dibedakan lewat ritme:
+     bagian polos berselang dengan bagian berlatar.
+     ============================================================= --}}
+<section class="border-y border-border/60 bg-muted/30 py-8">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-10 gap-y-4 px-8 lg:px-10">
+        <p class="muncul text-sm font-medium text-muted-foreground">
+            Dipakai sendiri oleh produk Flustra
+        </p>
+        <div class="muncul flex flex-wrap items-center gap-x-8 gap-y-3" style="--tunda: 80ms">
+            @foreach (array_slice(array_keys(config('flustra.produk')), 0, 5) as $nama)
+                <span class="text-sm font-medium text-foreground/70">{{ $nama }}</span>
             @endforeach
         </div>
     </div>
 </section>
 
-{{-- ===================== Fitur ===================== --}}
-<section id="fitur" class="py-16">
+{{-- ===================== Cara kerja ===================== --}}
+<section id="cara-kerja" class="py-24">
     <div class="mx-auto max-w-6xl px-8 lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Yang membedakan</h2>
+        <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Cara kerja</p>
+        <h2 class="muncul mt-3 max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+            Tiga langkah, sekali saja
+        </h2>
 
-        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {{-- Garis penghubung antar langkah, bukan tiga kotak berdampingan:
+             urutannya yang penting di sini, dan kotak tidak menyampaikan urutan. --}}
+        <div class="relative mt-14">
+            <div class="absolute left-0 right-0 top-5 hidden h-px bg-border md:block" aria-hidden="true"></div>
+
+            <div class="grid gap-10 md:grid-cols-3 md:gap-8">
+                @php
+                    $langkah = [
+                        ['Tautkan nomor', 'Sekali scan QR di dashboard. Setelah itu sesinya tersimpan permanen — termasuk saat server di-deploy ulang.'],
+                        ['Ambil API key', 'Satu kunci per aplikasi, bisa dilihat lagi kapan saja dan dicabut sendiri-sendiri.'],
+                        ['Panggil API-nya', 'Satu permintaan HTTP. Tidak ada SDK yang wajib dipasang, tidak ada antrean yang perlu Anda urus.'],
+                    ];
+                @endphp
+                @foreach ($langkah as $i => [$judul, $isi])
+                    <div class="muncul relative" style="--tunda: {{ $i * 90 }}ms">
+                        <span class="relative z-10 grid h-10 w-10 place-items-center rounded-full border border-primary/25 bg-background text-sm font-semibold text-primary">
+                            {{ $i + 1 }}
+                        </span>
+                        <h3 class="mt-5 text-lg font-semibold">{{ $judul }}</h3>
+                        <p class="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ===================== Sorotan utama =====================
+
+     Satu keunggulan diberi ruang penuh, bukan diratakan menjadi salah satu dari
+     enam kotak seukuran. Inilah alasan project ini ada; kalau ia tampil sama
+     besar dengan "template pesan", tidak ada yang akan menyadarinya.
+     ============================================================= --}}
+<section id="fitur" class="border-y border-border/60 bg-muted/30 py-24">
+    <div class="mx-auto max-w-6xl px-8 lg:px-10">
+        <div class="grid items-center gap-14 lg:grid-cols-2">
+            <div class="min-w-0">
+                <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Yang membedakan</p>
+                <h2 class="muncul mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+                    Deploy ulang tanpa scan QR lagi
+                </h2>
+                <p class="muncul mt-5 text-lg leading-relaxed text-muted-foreground" style="--tunda: 120ms">
+                    Gateway WhatsApp yang menempel di dalam aplikasi akan meminta scan
+                    ulang setiap kali servernya dinyalakan ulang. Di sini kredensial
+                    nomor disimpan terpisah dan dicadangkan berkala, jadi nomor Anda
+                    menyala sendiri begitu container kembali hidup.
+                </p>
+                <p class="muncul mt-4 text-sm leading-relaxed text-muted-foreground" style="--tunda: 160ms">
+                    Nomor tetap bisa Anda ganti kapan saja lewat Putus tautan → Hubungkan.
+                </p>
+            </div>
+
+            {{-- Gambaran keadaan, bukan tangkapan layar: tangkapan layar cepat
+                 basi setiap kali dashboard berubah sedikit. --}}
+            <div class="muncul min-w-0 rounded-2xl border border-border bg-background p-6 shadow-sm" style="--tunda: 200ms">
+                <p class="text-xs font-medium uppercase tracking-wider text-muted-foreground">Saat server di-deploy ulang</p>
+                <ol class="mt-5 space-y-5">
+                    @php
+                        $urutan = [
+                            ['Container dimatikan', 'Sesi disimpan rapi sebelum proses berhenti.'],
+                            ['Versi baru menyala', 'Engine bertanya ke Laravel: nomor mana saja yang tadi aktif?'],
+                            ['Nomor tersambung sendiri', 'Tanpa scan QR. Tanpa Anda menyentuh apa pun.'],
+                        ];
+                    @endphp
+                    @foreach ($urutan as [$judul, $isi])
+                        <li class="flex gap-4">
+                            <div class="flex flex-col items-center self-stretch">
+                                <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                                </span>
+                                @if (! $loop->last)
+                                    <span class="mt-1 w-px flex-1 bg-border"></span>
+                                @endif
+                            </div>
+                            <div class="pb-1">
+                                <p class="text-sm font-medium">{{ $judul }}</p>
+                                <p class="mt-1 text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </div>
+        </div>
+
+        {{-- Sisa fiturnya sebagai daftar bergaris, bukan kotak. Isinya pendek —
+             kotak di sekelilingnya menambah berat visual tanpa menambah arti. --}}
+        <div class="mt-20 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             @php
                 // Ikon disimpan sebagai path SVG mentah supaya tidak perlu
                 // menambah pustaka ikon hanya untuk satu halaman.
                 $fitur = [
-                    ['M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9', 'Sesi tidak putus saat deploy', 'Kredensial nomor tersimpan permanen dan dicadangkan otomatis.'],
                     ['M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0 .01M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', 'Banyak nomor sekaligus', 'Satu nomor bermasalah tidak menghentikan nomor lain.'],
-                    ['M12 6v6l4 2M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z', 'Jeda kirim otomatis', 'Tiap pesan diberi jeda acak dan diantre per nomor.'],
+                    ['M12 6v6l4 2M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z', 'Jeda kirim otomatis', 'Tiap pesan diberi jeda acak dan diantre per nomor, supaya nomor Anda tidak terbaca sebagai spam.'],
                     ['M4 4h16v12H5.17L4 17.17V4zM8 9h8M8 12h5', 'Webhook pesan masuk', 'Balasan pelanggan diteruskan ke aplikasi Anda, bertanda tangan.'],
                     ['M9 11l3 3 8-8M21 12a9 9 0 1 1-6.22-8.56', 'Riwayat & status kirim', 'Terkirim, sampai, atau dibaca — tercatat per pesan.'],
                     ['M3 7h18M3 12h18M3 17h18', 'Workspace terpisah', 'Cabang atau klien punya nomor, kunci, dan riwayat sendiri.'],
+                    ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'Kunci bisa dicabut sendiri', 'Satu kunci bocor tidak berarti seluruh nomor Anda ikut jatuh.'],
                 ];
             @endphp
             @foreach ($fitur as $i => [$ikon, $judul, $isi])
-                <div class="muncul rounded-xl border border-border p-5" style="--tunda: {{ ($i % 3) * 80 }}ms">
-                    <span class="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $ikon }}"/></svg>
-                    </span>
-                    <h3 class="mt-4 font-semibold">{{ $judul }}</h3>
+                <div class="muncul" style="--tunda: {{ ($i % 3) * 80 }}ms">
+                    <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $ikon }}"/></svg>
+                    <h3 class="mt-3 font-semibold">{{ $judul }}</h3>
                     <p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
                 </div>
             @endforeach
@@ -317,50 +399,65 @@
     </div>
 </section>
 
-{{-- ===================== Kapan dipakai ===================== --}}
-<section class="py-16">
+{{-- ===================== Kapan terpakai ===================== --}}
+<section class="py-24">
     <div class="mx-auto max-w-6xl px-8 lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Kapan terpakai</h2>
+        <div class="grid gap-14 lg:grid-cols-[1fr_1.4fr]">
+            <div>
+                <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Kapan terpakai</p>
+                <h2 class="muncul mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+                    Di mana pun aplikasi Anda perlu bicara
+                </h2>
+            </div>
 
-        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            @php
-                $pemakaian = [
-                    ['Toko & e-commerce', 'Konfirmasi pesanan dan nomor resi.'],
-                    ['Penagihan', 'Invoice terbit, lunas, atau lewat jatuh tempo.'],
-                    ['Jasa terjadwal', 'Pengingat janji temu sehari sebelumnya.'],
-                    ['Verifikasi & OTP', 'Kode sekali pakai dari nomor Anda sendiri.'],
-                ];
-            @endphp
-            @foreach ($pemakaian as $i => [$judul, $isi])
-                <div class="muncul rounded-xl border border-border p-5" style="--tunda: {{ ($i % 4) * 70 }}ms">
-                    <h3 class="font-semibold">{{ $judul }}</h3>
-                    <p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
-                </div>
-            @endforeach
+            {{-- Daftar bergaris pemisah, bukan empat kotak: keempatnya setara,
+                 dan garis tipis sudah cukup memisahkan. --}}
+            <div class="divide-y divide-border/70">
+                @php
+                    $pemakaian = [
+                        ['Toko & e-commerce', 'Konfirmasi pesanan masuk, nomor resi, dan pemberitahuan barang dikirim.'],
+                        ['Penagihan', 'Invoice terbit, lunas, atau lewat jatuh tempo — langsung ke nomor pelanggan.'],
+                        ['Jasa terjadwal', 'Pengingat janji temu sehari sebelumnya, otomatis dari sistem Anda.'],
+                        ['Verifikasi & OTP', 'Kode sekali pakai yang dikirim dari nomor Anda sendiri, bukan nomor orang lain.'],
+                    ];
+                @endphp
+                @foreach ($pemakaian as $i => [$judul, $isi])
+                    <div class="muncul flex flex-col gap-1 py-5 sm:flex-row sm:gap-8" style="--tunda: {{ $i * 70 }}ms">
+                        <h3 class="shrink-0 font-semibold sm:w-52">{{ $judul }}</h3>
+                        <p class="text-sm leading-relaxed text-muted-foreground">{{ $isi }}</p>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>
 
 {{-- ===================== Untuk developer ===================== --}}
-<section id="untuk-developer" class="py-16">
+<section id="untuk-developer" class="border-y border-border/60 bg-muted/30 py-24">
     <div class="mx-auto max-w-6xl px-8 lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Untuk developer</h2>
-        <p class="muncul mt-2 text-muted-foreground" style="--tunda: 60ms">
-            HTTP dan JSON biasa. Tidak ada SDK yang wajib dipasang.
-        </p>
+        <div class="max-w-xl">
+            <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Untuk developer</p>
+            <h2 class="muncul mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+                HTTP dan JSON biasa
+            </h2>
+            <p class="muncul mt-4 text-lg leading-relaxed text-muted-foreground" style="--tunda: 100ms">
+                Tidak ada SDK yang wajib dipasang. Kalau bahasa Anda bisa memanggil
+                URL, ia bisa memakai gateway ini.
+            </p>
+        </div>
 
-        <div class="muncul mt-8" style="--tunda: 120ms" x-data="{ bahasa: 'php' }">
+        <div class="muncul mt-10" style="--tunda: 140ms" x-data="{ bahasa: 'php' }">
             <div class="flex flex-wrap gap-1 text-sm">
                 @foreach (['php' => 'PHP / Laravel', 'node' => 'Node.js', 'python' => 'Python'] as $kode => $label)
                     <button @click="bahasa = '{{ $kode }}'"
                             class="rounded-lg px-3 py-1.5 font-medium transition"
-                            :class="bahasa === '{{ $kode }}' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'">
+                            :class="bahasa === '{{ $kode }}' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-background hover:text-foreground'">
                         {{ $label }}
                     </button>
                 @endforeach
             </div>
 
-            <div class="mt-4 overflow-hidden rounded-2xl border border-border bg-[var(--code-chrome)] p-1">
+            <div class="mt-4 overflow-hidden rounded-2xl border border-border bg-[var(--code-chrome)] p-1 shadow-sm">
                 <div x-show="bahasa === 'php'">
 <pre class="overflow-x-auto rounded-xl bg-[var(--code-bg)] p-5 text-[13px] leading-relaxed text-[var(--code-foreground)]"><code>Http::withHeaders([<span class="text-[var(--code-string)]">'X-Api-Key'</span> =&gt; config(<span class="text-[var(--code-string)]">'services.wa.key'</span>)])
     -&gt;post(<span class="text-[var(--code-string)]">'https://wa.flustra.id/api/v1/messages/text'</span>, [
@@ -391,33 +488,35 @@
             </div>
         </div>
 
-        <div class="muncul mt-8 flex flex-wrap gap-3" style="--tunda: 160ms">
-            <a href="{{ route('docs.show', 'referensi-api') }}" class="rounded-lg bg-secondary px-5 py-2.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
+        <div class="muncul mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm font-medium" style="--tunda: 180ms">
+            <a href="{{ route('docs.show', 'referensi-api') }}" class="inline-flex items-center gap-1.5 text-primary hover:underline">
                 Referensi API
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </a>
-            <a href="{{ route('docs.show', 'contoh-integrasi') }}" class="rounded-lg border border-border bg-transparent px-5 py-2.5 text-sm font-medium hover:bg-muted">
-                Contoh integrasi
-            </a>
-            <a href="{{ route('docs.index') }}" class="rounded-lg border border-border bg-transparent px-5 py-2.5 text-sm font-medium hover:bg-muted">
-                Semua dokumentasi
-            </a>
+            <a href="{{ route('docs.show', 'contoh-integrasi') }}" class="text-muted-foreground hover:text-foreground">Contoh integrasi</a>
+            <a href="{{ route('docs.show', 'webhook') }}" class="text-muted-foreground hover:text-foreground">Webhook</a>
+            <a href="{{ route('docs.index') }}" class="text-muted-foreground hover:text-foreground">Semua dokumentasi</a>
         </div>
     </div>
 </section>
 
 {{-- ===================== Harga =====================
 
-     Kartu harga ini masih etalase: belum ada penagihan, langganan, maupun
-     penegakan batas di balik angkanya. Tombolnya sengaja mengarah ke
-     pendaftaran biasa. Sebelum harga ini benar-benar ditagihkan, batas
-     workspace dan kuota pesan per paket harus ditegakkan lebih dulu di
-     sisi aplikasi.
+     Angka dan fitur di sini dibaca langsung dari `config/plans.php` — sumber
+     yang sama persis dengan yang menegakkan batas di aplikasi dan yang dipakai
+     menyusun tagihan. Jangan pernah menuliskannya ulang sebagai teks di sini:
+     halaman harga yang menjanjikan angka berbeda dari yang benar-benar
+     ditegakkan adalah janji yang kita langgar sendiri di hadapan orang yang
+     baru saja membayar.
      ============================================================= --}}
-<section id="harga" class="py-16">
+<section id="harga" class="py-24">
     <div class="mx-auto max-w-6xl px-8 lg:px-10" x-data="{ tahunan: false }">
-        <div class="muncul max-w-2xl">
-            <h2 class="text-2xl font-semibold tracking-tight">Harga</h2>
-            <p class="mt-2 text-muted-foreground">
+        <div class="max-w-2xl">
+            <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Harga</p>
+            <h2 class="muncul mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+                Bayar sesuai besarnya pemakaian
+            </h2>
+            <p class="muncul mt-4 text-lg leading-relaxed text-muted-foreground" style="--tunda: 100ms">
                 Semua paket memakai gateway, API, dan dashboard yang sama. Yang membedakan hanya
                 seberapa besar Anda memakainya.
             </p>
@@ -438,57 +537,16 @@
         </div>
 
         @php
-            // Harga tahunan = harga bulanan x 10, jadi dua bulan gratis.
-            $paket = [
-                [
-                    'nama' => 'Mulai',
-                    'bulanan' => 150_000,
-                    'untuk' => 'Satu usaha dengan satu nomor.',
-                    'sorot' => false,
-                    'fitur' => [
-                        '1 workspace',
-                        '1 nomor WhatsApp aktif',
-                        '3.000 pesan keluar per bulan',
-                        '3 API key',
-                        'Webhook pesan masuk',
-                        'Riwayat pesan 30 hari',
-                        'Template pesan',
-                        'Dukungan lewat email',
-                    ],
-                ],
-                [
-                    'nama' => 'Bisnis',
-                    'bulanan' => 300_000,
-                    'untuk' => 'Beberapa cabang atau beberapa aplikasi sekaligus.',
-                    'sorot' => true,
-                    'fitur' => [
-                        '3 workspace',
-                        '3 nomor WhatsApp aktif',
-                        '15.000 pesan keluar per bulan',
-                        '10 API key',
-                        'Pengiriman massal terjadwal',
-                        'Riwayat pesan 90 hari',
-                        'Anggota tim dengan peran',
-                        'Dukungan lewat WhatsApp',
-                    ],
-                ],
-                [
-                    'nama' => 'Skala',
-                    'bulanan' => 550_000,
-                    'untuk' => 'Agensi dan perusahaan dengan banyak merek.',
-                    'sorot' => false,
-                    'fitur' => [
-                        '10 workspace',
-                        '10 nomor WhatsApp aktif',
-                        '50.000 pesan keluar per bulan',
-                        'API key tanpa batas',
-                        'Prioritas antrean pengiriman',
-                        'Riwayat pesan 12 bulan',
-                        'Laporan pemakaian bulanan',
-                        'Pendampingan saat pemasangan',
-                    ],
-                ],
-            ];
+            // Harga tahunan = harga bulanan x 10, jadi dua bulan gratis. Angka
+            // pengalinya pun tidak ditulis di sini — ia ikut dari config.
+            $paket = collect(\App\Support\Plan::all())->map(fn ($plan) => [
+                'nama' => $plan->name(),
+                'bulanan' => $plan->monthlyPrice(),
+                'tahunan' => $plan->price('yearly'),
+                'untuk' => $plan->tagline(),
+                'sorot' => $plan->isHighlighted(),
+                'fitur' => $plan->features(),
+            ])->all();
         @endphp
 
         <div class="mt-10 grid items-start gap-6 lg:grid-cols-3">
@@ -504,14 +562,14 @@
 
                     <p class="mt-5 flex items-baseline gap-1.5">
                         <span class="text-3xl font-semibold tracking-tight"
-                              x-text="tahunan ? 'Rp{{ number_format($p['bulanan'] * 10, 0, ',', '.') }}' : 'Rp{{ number_format($p['bulanan'], 0, ',', '.') }}'">Rp{{ number_format($p['bulanan'], 0, ',', '.') }}</span>
+                              x-text="tahunan ? 'Rp{{ number_format($p['tahunan'], 0, ',', '.') }}' : 'Rp{{ number_format($p['bulanan'], 0, ',', '.') }}'">Rp{{ number_format($p['bulanan'], 0, ',', '.') }}</span>
                         <span class="text-sm text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'">/bulan</span>
                     </p>
                     {{-- Dibuat tak terlihat, bukan disembunyikan: kalau barisnya
                          ikut hilang, ketiga kartu bergeser naik-turun tiap kali
                          sakelar bulanan/tahunan ditekan. --}}
                     <p class="mt-1 text-xs text-muted-foreground" :class="tahunan ? '' : 'invisible'">
-                        Setara Rp{{ number_format($p['bulanan'] * 10 / 12, 0, ',', '.') }} per bulan.
+                        Setara Rp{{ number_format($p['tahunan'] / 12, 0, ',', '.') }} per bulan.
                     </p>
 
                     <a href="{{ route('register') }}"
@@ -532,16 +590,19 @@
         </div>
 
         <p class="muncul mt-6 text-sm text-muted-foreground" style="--tunda: 120ms">
-            Butuh nomor atau kuota lebih banyak dari paket Skala?
+            Butuh nomor atau kuota lebih banyak dari paket Elite?
             <a href="https://about.flustra.id/#contact" class="text-primary hover:underline">Hubungi kami</a> untuk penawaran khusus.
         </p>
     </div>
 </section>
 
 {{-- ===================== Pertanyaan umum ===================== --}}
-<section class="py-16">
+<section class="border-t border-border/60 py-24">
     <div class="mx-auto max-w-3xl px-8 lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Pertanyaan yang sering muncul</h2>
+        <p class="muncul text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tanya jawab</p>
+        <h2 class="muncul mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" style="--tunda: 60ms">
+            Pertanyaan yang sering muncul
+        </h2>
 
         <div class="mt-8" x-data="{ terbuka: 0 }">
             @php
@@ -570,16 +631,28 @@
     </div>
 </section>
 
-{{-- ===================== Penutup ===================== --}}
-<section class="py-20">
-    <div class="mx-auto max-w-3xl px-8 text-center lg:px-10">
-        <h2 class="muncul text-2xl font-semibold tracking-tight">Siap mencoba?</h2>
-        <p class="muncul mt-3 text-muted-foreground" style="--tunda: 60ms">Buat akun, tautkan satu nomor, dan kirim pesan pertama Anda hari ini.</p>
-        <div class="muncul mt-7 flex flex-wrap justify-center gap-3" style="--tunda: 120ms">
-            <a href="{{ route('register') }}" class="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+{{-- ===================== Penutup =====================
+
+     Satu-satunya blok berlatar penuh warna utama di seluruh halaman. Ia menutup
+     halaman dengan tegas dan menandai di mana ajakan terakhirnya berada — tanpa
+     itu, bagian ini terbaca sebagai satu lagi paragraf di tengah yang lain.
+     ============================================================= --}}
+<section class="bg-primary text-primary-foreground">
+    <div class="mx-auto max-w-4xl px-8 py-24 text-center lg:px-10">
+        <h2 class="muncul text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            Kirim pesan pertama Anda hari ini
+        </h2>
+        <p class="muncul mx-auto mt-5 max-w-xl text-lg leading-relaxed text-primary-foreground/80" style="--tunda: 60ms">
+            Buat akun, tautkan satu nomor, dan sambungkan ke aplikasi Anda.
+            Menautkan nomor pertama biasanya di bawah satu menit.
+        </p>
+        <div class="muncul mt-9 flex flex-wrap justify-center gap-3" style="--tunda: 120ms">
+            <a href="{{ route('register') }}"
+               class="rounded-lg bg-primary-foreground px-6 py-3 text-sm font-semibold text-primary transition hover:opacity-90">
                 Buat akun
             </a>
-            <a href="{{ route('docs.show', 'mulai-cepat') }}" class="rounded-lg border border-input px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+            <a href="{{ route('docs.show', 'mulai-cepat') }}"
+               class="rounded-lg border border-primary-foreground/30 px-6 py-3 text-sm font-medium transition hover:bg-primary-foreground/10">
                 Baca panduan mulai cepat
             </a>
         </div>

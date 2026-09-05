@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\AuthenticateApiKey;
+use App\Http\Middleware\EnsureSubscriptionActive;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Http\Middleware\VerifyEngineSignature;
 use Illuminate\Foundation\Application;
@@ -28,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'apikey' => AuthenticateApiKey::class,
             'workspace' => EnsureWorkspaceSelected::class,
+            'subscription' => EnsureSubscriptionActive::class,
+            'admin' => EnsureSuperAdmin::class,
         ]);
 
         $middleware->group('internal', [

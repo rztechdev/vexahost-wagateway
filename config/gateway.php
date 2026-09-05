@@ -34,6 +34,18 @@ return [
         'timeout' => (int) env('ENGINE_TIMEOUT', 15),
         'send_timeout' => (int) env('ENGINE_SEND_TIMEOUT', 60),
         'connect_timeout' => (int) env('ENGINE_CONNECT_TIMEOUT', 5),
+
+        /*
+        | Cermin dari `WA_MAX_SESSIONS` milik engine. Laravel tidak memakainya
+        | untuk memutuskan apa pun — engine yang menolak sesi ke-N+1 — tapi
+        | panel admin perlu menampilkannya berdampingan dengan jumlah sesi yang
+        | sedang hidup. Tanpa angka itu di layar, batas kapasitas platform baru
+        | ketahuan saat pelanggan berbayar gagal menautkan nomornya.
+        |
+        | Kalau nilai di sini berbeda dengan env engine, yang berlaku tetap env
+        | engine; yang salah cuma angka di panel.
+        */
+        'max_sessions' => (int) env('WA_MAX_SESSIONS', 3),
     ],
 
     /*

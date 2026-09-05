@@ -7,6 +7,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -43,6 +44,31 @@ class AuthenticateApiKey
 
         if ($scope && ! $key->allows($scope)) {
             return $this->deny("API key tidak punya scope '{$scope}'.", 403);
+        }
+
+        /*
+         | Batas permintaan per menit adalah salah satu pembeda antar paket, dan
+         | sampai sekarang kolomnya diisi tanpa pernah ditegakkan di mana pun.
+         |
+         | Dihitung per WORKSPACE, bukan per API key: menghitung per kunci
+         | membuat batasnya bisa dilipatgandakan hanya dengan membuat kunci baru,
+         | yang justru gratis. Nilai 0 berarti tanpa batas, mengikuti perjanjian
+         | yang sama dengan kuota pesan.
+        */
+        $batas = (int) $key->workspace->api_rate_limit_per_minute;
+
+        if ($batas > 0) {
+            $ember = "api:{$key->workspace_id}";
+
+            if (RateLimiter::tooManyAttempts($ember, $batas)) {
+                return $this->deny(
+                    "Batas {$batas} permintaan per menit terlampaui. Coba lagi dalam "
+                        .RateLimiter::availableIn($ember).' detik.',
+                    429
+                );
+            }
+
+            RateLimiter::hit($ember, 60);
         }
 
         // Menulis last_used_at pada setiap request akan menjadi satu UPDATE per

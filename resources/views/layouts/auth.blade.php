@@ -1,98 +1,156 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Flustra')</title>
+    <title>@yield('title', 'Flustra WA Gateway')</title>
 
-    <!-- Primary Meta Tags & Favicon Configuration -->
-    <meta name="description" content="Masuk atau daftar ke Flustra WA Gateway - Layanan Notifikasi WhatsApp Terbaik.">
+    <!-- Meta Tags & Favicon -->
+    <meta name="description" content="Masuk atau daftar ke Flustra WA Gateway - Layanan Notifikasi & Gateway WhatsApp API Terbaik.">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#f8f5f0">
+    <meta name="theme-color" content="#2e7d32">
     
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('images/favicon-48x48.png') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/icon-96x96.png') }}">
-    <link rel="icon" type="image/png" sizes="144x144" href="{{ asset('images/icon-144x144.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('images/android-chrome-512x512.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Vite CSS & JS -->
-    @vite(['resources/css/auth.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
 
     <!-- Theme Initialization Script -->
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+        function applyTheme() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        applyTheme();
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
         }
     </script>
 </head>
-<body>
-    <div class="auth-page">
-        <!-- WebGL Canvas untuk Latar Belakang Smoky. data-color diatur dinamis atau manual -->
-        <div class="auth-canvas-wrap" aria-hidden="true">
-            <canvas id="auth-smokey-canvas" data-color="{{ $shader_color ?? '#2e7d32' }}"></canvas>
-            <div class="auth-canvas-blur"></div>
+<body class="min-h-full bg-background text-foreground antialiased font-sans selection:bg-primary/20 selection:text-primary">
+    <div class="min-h-screen grid lg:grid-cols-[1.15fr_1fr] relative overflow-x-hidden">
+        
+        {{-- ===================== SISI KIRI: HERO / BRAND PANEL ===================== --}}
+        <div class="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden bg-[#123524] text-white select-none">
+
+            {{-- Header Kiri: Brand Identity --}}
+            <div class="relative z-10">
+                <a href="{{ route('welcome') }}" class="group inline-flex items-center gap-3 transition">
+                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-9 w-auto object-contain transition group-hover:scale-105">
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold tracking-tight text-white">Flustra WA</span>
+                        <span class="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">Gateway API Platform</span>
+                    </div>
+                </a>
+            </div>
+
+            {{-- Tengah Kiri: Headline & Value Proposition --}}
+            <div class="relative z-10 my-auto py-10 max-w-lg">
+                <h1 class="text-3xl xl:text-4xl 2xl:text-[2.75rem] font-extrabold tracking-tight text-white leading-[1.18]">
+                    Kelola Pesan &amp; Otomasi WhatsApp Tanpa Batas
+                </h1>
+
+                <p class="mt-4 text-sm xl:text-base leading-relaxed text-slate-300 font-normal">
+                    Dashboard terpusat untuk integrasi API WhatsApp multi-sesi, broadcast pesan massal, webhook interaktif, dan notifikasi pengingat otomatis dengan performa andal dan terpercaya.
+                </p>
+
+                {{-- Stats Row (3 Metrik Berdampingan) --}}
+                <div class="mt-10 grid grid-cols-3 gap-6 pt-8 border-t border-white/10">
+                    <div>
+                        <p class="text-2xl xl:text-3xl font-black text-white tracking-tight">99.9%</p>
+                        <p class="mt-1 text-xs text-emerald-300 font-medium">Uptime Gateway</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl xl:text-3xl font-black text-white tracking-tight">Multi-Sesi</p>
+                        <p class="mt-1 text-xs text-emerald-300 font-medium">Kuota Fleksibel</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl xl:text-3xl font-black text-white tracking-tight">100%</p>
+                        <p class="mt-1 text-xs text-emerald-300 font-medium">Otomatisasi API</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Footer Kiri: Copyright --}}
+            <div class="relative z-10 text-xs text-slate-400 font-normal flex items-center justify-between">
+                <span>&copy; {{ date('Y') }} Flustra WA. All rights reserved.</span>
+                <span class="text-slate-500 text-[11px]">Gateway Notifikasi Resmi</span>
+            </div>
         </div>
 
-        <header class="auth-topbar">
-            <a href="/" class="auth-brand d-inline-flex align-items-center gap-2">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" style="height: 32px; width: auto; object-fit: contain;">
-                <span>Flustra WA Gateway</span>
-            </a>
+        {{-- ===================== SISI KANAN: FORM PANEL ===================== --}}
+        <div class="relative flex flex-col justify-between min-h-screen bg-background p-6 sm:p-10 lg:p-12 overflow-y-auto">
             
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button onclick="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" 
-                        title="Toggle Tema"
-                        style="background: transparent; border: none; cursor: pointer; color: var(--color-cream-800); display: flex; align-items: center; justify-content: center; padding: 0.2rem;">
-                    <!-- Ikon Matahari (Tampil saat Dark Mode) -->
-                    <svg class="h-5 w-5" style="display: none;" id="icon-sun" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <!-- Ikon Bulan (Tampil saat Light Mode) -->
-                    <svg class="h-5 w-5" style="display: block;" id="icon-moon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
-                
-                @yield('topbar_action')
-            </div>
-        </header>
+            {{-- Topbar Kanan --}}
+            <div class="flex items-center justify-between gap-4 w-full">
+                {{-- Logo khusus layar mobile --}}
+                <div class="lg:hidden flex items-center gap-2.5">
+                    <a href="{{ route('welcome') }}" class="flex items-center gap-2">
+                        <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-8 w-auto object-contain">
+                        <span class="text-base font-bold text-foreground">Flustra WA</span>
+                    </a>
+                </div>
 
-        <main class="auth-main">
-            @yield('content')
-        </main>
+                <div class="hidden lg:block"></div>
+
+                <div class="flex items-center gap-2.5 ml-auto">
+                    {{-- Tombol Ganti Tema (Dark/Light) --}}
+                    <button type="button" onclick="toggleDarkMode()"
+                            class="grid h-9 w-9 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-95"
+                            title="Ganti mode tampilan"
+                            aria-label="Ganti mode tampilan">
+                        <svg class="hidden h-4 w-4 text-amber-400 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg class="block h-4 w-4 text-foreground dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+
+                    {{-- Link Kembali ke Website --}}
+                    <a href="{{ route('welcome') }}" 
+                       class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground shadow-2xs">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Kembali ke Website</span>
+                    </a>
+                </div>
+            </div>
+
+            {{-- Form Wrapper (Tengah Vertikal) --}}
+            <div class="my-auto py-8 w-full @yield('container_width', 'max-w-md') mx-auto">
+                @yield('content')
+            </div>
+
+            {{-- Footer Khusus Mobile --}}
+            <div class="lg:hidden text-center text-xs text-muted-foreground pt-4 border-t border-border/70">
+                &copy; {{ date('Y') }} Flustra WA. All rights reserved.
+            </div>
+        </div>
+
     </div>
 
-    <!-- Panggil Javascript WebGL Shader -->
-    <script src="{{ asset('js/auth-smokey-bg.js') }}"></script>
+    <!-- Script pembantu toggle password -->
     <script>
-        // Mempertahankan label floating jika field terisi
-        document.querySelectorAll('.auth-field input').forEach(function (input) {
-            var wrap = input.closest('.auth-field');
-            if (!wrap) return;
-            function sync() {
-                wrap.classList.toggle('has-value', input.value.length > 0);
-            }
-            input.addEventListener('input', sync);
-            sync();
-        });
-
-        // Toggle password visibility
         function togglePasswordVisibility(inputId, btn) {
-            var input = document.getElementById(inputId);
+            const input = document.getElementById(inputId);
             if (!input) return;
-            var icon = btn.querySelector('i');
+            const icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text';
                 if (icon) {
@@ -107,30 +165,6 @@
                 }
             }
         }
-
-        // Logic for icon visibility based on dark mode class on HTML element
-        function updateThemeIcons() {
-            var isDark = document.documentElement.classList.contains('dark');
-            var iconSun = document.getElementById('icon-sun');
-            var iconMoon = document.getElementById('icon-moon');
-            if (iconSun && iconMoon) {
-                iconSun.style.display = isDark ? 'block' : 'none';
-                iconMoon.style.display = isDark ? 'none' : 'block';
-            }
-        }
-        
-        // Initial setup
-        updateThemeIcons();
-
-        // Observe changes to 'class' attribute on HTML to switch icons instantly
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.attributeName === 'class') {
-                    updateThemeIcons();
-                }
-            });
-        });
-        observer.observe(document.documentElement, { attributes: true });
     </script>
     @yield('scripts')
 </body>

@@ -78,6 +78,9 @@ class AuthController extends Controller
             'name' => $data['name'],
             'email' => mb_strtolower($data['email']),
             'password' => Hash::make($data['password']),
+            'google_id' => $request->input('google_id') ?: null,
+            'avatar' => $request->input('google_avatar') ?: null,
+            'email_verified_at' => $request->filled('google_id') ? now() : null,
         ]);
 
         // Workspace dibuat sekalian saat mendaftar. Tanpa ini pengguna baru

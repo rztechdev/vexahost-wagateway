@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\SessionService;
+use App\Support\PhoneNumber;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -88,16 +89,32 @@ class WorkspaceController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80'],
+            'billing_phone' => ['nullable', 'string', 'max:20'],
         ]);
+
+        // Nomor tagihan dinormalkan seperti nomor tujuan pesan mana pun. Kalau
+        // tidak, pengingat yang dikirim ke `08...` gagal diam-diam — dan
+        // gagalnya baru ketahuan sebagai pelanggan yang tidak pernah tahu
+        // langganannya habis.
+        $nomor = filled($data['billing_phone'] ?? null)
+            ? PhoneNumber::normalize($data['billing_phone'])
+            : null;
+
+        if (filled($data['billing_phone'] ?? null) && $nomor === null) {
+            return back()->withErrors(['billing_phone' => 'Nomor WhatsApp tidak valid.']);
+        }
 
         // Slug sengaja tidak ikut berubah. Ia dipakai sebagai pengenal yang
         // tahan lama di log dan audit; nama boleh berubah kapan saja, slug
         // tidak. Tidak ada satu pun URL atau API key yang bergantung padanya.
-        $workspace->update(['name' => $data['name']]);
+        $workspace->update([
+            'name' => $data['name'],
+            'billing_phone' => $nomor,
+        ]);
 
         AuditLog::record('workspace.renamed', $workspace, ['name' => $data['name']], $workspace->id);
 
-        return back()->with('status', 'Nama workspace diperbarui.');
+        return back()->with('status', 'Pengaturan workspace diperbarui.');
     }
 
     /**
@@ -157,6 +174,13 @@ class WorkspaceController extends Controller
 
         if (! $request->user()->canManage($workspace)) {
             abort(403, 'Hanya owner atau admin yang bisa menambah anggota.');
+        }
+
+        if (! $workspace->canAddMember()) {
+            return back()->withErrors([
+                'email' => 'Paket '.$workspace->plan()->name().' hanya mengizinkan '
+                    .$workspace->plan()->maxMembers().' anggota. Keluarkan salah satu, atau naikkan paket.',
+            ]);
         }
 
         $data = $request->validate([

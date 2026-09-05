@@ -84,6 +84,11 @@ class DocsRepository
                     'title' => 'Praktik Baik',
                     'summary' => 'Cara memakai gateway tanpa membuat nomor Anda diblokir WhatsApp.',
                 ],
+                'langganan-dan-tagihan' => [
+                    'file' => 'LANGGANAN_DAN_TAGIHAN.md',
+                    'title' => 'Langganan & Tagihan',
+                    'summary' => 'Paket, cara membayar, perpanjangan, dan apa yang terjadi saat langganan habis.',
+                ],
                 'batas-dan-kuota' => [
                     'file' => 'BATAS_DAN_KUOTA.md',
                     'title' => 'Batas & Kuota',

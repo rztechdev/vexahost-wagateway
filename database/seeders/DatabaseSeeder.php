@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -11,15 +10,15 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Berlaku di semua tahap — lokal, staging, dan produksi.
+     *
+     * Isinya hanya akun super admin. Tidak ada data contoh: workspace, sesi,
+     * dan API key semuanya dibuat lewat dashboard, termasuk milik Flustra
+     * sendiri, jadi seeder yang membuatkannya akan menghasilkan baris yang
+     * tidak pernah bisa dibuka siapa pun lewat antarmuka.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(AdminUserSeeder::class);
     }
 }

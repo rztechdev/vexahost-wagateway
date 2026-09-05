@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\Plan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -18,6 +20,9 @@ class Workspace extends Model
         'slug',
         'owner_id',
         'owner_email',
+        'billing_phone',
+        'billing_name',
+        'billing_email',
         'status',
         'plan_slug',
         'max_sessions',
@@ -76,6 +81,42 @@ class Workspace extends Model
     public function usageCounters(): HasMany
     {
         return $this->hasMany(UsageCounter::class);
+    }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Paket yang sedang berlaku.
+     *
+     * Workspace tanpa langganan — internal Flustra, atau baris yang terbuat
+     * sebelum penagihan dinyalakan — jatuh ke paket bawaan. Itu membuat setiap
+     * pemanggil bisa menganggap paket selalu ada, sehingga tidak ada satu pun
+     * tempat di antarmuka yang perlu menangani "workspace tanpa paket".
+     */
+    public function plan(): Plan
+    {
+        return Plan::find($this->subscription?->plan_slug ?? $this->plan_slug);
+    }
+
+    /**
+     * Berapa hari riwayat pesan disimpan untuk workspace ini.
+     *
+     * Workspace internal memakai angka retensi global: ia tidak berlangganan,
+     * jadi tidak ada paket yang bisa menjawabnya.
+     */
+    public function messageRetentionDays(): int
+    {
+        return $this->is_internal
+            ? (int) config('gateway.retention.messages_days')
+            : $this->plan()->messageRetentionDays();
     }
 
     public function isActive(): bool
@@ -138,5 +179,38 @@ class Workspace extends Model
     public function canAddSession(): bool
     {
         return $this->sessions()->count() < $this->max_sessions;
+    }
+
+    /**
+     * Batas jumlah API key dan anggota tim dibaca langsung dari paket, bukan
+     * dari kolom di tabel ini seperti sesi dan kuota pesan.
+     *
+     * Bedanya disengaja. Kolom `max_sessions` dan `monthly_message_quota`
+     * dipakai juga sebagai kelonggaran manual — admin sesekali perlu menaikkan
+     * satu workspace tanpa memindahkannya ke paket lain. Untuk API key dan
+     * anggota tim kebutuhan itu tidak pernah muncul, dan menambah dua kolom
+     * hanya untuk kesetangkupan berarti dua nilai lagi yang bisa menyimpang
+     * dari paket tanpa ada yang menyadarinya.
+     */
+    public function canAddApiKey(): bool
+    {
+        $batas = $this->plan()->maxApiKeys();
+
+        if ($this->is_internal || $batas === 0) {
+            return true;
+        }
+
+        return $this->apiKeys()->whereNull('revoked_at')->count() < $batas;
+    }
+
+    public function canAddMember(): bool
+    {
+        $batas = $this->plan()->maxMembers();
+
+        if ($this->is_internal || $batas === 0) {
+            return true;
+        }
+
+        return $this->members()->count() < $batas;
     }
 }

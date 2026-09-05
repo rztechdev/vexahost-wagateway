@@ -150,6 +150,68 @@ WA_MAX_SESSIONS=3
 
 ---
 
+## Penagihan
+
+Variabel berikut sama bentuknya di ketiga tahap; yang berbeda hanya isinya.
+**Dev dan staging tidak boleh memakai QRIS merchant sungguhan** — pengujian di
+sana akan menghasilkan kode QR yang benar-benar bisa dibayar orang.
+
+```env
+# QRIS statis milik merchant, string panjang berawalan 00020101021126...
+# Kosong = halaman pembayaran hanya menampilkan instruksi transfer bank,
+# bukan kode QR rusak. Pakai QRIS MERCHANT, bukan QRIS akun pribadi: akun
+# pribadi punya batas nominal bulanan dan bisa dibekukan bank begitu polanya
+# terbaca komersial.
+#
+# WAJIB DIKUTIP. Nama kota merchant di dalamnya (tag 60) hampir selalu memuat
+# spasi; tanpa kutip dotenv menolak seluruh berkas dan aplikasi gagal boot,
+# bukan sekadar kehilangan QRIS-nya. Salin apa adanya — spasi di ujung nama
+# kota ikut dihitung panjang tag, dan satu saja terpangkas membuat CRC-nya
+# tidak cocok lagi.
+QRIS_PAYLOAD=
+QRIS_MERCHANT_NAME=Flustra
+
+# Ditampilkan berdampingan dengan kode QR, bukan sebagai jalur darurat: batas
+# QRIS per transaksi mengikuti kebijakan tiap dompet digital dan bisa berhenti
+# di bawah nilai paket tahunan Elite.
+BILLING_BANK_NAME=
+BILLING_BANK_ACCOUNT=
+BILLING_BANK_HOLDER=
+
+# Irama siklus. Nilai bawaan sudah masuk akal; ubah hanya kalau ada alasan.
+BILLING_INVOICE_DUE_DAYS=7      # batas bayar sejak tagihan terbit
+BILLING_ISSUE_DAYS_BEFORE=3     # tagihan perpanjangan terbit sekian hari sebelum habis
+BILLING_GRACE_DAYS=30           # jarak antara pengiriman berhenti dan sesi dilepas
+BILLING_UNIQUE_CODE=true        # kode unik 3 digit di nominal, untuk mencocokkan mutasi
+BILLING_TAX_PERCENT=0           # 0 = harga yang dipajang sudah final, tanpa baris pajak
+
+# Workspace milik Flustra sendiri yang nomornya dipakai mengirim pengingat
+# tagihan. Kosong = pengingat cukup lewat spanduk di dashboard. Jangan diisi
+# workspace pelanggan: kuotanya yang terpotong dan laporan spam-nya yang jatuh
+# ke nomor mereka.
+BILLING_NOTIFY_WORKSPACE_ID=
+```
+
+### Akun super admin
+
+Panel `/admin` hanya bisa dibuka super admin, dan super admin hanya bisa
+diangkat super admin lain — jadi akun pertama lahir dari seeder, bukan dari
+antarmuka. Seeder aman dijalankan berulang: akun yang sudah ada tidak ditimpa
+kata sandinya.
+
+```env
+ADMIN_EMAIL=flustrafinances@gmail.com
+ADMIN_NAME="Flustra Finance"
+ADMIN_PASSWORD=            # WAJIB diisi di staging dan produksi
+```
+
+`ADMIN_PASSWORD` yang dikosongkan jatuh ke nilai bawaan `12345678`. Nilai itu
+ada di dalam repo, artinya **sudah bocor** — pakai hanya di lokal. Isi env-nya
+sebelum menjalankan `php artisan db:seed` di staging maupun produksi, atau
+ganti kata sandinya segera setelah akunnya terbuat.
+
+---
+
 ## Rahasia yang wajib berbeda tiap tahap
 
 Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainya sama dengan produksi, penyerang bisa mengirim WhatsApp atas nama seluruh pelanggan.
@@ -168,6 +230,7 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 
 1. Migrasi berjalan bersih di tahap sebelumnya (`php artisan migrate --force`).
 2. `php artisan test` hijau.
+2b. `php artisan db:seed --force` dijalankan sekali di tahap baru, dengan `ADMIN_PASSWORD` sudah terisi.
 3. Deploy ulang resource di tahap tersebut, lalu pastikan sesi kembali tersambung **tanpa scan QR** — ini uji regresi utamanya. Sejak penyatuan, redeploy ikut me-restart web, jadi uji ini sekaligus membuktikan penghentian rapi engine dan penantian boot-nya.
 4. Kirim satu pesan uji dan pastikan statusnya sampai `delivered`.
 5. Webhook uji coba menerima kiriman dan tanda tangannya lolos verifikasi.

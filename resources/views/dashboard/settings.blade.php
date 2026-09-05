@@ -46,6 +46,20 @@
                         Slug <code>{{ $currentWorkspace->slug }}</code> sengaja tidak ikut berubah — ia dipakai
                         sebagai pengenal tetap di catatan audit. Tidak ada API key atau URL yang bergantung padanya.
                     </p>
+
+                    <label class="mb-1 mt-5 block text-sm font-medium" for="billing-phone">Nomor WhatsApp untuk tagihan</label>
+                    <input id="billing-phone" name="billing_phone" maxlength="20" inputmode="tel"
+                           value="{{ old('billing_phone', $currentWorkspace->billing_phone) }}"
+                           placeholder="08xxxxxxxxxx"
+                           class="w-full max-w-xs rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
+                    @error('billing_phone')
+                        <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        Ke sinilah pengingat masa berlaku langganan dikirim, beberapa hari sebelum habis.
+                        Berbeda dari nomor sesi Anda — nomor ini justru paling dibutuhkan saat sesinya sedang mati.
+                        Kosongkan kalau Anda memilih hanya mengandalkan pemberitahuan di dashboard.
+                    </p>
                 </form>
             @endif
         </x-card>
