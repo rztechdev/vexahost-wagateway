@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Models\WaSession;
 use App\Models\Workspace;
+use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\DB;
  */
 class OverviewController extends Controller
 {
+    public function __construct(private readonly WhatsAppNotifier $notifier) {}
+
     public function __invoke(): View
     {
         $bulanIni = now()->format('Y-m');
@@ -44,8 +47,11 @@ class OverviewController extends Controller
                 ->sum('total'),
 
             'tagihanMenunggu' => Invoice::where('status', 'pending')->count(),
-            'tagihanPerluDiperiksa' => Invoice::where('status', 'pending')
-                ->whereNotNull('proof_path')
+            // Semua status kecuali lunas: bukti yang menempel pada tagihan
+            // yang telanjur dibatalkan atau kedaluwarsa tetap berarti ada orang
+            // yang sudah membayar dan layanannya masih mati.
+            'tagihanPerluDiperiksa' => Invoice::whereNotNull('proof_path')
+                ->where('status', '!=', 'paid')
                 ->count(),
 
             'sesiHidup' => WaSession::whereIn('status', ['connected', 'connecting', 'qr'])->count(),
@@ -55,6 +61,18 @@ class OverviewController extends Controller
             'pesanBulanIni' => (int) DB::table('usage_counters')
                 ->where('period', $bulanIni)
                 ->sum('messages_sent'),
+
+            /*
+             | Apakah pemberitahuan WhatsApp benar-benar bisa dikirim.
+             |
+             | Ini keadaan yang paling sulit disadari kalau tidak ditampilkan:
+             | begitu `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra
+             | terputus, SELURUH pemberitahuan berhenti tanpa satu pun gejala —
+             | pelanggan tidak diberi tahu tagihannya lunas, tim tidak diberi
+             | tahu ada bukti masuk, dan tidak ada yang gagal secara terlihat.
+            */
+            'notifikasiSiap' => $this->notifier->ready(),
+            'nomorAdminTerisi' => filled(config('billing.admin_phone')),
 
             'antrean' => DB::table('jobs')->count(),
             'antreanGagal' => DB::table('failed_jobs')->count(),

@@ -54,18 +54,53 @@ class BillingTest extends TestCase
         return app(SubscriptionService::class)->ensureFor($this->workspace->fresh());
     }
 
-    public function test_workspace_tanpa_langganan_langsung_dapat_masa_percobaan(): void
+    /**
+     * Workspace baru TIDAK mendapat masa gratis.
+     *
+     * Masa gratis sampai akhir bulan hanya milik akun yang sudah ada sebelum
+     * produk ini dijual, dan diberikan sekali oleh migrasi. Kalau keadaan
+     * bawaannya `trialing`, setiap pendaftar baru ikut memakai produk berbayar
+     * secara cuma-cuma tanpa pernah diputuskan siapa pun.
+     */
+    public function test_workspace_baru_belum_berlangganan_dan_belum_bisa_dipakai(): void
     {
         $this->actingAs($this->owner)->get(route('billing.index'))->assertOk();
 
-        $subscription = $this->workspace->fresh()->subscription;
+        $workspace = $this->workspace->fresh();
 
-        $this->assertSame('trialing', $subscription->status);
-        $this->assertSame('essentials', $subscription->plan_slug);
+        $this->assertSame('unpaid', $workspace->subscription->status);
+        $this->assertNull($workspace->subscription->current_period_end);
+        $this->assertFalse($workspace->subscription->isUsable());
 
-        // Berakhir di akhir bulan berjalan — sama untuk semua orang, supaya
-        // pengingat bisa dikirim serentak dan bukan setiap hari untuk seseorang.
-        $this->assertTrue($subscription->current_period_end->isSameDay(now()->endOfMonth()));
+        // Dan cerminnya di workspace, tempat penegakan pengiriman membaca.
+        $this->assertSame('suspended', $workspace->status);
+    }
+
+    public function test_workspace_baru_tidak_bisa_membuat_sesi_sebelum_membayar(): void
+    {
+        $this->actingAs($this->owner)->get(route('billing.index'));
+
+        // Diarahkan ke halaman paket, bukan ke ringkasan: yang dibutuhkan orang
+        // yang belum pernah berlangganan adalah memilih, bukan membaca lagi
+        // bahwa ia belum berlangganan.
+        $this->actingAs($this->owner)
+            ->post(route('sessions.store'), ['name' => 'CS'])
+            ->assertRedirect(route('billing.plans'));
+
+        $this->assertSame(0, $this->workspace->sessions()->count());
+    }
+
+    public function test_membayar_membuka_workspace_yang_belum_pernah_berlangganan(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        app(SubscriptionService::class)->markPaid($invoice);
+
+        $workspace = $this->workspace->fresh();
+
+        $this->assertSame('active', $workspace->subscription->status);
+        $this->assertSame('active', $workspace->status);
+        $this->assertTrue($workspace->subscription->current_period_end->isFuture());
     }
 
     /**
@@ -266,7 +301,103 @@ class BillingTest extends TestCase
         // Menganggap unggahan sebagai pembayaran berarti siapa pun bisa
         // menyalakan layanannya sendiri dengan gambar apa saja dari galeri.
         $this->assertSame('pending', $invoice->status);
-        $this->assertSame('trialing', $this->workspace->fresh()->subscription->status);
+        $this->assertSame('unpaid', $this->workspace->fresh()->subscription->status);
+    }
+
+    /**
+     * Setelah bukti terkirim, pelanggan harus mendarat di halaman yang seluruh
+     * isinya mengatakan "sudah kami terima".
+     *
+     * Kembali ke form dengan spanduk hijau tipis pernah membuat pelanggan
+     * mengira unggahannya gagal, lalu membatalkan tagihannya 24 detik kemudian.
+     */
+    public function test_setelah_bukti_terkirim_diarahkan_ke_halaman_verifikasi(): void
+    {
+        Storage::fake('media');
+
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $this->actingAs($this->owner)
+            ->post(route('billing.proof.upload', $invoice->id), [
+                'bukti' => UploadedFile::fake()->image('bukti.jpg'),
+            ])
+            ->assertRedirect(route('billing.verifying', $invoice->id));
+
+        $this->actingAs($this->owner)
+            ->get(route('billing.verifying', $invoice->id))
+            ->assertOk()
+            ->assertSee('Bukti Anda sudah kami terima');
+    }
+
+    public function test_halaman_verifikasi_menolak_tagihan_yang_belum_ada_buktinya(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $this->actingAs($this->owner)
+            ->get(route('billing.verifying', $invoice->id))
+            ->assertRedirect(route('billing.invoice', $invoice->id));
+    }
+
+    /**
+     * Tagihan yang buktinya sudah dikirim tidak boleh dibatalkan pelanggan.
+     *
+     * Ini penjagaan yang paling menentukan di seluruh alur pembayaran: sekali
+     * dibatalkan, pembayaran yang uangnya sudah masuk kehilangan tempatnya.
+     */
+    public function test_tagihan_yang_sudah_ada_buktinya_tidak_bisa_dibatalkan(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+        $invoice->forceFill(['proof_path' => 'bukti-bayar/contoh.jpg'])->save();
+
+        $this->actingAs($this->owner)
+            ->post(route('billing.invoice.cancel', $invoice->id))
+            ->assertSessionHasErrors('tagihan');
+
+        $this->assertSame('pending', $invoice->fresh()->status);
+    }
+
+    public function test_tagihan_tanpa_bukti_tetap_bisa_dibatalkan(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $this->actingAs($this->owner)
+            ->post(route('billing.invoice.cancel', $invoice->id))
+            ->assertRedirect();
+
+        $this->assertSame('canceled', $invoice->fresh()->status);
+    }
+
+    public function test_status_tagihan_bisa_ditanyakan_halaman_verifikasi(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+        $invoice->forceFill(['proof_path' => 'bukti-bayar/contoh.jpg'])->save();
+
+        $this->actingAs($this->owner)
+            ->getJson(route('billing.status', $invoice->id))
+            ->assertOk()
+            ->assertJson(['status' => 'pending', 'lunas' => false]);
+
+        app(SubscriptionService::class)->markPaid($invoice->fresh());
+
+        $this->actingAs($this->owner)
+            ->getJson(route('billing.status', $invoice->id))
+            ->assertOk()
+            ->assertJson(['status' => 'paid', 'lunas' => true]);
+    }
+
+    public function test_status_tagihan_orang_lain_tidak_bisa_diintip(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $orangLain = User::create([
+            'name' => 'Budi', 'email' => 'budi2@contoh.id', 'password' => Hash::make('rahasia12345'),
+        ]);
+        $lain = Workspace::create(['name' => 'Warung Lain', 'slug' => 'warung-lain-2', 'owner_id' => $orangLain->id]);
+        $lain->members()->attach($orangLain->id, ['role' => 'owner']);
+
+        $this->actingAs($orangLain)
+            ->getJson(route('billing.status', $invoice->id))
+            ->assertNotFound();
     }
 
     public function test_workspace_lain_tidak_bisa_membuka_tagihan_kita(): void

@@ -67,6 +67,19 @@ class Subscription extends Model
         return in_array($this->status, ['trialing', 'active'], true);
     }
 
+    /**
+     * Belum pernah berlangganan sama sekali.
+     *
+     * Dibedakan dari `past_due` — yang satu belum pernah mulai, yang lain
+     * pernah lalu berhenti — karena keduanya butuh kalimat yang berbeda di
+     * depan pengguna. "Pengiriman pesan dihentikan" tidak masuk akal bagi orang
+     * yang belum pernah mengirim apa pun.
+     */
+    public function isUnpaid(): bool
+    {
+        return $this->status === 'unpaid';
+    }
+
     /** Sisa hari sampai periode berakhir. Negatif berarti sudah lewat. */
     public function daysRemaining(): int
     {
@@ -99,6 +112,7 @@ class Subscription extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
+            'unpaid' => 'Belum berlangganan',
             'trialing' => 'Masa percobaan',
             'active' => 'Aktif',
             'past_due' => 'Lewat jatuh tempo',

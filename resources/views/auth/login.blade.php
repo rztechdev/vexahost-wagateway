@@ -94,8 +94,18 @@
                 <span>Ingat saya</span>
             </label>
 
+            {{-- Selama pemulihan mandiri belum ada, tautannya menunjuk ke
+                 manusia — bukan hilang begitu saja. Orang yang tidak bisa masuk
+                 harus selalu menemukan satu jalan keluar di halaman ini, dan
+                 halaman masuk tanpa jalan keluar adalah pintu terkunci tanpa
+                 bel. Begitu `password.request` ada, tautan itu yang dipakai. --}}
             @if (Route::has('password.request'))
                 <a href="{{ route('password.request') }}" class="font-medium text-primary hover:underline">
+                    Lupa kata sandi?
+                </a>
+            @else
+                <a href="mailto:{{ config('billing.support_email') }}?subject=Lupa%20kata%20sandi%20Flustra%20WA"
+                   class="font-medium text-primary hover:underline">
                     Lupa kata sandi?
                 </a>
             @endif

@@ -276,7 +276,22 @@
                  pelanggan yang gateway-nya berjalan lancar justru yang paling
                  jarang membuka halaman itu. --}}
             @isset($currentSubscription)
-                @if (! $currentSubscription->isUsable())
+                {{-- Yang belum pernah berlangganan butuh kalimat yang berbeda dari
+                     yang langganannya berhenti. "Pengiriman pesan sedang berhenti"
+                     tidak masuk akal bagi orang yang belum pernah mengirim apa pun,
+                     dan kalimat yang salah di layar pertama membuat pendaftar baru
+                     mengira ada yang rusak. --}}
+                @if ($currentSubscription->isUnpaid())
+                    <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
+                        <span>
+                            <strong>Pilih paket untuk mulai.</strong>
+                            Menautkan nomor dan mengirim pesan terbuka setelah langganan pertama Anda aktif.
+                        </span>
+                        <a href="{{ route('billing.plans') }}" class="shrink-0 rounded-lg bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90">
+                            Lihat paket
+                        </a>
+                    </div>
+                @elseif (! $currentSubscription->isUsable())
                     <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         <span>
                             <strong>Pengiriman pesan sedang berhenti.</strong>
@@ -328,6 +343,8 @@
         </main>
     </div>
 </div>
+
+@include('partials.pesan-server')
 
 @stack('scripts')
 </body>

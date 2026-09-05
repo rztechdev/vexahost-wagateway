@@ -53,6 +53,43 @@ class WorkspaceController extends Controller
     }
 
     /**
+     * Halaman satu workspace.
+     *
+     * Seluruh pengelolaan pindah ke sini, keluar dari daftar. Sebelumnya tiap
+     * baris di daftar bisa dibuka menjadi panel berisi empat form sekaligus —
+     * daftar yang berubah bentuk saat disentuh sulit dipindai, dan form yang
+     * bersembunyi di dalam baris membuat orang tidak yakin sedang mengubah
+     * workspace yang mana. Daftar sekarang hanya untuk mencari; halaman ini
+     * untuk bertindak.
+     */
+    public function show(Request $request, int $id): View
+    {
+        $workspace = Workspace::with(['owner', 'members', 'sessions'])->findOrFail($id);
+
+        $subscription = $this->subscriptions->ensureFor($workspace);
+
+        return view('admin.workspace-detail', [
+            'workspace' => $workspace,
+            'subscription' => $subscription,
+            'plans' => Plan::all(),
+            'invoices' => $workspace->invoices()->latest()->limit(10)->get(),
+
+            // Dua belas bulan terakhir, supaya pola pemakaian terlihat — bukan
+            // cuma angka bulan berjalan yang tidak bisa dibandingkan dengan apa pun.
+            'pemakaian' => $workspace->usageCounters()
+                ->orderByDesc('period')
+                ->limit(12)
+                ->get(),
+
+            'audit' => AuditLog::with('user:id,email')
+                ->where('workspace_id', $workspace->id)
+                ->latest('id')
+                ->limit(15)
+                ->get(),
+        ]);
+    }
+
+    /**
      * Memindahkan workspace ke paket lain tanpa tagihan.
      *
      * Dipakai untuk memperbaiki kesalahan dan untuk kesepakatan di luar

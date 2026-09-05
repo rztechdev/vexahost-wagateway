@@ -6,6 +6,8 @@ use App\Jobs\SendMessageJob;
 use App\Models\Message;
 use App\Models\WaSession;
 use App\Models\Workspace;
+use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -113,10 +115,73 @@ class MessageDispatcher
             throw new RuntimeException('Workspace sedang tidak aktif.');
         }
 
-        if (! $workspace->hasQuotaRemaining()) {
+        $kuota = (int) $workspace->monthly_message_quota;
+
+        if ($workspace->is_internal || $kuota === 0) {
+            return;
+        }
+
+        /*
+         | Pemeriksaan kuota ditulis di sini alih-alih memanggil
+         | `hasQuotaRemaining()`, karena baris pemakaiannya dibutuhkan dua kali:
+         | untuk menolak saat penuh, dan untuk memutuskan perlu-tidaknya
+         | peringatan. Memanggil keduanya berarti dua kueri pada tabel yang
+         | paling sering ditulis di sistem ini, untuk setiap pesan yang dikirim.
+         |
+         | `hasQuotaRemaining()` tetap ada dan tetap dipakai di tempat lain yang
+         | hanya butuh jawabannya.
+        */
+        $terpakai = (int) $workspace->currentUsage()->messages_sent;
+
+        if ($terpakai >= $kuota) {
             throw new RuntimeException(
-                "Kuota pesan bulan ini sudah habis ({$workspace->monthly_message_quota} pesan)."
+                "Kuota pesan bulan ini sudah habis ({$kuota} pesan)."
             );
         }
+
+        $this->warnIfQuotaLow($workspace, $terpakai + 1, $kuota);
+    }
+
+    /**
+     * Memberi tahu saat kuota mendekati dan mencapai batasnya.
+     *
+     * Kuota yang habis tanpa peringatan terasa seperti kerusakan, bukan seperti
+     * batas paket: pengiriman berhenti di tengah hari kerja dan pemiliknya baru
+     * tahu dari pelanggan yang tidak menerima apa-apa. Satu pesan di 80% memberi
+     * ruang memutuskan sebelum berhenti terjadi.
+     *
+     * Ini berjalan pada setiap pesan, jadi urutannya sengaja: yang paling murah
+     * diperiksa lebih dulu, dan `WhatsAppNotifier` — yang memegang penanda "sudah
+     * pernah dikirim" di cache — baru disentuh setelah ambangnya benar terlampaui.
+     * Notifier-nya diambil dari container di sini, bukan lewat constructor,
+     * karena ia sendiri memakai `MessageDispatcher` dan menyuntikkannya akan
+     * menutup lingkaran.
+     */
+    private function warnIfQuotaLow(Workspace $workspace, int $terpakai, int $kuota): void
+    {
+        if (blank($workspace->billing_phone)) {
+            return;
+        }
+
+        $tingkat = match (true) {
+            $terpakai >= $kuota => 'habis',
+            $terpakai >= (int) ($kuota * 0.8) => 'hampir',
+            default => null,
+        };
+
+        if ($tingkat === null) {
+            return;
+        }
+
+        $periode = now()->format('Y-m');
+
+        app(WhatsAppNotifier::class)->toWorkspace(
+            $workspace,
+            $tingkat === 'habis'
+                ? BillingMessages::quotaExhausted($workspace, $kuota)
+                : BillingMessages::quotaWarning($workspace, $terpakai, $kuota),
+            "quota:{$tingkat}:{$workspace->id}:{$periode}",
+            24 * 40,
+        );
     }
 }

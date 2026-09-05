@@ -49,6 +49,10 @@ class DashboardSmokeTest extends TestCase
 
         $this->workspace->members()->attach($this->user->id, ['role' => 'owner']);
 
+        // Workspace baru lahir `unpaid`; tes ini menguji hal lain,
+        // jadi penagihannya tidak boleh ikut menghalangi.
+        $this->berlangganan($this->workspace);
+
         $this->actingAs($this->user);
         $this->withSession(['current_workspace_id' => $this->workspace->id]);
     }

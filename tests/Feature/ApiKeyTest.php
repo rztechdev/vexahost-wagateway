@@ -48,6 +48,10 @@ class ApiKeyTest extends TestCase
 
         $this->workspace->members()->attach($this->owner->id, ['role' => 'owner']);
 
+        // Workspace baru lahir `unpaid`; tes ini menguji hal lain,
+        // jadi penagihannya tidak boleh ikut menghalangi.
+        $this->berlangganan($this->workspace);
+
         $this->actingAs($this->owner);
         $this->withSession(['current_workspace_id' => $this->workspace->id]);
     }

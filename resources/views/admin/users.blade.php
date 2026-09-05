@@ -35,9 +35,20 @@
                                 {{ $user->last_login_at?->translatedFormat('j M Y, H:i') ?? 'belum pernah' }}
                             </td>
                             <td class="px-5 py-2.5 text-right">
+                                <div class="flex items-center justify-end gap-3">
+                                    {{-- Satu-satunya jalan kembali bagi pelanggan yang
+                                         terkunci: pemulihan mandiri sengaja belum ada,
+                                         dan halaman masuk menyuruh mereka menghubungi kami. --}}
+                                    <form method="POST" action="{{ route('admin.users.reset-password', $user->id) }}"
+                                          data-konfirmasi="Buat kata sandi baru untuk {{ $user->email }}? Kata sandi lamanya langsung tidak berlaku, dan semua sesi 'ingat saya' miliknya ikut dikeluarkan."
+                                          data-konfirmasi-ya="Ya, atur ulang">
+                                        @csrf
+                                        <button class="text-muted-foreground hover:text-foreground hover:underline">Atur ulang sandi</button>
+                                    </form>
+
                                 @if ($user->id !== auth()->id())
                                     <form method="POST" action="{{ route('admin.users.super', $user->id) }}"
-                                          onsubmit="return confirm('Ubah hak super admin untuk {{ $user->email }}?')">
+                                          data-konfirmasi="Ubah hak super admin untuk {{ $user->email }}?">
                                         @csrf
                                         <button class="hover:underline {{ $user->is_super_admin ? 'text-destructive' : 'text-primary' }}">
                                             {{ $user->is_super_admin ? 'Cabut' : 'Jadikan super admin' }}
@@ -48,6 +59,7 @@
                                          terakhir yang melakukannya mengunci panel dari luar. --}}
                                     <span class="text-xs text-muted-foreground">Anda</span>
                                 @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

@@ -123,6 +123,20 @@ return [
     'notify_workspace_id' => env('BILLING_NOTIFY_WORKSPACE_ID'),
 
     /*
+    | Nomor WhatsApp tim kami sendiri. Ke sinilah pemberitahuan yang butuh
+    | tindakan manusia dikirim — terutama "ada bukti pembayaran baru masuk",
+    | karena selama pembayaran dicocokkan manual, tagihan hanya menjadi lunas
+    | kalau ada orang yang membukanya di panel.
+    */
+    'admin_phone' => env('BILLING_ADMIN_PHONE'),
+
+    /*
+    | Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa
+    | kata sandi, karena pemulihan mandiri sengaja belum dibuat.
+    */
+    'support_email' => env('BILLING_SUPPORT_EMAIL', 'flustrafinances@gmail.com'),
+
+    /*
     |--------------------------------------------------------------------------
     | Pajak
     |--------------------------------------------------------------------------

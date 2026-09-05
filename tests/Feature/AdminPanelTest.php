@@ -109,10 +109,95 @@ class AdminPanelTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post(route('admin.invoices.paid', $invoice->id))
-            ->assertSessionHasErrors('tagihan');
+            ->assertRedirect();
 
-        // Kalau lolos, satu pembayaran memberi dua bulan.
+        // Yang dijaga bukan pesan galatnya, tapi akibatnya: kalau penandaan
+        // kedua lolos, satu pembayaran memberi dua bulan.
         $this->assertTrue($berakhirPertama->equalTo($this->workspace->fresh()->subscription->current_period_end));
+    }
+
+    /**
+     * Bukti yang menempel pada tagihan yang telanjur ditutup tidak boleh hilang
+     * dari layar admin.
+     *
+     * Ini pernah terjadi: pelanggan mengunggah bukti, mengira gagal karena tidak
+     * ada tanda yang cukup jelas, lalu membatalkan tagihannya sendiri — dan
+     * saringan bawaan admin waktu itu hanya menampilkan `pending`, jadi
+     * pembayarannya tidak muncul di mana pun.
+     */
+    public function test_bukti_pada_tagihan_yang_ditutup_tetap_muncul_di_admin(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $invoice->forceFill([
+            'proof_path' => 'bukti-bayar/contoh.jpg',
+            'status' => 'canceled',
+        ])->save();
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.invoices'))
+            ->assertOk()
+            ->assertSee($invoice->number);
+    }
+
+    public function test_tagihan_yang_ditutup_masih_bisa_ditandai_lunas(): void
+    {
+        // Uangnya sudah masuk; menolak menandainya lunas berarti memaksa
+        // pelanggan membayar dua kali atau admin mengarang tagihan baru.
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'elite', 'monthly');
+        $invoice->forceFill(['proof_path' => 'bukti-bayar/contoh.jpg', 'status' => 'canceled'])->save();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.invoices.paid', $invoice->id), ['catatan' => 'mutasi masuk'])
+            ->assertRedirect();
+
+        $this->assertSame('paid', $invoice->fresh()->status);
+        $this->assertSame('active', $this->workspace->fresh()->subscription->status);
+    }
+
+    /**
+     * Bukti yang tidak bisa diterima harus punya jalan keluar.
+     *
+     * Tanpa ini, tangkapan layar terpotong atau nominal yang tidak cocok
+     * berujung buntu: admin tidak bisa menandainya lunas dengan jujur, dan
+     * pelanggan tidak bisa mengunggah ulang karena tagihannya sudah tertutup.
+     */
+    public function test_menolak_bukti_membuka_kembali_tagihannya(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+        $invoice->forceFill([
+            'proof_path' => 'bukti-bayar/contoh.jpg',
+            'status' => 'expired',
+            'due_at' => now()->subDays(3),
+        ])->save();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.invoices.reject-proof', $invoice->id), [
+                'alasan' => 'Nominal tidak cocok dengan mutasi.',
+            ])
+            ->assertRedirect();
+
+        $invoice->refresh();
+
+        $this->assertSame('pending', $invoice->status);
+        $this->assertNull($invoice->proof_path);
+        $this->assertSame('Nominal tidak cocok dengan mutasi.', $invoice->note);
+
+        // Tenggat baru wajib: dikembalikan ke pending dengan due_at yang sudah
+        // lewat berarti job harian menutupnya lagi keesokan paginya.
+        $this->assertTrue($invoice->due_at->isFuture());
+    }
+
+    public function test_alasan_penolakan_bukti_wajib_diisi(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+        $invoice->forceFill(['proof_path' => 'bukti-bayar/contoh.jpg'])->save();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.invoices.reject-proof', $invoice->id), ['alasan' => ''])
+            ->assertSessionHasErrors('alasan');
+
+        $this->assertNotNull($invoice->fresh()->proof_path);
     }
 
     public function test_admin_bisa_menangguhkan_dan_memulihkan(): void

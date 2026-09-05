@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\MessageDispatcher;
+use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\WebhookDispatcher;
 use App\Support\PhoneNumber;
 use Illuminate\Http\JsonResponse;
@@ -98,6 +100,8 @@ class EngineEventController extends Controller
 
     private function onDisconnected(WaSession $session, array $payload): void
     {
+        $sempatTersambung = $session->connected_at !== null && $session->status === 'connected';
+
         $session->update([
             'status' => 'disconnected',
             'qr_payload' => null,
@@ -105,6 +109,31 @@ class EngineEventController extends Controller
         ]);
 
         $this->notifySessionStatus($session, 'disconnected');
+
+        /*
+         | Pemberitahuan paling berharga di produk ini.
+         |
+         | Gateway yang mati diam membuat pelanggan baru sadar setelah berhari-
+         | hari pesan tidak terkirim — biasanya saat pelanggan *mereka* yang
+         | mengeluh. Satu pesan ke nomor tagihan mengubah kegagalan diam menjadi
+         | kegagalan yang terlihat dalam hitungan menit.
+         |
+         | Hanya untuk sesi yang tadinya benar-benar tersambung: sesi yang
+         | memang belum pernah discan bukan gangguan, dan mengabarkannya berarti
+         | mengganggu orang dengan sesuatu yang sudah mereka ketahui.
+         |
+         | Penandanya memuat `connected_at` supaya pemutusan berikutnya — setelah
+         | nomor itu tersambung lagi — tetap dikabarkan, sementara rentetan
+         | disconnect dari satu kejadian yang sama tidak berubah jadi spam.
+        */
+        if ($sempatTersambung && $session->workspace) {
+            app(WhatsAppNotifier::class)->toWorkspace(
+                $session->workspace,
+                BillingMessages::sessionDisconnected($session),
+                'session-down:'.$session->id.':'.optional($session->connected_at)->timestamp,
+                6,
+            );
+        }
     }
 
     private function onAuthFailure(WaSession $session, array $payload): void

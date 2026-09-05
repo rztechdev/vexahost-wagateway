@@ -2,6 +2,8 @@
 @section('title', 'Sesi WhatsApp')
 
 @section('content')
+    @include('partials.sesi-perlu-dihubungkan')
+
 <div
     x-data="qrModal(@js(session('open_qr')))"
     x-init="init()">
@@ -72,7 +74,7 @@
                     @endif
 
                     <form method="POST" action="{{ route('sessions.logout', $session->id) }}"
-                          onsubmit="return confirm('Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.')">
+                          data-konfirmasi="Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.">
                         @csrf
                         <button title="Putus tautan, lalu Hubungkan lagi untuk memakai nomor lain"
                                 class="rounded-lg border border-amber-500/50 px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
@@ -81,7 +83,7 @@
                     </form>
 
                     <form method="POST" action="{{ route('sessions.destroy', $session->id) }}"
-                          onsubmit="return confirm('Hapus sesi {{ $session->name }} beserta backup kredensialnya?')">
+                          data-konfirmasi="Hapus sesi {{ $session->name }} beserta backup kredensialnya?">
                         @csrf @method('DELETE')
                         <button class="rounded-lg border border-destructive/50 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10">Hapus</button>
                     </form>

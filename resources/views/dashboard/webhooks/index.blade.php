@@ -69,7 +69,7 @@
                                 </button>
                             </form>
                             <form method="POST" action="{{ route('webhooks.destroy', $webhook->id) }}"
-                                  onsubmit="return confirm('Hapus webhook ini?')">
+                                  data-konfirmasi="Hapus webhook ini?">
                                 @csrf @method('DELETE')
                                 <button class="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
                             </form>

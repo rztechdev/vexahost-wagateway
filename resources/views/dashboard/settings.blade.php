@@ -119,7 +119,7 @@
                     </div>
                     @if ($member->pivot->role !== 'owner')
                         <form method="POST" action="{{ route('settings.members.remove', $member->id) }}"
-                              onsubmit="return confirm('Keluarkan {{ $member->name }} dari workspace ini?')">
+                              data-konfirmasi="Keluarkan {{ $member->name }} dari workspace ini?">
                             @csrf @method('DELETE')
                             <button class="text-xs text-destructive hover:underline">Keluarkan</button>
                         </form>

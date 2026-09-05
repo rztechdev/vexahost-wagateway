@@ -52,7 +52,7 @@
                                     <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">aktif</span>
                                     @if ($bolehLihatKunci)
                                         <form method="POST" action="{{ route('api-keys.destroy', $key->id) }}"
-                                              onsubmit="return confirm('Cabut kunci {{ $key->name }}? Aplikasi yang memakainya akan langsung ditolak.')">
+                                              data-konfirmasi="Cabut kunci {{ $key->name }}? Aplikasi yang memakainya akan langsung ditolak.">
                                             @csrf @method('DELETE')
                                             <button class="text-xs text-destructive hover:underline">Cabut</button>
                                         </form>

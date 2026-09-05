@@ -55,7 +55,11 @@ class EnsureSubscriptionActive
         }
 
         return redirect()
-            ->route('billing.index')
-            ->withErrors(['langganan' => 'Langganan workspace ini sedang tidak aktif. Perpanjang dulu untuk melanjutkan.']);
+            ->route($subscription->isUnpaid() ? 'billing.plans' : 'billing.index')
+            ->withErrors([
+                'langganan' => $subscription->isUnpaid()
+                    ? 'Pilih paket dulu untuk mulai memakai gateway.'
+                    : 'Langganan workspace ini sedang tidak aktif. Perpanjang dulu untuk melanjutkan.',
+            ]);
     }
 }

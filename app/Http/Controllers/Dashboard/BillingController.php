@@ -7,9 +7,12 @@ use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
 use App\Services\Billing\QrisManual;
 use App\Services\Billing\SubscriptionService;
+use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\PhoneNumber;
 use App\Support\Plan;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +23,7 @@ class BillingController extends Controller
     public function __construct(
         private readonly SubscriptionService $subscriptions,
         private readonly QrisManual $qris,
+        private readonly WhatsAppNotifier $notifier,
     ) {}
 
     /**
@@ -181,7 +185,11 @@ class BillingController extends Controller
             'billing_phone' => $nomor,
         ])->save();
 
-        return back()->with('status', 'Data penagihan disimpan.');
+        return back()->with('swal', [
+            'icon' => 'success',
+            'title' => 'Data penagihan disimpan',
+            'text' => 'Nama dan email ini akan tercetak di tagihan Anda.',
+        ]);
     }
 
     /**
@@ -201,7 +209,11 @@ class BillingController extends Controller
         $invoice = $workspace->invoices()->findOrFail($id);
 
         if (! $invoice->isPending()) {
-            return back()->withErrors(['bukti' => 'Tagihan ini sudah tidak menunggu pembayaran.']);
+            return back()->with('swal', [
+                'icon' => 'error',
+                'title' => 'Bukti tidak bisa dikirim',
+                'text' => 'Tagihan ini sudah tidak menunggu pembayaran.',
+            ]);
         }
 
         $request->validate([
@@ -218,7 +230,90 @@ class BillingController extends Controller
             'number' => $invoice->number,
         ], $workspace->id);
 
-        return back()->with('status', 'Bukti transfer terkirim. Kami memeriksanya dan mengaktifkan langganan Anda, biasanya dalam beberapa jam pada jam kerja.');
+        // Tanda terima ke pelanggan, dan panggilan ke kami sendiri. Yang kedua
+        // yang paling menentukan: selama pencocokan masih manual, tagihan hanya
+        // menjadi lunas kalau ada orang yang membukanya di panel — dan tanpa
+        // pesan ini tidak ada apa pun yang memberi tahu ada yang perlu dibuka.
+        $this->notifier->toWorkspace(
+            $workspace,
+            BillingMessages::proofReceived($invoice),
+            "proof-received:{$invoice->id}",
+        );
+
+        $this->notifier->toAdmin(
+            BillingMessages::adminProofWaiting($invoice),
+            "admin-proof:{$invoice->id}",
+        );
+
+        /*
+         | Dialihkan ke halaman tersendiri, bukan kembali ke form.
+         |
+         | Kembali ke halaman yang sama dengan spanduk hijau tipis ternyata tidak
+         | cukup meyakinkan: pelanggan pernah mengunggah bukti, tidak merasa ada
+         | yang berubah, mengira gagal, lalu membatalkan tagihannya sendiri 24
+         | detik kemudian. Halaman yang seluruhnya berbicara tentang "bukti Anda
+         | sudah kami terima" tidak menyisakan ruang untuk keraguan itu.
+         */
+        return redirect()
+            ->route('billing.verifying', $invoice->id)
+            ->with('swal', [
+                'icon' => 'success',
+                'title' => 'Bukti pembayaran terkirim',
+                'text' => 'Kami sudah menerimanya. Tim kami memeriksa dan mengaktifkan langganan Anda, biasanya dalam beberapa jam pada jam kerja.',
+                'confirmButtonText' => 'Baik',
+            ]);
+    }
+
+    /**
+     * Halaman "bukti sudah kami terima, sedang diperiksa".
+     *
+     * Punya alamat sendiri supaya bisa ditautkan dan dibuka lagi kapan saja —
+     * pelanggan yang menutup tab lalu bertanya-tanya apakah buktinya benar
+     * terkirim punya satu tempat pasti untuk memeriksanya, tanpa harus menebak
+     * dari status di halaman lain.
+     */
+    public function verifying(Request $request, int $id): View|RedirectResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        $invoice = $workspace->invoices()->findOrFail($id);
+
+        // Tagihan yang sudah dijawab tidak lagi "menunggu diperiksa"; halaman
+        // checkout yang tahu cara menampilkan keadaan akhirnya.
+        if ($invoice->isPaid() || blank($invoice->proof_path)) {
+            return redirect()->route('billing.invoice', $invoice->id);
+        }
+
+        return view('dashboard.billing.verifying', [
+            'invoice' => $invoice,
+            'plan' => $invoice->plan(),
+            'subscription' => $this->subscriptions->ensureFor($workspace),
+        ]);
+    }
+
+    /**
+     * Keadaan satu tagihan sebagai JSON, untuk ditanyakan berkala oleh halaman
+     * menunggu verifikasi.
+     *
+     * Ada karena halaman itu menjanjikan "berubah sendiri begitu selesai", dan
+     * janji yang tidak ditepati di halaman pembayaran adalah cara tercepat
+     * membuat orang menekan tombol yang tidak seharusnya — persis yang dulu
+     * terjadi saat pelanggan membatalkan tagihannya sendiri.
+     *
+     * Sengaja sekecil mungkin: hanya status dan ke mana harus pergi. Tidak ada
+     * nominal, nama, atau apa pun yang tidak dibutuhkan pemanggilnya.
+     */
+    public function status(Request $request, int $id): JsonResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        $invoice = $workspace->invoices()->findOrFail($id);
+
+        return response()->json([
+            'status' => $invoice->status,
+            'lunas' => $invoice->isPaid(),
+            'lanjut' => route('billing.invoice', $invoice->id),
+        ]);
     }
 
     public function cancelInvoice(Request $request, int $id): RedirectResponse
@@ -233,13 +328,32 @@ class BillingController extends Controller
             return back()->withErrors(['tagihan' => 'Hanya tagihan yang menunggu pembayaran yang bisa dibatalkan.']);
         }
 
+        /*
+         | Tagihan yang buktinya sudah dikirim tidak boleh dibatalkan pelanggan.
+         |
+         | Ini pernah terjadi dan menelan satu pembayaran: bukti terunggah, tidak
+         | ada tanda yang cukup jelas bahwa ia diterima, pelanggan mengira gagal
+         | lalu membatalkan tagihannya 24 detik kemudian — dan tagihan yang sudah
+         | dibatalkan lenyap dari layar admin. Uangnya masuk, layanannya mati,
+         | dan tidak ada satu pun tempat yang menunjukkannya.
+         */
+        if (filled($invoice->proof_path)) {
+            return back()->withErrors([
+                'tagihan' => 'Bukti pembayaran untuk tagihan ini sudah kami terima, jadi tagihannya tidak bisa dibatalkan sendiri. Hubungi kami kalau ini keliru.',
+            ]);
+        }
+
         $invoice->forceFill(['status' => 'canceled'])->save();
 
         AuditLog::record('invoice.canceled', $invoice, [
             'number' => $invoice->number,
         ], $workspace->id);
 
-        return redirect()->route('billing.index')->with('status', "Tagihan {$invoice->number} dibatalkan.");
+        return redirect()->route('billing.index')->with('swal', [
+            'icon' => 'success',
+            'title' => 'Tagihan dibatalkan',
+            'text' => "{$invoice->number} tidak akan ditagihkan lagi.",
+        ]);
     }
 
     /**

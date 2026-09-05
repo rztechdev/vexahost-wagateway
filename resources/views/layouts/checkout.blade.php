@@ -154,6 +154,8 @@
         </div>
     </footer>
 
-    @stack('scripts')
+    @include('partials.pesan-server')
+
+@stack('scripts')
 </body>
 </html>

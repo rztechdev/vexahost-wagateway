@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 import QRCode from 'qrcode';
+import Swal from 'sweetalert2';
 
 Alpine.plugin(collapse);
 window.Alpine = Alpine;
@@ -44,3 +45,130 @@ function renderQrisCodes() {
 
 window.renderQris = renderQrisCodes;
 document.addEventListener('DOMContentLoaded', renderQrisCodes);
+
+/* ---------------------------------------------------------------------------
+   Pemberitahuan hasil tindakan.
+
+   Dipakai untuk momen yang menentukan — bukti terkirim, pembayaran ditandai
+   lunas, tagihan gagal dibuat — bukan untuk setiap pesan kecil. Latar belakang
+   perlunya: pelanggan pernah mengunggah bukti, tidak menemukan tanda yang cukup
+   jelas bahwa ia diterima, mengira gagal, lalu membatalkan tagihannya sendiri.
+   Spanduk hijau tipis di atas halaman ternyata tidak cukup untuk keputusan yang
+   menyangkut uang.
+   --------------------------------------------------------------------------- */
+const warnaTombol = () =>
+    getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2e7d32';
+
+window.beriTahu = function beriTahu(opsi) {
+    return Swal.fire({
+        icon: opsi.icon || 'info',
+        title: opsi.title || '',
+        text: opsi.text || undefined,
+        html: opsi.html || undefined,
+        confirmButtonText: opsi.confirmButtonText || 'Mengerti',
+        confirmButtonColor: warnaTombol(),
+        // Gelap/terang mengikuti tema aplikasi; dialog terang di atas halaman
+        // gelap menyilaukan pada dini hari, dan justru di jam itulah orang
+        // sering menyelesaikan pembayaran.
+        background: getComputedStyle(document.body).backgroundColor,
+        color: getComputedStyle(document.body).color,
+    });
+};
+
+/*
+ * Konfirmasi yang menggantikan `confirm()` bawaan peramban.
+ *
+ * Dipasang lewat `data-konfirmasi="pesan"` pada <form>. Pengiriman ditahan
+ * sampai pengguna menekan tombol setuju — tanpa `ditahan`, pengiriman kedua
+ * setelah konfirmasi akan tertahan lagi tanpa akhir.
+ */
+function pasangKonfirmasi() {
+    document.querySelectorAll('form[data-konfirmasi]').forEach((form) => {
+        if (form.dataset.konfirmasiSiap) return;
+        form.dataset.konfirmasiSiap = '1';
+
+        form.addEventListener('submit', (e) => {
+            if (form.dataset.ditahan === 'lepas') return;
+
+            e.preventDefault();
+
+            Swal.fire({
+                icon: 'warning',
+                title: form.dataset.konfirmasiJudul || 'Yakin?',
+                text: form.dataset.konfirmasi,
+                showCancelButton: true,
+                confirmButtonText: form.dataset.konfirmasiYa || 'Ya, lanjutkan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: warnaTombol(),
+                background: getComputedStyle(document.body).backgroundColor,
+                color: getComputedStyle(document.body).color,
+            }).then((hasil) => {
+                if (! hasil.isConfirmed) return;
+                form.dataset.ditahan = 'lepas';
+                form.requestSubmit ? form.requestSubmit() : form.submit();
+            });
+        });
+    });
+}
+
+/*
+ * Menahan pengiriman form saat ada isian wajib yang masih kosong, lalu
+ * menyebutkan yang mana.
+ *
+ * Peramban sudah menolak form seperti ini sendiri, tapi pesannya muncul sebagai
+ * gelembung kecil yang hilang dalam hitungan detik dan sering tidak terlihat
+ * pada form panjang — terutama saat isian yang kosong ada di luar layar.
+ */
+function pasangValidasi() {
+    document.querySelectorAll('form[data-validasi]').forEach((form) => {
+        if (form.dataset.validasiSiap) return;
+        form.dataset.validasiSiap = '1';
+
+        form.addEventListener('submit', (e) => {
+            const kosong = [...form.querySelectorAll('[required]')].filter((el) =>
+                el.type === 'file' ? el.files.length === 0 : ! String(el.value).trim()
+            );
+
+            if (kosong.length === 0) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const nama = kosong.map((el) => {
+                const label = form.querySelector(`label[for="${el.id}"]`);
+                return label ? label.textContent.trim().replace(/\s+/g, ' ') : (el.name || 'isian');
+            });
+
+            window.beriTahu({
+                icon: 'warning',
+                title: 'Ada yang belum diisi',
+                html: 'Lengkapi dulu:<br><strong>' + nama.join('</strong><br><strong>') + '</strong>',
+            });
+
+            kosong[0].focus();
+        });
+    });
+}
+
+/*
+ * Pesan dari server, dititipkan lewat <script type="application/json">.
+ * Ditulis sebagai JSON, bukan sebagai kode JS yang di-echo, supaya teks pesan
+ * yang memuat kutip atau tanda kurung tidak pernah bisa merusak halaman.
+ */
+function tampilkanPesanServer() {
+    const wadah = document.getElementById('pesan-server');
+    if (! wadah) return;
+
+    try {
+        const pesan = JSON.parse(wadah.textContent);
+        if (pesan && pesan.title) window.beriTahu(pesan);
+    } catch (e) {
+        // Pesan yang rusak tidak boleh menjatuhkan sisa halaman.
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    pasangKonfirmasi();
+    pasangValidasi();
+    tampilkanPesanServer();
+});

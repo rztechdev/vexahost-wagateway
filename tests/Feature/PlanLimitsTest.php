@@ -50,7 +50,10 @@ class PlanLimitsTest extends TestCase
 
         $this->workspace->members()->attach($this->owner->id, ['role' => 'owner']);
 
-        app(SubscriptionService::class)->ensureFor($this->workspace);
+        // Workspace baru lahir `unpaid`; tes ini menguji hal lain,
+        // jadi penagihannya tidak boleh ikut menghalangi.
+        $this->berlangganan($this->workspace, 'essentials');
+
     }
 
     public function test_api_key_dibatasi_jumlahnya_oleh_paket(): void

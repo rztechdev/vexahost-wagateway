@@ -2,6 +2,8 @@
 @section('title', 'Ringkasan')
 
 @section('content')
+    @include('partials.sesi-perlu-dihubungkan')
+
     @php
         $connected = $sessions->where('status', 'connected')->count();
         $quota = $currentWorkspace->is_internal ? null : $currentWorkspace->monthly_message_quota;

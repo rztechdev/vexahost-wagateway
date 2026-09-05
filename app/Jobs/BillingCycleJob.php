@@ -4,14 +4,12 @@ namespace App\Jobs;
 
 use App\Models\Invoice;
 use App\Models\Subscription;
-use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
-use App\Services\MessageDispatcher;
-use App\Support\PhoneNumber;
+use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -32,11 +30,11 @@ class BillingCycleJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    public function handle(SubscriptionService $subscriptions, MessageDispatcher $dispatcher): void
+    public function handle(SubscriptionService $subscriptions, WhatsAppNotifier $notifier): void
     {
         $this->expireOverdueInvoices();
         $this->issueRenewalInvoices($subscriptions);
-        $this->sendReminders($dispatcher);
+        $this->sendReminders($notifier);
         $this->markPastDue($subscriptions);
         $this->suspendAfterGrace($subscriptions);
     }
@@ -50,6 +48,18 @@ class BillingCycleJob implements ShouldQueue
     {
         Invoice::where('status', 'pending')
             ->where('due_at', '<', now())
+            /*
+             | Yang sudah ada buktinya dikecualikan.
+             |
+             | Uangnya sudah dikirim; yang belum selesai adalah pemeriksaan di
+             | pihak kami. Menandainya kedaluwarsa berarti menghukum pelanggan
+             | karena kami lambat memverifikasi — ia membuka halaman tagihannya
+             | dan membaca "batas waktu pembayaran sudah lewat" padahal sudah
+             | membayar. Tagihan seperti ini tetap terbuka sampai ada manusia
+             | yang menjawabnya, dan panel admin memang menampilkannya paling
+             | atas justru karena itu.
+            */
+            ->whereNull('proof_path')
             ->update(['status' => 'expired', 'updated_at' => now()]);
     }
 
@@ -106,20 +116,16 @@ class BillingCycleJob implements ShouldQueue
     }
 
     /**
-     * Pengingat lewat WhatsApp, memakai gateway kami sendiri.
+     * Pengingat sebelum masa berlaku habis.
      *
-     * Seluruhnya pelengkap. Spanduk di dashboard dan tagihan yang sudah terbit
-     * adalah pemberitahuan yang sebenarnya; kegagalan di sini tidak boleh
-     * mengubah satu pun status langganan.
+     * Seluruhnya pelengkap: spanduk di dashboard dan tagihan yang sudah terbit
+     * adalah pemberitahuan yang sebenarnya, dan kegagalan di sini tidak boleh
+     * mengubah satu pun status langganan. Tapi pelanggan yang gateway-nya
+     * berjalan lancar justru yang paling jarang membuka dashboard — jadi di
+     * praktiknya, inilah satu-satunya yang benar-benar sampai.
      */
-    private function sendReminders(MessageDispatcher $dispatcher): void
+    private function sendReminders(WhatsAppNotifier $notifier): void
     {
-        $pengirim = $this->reminderSession();
-
-        if (! $pengirim) {
-            return;
-        }
-
         foreach (config('billing.reminder_days') as $sisaHari) {
             $tanggal = now()->addDays($sisaHari);
 
@@ -127,74 +133,18 @@ class BillingCycleJob implements ShouldQueue
                 ->whereIn('status', ['trialing', 'active'])
                 ->whereBetween('current_period_end', [$tanggal->copy()->startOfDay(), $tanggal->copy()->endOfDay()])
                 ->get()
-                ->each(function (Subscription $subscription) use ($dispatcher, $pengirim, $sisaHari): void {
-                    $workspace = $subscription->workspace;
-
-                    if (! $workspace || $workspace->is_internal || blank($workspace->billing_phone)) {
+                ->each(function (Subscription $subscription) use ($notifier, $sisaHari): void {
+                    if (! $subscription->workspace) {
                         return;
                     }
 
-                    $penanda = "billing:reminder:{$subscription->id}:{$sisaHari}";
-
-                    if (Cache::has($penanda)) {
-                        return;
-                    }
-
-                    try {
-                        $dispatcher->queue($pengirim, $workspace->billing_phone, [
-                            'body' => $this->reminderText($subscription, $sisaHari),
-                        ]);
-
-                        Cache::put($penanda, true, now()->addDay());
-                    } catch (\Throwable $e) {
-                        Log::warning('Pengingat tagihan gagal dikirim.', [
-                            'workspace_id' => $workspace->id,
-                            'nomor' => PhoneNumber::mask($workspace->billing_phone),
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
+                    $notifier->toWorkspace(
+                        $subscription->workspace,
+                        BillingMessages::expiringSoon($subscription, $sisaHari),
+                        "reminder:{$subscription->id}:{$sisaHari}",
+                    );
                 });
         }
-    }
-
-    private function reminderText(Subscription $subscription, int $sisaHari): string
-    {
-        $nama = $subscription->workspace->name;
-        $paket = $subscription->plan()->name();
-        $tanggal = $subscription->current_period_end->translatedFormat('j F Y');
-        $url = route('billing.index');
-
-        $pembuka = match (true) {
-            $sisaHari <= 0 => "Langganan {$paket} untuk workspace *{$nama}* berakhir hari ini ({$tanggal}).",
-            $sisaHari === 1 => "Langganan {$paket} untuk workspace *{$nama}* berakhir besok ({$tanggal}).",
-            default => "Langganan {$paket} untuk workspace *{$nama}* berakhir {$sisaHari} hari lagi, pada {$tanggal}.",
-        };
-
-        return $pembuka."\n\n"
-            .'Setelah tanggal itu pengiriman pesan berhenti, tapi nomor WhatsApp Anda tetap tertaut dan tidak perlu discan ulang selama '
-            .config('billing.grace_days')." hari.\n\n"
-            ."Perpanjang di: {$url}";
-    }
-
-    /**
-     * Sesi milik Flustra sendiri yang dipakai mengirim pengingat.
-     *
-     * Dikonfigurasi lewat env dan bukan dipilih otomatis: mengirim pemberitahuan
-     * tagihan dari nomor pelanggan mana pun yang kebetulan tersambung berarti
-     * pelanggan itu yang membayar kuotanya dan yang menerima laporan spam-nya.
-     */
-    private function reminderSession(): ?WaSession
-    {
-        $workspaceId = config('billing.notify_workspace_id');
-
-        if (blank($workspaceId)) {
-            return null;
-        }
-
-        return Workspace::find($workspaceId)
-            ?->sessions()
-            ->where('status', 'connected')
-            ->first();
     }
 
     /**

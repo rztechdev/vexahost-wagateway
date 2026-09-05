@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
+use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
+use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Auth\AuthController;
@@ -79,6 +82,8 @@ Route::middleware('auth')->group(function (): void {
         Route::post('billing/invoices/{id}/penagihan', [BillingController::class, 'saveBillingDetails'])->name('billing.details');
         Route::post('billing/invoices/{id}/bukti', [BillingController::class, 'uploadProof'])->name('billing.proof.upload');
         Route::get('billing/invoices/{id}/bukti', [BillingController::class, 'proof'])->name('billing.proof');
+        Route::get('billing/invoices/{id}/menunggu-verifikasi', [BillingController::class, 'verifying'])->name('billing.verifying');
+        Route::get('billing/invoices/{id}/status', [BillingController::class, 'status'])->name('billing.status');
         Route::post('billing/invoices/{id}/batal', [BillingController::class, 'cancelInvoice'])->name('billing.invoice.cancel');
 
         Route::get('sessions', [SessionController::class, 'index'])->name('sessions.index');
@@ -129,6 +134,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/', AdminOverviewController::class)->name('overview');
 
     Route::get('workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces');
+    Route::get('workspaces/{id}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
     Route::post('workspaces/{id}/paket', [AdminWorkspaceController::class, 'changePlan'])->name('workspaces.plan');
     Route::post('workspaces/{id}/perpanjang', [AdminWorkspaceController::class, 'extend'])->name('workspaces.extend');
     Route::post('workspaces/{id}/tangguhkan', [AdminWorkspaceController::class, 'toggleSuspend'])->name('workspaces.suspend');
@@ -137,11 +143,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('tagihan', [AdminInvoiceController::class, 'index'])->name('invoices');
     Route::post('tagihan/{id}/lunas', [AdminInvoiceController::class, 'markPaid'])->name('invoices.paid');
     Route::post('tagihan/{id}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.status');
+    Route::post('tagihan/{id}/tolak-bukti', [AdminInvoiceController::class, 'requestNewProof'])->name('invoices.reject-proof');
     Route::get('tagihan/{id}/bukti', [AdminInvoiceController::class, 'proof'])->name('invoices.proof');
 
     Route::get('sesi', [AdminSessionController::class, 'index'])->name('sessions');
     Route::post('sesi/{id}/putus', [AdminSessionController::class, 'disconnect'])->name('sessions.disconnect');
 
+    Route::get('pesan', AdminMessageController::class)->name('messages');
+    Route::get('audit', AdminAuditController::class)->name('audit');
+    Route::get('sistem', AdminSystemController::class)->name('system');
+
     Route::get('pengguna', [AdminUserController::class, 'index'])->name('users');
     Route::post('pengguna/{id}/super-admin', [AdminUserController::class, 'toggleSuperAdmin'])->name('users.super');
+    Route::post('pengguna/{id}/atur-ulang-sandi', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
 });

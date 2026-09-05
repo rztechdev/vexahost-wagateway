@@ -55,7 +55,7 @@
                                     {{-- Memutus, bukan melepas tautan: kredensialnya tetap
                                          tersimpan, jadi pemiliknya menyalakan lagi tanpa scan QR. --}}
                                     <form method="POST" action="{{ route('admin.sessions.disconnect', $session->id) }}"
-                                          onsubmit="return confirm('Putus sesi ini? Pemiliknya bisa menyalakannya lagi tanpa scan ulang.')">
+                                          data-konfirmasi="Putus sesi ini? Pemiliknya bisa menyalakannya lagi tanpa scan ulang.">
                                         @csrf
                                         <button class="text-destructive hover:underline">Putus</button>
                                     </form>

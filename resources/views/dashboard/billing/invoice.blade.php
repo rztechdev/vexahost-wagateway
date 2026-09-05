@@ -272,7 +272,7 @@
                             </div>
 
                             @if ($bolehBayar)
-                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" class="mt-4 space-y-3.5">
+                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi class="mt-4 space-y-3.5">
                                     @csrf
                                     <div>
                                         <label for="billing_name" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
@@ -609,7 +609,7 @@
                                     </div>
                                 @endif
 
-                                <form method="POST" action="{{ route('billing.proof.upload', $invoice->id) }}" enctype="multipart/form-data" class="space-y-3">
+                                <form method="POST" action="{{ route('billing.proof.upload', $invoice->id) }}" enctype="multipart/form-data" data-validasi class="space-y-3">
                                     @csrf
                                     <div>
                                         <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
@@ -635,7 +635,7 @@
                                 @if ($invoice->isPending() && $bolehBayar)
                                     <div class="border-t border-border/80 pt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
                                         <form method="POST" action="{{ route('billing.invoice.cancel', $invoice->id) }}"
-                                              onsubmit="return confirm('Apakah Anda yakin ingin membatalkan tagihan ini?')">
+                                              data-konfirmasi="Apakah Anda yakin ingin membatalkan tagihan ini?">
                                             @csrf
                                             <button type="submit" class="hover:text-destructive hover:underline">
                                                 Batalkan tagihan ini

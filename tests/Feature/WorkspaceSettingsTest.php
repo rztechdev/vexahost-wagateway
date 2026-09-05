@@ -44,6 +44,10 @@ class WorkspaceSettingsTest extends TestCase
         ]);
 
         $this->workspace->members()->attach($this->owner->id, ['role' => 'owner']);
+
+        // Workspace baru lahir `unpaid`; tes ini menguji hal lain,
+        // jadi penagihannya tidak boleh ikut menghalangi.
+        $this->berlangganan($this->workspace);
     }
 
     public function test_owner_bisa_mengganti_nama_workspace(): void

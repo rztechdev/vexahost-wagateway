@@ -185,12 +185,62 @@ BILLING_GRACE_DAYS=30           # jarak antara pengiriman berhenti dan sesi dile
 BILLING_UNIQUE_CODE=true        # kode unik 3 digit di nominal, untuk mencocokkan mutasi
 BILLING_TAX_PERCENT=0           # 0 = harga yang dipajang sudah final, tanpa baris pajak
 
-# Workspace milik Flustra sendiri yang nomornya dipakai mengirim pengingat
-# tagihan. Kosong = pengingat cukup lewat spanduk di dashboard. Jangan diisi
-# workspace pelanggan: kuotanya yang terpotong dan laporan spam-nya yang jatuh
-# ke nomor mereka.
+# Workspace milik Flustra sendiri yang nomornya dipakai mengirim SELURUH
+# pemberitahuan WhatsApp. Jangan diisi workspace pelanggan: kuotanya yang
+# terpotong dan laporan spam-nya yang jatuh ke nomor mereka.
+#
+# Kosong = seluruh pemberitahuan diam, tanpa satu pun yang gagal secara
+# terlihat. Panel admin menampilkan peringatan merah di halaman Ringkasan
+# selama keadaan ini berlangsung — itu satu-satunya gejalanya.
 BILLING_NOTIFY_WORKSPACE_ID=
+
+# Nomor WhatsApp tim, untuk pemberitahuan yang butuh tindakan manusia —
+# terutama "ada bukti pembayaran baru masuk". Selama pencocokan masih manual,
+# tagihan hanya menjadi lunas kalau ada orang yang membukanya di panel, dan
+# tanpa nomor ini tidak ada yang memberi tahu bahwa ada yang perlu dibuka.
+BILLING_ADMIN_PHONE=
+
+# Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa kata
+# sandi, karena pemulihan mandiri sengaja belum dibuat.
+BILLING_SUPPORT_EMAIL=flustrafinances@gmail.com
+
+# Lantai masa percobaan. Percobaan selalu berakhir di akhir bulan; kalau sisa
+# bulan berjalan lebih pendek dari ini, masanya melompat ke akhir bulan
+# berikutnya supaya pendaftar tanggal 30 tidak cuma dapat satu hari.
+BILLING_TRIAL_MIN_DAYS=10
 ```
+
+### Pemberitahuan WhatsApp — apa saja yang dikirim
+
+Semuanya lewat gateway ini sendiri, dari nomor workspace Flustra.
+
+| Peristiwa | Kepada | Kenapa ada |
+|---|---|---|
+| Bukti pembayaran diunggah | Pelanggan | Menutup keraguan yang dulu berujung tagihan dibatalkan sendiri |
+| Bukti pembayaran diunggah | **Tim** | Tagihan hanya lunas kalau ada yang membukanya di panel |
+| Pembayaran dikonfirmasi | Pelanggan | Menutup lingkaran; tanpa ini mereka menunggu tanpa kabar |
+| Bukti ditolak + alasan | Pelanggan | Penolakan tanpa alasan cuma membuat tagihan terbuka lagi tanpa ada yang tahu kenapa |
+| Masa berlaku H-7/3/1/0 | Pelanggan | Spanduk dashboard hanya terlihat oleh yang kebetulan membukanya |
+| Pengiriman dihentikan | Pelanggan | Layanan berhenti harus terasa sebagai kebijakan, bukan kerusakan |
+| Nomor dilepas setelah tenggang | Pelanggan | Menjelaskan bahwa datanya tetap aman |
+| **Sesi WhatsApp terputus** | Pelanggan | Gateway yang mati diam baru ketahuan saat pelanggan *mereka* yang mengeluh |
+| Kuota 80% dan 100% | Pelanggan | Kuota habis tanpa peringatan terasa seperti kerusakan |
+
+Semuanya **pelengkap**: kegagalan mengirim dicatat di log dan tidak pernah
+menjatuhkan tindakan yang sedang berjalan — tagihan tetap lunas meski pesannya
+gagal terkirim. Tiap peristiwa dijaga penanda di cache supaya job yang berjalan
+dua kali tidak mengirim pesan yang sama dua kali; pesan kembar soal uang membuat
+orang mengira ia ditagih dua kali.
+
+### Email — belum dipakai
+
+`MAIL_MAILER=log` dan memang belum ada satu pun alur yang mengandalkan email.
+Pemulihan kata sandi sengaja belum dibuat; pelanggan yang lupa kata sandinya
+menghubungi admin, dan admin mengatur ulang dari `/admin/pengguna`.
+
+Isi `MAIL_*` hanya kalau alur yang butuh email benar-benar dibuat — jangan
+mengisinya lebih dulu, karena kotak email yang terpasang tapi tidak terpakai
+memberi kesan pemberitahuan sudah berjalan padahal tidak.
 
 ### Akun super admin
 

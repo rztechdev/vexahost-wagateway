@@ -41,7 +41,7 @@
                 @endif
             </div>
 
-            @if ($subscription->current_period_end)
+            @if ($subscription->current_period_end && ! $subscription->isUnpaid())
                 <div class="mt-6 border-t border-border pt-5">
                     <div class="flex flex-wrap items-end justify-between gap-4">
                         <div>
@@ -64,7 +64,15 @@
 
             {{-- Keadaan yang butuh tindakan diberi warna; keadaan normal tidak.
                  Kalau semuanya berwarna, tidak ada yang menonjol. --}}
-            @if ($subscription->status === 'past_due')
+            @if ($subscription->isUnpaid())
+                <div class="mt-5 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3.5 text-sm text-primary">
+                    <p class="font-medium">Workspace ini belum berlangganan.</p>
+                    <p class="mt-1 leading-relaxed">
+                        Pilih paket untuk menautkan nomor WhatsApp dan mulai mengirim pesan.
+                        Riwayat, template, dan API key tetap bisa Anda siapkan lebih dulu.
+                    </p>
+                </div>
+            @elseif ($subscription->status === 'past_due')
                 <div class="mt-5 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3.5 text-sm text-destructive">
                     <p class="font-medium">Pengiriman pesan sedang berhenti.</p>
                     <p class="mt-1 leading-relaxed">

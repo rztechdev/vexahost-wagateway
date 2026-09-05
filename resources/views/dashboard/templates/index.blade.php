@@ -55,7 +55,7 @@
                     </div>
                 </form>
                 <form method="POST" action="{{ route('templates.destroy', $template->id) }}" class="mt-2"
-                      onsubmit="return confirm('Hapus template {{ $template->name }}?')">
+                      data-konfirmasi="Hapus template {{ $template->name }}?">
                     @csrf @method('DELETE')
                     <button class="text-xs text-destructive hover:underline">Hapus template</button>
                 </form>

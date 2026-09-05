@@ -6,7 +6,7 @@ use App\Jobs\BillingCycleJob;
 use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
-use App\Services\MessageDispatcher;
+use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -57,7 +57,7 @@ class BillingCycleTest extends TestCase
         $workspace = $this->workspace();
         $this->langgananBerakhir($workspace, '+2 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $invoice = Invoice::first();
 
@@ -70,7 +70,7 @@ class BillingCycleTest extends TestCase
     {
         $this->langgananBerakhir($this->workspace(), '+20 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame(0, Invoice::count());
     }
@@ -79,8 +79,8 @@ class BillingCycleTest extends TestCase
     {
         $this->langgananBerakhir($this->workspace(), '+1 day');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame(1, Invoice::count());
     }
@@ -97,7 +97,7 @@ class BillingCycleTest extends TestCase
             'connected_at' => now(),
         ]);
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame('past_due', $subscription->fresh()->status);
 
@@ -126,7 +126,7 @@ class BillingCycleTest extends TestCase
             'connected_at' => now(),
         ]);
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame('suspended', $subscription->fresh()->status);
         $this->assertSame('disconnected', $session->fresh()->status);
@@ -145,7 +145,7 @@ class BillingCycleTest extends TestCase
 
         $subscription = $this->langgananBerakhir($workspace, '-5 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame(0, Invoice::count());
         $this->assertSame('active', $subscription->fresh()->status);
@@ -158,11 +158,49 @@ class BillingCycleTest extends TestCase
 
         $invoice->forceFill(['due_at' => now()->subDay()])->save();
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         // Kode uniknya harus bebas dipakai tagihan berikutnya, dan pelanggan
         // tidak boleh membayar nominal yang sudah tidak dicari siapa-siapa.
         $this->assertSame('expired', $invoice->fresh()->status);
+    }
+
+    /**
+     * Tagihan yang sudah ada buktinya tidak boleh kedaluwarsa.
+     *
+     * Uangnya sudah dikirim; yang belum selesai adalah pemeriksaan di pihak
+     * kami. Menandainya kedaluwarsa berarti pelanggan membuka halaman tagihan
+     * dan membaca "batas waktu pembayaran sudah lewat" padahal sudah membayar.
+     */
+    public function test_tagihan_berbukti_tidak_ikut_kedaluwarsa(): void
+    {
+        $workspace = $this->workspace();
+
+        $berbukti = app(SubscriptionService::class)->issueInvoice($workspace, 'prime', 'monthly');
+        $berbukti->forceFill(['due_at' => now()->subDay(), 'proof_path' => 'bukti-bayar/contoh.jpg'])->save();
+
+        $polos = app(SubscriptionService::class)->issueInvoice($workspace, 'elite', 'monthly');
+        $polos->forceFill(['due_at' => now()->subDay()])->save();
+
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+
+        $this->assertSame('pending', $berbukti->fresh()->status, 'Bukti sudah masuk — tagihannya harus tetap terbuka.');
+        $this->assertSame('expired', $polos->fresh()->status);
+    }
+
+    /**
+     * Workspace yang belum pernah berlangganan tidak ikut ditagih otomatis dan
+     * tidak ikut ditangguhkan — ia memang belum pernah mulai.
+     */
+    public function test_workspace_unpaid_tidak_disentuh_siklus_harian(): void
+    {
+        $workspace = $this->workspace('belum-bayar');
+        $subscription = app(SubscriptionService::class)->ensureFor($workspace);
+
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+
+        $this->assertSame(0, Invoice::count(), 'Yang belum pernah berlangganan tidak boleh ditagih otomatis.');
+        $this->assertSame('unpaid', $subscription->fresh()->status);
     }
 
     public function test_membayar_setelah_ditangguhkan_memulihkan_layanan(): void
@@ -175,7 +213,7 @@ class BillingCycleTest extends TestCase
             'past_due_at' => now()->subDays(config('billing.grace_days') + 1),
         ])->save();
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(MessageDispatcher::class));
+        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
         $this->assertSame('suspended', $workspace->fresh()->status);
 
         $invoice = app(SubscriptionService::class)->issueInvoice($workspace, 'prime', 'monthly');

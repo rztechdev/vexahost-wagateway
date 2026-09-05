@@ -40,6 +40,30 @@
         </div>
     </x-card>
 
+    @unless ($notifikasiSiap && $nomorAdminTerisi)
+        <x-card class="mb-6 border-destructive">
+            <div class="flex flex-wrap items-start gap-3">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-destructive" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                <div class="min-w-0">
+                    <p class="font-semibold text-destructive">Pemberitahuan WhatsApp sedang tidak berjalan</p>
+                    <ul class="mt-2 space-y-1 text-sm text-muted-foreground">
+                        @unless ($notifikasiSiap)
+                            <li>&bull; Tidak ada sesi pengirim yang siap. Isi <code>BILLING_NOTIFY_WORKSPACE_ID</code> dengan id workspace Flustra, dan pastikan salah satu nomornya berstatus <em>terhubung</em>.</li>
+                        @endunless
+                        @unless ($nomorAdminTerisi)
+                            <li>&bull; <code>BILLING_ADMIN_PHONE</code> kosong, jadi tidak ada yang memberi tahu tim saat bukti pembayaran baru masuk.</li>
+                        @endunless
+                    </ul>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                        Selama begini, pelanggan tidak dikabari saat pembayarannya lunas, saat kuotanya
+                        hampir habis, atau saat nomornya terputus — dan tidak ada satu pun yang gagal
+                        secara terlihat.
+                    </p>
+                </div>
+            </div>
+        </x-card>
+    @endunless
+
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-card>
             <p class="text-sm text-muted-foreground">Pendapatan bulan ini</p>
@@ -72,6 +96,7 @@
         <x-card title="Langganan per status">
             @php
                 $label = [
+                    'unpaid' => 'Belum berlangganan',
                     'trialing' => 'Masa percobaan',
                     'active' => 'Aktif',
                     'past_due' => 'Lewat jatuh tempo',

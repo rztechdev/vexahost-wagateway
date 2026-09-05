@@ -26,13 +26,30 @@
         'Ikhtisar' => [
             ['rute' => 'admin.overview', 'label' => 'Ringkasan', 'ikon' => 'M3 12l9-9 9 9M5 10v10h14V10'],
         ],
-        'Manajemen' => [
+        'Operasional' => [
             ['rute' => 'admin.workspaces', 'label' => 'Workspace', 'cocok' => ['admin.workspaces', 'admin.workspaces.*'], 'ikon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-3M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1'],
             ['rute' => 'admin.invoices', 'label' => 'Tagihan', 'cocok' => ['admin.invoices', 'admin.invoices.*'], 'ikon' => 'M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2zM8 8h8M8 12h8M8 16h5'],
             ['rute' => 'admin.sessions', 'label' => 'Sesi WhatsApp', 'cocok' => ['admin.sessions', 'admin.sessions.*'], 'ikon' => 'M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z'],
+            ['rute' => 'admin.messages', 'label' => 'Lalu Lintas Pesan', 'ikon' => 'M4 4h16v12H5.17L4 17.17V4zM8 9h8M8 12h5'],
+        ],
+        'Akun & Jejak' => [
             ['rute' => 'admin.users', 'label' => 'Pengguna', 'cocok' => ['admin.users', 'admin.users.*'], 'ikon' => 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm10 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
+            ['rute' => 'admin.audit', 'label' => 'Catatan Audit', 'ikon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4'],
+            ['rute' => 'admin.system', 'label' => 'Sistem', 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h2m14 0h2M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4'],
         ],
     ];
+
+    /*
+     | Angka pada menu.
+     |
+     | Hanya satu yang ditampilkan: tagihan yang menunggu tindakan manusia.
+     | Lencana pada setiap menu berubah jadi hiasan yang diabaikan mata; satu
+     | lencana yang muncul hanya saat memang ada pekerjaan justru terbaca.
+    */
+    $perluDiperiksa = \App\Models\Invoice::whereNotNull('proof_path')->where('status', '!=', 'paid')->count()
+        + \App\Models\Invoice::where('status', 'pending')->whereNull('proof_path')->count();
+
+    $lencanaMenu = ['admin.invoices' => $perluDiperiksa];
 
     $aktif = function (array $item): bool {
         return request()->routeIs(...($item['cocok'] ?? [$item['rute']]));
@@ -84,6 +101,11 @@
                                     <path d="{{ $item['ikon'] }}"/>
                                 </svg>
                                 <span class="truncate">{{ $item['label'] }}</span>
+                                @if (($lencanaMenu[$item['rute']] ?? 0) > 0)
+                                    <span class="ml-auto shrink-0 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950">
+                                        {{ $lencanaMenu[$item['rute']] > 99 ? '99+' : $lencanaMenu[$item['rute']] }}
+                                    </span>
+                                @endif
                             </a>
                         @endforeach
                     </div>
@@ -179,6 +201,8 @@
         </main>
     </div>
 
-    @stack('scripts')
+    @include('partials.pesan-server')
+
+@stack('scripts')
 </body>
 </html>

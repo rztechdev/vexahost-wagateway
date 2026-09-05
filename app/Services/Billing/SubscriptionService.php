@@ -7,6 +7,8 @@ use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\SessionService;
 use App\Support\Plan;
 use Illuminate\Support\Facades\DB;
@@ -29,18 +31,26 @@ use RuntimeException;
  */
 class SubscriptionService
 {
-    public function __construct(private readonly SessionService $sessions) {}
+    public function __construct(
+        private readonly SessionService $sessions,
+        private readonly WhatsAppNotifier $notifier,
+    ) {}
 
     /**
      * Langganan workspace, dibuatkan kalau belum ada.
      *
-     * Workspace baru mulai sebagai `trialing` sampai akhir bulan berjalan —
-     * sama persis dengan yang didapat pemakai lama saat penagihan dinyalakan.
-     * Pendaftar yang mencoba produk di tanggal 28 karena itu hanya mendapat
-     * beberapa hari; itu disengaja, dan admin bisa memperpanjangnya lewat
-     * panel. Alternatifnya, memberi 30 hari sejak mendaftar, membuat setiap
-     * hari dalam sebulan menjadi hari jatuh tempo bagi seseorang, dan
-     * pengingat tidak pernah bisa dikirim serentak.
+     * Workspace baru mulai sebagai `unpaid`: belum pernah berlangganan, belum
+     * boleh mengirim apa pun. Ia harus memilih paket dan membayar lebih dulu.
+     *
+     * Masa gratis sampai akhir bulan **hanya** milik akun yang sudah ada
+     * sebelum produk ini dijual, dan itu diberikan sekali oleh migrasi
+     * `give_existing_workspaces_a_trial` — bukan oleh keadaan bawaan di sini.
+     * Kalau bawaannya `trialing`, setiap pendaftar baru ikut memakai produk
+     * berbayar secara cuma-cuma tanpa pernah diputuskan siapa pun.
+     *
+     * Kalau suatu saat masa coba untuk pendaftar baru memang diinginkan,
+     * tempatnya di sini — dengan tanggal berakhir yang eksplisit, bukan dengan
+     * mengembalikan `trialing` sebagai bawaan.
      */
     public function ensureFor(Workspace $workspace): Subscription
     {
@@ -51,10 +61,21 @@ class SubscriptionService
         $subscription = $workspace->subscription()->create([
             'plan_slug' => config('plans.default'),
             'period' => 'monthly',
-            'status' => 'trialing',
-            'current_period_start' => now(),
-            'current_period_end' => now()->endOfMonth(),
+            'status' => 'unpaid',
+            'current_period_start' => null,
+            'current_period_end' => null,
         ]);
+
+        /*
+         | Workspace ikut ditandai `suspended`.
+         |
+         | Bukan hukuman — ini cerminnya. Seluruh penegakan yang sudah ada
+         | (`MessageDispatcher::guardWorkspace()` dan `AuthenticateApiKey`)
+         | membaca `workspaces.status`, bukan status langganan. Tanpa baris ini,
+         | workspace yang belum pernah membayar tetap `active` dan API-nya bisa
+         | dipakai penuh — batas paket ditegakkan, tapi hak memakainya tidak.
+        */
+        $workspace->forceFill(['status' => 'suspended'])->save();
 
         return $workspace->setRelation('subscription', $subscription)->subscription;
     }
@@ -146,7 +167,7 @@ class SubscriptionService
             return $invoice;
         }
 
-        return DB::transaction(function () use ($invoice, $admin, $note) {
+        $invoice = DB::transaction(function () use ($invoice, $admin, $note) {
             $invoice->forceFill([
                 'status' => 'paid',
                 'paid_at' => now(),
@@ -194,6 +215,21 @@ class SubscriptionService
 
             return $invoice->refresh();
         });
+
+        /*
+         | Dikirim di luar transaksi, dengan sengaja.
+         |
+         | Di dalamnya, pesan yang gagal akan menggulung balik penandaan lunas —
+         | pembayaran yang sudah masuk batal tercatat gara-gara WhatsApp sedang
+         | tersendat. Di luar, kegagalannya tinggal satu baris log.
+        */
+        $this->notifier->toWorkspace(
+            $invoice->workspace,
+            BillingMessages::paymentConfirmed($invoice, $invoice->workspace->subscription),
+            "invoice-paid:{$invoice->id}",
+        );
+
+        return $invoice;
     }
 
     /**
@@ -221,6 +257,13 @@ class SubscriptionService
                 'workspace' => $subscription->workspace->name,
             ], $subscription->workspace_id);
         });
+
+        $this->notifier->toWorkspace(
+            $subscription->workspace,
+            BillingMessages::serviceStopped($subscription),
+            "past-due:{$subscription->id}",
+            24 * 30,
+        );
     }
 
     /**
@@ -267,6 +310,13 @@ class SubscriptionService
         AuditLog::record('subscription.suspended', $subscription, [
             'workspace' => $subscription->workspace->name,
         ], $subscription->workspace_id);
+
+        $this->notifier->toWorkspace(
+            $subscription->workspace,
+            BillingMessages::sessionsReleased($subscription),
+            "suspended:{$subscription->id}",
+            24 * 30,
+        );
     }
 
     /**
