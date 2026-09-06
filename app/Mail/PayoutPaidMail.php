@@ -18,7 +18,7 @@ class PayoutPaidMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pencairan Komisi Telah Ditransfer: ' . $this->payout->payout_number . ' — ' . config('app.name')
+            subject: 'Pencairan Komisi Telah Ditransfer: '.$this->payout->payout_number.' — '.config('app.name')
         );
     }
 

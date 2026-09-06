@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class MitraTest extends TestCase
@@ -21,6 +22,7 @@ class MitraTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Workspace $workspace;
 
     protected function setUp(): void
@@ -277,7 +279,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) \Illuminate\Support\Str::uuid(),
+            'external_id' => (string) Str::uuid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-001',
             'plan_slug' => 'pro',
@@ -341,7 +343,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) \Illuminate\Support\Str::uuid(),
+            'external_id' => (string) Str::uuid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-002',
             'plan_slug' => 'starter',
@@ -402,7 +404,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) \Illuminate\Support\Str::uuid(),
+            'external_id' => (string) Str::uuid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-003',
             'plan_slug' => 'enterprise',
@@ -594,4 +596,3 @@ class MitraTest extends TestCase
         $responseOther->assertForbidden();
     }
 }
-

@@ -378,7 +378,24 @@ class PaygTest extends TestCase
             ->assertSee('Prime')
             ->assertSee('Elite')
             ->assertSee('Pay as you go')
-            ->assertSee('/pesan terkirim');
+            // Harga per pesan TIDAK boleh muncul di halaman harga: angka satuan
+            // di sini mengundang orang menghitung sendiri lalu menyimpulkan
+            // paket bulanan lebih murah, padahal PAYG memang bukan untuk yang
+            // kirimannya rutin.
+            ->assertDontSee('/pesan terkirim')
+            ->assertDontSee('per pesan terkirim');
+    }
+
+    /** Yang sudah memakai PAYG berhak tahu saldonya habis untuk apa. */
+    public function test_harga_per_pesan_tetap_terbuka_di_halaman_saldo(): void
+    {
+        $this->jadikanPayg(50_000);
+
+        $this->actingAs($this->pemilik)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->get(route('balance.index'))
+            ->assertOk()
+            ->assertSee('per pesan terkirim');
     }
 
     /** PAYG tidak boleh muncul di daftar paket bulanan mana pun. */

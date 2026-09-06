@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -13,6 +15,7 @@ class ProfileTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Workspace $workspace;
 
     protected function setUp(): void
@@ -112,9 +115,9 @@ class ProfileTest extends TestCase
 
     public function test_upload_foto_profil_berhasil(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
-        $file = \Illuminate\Http\UploadedFile::fake()->image('foto_profil.jpg', 300, 300);
+        $file = UploadedFile::fake()->image('foto_profil.jpg', 300, 300);
 
         $response = $this->actingAs($this->user)
             ->withSession(['current_workspace_id' => $this->workspace->id])
@@ -126,7 +129,7 @@ class ProfileTest extends TestCase
         $response->assertRedirect();
         $user = $this->user->fresh();
         $this->assertNotNull($user->avatar);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($user->avatar);
+        Storage::disk('public')->assertExists($user->avatar);
         $this->assertStringContainsString('storage/', $user->avatarUrl());
     }
 }

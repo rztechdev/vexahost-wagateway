@@ -17,7 +17,7 @@ class ResetPasswordMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Atur ulang kata sandi — ' . config('app.name'));
+        return new Envelope(subject: 'Atur ulang kata sandi — '.config('app.name'));
     }
 
     public function content(): Content

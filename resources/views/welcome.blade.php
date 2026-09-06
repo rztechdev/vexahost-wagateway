@@ -646,7 +646,7 @@
                 <div class="space-y-3 max-w-2xl">
                     <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{{ $payg->name() }}</h3>
                     <p class="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                        {{ $payg->tagline() }} Cukup isi saldo sesuai kebutuhan (mulai Rp 50.000). Saldo tidak memiliki masa kedaluwarsa dan hanya berkurang saat pesan terkirim.
+                        {{ $payg->tagline() }} Isi saldo sesuai kebutuhan, lalu pakai kapan saja — saldo tidak punya masa kedaluwarsa dan hanya berkurang saat pesan benar-benar terkirim.
                     </p>
                     <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground pt-1">
                         <span class="flex items-center gap-1.5">
@@ -666,13 +666,20 @@
 
                 <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-start xl:items-center gap-5 shrink-0">
                     <div class="sm:text-right lg:text-left xl:text-right">
+                        {{-- Harga per pesan sengaja TIDAK ditampilkan di sini.
+                             Angka satuan di halaman harga mengundang orang
+                             menghitung sendiri lalu menyimpulkan paket bulanan
+                             lebih murah — padahal PAYG memang bukan untuk yang
+                             kirimannya rutin. Yang dijual di kartu ini bentuk
+                             pembayarannya, bukan tarifnya. Rinciannya terbuka
+                             penuh di halaman Saldo setelah mereka memakainya. --}}
                         <div class="flex items-baseline gap-1.5 sm:justify-end lg:justify-start xl:justify-end">
+                            <span class="text-xs sm:text-sm font-medium text-muted-foreground">mulai</span>
                             <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-                                Rp {{ number_format(config('billing.payg.price_per_message', 200), 0, ',', '.') }}
+                                Rp {{ number_format(config('billing.payg.min_topup', 50000), 0, ',', '.') }}
                             </span>
-                            <span class="text-xs sm:text-sm font-medium text-muted-foreground">/pesan terkirim</span>
                         </div>
-                        <p class="mt-1 text-xs text-muted-foreground">Top-up saldo awal min. Rp 50.000</p>
+                        <p class="mt-1 text-xs text-muted-foreground">Isi saldo sekali, pakai kapan saja</p>
                     </div>
 
                     <a href="{{ route('register') }}"

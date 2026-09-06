@@ -128,10 +128,23 @@ return [
             'message_retention_days' => 30,
             'api_rate_limit_per_minute' => 60,
 
+            /*
+             | Harga per pesan SENGAJA tidak disebut di sini.
+             |
+             | Daftar ini dibaca halaman harga, dan angka per pesan di sana
+             | mengundang orang menghitung sendiri lalu menyimpulkan paket
+             | bulanan lebih murah — padahal PAYG bukan untuk mereka. Yang
+             | dijual di halaman harga adalah bentuk pembayarannya (bayar
+             | sesuai pemakaian, tanpa langganan), bukan tarifnya.
+             |
+             | Angkanya tetap terbuka penuh di halaman Saldo, tempat pelanggan
+             | yang SUDAH memakainya perlu tahu saldonya habis untuk apa.
+            */
             'features' => [
                 '1 nomor WhatsApp aktif',
-                'Rp 200 per pesan terkirim',
-                'Saldo diisi di depan, minimum Rp 50.000',
+                'Bayar hanya saat pesan terkirim',
+                'Saldo diisi di depan, mulai Rp 50.000',
+                'Saldo tidak punya masa kedaluwarsa',
                 'Pesan gagal tidak memotong saldo',
                 '3 API key',
                 'Riwayat pesan 30 hari',

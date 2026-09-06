@@ -19,8 +19,8 @@ class PayoutRequestedMail extends Mailable
     public function envelope(): Envelope
     {
         $subject = $this->isForAdmin
-            ? 'Permintaan Pencairan Komisi Reseller: ' . $this->payout->payout_number . ' (Rp ' . number_format($this->payout->amount, 0, ',', '.') . ') — ' . config('app.name')
-            : 'Bukti Pengajuan Pencairan Komisi: ' . $this->payout->payout_number . ' — ' . config('app.name');
+            ? 'Permintaan Pencairan Komisi Reseller: '.$this->payout->payout_number.' (Rp '.number_format($this->payout->amount, 0, ',', '.').') — '.config('app.name')
+            : 'Bukti Pengajuan Pencairan Komisi: '.$this->payout->payout_number.' — '.config('app.name');
 
         return new Envelope(subject: $subject);
     }

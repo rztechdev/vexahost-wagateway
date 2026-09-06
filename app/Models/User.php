@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -75,12 +77,12 @@ class User extends Authenticatable
             : asset('storage/'.$this->avatar);
     }
 
-    public function referralCode(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function referralCode(): HasOne
     {
         return $this->hasOne(ReferralCode::class, 'owner_user_id');
     }
 
-    public function payoutRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function payoutRequests(): HasMany
     {
         return $this->hasMany(PayoutRequest::class);
     }

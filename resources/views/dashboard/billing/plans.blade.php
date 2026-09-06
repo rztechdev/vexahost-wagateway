@@ -235,11 +235,15 @@
                     <p class="mt-0.5 text-sm text-muted-foreground">{{ $payg->tagline() }}</p>
                 </div>
 
+                {{-- Harga per pesan sengaja TIDAK di sini. Lihat catatan di
+                     config/plans.php: angka satuan di halaman harga mengundang
+                     orang menghitung sendiri lalu menyimpulkan paket bulanan
+                     lebih murah. Rinciannya terbuka penuh di halaman Saldo. --}}
                 <p class="flex items-baseline gap-1.5">
+                    <span class="text-sm text-muted-foreground">mulai</span>
                     <span class="text-3xl font-semibold tracking-tight">
-                        Rp {{ number_format(config('billing.payg.price_per_message'), 0, ',', '.') }}
+                        Rp {{ number_format(config('billing.payg.min_topup'), 0, ',', '.') }}
                     </span>
-                    <span class="text-sm text-muted-foreground">/pesan terkirim</span>
                 </p>
             </div>
 
@@ -259,14 +263,10 @@
                 </a>
             @endif
 
-            {{-- Titik impasnya disebut apa adanya. Menyembunyikannya berarti
-                 menjual PAYG ke orang yang seharusnya ambil paket, lalu
-                 kehilangan mereka saat tagihannya ternyata lebih mahal. --}}
             <p class="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
-                Cocok kalau pengiriman Anda sedikit dan tidak tentu. Di atas sekitar
-                <strong>745 pesan per bulan</strong>, paket Essentials selalu lebih murah —
-                saldo tidak punya masa berlaku, tapi paket memberi jauh lebih banyak pesan
-                untuk uang yang sama.
+                Cocok kalau pengiriman Anda sedikit dan tidak tentu. Saldo tidak punya masa
+                berlaku, jadi tidak ada yang hangus di bulan yang Anda tidak mengirim apa pun.
+                Rincian tarif dan sisa pesan ada di halaman Saldo.
             </p>
         </div>
 
