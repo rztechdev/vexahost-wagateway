@@ -63,6 +63,43 @@
                     .'broadcast besar memang wajar berjam-jam.',
             ],
             [
+                'nama' => 'Sambungan HTTPS',
+                'baik' => $keamanan['https'] || ! $keamanan['wajib_aman'],
+                'kabar' => $keamanan['https']
+                    ? 'Halaman ini dibuka lewat HTTPS.'
+                    : 'Halaman ini dibuka lewat HTTP polos.',
+                'akibat' => 'Kata sandi, cookie sesi, dan API key pelanggan lewat jaringan apa adanya — '
+                    .'siapa pun di jaringan yang sama bisa membacanya dan masuk sebagai orang itu. '
+                    .'Di lokal ini wajar; di produksi berarti sertifikat Coolify belum terpasang.',
+            ],
+            [
+                'nama' => 'Cookie sesi terkunci',
+                'baik' => ($keamanan['cookie_secure'] && $keamanan['sesi_terenkripsi']) || ! $keamanan['wajib_aman'],
+                'kabar' => ($keamanan['cookie_secure'] ? 'Secure menyala' : 'SESSION_SECURE_COOKIE mati')
+                    .', '.($keamanan['sesi_terenkripsi'] ? 'isi sesi terenkripsi.' : 'SESSION_ENCRYPT mati.'),
+                'akibat' => 'Tanpa Secure, satu permintaan http:// sebelum redirect sudah cukup membocorkan '
+                    .'sesi admin. Tanpa enkripsi, isi sesi tersimpan apa adanya di tabel sessions — '
+                    .'siapa pun yang bisa membaca database bisa menyamar jadi pengguna mana pun. '
+                    .'Keduanya sengaja dimatikan di lokal: cookie secure di http://127.0.0.1 membuat login '
+                    .'gagal tanpa pesan apa pun.',
+            ],
+            [
+                'nama' => 'Header keamanan',
+                'baik' => $keamanan['header'],
+                'kabar' => $keamanan['header']
+                    ? 'HSTS, X-Frame-Options, nosniff, dan Permissions-Policy terpasang.'
+                    : 'HeaderKeamanan tidak terdaftar di middleware global.',
+                'akibat' => 'Dashboard bisa dibingkai halaman lain dan tombolnya ditumpangi tanpa disadari '
+                    .'pengguna, dan browser tidak pernah tahu bahwa alamat ini seharusnya selalu HTTPS.',
+            ],
+            [
+                'nama' => 'Mode debug',
+                'baik' => $keamanan['debug_mati'],
+                'kabar' => $keamanan['debug_mati'] ? 'APP_DEBUG mati.' : 'APP_DEBUG menyala.',
+                'akibat' => 'Setiap halaman galat memamerkan seluruh isi environment kepada pengunjung — '
+                    .'kata sandi database, secret HMAC engine, dan kredensial Google sekaligus.',
+            ],
+            [
                 'nama' => 'Job gagal',
                 'baik' => $antrean['gagal'] === 0,
                 'kabar' => $antrean['gagal'] === 0

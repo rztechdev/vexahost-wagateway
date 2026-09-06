@@ -289,6 +289,35 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 
 `ENGINE_TOKEN` dan `ENGINE_HMAC_SECRET` harus **identik antara Laravel dan engine dalam satu tahap**, dan **berbeda antar tahap**.
 
+## Keamanan sesi — hanya staging & produksi
+
+| Variabel | Lokal | Staging | Production |
+|---|---|---|---|
+| `SESSION_SECURE_COOKIE` | **tidak diisi** | `true` | `true` |
+| `SESSION_ENCRYPT` | `false` (bawaan) | `true` | `true` |
+
+`SESSION_SECURE_COOKIE=true` membuat cookie sesi tidak pernah ikut permintaan
+`http://`. Tanpanya, satu permintaan polos sebelum redirect ke HTTPS sudah cukup
+membocorkan sesi admin kepada siapa pun yang sejaringan.
+
+**Jangan diisi di `.env` lokal.** Dev berjalan di `http://127.0.0.1:8070`, dan
+cookie secure di sana membuat login gagal **tanpa satu pun pesan galat** —
+gejalanya cuma formulir yang kembali ke halaman login, dan itu sangat sulit
+ditebak penyebabnya.
+
+`SESSION_ENCRYPT=true` mengenkripsi isi sesi sebelum ditulis ke tabel
+`sessions`. Tanpanya, siapa pun yang bisa membaca database bisa membaca isi
+sesi pengguna mana pun.
+
+Keduanya, plus HTTPS dan `APP_DEBUG`, muncul sebagai pemeriksaan di
+`/admin/sistem` — sengaja hijau di `local`/`testing`, karena di sana keduanya
+memang dimatikan dan merah tiap hari melatih orang mengabaikan merah.
+
+Header keamanan (`HSTS`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`,
+`Permissions-Policy`) **tidak** punya env — semuanya dipasang
+`App\Http\Middleware\HeaderKeamanan` untuk seluruh respons. HSTS hanya keluar
+saat `$request->secure()`.
+
 ## Daftar periksa promosi dev → staging → production
 
 1. Migrasi berjalan bersih di tahap sebelumnya (`php artisan migrate --force`).

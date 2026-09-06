@@ -4,6 +4,7 @@ use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureWorkspaceSelected;
+use App\Http\Middleware\HeaderKeamanan;
 use App\Http\Middleware\VerifyEngineSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+
+        // Berlaku untuk SEMUA respons — halaman, API, dan callback engine
+        // sekaligus. Dipasang global dan bukan per-grup karena header yang
+        // hilang di satu rute saja sudah cukup: satu halaman yang bisa
+        // di-iframe adalah satu halaman yang bisa dipakai clickjacking.
+        $middleware->append(HeaderKeamanan::class);
 
         $middleware->alias([
             'apikey' => AuthenticateApiKey::class,

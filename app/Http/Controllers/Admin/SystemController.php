@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\HeaderKeamanan;
 use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\Billing\QrisManual;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\KesehatanAntrean;
 use App\Support\Plan;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -31,10 +34,12 @@ class SystemController extends Controller
         private readonly QrisManual $qris,
     ) {}
 
-    public function __invoke(): View
+    public function __invoke(Request $request): View
     {
         return view('admin.system', [
             'engine' => $this->engine(),
+
+            'keamanan' => $this->keamanan($request),
 
             'notifikasi' => [
                 'siap' => $this->notifier->ready(),
@@ -79,6 +84,38 @@ class SystemController extends Controller
                 'zona_waktu' => config('app.timezone'),
             ],
         ]);
+    }
+
+    /**
+     * Empat hal yang membuat sambungan ke aplikasi ini aman — atau tidak.
+     *
+     * Ketiganya di luar `engine()` punya sifat yang sama dan itulah alasan
+     * mereka ada di halaman ini: tidak satu pun menghasilkan galat saat salah.
+     * Cookie yang bocor lewat http, halaman yang bisa dibingkai orang lain, dan
+     * halaman galat yang memamerkan kata sandi database semuanya tampak persis
+     * seperti aplikasi yang berjalan normal — sampai ada yang memanfaatkannya.
+     *
+     * `secure()` dibaca dari permintaan yang sedang berjalan, bukan dari
+     * `APP_URL`: yang menentukan aman-tidaknya adalah sambungan yang benar-benar
+     * dipakai admin saat ini, dan `APP_URL` boleh saja berbunyi https sementara
+     * halamannya dibuka lewat http.
+     *
+     * @return array<string, bool|string>
+     */
+    private function keamanan(Request $request): array
+    {
+        return [
+            // HTTPS dan cookie secure SENGAJA mati di lokal — dev berjalan di
+            // http://127.0.0.1:8070. Menandainya merah tiap hari di mesin
+            // pengembang melatih orang mengabaikan warna merah di halaman ini,
+            // dan halaman ini cuma berguna selama merahnya masih berarti.
+            'wajib_aman' => ! app()->environment(['local', 'testing']),
+            'https' => $request->secure(),
+            'cookie_secure' => (bool) config('session.secure'),
+            'sesi_terenkripsi' => (bool) config('session.encrypt'),
+            'debug_mati' => ! config('app.debug'),
+            'header' => app(Kernel::class)->hasMiddleware(HeaderKeamanan::class),
+        ];
     }
 
     /**

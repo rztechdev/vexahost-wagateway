@@ -104,11 +104,20 @@ kode:
 
 ## Definisi selesai
 
-- [ ] Header muncul di respons produksi, dan tidak ada satu pun halaman yang rusak
-- [ ] Login lokal (`http://127.0.0.1:8070`) tetap berfungsi
-- [ ] Halaman Sistem menampilkan empat pemeriksaan baru dengan akibatnya
-- [ ] `KeamananTest`: header ada saat HTTPS, HSTS **tidak** ada saat HTTP
-- [ ] Seluruh suite lulus di SQLite **dan** MySQL
+- [x] Header muncul di respons produksi, dan tidak ada satu pun halaman yang rusak
+- [x] Login lokal (`http://127.0.0.1:8070`) tetap berfungsi
+- [x] Halaman Sistem menampilkan empat pemeriksaan baru dengan akibatnya
+- [x] `KeamananTest`: header ada saat HTTPS, HSTS **tidak** ada saat HTTP
+- [x] Seluruh suite lulus di SQLite **dan** MySQL
+
+**Selesai.** `HeaderKeamanan` dipasang global di `bootstrap/app.php`;
+`SESSION_SECURE_COOKIE`/`SESSION_ENCRYPT` menyala di `.env.production` dan
+`.env.staging` saja. Rate limit login ternyata **sudah ada** (`throttle:login`,
+5/menit per email+IP di `AppServiceProvider`) — yang ditambahkan cuma tesnya.
+Pemeriksaan HTTPS & cookie di halaman Sistem sengaja hijau di `local`/`testing`:
+keduanya memang dimatikan di sana, dan merah tiap hari melatih orang
+mengabaikan merah. `trustProxies(at: '*')` **tidak** diubah — ia disebut di
+tabel temuan tapi tidak masuk ruang lingkup.
 
 ---
 
