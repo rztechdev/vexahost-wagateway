@@ -99,6 +99,11 @@ class DocsRepository
                     'title' => 'Batas & Kuota',
                     'summary' => 'Batas yang berlaku di workspace Anda dan apa yang terjadi saat tercapai.',
                 ],
+                'bantuan' => [
+                    'file' => 'BANTUAN.md',
+                    'title' => 'Bantuan & Tiket',
+                    'summary' => 'Menghubungi kami lewat tiket, dan apa yang terjadi sesudahnya.',
+                ],
                 'faq' => [
                     'file' => 'FAQ.md',
                     'title' => 'Tanya Jawab',

@@ -5,11 +5,11 @@
 @section('content')
 <div>
     {{-- Header Form --}}
-    <div class="mb-6">
+    <div class="mb-4 sm:mb-6">
         <h2 class="text-2xl sm:text-[1.7rem] font-bold tracking-tight text-foreground">
             Selamat Datang
         </h2>
-        <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground">
+        <p class="mt-1 sm:mt-1.5 text-xs sm:text-sm text-muted-foreground">
             Masuk ke dashboard akun Flustra WA Anda
         </p>
     </div>
@@ -117,7 +117,7 @@
     </form>
 
     {{-- Pemisah --}}
-    <div class="relative my-5">
+    <div class="relative my-3.5 sm:my-5">
         <div class="absolute inset-0 flex items-center">
             <div class="w-full border-t border-border"></div>
         </div>
@@ -141,7 +141,7 @@
     </div>
 
     {{-- Tautan Daftar Akun --}}
-    <p class="mt-5 text-center text-xs text-muted-foreground">
+    <p class="mt-3.5 sm:mt-5 text-center text-xs text-muted-foreground">
         Belum punya akun? 
         <a href="{{ route('register') }}" class="font-semibold text-primary hover:underline">
             Daftar di sini

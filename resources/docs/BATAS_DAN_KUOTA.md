@@ -46,6 +46,24 @@ Saat tercapai, membuat sesi baru ditolak:
 
 Hapus sesi yang tidak dipakai, atau naikkan paket.
 
+### Saldo (pay as you go)
+
+Kalau workspace Anda memakai pay as you go, yang membatasi pengiriman bukan kuota bulanan melainkan **saldo** — dan tidak ada tanggal berakhir sama sekali.
+
+Saat saldo tidak cukup, pengiriman ditolak:
+
+```json
+{ "success": false, "error": { "message": "Saldo tidak cukup untuk mengirim pesan. Isi saldo dari menu Saldo di dashboard." } }
+```
+
+Yang perlu diingat saat menangani ini di aplikasi Anda:
+
+- **Saldo dipotong saat pesan terkirim, bukan saat diantrekan.** Pesan yang gagal tidak memotong apa pun.
+- Pengiriman massal memeriksa saldo dua kali — saat mengantre dan tepat sebelum kirim — jadi sebagian pesan bisa terkirim sementara sisanya gagal kalau saldo habis di tengah jalan. Periksa status tiap pesan, jangan menganggap seluruh batch berhasil.
+- Kami mengabari Anda lewat WhatsApp saat saldo menipis, sebelum berhenti terjadi.
+
+Rincian tarif, sisa pesan, dan riwayat mutasi ada di menu **Saldo**. Lihat [Langganan & Tagihan](LANGGANAN_DAN_TAGIHAN.md).
+
 ### Kuota pesan bulanan
 
 Jumlah pesan **keluar** per bulan kalender. Pesan masuk tidak dihitung.
@@ -127,6 +145,8 @@ if ($response->status() === 429) {
 
 ## Menaikkan batas
 
-Hubungi kami lewat [helpdesk.flustra.id](https://helpdesk.flustra.id) untuk membahas paket yang sesuai dengan volume Anda.
+Kirim tiket dari menu **Bantuan** di dashboard untuk membahas paket yang sesuai dengan volume Anda — lihat [Bantuan & Tiket](BANTUAN.md).
+
+Kalau kebutuhan Anda melampaui paket Elite — lebih banyak nomor, kuota lebih besar, atau retensi lebih panjang — isi formulir **Enterprise** di halaman harga. Batas dan harganya disusun mengikuti kebutuhan Anda.
 
 Sebelum menaikkan, pastikan volume Anda memang wajar untuk jalur ini — baca [Praktik Baik](PRAKTIK_BAIK.md). Volume besar lewat nomor biasa punya risiko tersendiri yang tidak bisa diselesaikan hanya dengan menaikkan kuota.

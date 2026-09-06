@@ -159,7 +159,7 @@ Ya, kuota disetel ulang setiap awal bulan kalender dan tidak diakumulasi.
 
 ### Bagaimana menaikkan batas?
 
-Hubungi kami lewat [helpdesk.flustra.id](https://helpdesk.flustra.id).
+Kirim tiket dari menu **Bantuan** di dashboard — lihat [Bantuan & Tiket](BANTUAN.md). Bantuan tetap terbuka walau langganan Anda sedang tidak aktif.
 
 ---
 

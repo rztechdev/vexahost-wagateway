@@ -23,6 +23,69 @@ Membayar tahunan berarti membayar sepuluh bulan untuk dua belas — dua bulan gr
 
 **Langganan melekat pada workspace.** Kalau Anda memisahkan dua cabang menjadi dua workspace, masing-masing berlangganan sendiri. Biaya kami tumbuh per nomor WhatsApp, dan nomor melekat pada workspace.
 
+### Harga pembelian pertama
+
+Tagihan **pertama** setiap workspace mendapat harga perkenalan:
+
+| | Essentials | Prime | Elite |
+|---|---|---|---|
+| Bulan pertama | Rp 79.000 | Rp 129.000 | Rp 249.000 |
+| Tahun pertama | Rp 990.000 | Rp 1.690.000 | Rp 2.990.000 |
+
+Perpanjangan berikutnya kembali ke harga normal di tabel atas — angkanya tertulis apa adanya di halaman paket sebelum Anda membayar, jadi tidak ada kejutan di tagihan kedua.
+
+Berlaku sekali seumur workspace. Yang menentukan bukan tanggal daftar melainkan **apakah workspace itu pernah membayar**: masa coba gratis tidak menghabiskannya, dan tagihan yang terbit lalu dibatalkan sebelum dibayar juga tidak. Kalau Anda berubah pikiran soal paket sebelum membayar, harga perkenalannya masih utuh.
+
+Naik paket setelah pernah membayar tidak mengembalikan harga perkenalan.
+
+### Kode referal
+
+Punya kode dari mitra kami? Masukkan di kolom **Punya kode referal?** di halaman paket sebelum memilih. Potongannya terlihat langsung di kartu harga, sebelum tagihan terbit.
+
+Kode referal **bisa digabung** dengan harga pembelian pertama: harga perkenalan dipotong dulu, lalu kode referal memotong sisanya. Halaman tagihan menampilkan keduanya sebagai dua baris terpisah supaya Anda bisa memeriksanya.
+
+Aturannya:
+
+- Hanya untuk **tagihan pertama** workspace, sama seperti harga perkenalan.
+- Satu workspace hanya bisa memakai **satu** kode, sekali seumur hidup.
+- Anda tidak bisa memakai kode milik Anda sendiri.
+
+---
+
+## Pay as you go
+
+Kalau pengiriman Anda sedikit dan tidak tentu, tidak ada paket bulanan yang cocok — dan membayar bulanan untuk bulan yang Anda tidak mengirim apa pun tidak masuk akal.
+
+Pay as you go bekerja dengan **saldo yang diisi di depan**:
+
+1. Buka menu **Saldo** di dashboard, pilih jumlahnya (minimum Rp 50.000).
+2. Bayar lewat QRIS atau transfer, sama seperti tagihan langganan.
+3. Saldo bertambah setelah pembayaran Anda diperiksa.
+
+Yang perlu Anda tahu:
+
+- **Saldo tidak punya masa kedaluwarsa.** Tidak ada yang hangus di bulan yang Anda tidak mengirim apa pun.
+- **Hanya pesan yang benar-benar terkirim yang memotong saldo.** Pesan yang gagal — misalnya karena nomor tujuan tidak terdaftar di WhatsApp — tidak memotong apa pun.
+- **Tidak ada tanggal berakhir.** Yang membatasi pengiriman adalah saldo, bukan waktu.
+- Halaman Saldo menampilkan tarif per pesan, sisa pesan, dan **riwayat setiap mutasi** lengkap dengan sisa saldo sesudahnya.
+- Kami mengabari Anda lewat WhatsApp saat saldo menipis dan saat habis.
+
+Nominal yang Anda transfer akan sedikit berbeda dari jumlah yang dipilih — tiga digit terakhirnya kode unik, sama seperti tagihan langganan. Yang masuk sebagai saldo tetap jumlah yang Anda pilih.
+
+Kalau pengiriman Anda ternyata rutin tiap bulan, paket bulanan hampir selalu lebih murah. Bandingkan sendiri lewat riwayat mutasi Anda setelah sebulan pemakaian.
+
+---
+
+## Enterprise
+
+Butuh lebih banyak nomor, kuota di atas Elite, retensi riwayat lebih panjang, atau syarat khusus yang tidak muat di paket mana pun? Batas dan harganya kami susun mengikuti kebutuhan Anda.
+
+Isi formulir di bagian **Enterprise** pada halaman harga — nama, kontak, perkiraan jumlah nomor dan pesan per bulan, serta apa yang ingin Anda kerjakan. Tim kami menghubungi Anda dalam 1×24 jam pada hari kerja.
+
+Setelah kesepakatannya tersusun, tagihannya terbit lewat jalur yang sama dengan paket biasa: QRIS, unggah bukti, lalu batasnya berlaku begitu pembayarannya kami konfirmasi.
+
+Harga Enterprise sudah hasil kesepakatan, jadi harga perkenalan dan kode referal tidak berlaku di atasnya.
+
 ---
 
 ## Cara berlangganan

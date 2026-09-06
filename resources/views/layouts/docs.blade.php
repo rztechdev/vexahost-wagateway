@@ -423,7 +423,7 @@
                     <ul class="mt-4 space-y-2.5 text-xs sm:text-sm">
                         <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Tentang Kami</a></li>
                         <li><a href="https://about.flustra.id/#contact" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Hubungi Sales</a></li>
-                        <li><a href="https://helpdesk.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Pusat Bantuan</a></li>
+                        <li><a href="{{ route('docs.show', 'bantuan') }}" class="text-muted-foreground hover:text-foreground transition-colors">Pusat Bantuan</a></li>
                         <li><a href="mailto:flustrasupport@gmail.com" class="text-muted-foreground hover:text-foreground transition-colors break-all">flustrasupport@gmail.com</a></li>
                         <li><a href="https://wa.me/6282318280376" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">WhatsApp Helpdesk</a></li>
                         <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Kebijakan Privasi</a></li>
