@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\EnterpriseLead;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ use Illuminate\Http\Request;
  */
 class EnterpriseLeadController extends Controller
 {
-    public function store(Request $request, WhatsAppNotifier $notifier): RedirectResponse
+    public function store(Request $request, WhatsAppNotifier $notifier, EmailNotifier $email): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -50,25 +51,36 @@ class EnterpriseLeadController extends Controller
         ]);
 
         /*
-         | Tim dikabari lewat WhatsApp, bukan cuma lewat lencana di panel.
+         | Tim dikabari lewat WhatsApp DAN email.
          |
          | Permintaan penawaran adalah calon pelanggan terbesar yang pernah
          | mengetuk, dan yang menentukan ia jadi atau tidak hampir selalu
-         | seberapa cepat dijawab. Lencana di panel hanya terlihat oleh yang
-         | kebetulan sedang membukanya.
+         | seberapa cepat dijawab. WhatsApp saja berarti satu titik yang kalau
+         | mati — nomor Flustra terputus, dan itu memang terjadi saat deploy
+         | atau saat WhatsApp memutus perangkat tertaut — membuat seluruh kabar
+         | diam tanpa satu pun gejala.
          |
-         | Isi kebutuhannya sengaja TIDAK ikut: pelanggan sering menempelkan
-         | nama klien dan angka pendapatan di sana, dan WhatsApp diteruskan
-         | orang jauh lebih sering dari yang dikira.
+         | Isi kebutuhannya sengaja TIDAK ikut di keduanya: pelanggan sering
+         | menempelkan nama klien dan angka pendapatan di sana, dan keduanya
+         | diteruskan serta diarsipkan di tempat yang tidak kami kendalikan.
         */
+        $ringkas = $lead->name.($lead->company ? " · {$lead->company}" : '')."\n"
+            .$lead->email.' · '.$lead->phone."\n"
+            .($lead->estimated_sessions ? "Perkiraan nomor: {$lead->estimated_sessions}\n" : '')
+            .($lead->estimated_messages
+                ? 'Perkiraan pesan/bulan: '.number_format($lead->estimated_messages, 0, ',', '.')."\n"
+                : '');
+
         $notifier->toAdmin(
-            "*Permintaan Enterprise baru*\n\n"
-                ."{$lead->name}".($lead->company ? " · {$lead->company}" : '')."\n"
-                ."{$lead->email} · {$lead->phone}\n"
-                .($lead->estimated_sessions ? "Perkiraan nomor: {$lead->estimated_sessions}\n" : '')
-                .($lead->estimated_messages ? 'Perkiraan pesan/bulan: '.number_format($lead->estimated_messages, 0, ',', '.')."\n" : '')
-                ."\nBuka panel admin → Enterprise untuk menjawabnya.",
+            "*Permintaan Enterprise baru*\n\n".$ringkas."\nBuka panel admin → Enterprise untuk menjawabnya.",
             "enterprise-lead:{$lead->id}",
+        );
+
+        $email->kabarTim(
+            'Permintaan Enterprise baru — '.($lead->company ?: $lead->name),
+            $ringkas,
+            "enterprise-lead:{$lead->id}",
+            route('admin.enterprise.show', $lead->id),
         );
 
         return back()->with('swal', [

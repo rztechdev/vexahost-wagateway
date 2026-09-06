@@ -201,6 +201,14 @@
                        value="{{ old('phone') }}"
                        class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
             </div>
+            <div class="min-w-48">
+                <label for="nomor_email" class="mb-1 block text-sm font-medium">
+                    Email pemilik <span class="font-normal text-muted-foreground">(opsional)</span>
+                </label>
+                <input id="nomor_email" name="email" type="email" maxlength="180" placeholder="nama@flustra.id"
+                       value="{{ old('email') }}"
+                       class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+            </div>
             <div class="min-w-48 flex-1">
                 <label for="label" class="mb-1 block text-sm font-medium">Keterangan</label>
                 <input id="label" name="label" required maxlength="80" placeholder="mis. Nomor notifikasi Flustra"
@@ -212,10 +220,11 @@
             </button>
         </form>
 
-        <x-tabel :kepala="['Nomor' => '', 'Keterangan' => '', 'Ditambahkan' => '', 'Tindakan' => 'text-right']">
+        <x-tabel :kepala="['Nomor' => '', 'Email pemilik' => '', 'Keterangan' => '', 'Ditambahkan' => '', 'Tindakan' => 'text-right']">
             @forelse ($nomorIstimewa as $nomor)
                 <tr class="transition hover:bg-muted/40">
                     <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs sm:px-3">+{{ $nomor->phone }}</td>
+                    <td class="px-4 py-2.5 text-muted-foreground sm:px-3">{{ $nomor->email ?: '—' }}</td>
                     <td class="px-4 py-2.5 sm:px-3">
                         {{ $nomor->label }}
                         @if ($nomor->note)
@@ -235,7 +244,7 @@
                     </td>
                 </tr>
             @empty
-                <x-kosong :kolom="4" judul="Belum ada nomor istimewa"
+                <x-kosong :kolom="5" judul="Belum ada nomor istimewa"
                           pesan="Nomor yang didaftarkan di sini tidak memakan jatah nomor pelanggan mana pun." />
             @endforelse
         </x-tabel>
@@ -244,6 +253,64 @@
     {{-- ===================== Akun bebas ===================== --}}
     <x-section judul="Akun bebas berlangganan"
                sub="Seluruh workspace milik akun ini bebas dari penagihan, termasuk yang dibuat nanti. Ditandai per orang, bukan per workspace, supaya tidak ada yang perlu ingat menandainya lagi.">
+        {{-- Bebaskan lewat alamat email, termasuk yang belum pernah mendaftar.
+             Tanpa ini, membebaskan calon pelanggan berarti menunggu mereka
+             mendaftar lalu mengingat untuk kembali menandainya — dan yang lupa
+             ditandai akan tertagih seperti pelanggan biasa. --}}
+        <form method="POST" action="{{ route('admin.exemptions.email') }}"
+              class="mb-5 flex flex-wrap items-end gap-3 px-4 sm:px-0" data-validasi>
+            @csrf
+            <div class="min-w-56 flex-1">
+                <label for="bebas_email" class="mb-1 block text-sm font-medium">Bebaskan alamat email</label>
+                <input id="bebas_email" name="email" type="email" required maxlength="180"
+                       placeholder="nama@perusahaan.co.id" value="{{ old('email') }}"
+                       class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Belum punya akun? Pembebasannya menunggu dan berlaku otomatis begitu alamat itu mendaftar.
+                </p>
+            </div>
+            <div class="min-w-48 flex-1">
+                <label for="bebas_note" class="mb-1 block text-sm font-medium">
+                    Alasan <span class="font-normal text-muted-foreground">(opsional)</span>
+                </label>
+                <input id="bebas_note" name="note" maxlength="255" placeholder="mis. mitra strategis, akun internal"
+                       value="{{ old('note') }}"
+                       class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+            </div>
+            <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                Bebaskan
+            </button>
+        </form>
+
+        @error('email')
+            <p class="mb-4 px-4 text-sm text-destructive sm:px-0">{{ $message }}</p>
+        @enderror
+
+        @if ($pembebasanMenunggu->isNotEmpty())
+            <div class="mb-5 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Menunggu pemiliknya mendaftar
+                </p>
+                <ul class="mt-2 space-y-1.5 text-sm">
+                    @foreach ($pembebasanMenunggu as $menunggu)
+                        <li class="flex flex-wrap items-center justify-between gap-2">
+                            <span>
+                                {{ $menunggu->email }}
+                                @if ($menunggu->note)
+                                    <span class="text-xs text-muted-foreground">· {{ $menunggu->note }}</span>
+                                @endif
+                            </span>
+                            <form method="POST" action="{{ route('admin.exemptions.email.cancel', $menunggu->id) }}"
+                                  data-konfirmasi="Batalkan pembebasan untuk {{ $menunggu->email }}?">
+                                @csrf @method('DELETE')
+                                <button class="text-xs text-destructive hover:underline">Batalkan</button>
+                            </form>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <x-tabel :kepala="['Akun' => '', 'Workspace' => 'text-right', 'Tindakan' => 'text-right']">
             @forelse ($akunBebas as $akun)
                 <tr class="transition hover:bg-muted/40">

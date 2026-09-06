@@ -9,6 +9,7 @@ use App\Services\Billing\QrisManual;
 use App\Services\Billing\ReferralService;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\PhoneNumber;
 use App\Support\Plan;
@@ -26,6 +27,7 @@ class BillingController extends Controller
         private readonly QrisManual $qris,
         private readonly WhatsAppNotifier $notifier,
         private readonly ReferralService $referrals,
+        private readonly EmailNotifier $email,
     ) {}
 
     /**
@@ -312,6 +314,16 @@ class BillingController extends Controller
         $this->notifier->toAdmin(
             BillingMessages::adminProofWaiting($invoice),
             "admin-proof:{$invoice->id}",
+        );
+
+        // Email menyusul. WhatsApp saja berarti satu titik yang kalau mati
+        // membuat seluruh kabar ke tim diam tanpa gejala — dan tagihan hanya
+        // menjadi lunas kalau ada orang yang membukanya di panel.
+        $this->email->kabarTim(
+            'Bukti pembayaran baru — '.$invoice->number,
+            BillingMessages::adminProofWaiting($invoice),
+            "admin-proof:{$invoice->id}",
+            route('admin.invoices'),
         );
 
         /*

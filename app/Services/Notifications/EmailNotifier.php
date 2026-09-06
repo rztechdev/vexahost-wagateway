@@ -2,6 +2,7 @@
 
 namespace App\Services\Notifications;
 
+use App\Mail\KabarTim;
 use App\Mail\TesEmail;
 use App\Models\Workspace;
 use Illuminate\Mail\Mailable;
@@ -93,6 +94,23 @@ class EmailNotifier
         }
 
         return $this->send($alamat, $surat, $sekali, $ingatJam);
+    }
+
+    /**
+     * Kabar untuk tim, memakai teks yang sama dengan pemberitahuan WhatsApp.
+     *
+     * Ada supaya tiap pemanggil cukup menambah SATU baris di sebelah panggilan
+     * `WhatsAppNotifier::toAdmin()` yang sudah ada. Kalau ia menuntut menyusun
+     * mailable sendiri, sebagian pemanggil akan melewatkannya — dan jalur yang
+     * cuma separuh terpasang lebih buruk daripada yang tidak ada sama sekali,
+     * karena ia menciptakan harapan bahwa kabar selalu sampai lewat email.
+     *
+     * Penandanya berawalan sendiri di `send()`, jadi email yang berhasil tidak
+     * pernah membungkam pesan WhatsApp untuk peristiwa yang sama.
+     */
+    public function kabarTim(string $judul, string $isi, ?string $sekali = null, ?string $tautan = null): bool
+    {
+        return $this->toAdmin(new KabarTim($judul, $isi, $tautan), $sekali);
     }
 
     /** Mengirim ke alamat tim kami sendiri. */

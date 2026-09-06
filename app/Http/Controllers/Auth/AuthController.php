@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PendingExemption;
 use App\Models\ReferralCode;
 use App\Models\User;
 use App\Models\Workspace;
@@ -82,6 +83,10 @@ class AuthController extends Controller
             'workspace' => 'nama workspace',
         ]);
 
+        // Pembebasan yang menunggu diterapkan SEBELUM workspace dibuat: batas
+        // dan status langganan workspace baru ikut membaca `is_exempt` lewat
+        // `Workspace::isExempt()`, dan yang dibebaskan setelahnya sempat lahir
+        // sebagai pelanggan biasa lebih dulu.
         $user = User::create([
             'name' => $data['name'],
             'email' => mb_strtolower($data['email']),
@@ -103,6 +108,8 @@ class AuthController extends Controller
             'monthly_message_quota' => config('gateway.defaults.monthly_message_quota'),
             'api_rate_limit_per_minute' => config('gateway.defaults.api_rate_limit_per_minute'),
         ]);
+
+        PendingExemption::terapkanUntuk($user);
 
         $workspace->members()->attach($user->id, ['role' => 'owner']);
 

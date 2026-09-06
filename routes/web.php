@@ -231,6 +231,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('pengecualian/nomor', [AdminExemptionController::class, 'storeNumber'])->name('exemptions.numbers.store');
     Route::delete('pengecualian/nomor/{id}', [AdminExemptionController::class, 'destroyNumber'])->name('exemptions.numbers.destroy');
     Route::post('pengecualian/akun/{id}', [AdminExemptionController::class, 'toggleUser'])->name('exemptions.users.toggle');
+    Route::post('pengecualian/email', [AdminExemptionController::class, 'exemptEmail'])->name('exemptions.email');
+    Route::delete('pengecualian/email/{id}', [AdminExemptionController::class, 'cancelPendingExemption'])->name('exemptions.email.cancel');
     Route::post('pengecualian/pengirim', [AdminExemptionController::class, 'saveNotifier'])->name('exemptions.notifier');
     Route::post('pengecualian/pengirim/tes', [AdminExemptionController::class, 'testNotifier'])->name('exemptions.notifier.test');
     Route::post('pengecualian/email/tes', [AdminExemptionController::class, 'testEmail'])->name('exemptions.email.test');

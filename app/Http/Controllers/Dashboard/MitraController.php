@@ -9,6 +9,7 @@ use App\Models\PayoutRequest;
 use App\Models\ReferralCode;
 use App\Models\ReferralRedemption;
 use App\Services\Billing\InvoicePdfService;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class MitraController extends Controller
     public function __construct(
         private readonly WhatsAppNotifier $notifier,
         private readonly InvoicePdfService $pdfService,
+        private readonly EmailNotifier $email,
     ) {}
 
     /**
@@ -183,6 +185,15 @@ class MitraController extends Controller
             .'Buka panel admin untuk konfirmasi: '.route('admin.referrals');
         $this->notifier->toAdmin($pesanAdmin);
 
+        // Email menyusul: pendaftaran mitra yang tidak pernah dikonfirmasi
+        // adalah orang yang sudah menyerahkan data rekeningnya lalu didiamkan.
+        $this->email->kabarTim(
+            'Pendaftaran mitra baru — '.$user->name,
+            $pesanAdmin,
+            "mitra-daftar:{$kode->id}",
+            route('admin.referrals'),
+        );
+
         return redirect()->route('mitra.index')->with('swal', [
             'tipe' => 'success',
             'judul' => 'Permohonan Berhasil Dikirim',
@@ -285,6 +296,16 @@ class MitraController extends Controller
             .'Buka invoice online: '.route('admin.referrals.payout.invoice', $payout->id)."\n"
             .'Konfirmasi di panel admin: '.route('admin.referrals');
         $this->notifier->toAdmin($pesanWaAdmin, media: $pdfMedia);
+
+        // Email menyusul, tanpa lampiran PDF-nya: yang perlu sampai adalah
+        // kabar bahwa ada pencairan menunggu, dan invoice-nya selalu bisa
+        // dibuka lagi dari panel.
+        $this->email->kabarTim(
+            'Pengajuan pencairan komisi — '.$user->name,
+            $pesanWaAdmin,
+            "mitra-cair:{$payout->id}",
+            route('admin.referrals'),
+        );
 
         // 2. Notifikasi WhatsApp ke User / Mitra (disertai dokumen invoice PDF)
         $targetWaUser = $referralCode->whatsapp_number ?: $user->phone;

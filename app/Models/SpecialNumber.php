@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class SpecialNumber extends Model
 {
-    protected $fillable = ['phone', 'label', 'note', 'created_by'];
+    protected $fillable = ['phone', 'email', 'label', 'note', 'created_by'];
 
     /**
      * Daftar nomor dalam bentuk ternormalisasi.

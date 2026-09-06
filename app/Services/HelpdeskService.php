@@ -73,6 +73,13 @@ class HelpdeskService
             "ticket-new:{$ticket->id}",
         );
 
+        $this->email->kabarTim(
+            "Tiket baru #{$ticket->id} — {$ticket->subject}",
+            HelpdeskMessages::tiketBaruUntukAdmin($ticket),
+            "ticket-new:{$ticket->id}",
+            route('admin.tickets.show', $ticket->id),
+        );
+
         return $ticket;
     }
 
@@ -102,6 +109,13 @@ class HelpdeskService
         $this->notifier->toAdmin(
             HelpdeskMessages::balasanUntukAdmin($ticket),
             "ticket-reply:{$pesan->id}",
+        );
+
+        $this->email->kabarTim(
+            "Balasan baru di tiket #{$ticket->id}",
+            HelpdeskMessages::balasanUntukAdmin($ticket),
+            "ticket-reply:{$pesan->id}",
+            route('admin.tickets.show', $ticket->id),
         );
 
         return $pesan;

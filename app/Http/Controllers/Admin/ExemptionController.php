@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\AuditLog;
+use App\Models\PendingExemption;
 use App\Models\SpecialNumber;
 use App\Models\User;
 use App\Models\WaSession;
@@ -47,6 +48,11 @@ class ExemptionController extends Controller
 
             'workspaceBebas' => Workspace::where('is_internal', true)->orderBy('name')->get(),
 
+            'pembebasanMenunggu' => PendingExemption::with('pembuat')
+                ->whereNull('claimed_at')
+                ->orderBy('email')
+                ->get(),
+
             // Hanya workspace yang punya sesi tersambung yang layak jadi
             // pengirim — menawarkan yang lain berarti menawarkan pilihan yang
             // pasti gagal.
@@ -74,6 +80,9 @@ class ExemptionController extends Controller
     {
         $data = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
+            // Kontak pemilik nomor perusahaan. Nomor yang bermasalah tanpa
+            // orang yang bisa dihubungi berarti menebak siapa pemegangnya.
+            'email' => ['nullable', 'email', 'max:180'],
             'label' => ['required', 'string', 'max:80'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -90,6 +99,7 @@ class ExemptionController extends Controller
 
         $baris = SpecialNumber::create([
             'phone' => $nomor,
+            'email' => $data['email'] ?? null,
             'label' => $data['label'],
             'note' => $data['note'] ?? null,
             'created_by' => $request->user()->id,
@@ -123,6 +133,73 @@ class ExemptionController extends Controller
             'judul' => 'Nomor dikeluarkan dari daftar',
             'pesan' => 'Mulai sekarang nomor itu menghitung kuota sesi seperti nomor pelanggan biasa.',
         ]);
+    }
+
+    /**
+     * Membebaskan sebuah ALAMAT EMAIL, termasuk yang belum pernah mendaftar.
+     *
+     * Tanpa ini, membebaskan calon pelanggan berarti menunggu mereka mendaftar
+     * lebih dulu lalu mengingat untuk kembali menandainya — dan yang lupa
+     * ditandai akan tertagih seperti pelanggan biasa, lalu mengeluh tentang
+     * janji yang sudah diberikan seseorang.
+     */
+    public function exemptEmail(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:180'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $email = PendingExemption::normalkan($data['email']);
+
+        // Sudah punya akun? Bebaskan langsung — tidak ada gunanya menunggu
+        // sesuatu yang sudah terjadi.
+        if ($user = User::where('email', $email)->first()) {
+            $user->forceFill(['is_exempt' => true])->save();
+
+            AuditLog::record('exemption.user.granted', $user, [
+                'email' => $user->email,
+                'lewat' => 'email',
+            ]);
+
+            return back()->with('swal', [
+                'tipe' => 'success',
+                'judul' => 'Akun dibebaskan',
+                'pesan' => 'Akun '.$user->email.' sudah terdaftar, jadi pembebasannya berlaku sekarang juga — '
+                    .'termasuk untuk workspace yang dibuatnya nanti.',
+            ]);
+        }
+
+        $baris = PendingExemption::firstOrCreate(
+            ['email' => $email],
+            ['note' => $data['note'] ?? null, 'created_by' => $request->user()->id],
+        );
+
+        AuditLog::record('exemption.email.pending', $baris, ['email' => $email]);
+
+        return back()->with('swal', [
+            'tipe' => 'success',
+            'judul' => 'Pembebasan menunggu',
+            'pesan' => $email.' belum punya akun. Pembebasannya berlaku otomatis '
+                .'begitu alamat itu mendaftar — tidak perlu diingat lagi.',
+        ]);
+    }
+
+    /** Membatalkan pembebasan yang belum sempat dipakai. */
+    public function cancelPendingExemption(Request $request, int $id): RedirectResponse
+    {
+        $baris = PendingExemption::findOrFail($id);
+
+        if ($baris->sudahDipakai()) {
+            return back()->withErrors([
+                'email' => 'Pembebasan ini sudah dipakai. Cabut lewat daftar akun bebas di bawah.',
+            ]);
+        }
+
+        AuditLog::record('exemption.email.canceled', $baris, ['email' => $baris->email]);
+        $baris->delete();
+
+        return back()->with('status', 'Pembebasan yang menunggu dibatalkan.');
     }
 
     public function toggleUser(Request $request, int $id): RedirectResponse
