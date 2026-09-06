@@ -24,8 +24,17 @@ bukan mekanisme.
 | 5 | **Pay as you go** (§2) | Paling berisiko: ia menambah **cara ketiga** kuota ditegakkan (setelah kuota bulanan dan jatah coba gratis). Dikerjakan setelah referal supaya diskon referal sudah ada saat saldo pertama dijual. |
 | 6 | **Helpdesk** (§5) | Paling besar, dan satu-satunya yang bisa ditunda tanpa merugikan pelanggan yang sudah membayar. |
 
-**Jangan mengerjakan dua fitur sekaligus.** Tiap fitur menyentuh `SubscriptionService`,
-`MessageDispatcher`, atau panel admin — tiga tempat yang paling mudah rusak diam-diam.
+**"Satu per satu" berarti berurutan, bukan ganti sesi tiap fitur.** Kerjakan
+keenamnya dalam satu rangkaian kalau memungkinkan — yang dilarang adalah
+**mencampur dua fitur dalam satu perubahan**. Tiap fitur menyentuh
+`SubscriptionService`, `MessageDispatcher`, atau panel admin; dua perubahan besar
+yang bertabrakan di berkas yang sama menghasilkan kegagalan yang tidak bisa
+ditelusuri ke salah satunya.
+
+Aturannya: **selesai → buktikan → commit → baru pindah.** "Selesai" berarti
+seluruh kotak di "Definisi selesai" fitur itu terpenuhi dan **dibuktikan dengan
+menjalankannya**, bukan diklaim. Satu commit per fitur, supaya kalau ada yang
+harus dibatalkan, yang batal cuma satu fitur.
 
 ---
 

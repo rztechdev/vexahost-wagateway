@@ -5,7 +5,8 @@ Gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra, dirancang agar b
 > **Sedang berjalan: enam penambahan menuju enterprise.** Rencananya lengkap di
 > [PRD.md](PRD.md) — reseller & referal, pay as you go, keamanan, webhook per
 > API key, helpdesk, dan email Brevo. **Dikerjakan satu per satu** dalam urutan
-> yang ditentukan di PRD §0, bukan sekaligus: keenamnya menyentuh
+> yang ditentukan di PRD §0 — berurutan dalam satu rangkaian, bukan dicampur:
+> keenamnya menyentuh
 > `SubscriptionService`, `MessageDispatcher`, atau panel admin — tiga tempat yang
 > paling mudah rusak diam-diam. Keputusan produk yang sudah diambil Ryan ada di
 > tabel "Keputusan yang SUDAH diambil" di PRD; **jangan ditanya ulang, dan jangan
