@@ -152,6 +152,60 @@ class BillingMessages
     }
 
     /**
+     * Saldo pay as you go menipis.
+     *
+     * Menyebut sisa pesan, bukan cuma rupiah: yang perlu diputuskan pembacanya
+     * adalah "apakah ini cukup sampai saya sempat isi ulang", dan itu
+     * pertanyaan tentang jumlah pesan, bukan tentang angka rupiah.
+     */
+    public static function balanceLow(Workspace $workspace, int $saldo, int $sisaPesan): string
+    {
+        return '*Saldo hampir habis*
+
+'
+            ."Workspace *{$workspace->name}* menyisakan ".self::rupiah($saldo)
+            .' — cukup untuk sekitar *'.number_format($sisaPesan, 0, ',', '.').' pesan lagi*.
+
+'
+            .'Isi saldo dari menu Saldo di dashboard sebelum pengiriman berhenti. '
+            .'Minimum isi saldo '.self::rupiah((int) config('billing.payg.min_topup')).'.';
+    }
+
+    /** Saldo benar-benar habis. */
+    public static function balanceExhausted(Workspace $workspace): string
+    {
+        return '*Saldo habis* ⚠️
+
+'
+            ."Pengiriman pesan dari workspace *{$workspace->name}* berhenti karena saldonya habis.
+
+"
+            .'Nomor Anda *tetap tertaut* dan pesan masuk tetap diterima — yang berhenti hanya '
+            .'pengiriman keluar.
+
+'
+            .'Isi saldo dari menu Saldo di dashboard untuk melanjutkan.';
+    }
+
+    /** Saldo bertambah setelah tagihan isi saldo lunas. */
+    public static function balanceToppedUp(Workspace $workspace, int $jumlah, int $saldoBaru): string
+    {
+        $harga = (int) config('billing.payg.price_per_message');
+
+        return '*Saldo bertambah* ✅
+
+'
+            .self::rupiah($jumlah)." masuk ke workspace *{$workspace->name}*.
+
+"
+            .'Saldo sekarang: *'.self::rupiah($saldoBaru).'*'
+            .($harga > 0 ? ' — sekitar '.number_format(intdiv($saldoBaru, $harga), 0, ',', '.').' pesan.' : '.')
+            .'
+
+Pengiriman bisa dilanjutkan sekarang.';
+    }
+
+    /**
      * Ke tim kami sendiri: ada bukti pembayaran yang menunggu diperiksa.
      *
      * Selama pencocokan masih manual, tagihan hanya menjadi lunas kalau ada

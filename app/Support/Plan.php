@@ -79,8 +79,19 @@ class Plan
                 fn (string $slug) => self::get($slug),
                 array_keys(config('plans.catalog'))
             ),
-            fn (self $plan) => $plan->isSellable()
+            // PAYG ikut dikecualikan meski `sellable`. Ia memang bisa dibeli,
+            // tapi bentuk harganya berbeda — per pesan, bukan per bulan — dan
+            // seluruh pemanggil `all()` (halaman harga, dropdown admin, tabel
+            // paket di /admin/sistem) merender harga bulanan. Memaksanya masuk
+            // cetakan itu menghasilkan kartu bertuliskan "Rp 0/bulan".
+            fn (self $plan) => $plan->isSellable() && ! $plan->isPayg()
         ));
+    }
+
+    /** Paket pay as you go, yang bentuk harganya berbeda dari yang lain. */
+    public static function payg(): self
+    {
+        return self::get('payg');
     }
 
     /** Paket coba gratis untuk workspace baru. */
@@ -97,6 +108,18 @@ class Plan
     public function isFree(): bool
     {
         return $this->slug === config('plans.free');
+    }
+
+    /**
+     * Harga paket ini per pesan, bukan per bulan.
+     *
+     * Yang membatasi pengiriman workspace PAYG adalah saldonya, bukan kuota
+     * bulanan maupun tanggal berakhir — jadi seluruh kode yang membaca
+     * `current_period_end` harus tahan `null` untuk workspace seperti ini.
+     */
+    public function isPayg(): bool
+    {
+        return (bool) ($this->attributes['payg'] ?? false);
     }
 
     public function name(): string

@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Dashboard\ApiKeyController;
+use App\Http\Controllers\Dashboard\BalanceController;
 use App\Http\Controllers\Dashboard\BillingController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\MessageController;
@@ -76,6 +77,13 @@ Route::middleware('auth')->group(function (): void {
         | pengingat WhatsApp menuju halaman bayar — tanpa berharap pengguna
         | menggulir ke bagian yang benar.
         */
+        /*
+        | Saldo pay as you go. Isi saldo lewat jalur tagihan yang sudah ada —
+        | tidak ada alur pembayaran kedua di produk ini.
+        */
+        Route::get('saldo', [BalanceController::class, 'index'])->name('balance.index');
+        Route::post('saldo/isi', [BalanceController::class, 'topUp'])->name('balance.topup');
+
         Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
         Route::get('billing/paket', [BillingController::class, 'plans'])->name('billing.plans');
         Route::get('billing/riwayat', [BillingController::class, 'history'])->name('billing.history');

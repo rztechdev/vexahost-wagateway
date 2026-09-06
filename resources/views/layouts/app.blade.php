@@ -50,6 +50,13 @@
         ],
         'Akun' => [
             ['rute' => 'billing.index', 'label' => 'Langganan', 'cocok' => ['billing.*'], 'ikon' => 'M2 7h20v12H2zM2 11h20M6 15h4'],
+            // Hanya untuk workspace PAYG. Menampilkannya ke pelanggan
+            // berlangganan berarti menu yang isinya selalu nol dan tidak
+            // pernah bisa dipakai — dan menu mati mengajari orang mengabaikan
+            // menu.
+            ...(($currentWorkspace ?? null)?->isPayg() ? [
+                ['rute' => 'balance.index', 'label' => 'Saldo', 'cocok' => ['balance.*'], 'ikon' => 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
+            ] : []),
             ['rute' => 'settings', 'label' => 'Pengaturan', 'cocok' => ['settings', 'settings.*'], 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'],
         ],
     ];

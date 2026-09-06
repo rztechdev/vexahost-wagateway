@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Message;
+use App\Services\Billing\BalanceService;
 use App\Services\MessageDispatcher;
 use App\Services\Providers\ProviderException;
 use App\Services\Providers\ProviderManager;
@@ -76,6 +77,26 @@ class SendMessageJob implements ShouldQueue
             return;
         }
 
+        /*
+         | Saldo diperiksa lagi di sini, bukan cuma saat diantrekan.
+         |
+         | Alasannya sama dengan pemeriksaan status di atas: antara antre dan
+         | kirim bisa lewat berjam-jam. Bedanya, di sini yang berubah bukan
+         | tanggal melainkan saldo — dan yang menghabiskannya bisa jadi pesan
+         | lain dari workspace yang sama yang kebetulan terkirim lebih dulu.
+         |
+         | Ditandai gagal, bukan dilepas untuk diulang: saldo tidak akan terisi
+         | dalam tiga kali backoff, dan pesan yang menggantung berhari-hari lalu
+         | tiba-tiba terkirim saat pelanggan mengisi saldo jauh lebih buruk
+         | daripada pesan yang jelas-jelas gagal.
+        */
+        if ($workspace && $workspace->isPayg() && ! $workspace->isExempt()
+            && (int) $workspace->balance < (int) config('billing.payg.price_per_message')) {
+            $this->fail($message, 'Saldo habis sebelum pesan ini sempat terkirim.', $dispatcher, $webhooks);
+
+            return;
+        }
+
         $message->update(['status' => 'sending', 'attempts' => $message->attempts + 1]);
 
         try {
@@ -117,6 +138,29 @@ class SendMessageJob implements ShouldQueue
             'sent_at' => now(),
             'error' => null,
         ]);
+
+        /*
+         | Saldo dipotong SETELAH pesannya benar-benar terkirim, bukan saat
+         | diantrekan. Pesan yang gagal karena nomornya tidak terdaftar tidak
+         | boleh memotong saldo pelanggan.
+         |
+         | Kegagalan pemotongan tidak boleh menjatuhkan job ini: pesannya sudah
+         | terkirim dan tidak bisa ditarik kembali, jadi melempar galat di sini
+         | cuma membuat job diulang dan penerima menerima pesan yang sama dua
+         | kali. Yang benar adalah mencatatnya keras-keras — selisih saldo
+         | terbaca di `rekonsiliasi()` dan muncul di halaman Sistem.
+        */
+        if ($workspace && $workspace->isPayg() && ! $workspace->isExempt()) {
+            try {
+                app(BalanceService::class)->chargeMessage($workspace, $message);
+            } catch (\Throwable $e) {
+                Log::error('Gagal memotong saldo untuk pesan yang sudah terkirim.', [
+                    'message_id' => $message->id,
+                    'workspace_id' => $workspace->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         // API key dibaca dari BARIS PESAN, bukan dari request: di dalam job
         // tidak ada request sama sekali, dan pesan ini bisa saja diantrekan

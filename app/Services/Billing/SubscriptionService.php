@@ -40,6 +40,7 @@ class SubscriptionService
         private readonly WhatsAppNotifier $notifier,
         private readonly EmailNotifier $email,
         private readonly ReferralService $referrals,
+        private readonly BalanceService $balances,
     ) {}
 
     /**
@@ -250,6 +251,111 @@ class SubscriptionService
     }
 
     /**
+     * Menerbitkan tagihan isi saldo.
+     *
+     * Sengaja memakai JALUR TAGIHAN YANG SUDAH ADA — QRIS, unggah bukti, admin
+     * menandai lunas — bukan alur pembayaran kedua. Alur pembayaran kedua
+     * berarti dua tempat yang harus dijaga tetap benar, dua tempat yang bisa
+     * kehilangan uang pelanggan, dan dua tempat yang harus dipahami admin yang
+     * sedang memverifikasi.
+     *
+     * Yang membedakannya dari tagihan langganan cuma `plan_slug = 'payg'`, dan
+     * itulah yang dibaca `Invoice::isTopup()` saat `markPaid()` bercabang.
+     *
+     * Jumlahnya bebas di atas minimum, jadi TIDAK ada pemeriksaan tagihan
+     * pending yang sama seperti di `issueInvoice()`: pelanggan boleh saja
+     * mengisi saldo dua kali berturut-turut, dan dua tagihan topup yang sama
+     * nominalnya tetap dibedakan kode uniknya.
+     */
+    public function issueTopupInvoice(Workspace $workspace, int $jumlah): Invoice
+    {
+        $minimum = (int) config('billing.payg.min_topup');
+
+        if ($jumlah < $minimum) {
+            throw new RuntimeException('Minimum isi saldo Rp '.number_format($minimum, 0, ',', '.').'.');
+        }
+
+        $subscription = $this->ensureFor($workspace);
+        $tax = (int) round($jumlah * config('billing.tax_percent') / 100);
+
+        $invoice = DB::transaction(function () use ($workspace, $subscription, $jumlah, $tax) {
+            $code = $this->allocateUniqueCode($jumlah + $tax);
+
+            $invoice = Invoice::create([
+                'number' => 'INV-WA-'.Str::ulid(),
+                'external_id' => (string) Str::ulid(),
+                'workspace_id' => $workspace->id,
+                'subscription_id' => $subscription->id,
+                'plan_slug' => 'payg',
+                'period' => 'monthly',
+                // `amount` adalah saldo yang akan diterima pelanggan. Kode unik
+                // dan pajak menempel di `total`, TIDAK ikut jadi saldo — kalau
+                // ikut, saldo bertambah sebesar angka yang tidak pernah
+                // dijanjikan ke siapa pun dan buku besarnya tidak bisa
+                // dijelaskan.
+                'amount' => $jumlah,
+                'tax_amount' => $tax,
+                'discount_amount' => 0,
+                'unique_code' => $code,
+                'total' => $jumlah + $tax + $code,
+                'status' => 'pending',
+                'channel' => 'qris_manual',
+                'due_at' => now()->addDays(config('billing.invoice_due_days')),
+            ]);
+
+            $invoice->forceFill([
+                'number' => 'INV-WA-'.str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT),
+            ])->save();
+
+            AuditLog::record('invoice.issued', $invoice, [
+                'jenis' => 'topup',
+                'saldo' => $jumlah,
+                'total' => $invoice->total,
+            ], $workspace->id);
+
+            return $invoice;
+        });
+
+        $this->email->toWorkspace($workspace, new TagihanTerbit($invoice), "invoice-issued:{$invoice->id}");
+
+        return $invoice;
+    }
+
+    /**
+     * Memindahkan workspace ke pay as you go.
+     *
+     * `service_until` dan `current_period_end` dikosongkan: yang membatasi
+     * workspace PAYG adalah saldonya, bukan tanggal. Seluruh kode yang membaca
+     * kedua kolom itu sudah tahan `null` — keadaan yang sama sudah berlaku
+     * untuk paket coba gratis.
+     */
+    public function switchToPayg(Workspace $workspace): void
+    {
+        $subscription = $this->ensureFor($workspace);
+
+        DB::transaction(function () use ($workspace, $subscription) {
+            $subscription->forceFill([
+                'plan_slug' => 'payg',
+                'status' => 'active',
+                'current_period_start' => now(),
+                'current_period_end' => null,
+                'past_due_at' => null,
+                'suspended_at' => null,
+                'canceled_at' => null,
+            ])->save();
+
+            $workspace->forceFill([
+                'plan_slug' => 'payg',
+                'billing_mode' => 'payg',
+                'status' => 'active',
+                'service_until' => null,
+            ] + Plan::get('payg')->limits())->save();
+        });
+
+        AuditLog::record('subscription.payg', $subscription, [], $workspace->id);
+    }
+
+    /**
      * Menandai tagihan lunas dan memperpanjang langganan.
      *
      * `$admin` adalah orang yang menyetujui pembayaran. Selama pembayaran masih
@@ -272,6 +378,45 @@ class SubscriptionService
             ])->save();
 
             $workspace = $invoice->workspace;
+
+            /*
+             | Percabangan paling berisiko di seluruh penagihan.
+             |
+             | Satu kesalahan di sini berarti pelanggan membayar dan tidak
+             | menerima apa pun: tagihan isi saldo yang salah diperlakukan
+             | sebagai langganan memperpanjang periode yang tidak pernah ada
+             | dan TIDAK menambah saldo — uangnya masuk, saldonya nol, dan
+             | tidak ada satu pun tempat yang menunjukkannya.
+             |
+             | Karena itu percabangannya dibaca dari `plan_slug` tagihan, bukan
+             | dari keadaan workspace saat ini: keadaan workspace bisa berubah
+             | antara tagihan terbit dan dibayar, sementara tagihan yang sudah
+             | terbit adalah janji yang tidak boleh berubah artinya.
+            */
+            if ($invoice->isTopup()) {
+                // Membayar tagihan topup itulah yang memindahkan workspace ke
+                // PAYG — sama seperti paket berpindah saat tagihannya lunas,
+                // bukan saat dipilih. Aman dipanggil pada workspace yang sudah
+                // PAYG: ia menulis ulang nilai yang sama.
+                if (! $workspace->isPayg()) {
+                    $this->switchToPayg($workspace);
+                    $workspace->refresh();
+                }
+
+                $this->balances->topUp($workspace, $invoice->amount, $invoice, $admin);
+
+                $this->referrals->setujui($invoice);
+
+                AuditLog::record('invoice.paid', $invoice, [
+                    'jenis' => 'topup',
+                    'total' => $invoice->total,
+                    'saldo' => $workspace->fresh()->balance,
+                    'oleh' => $admin?->email,
+                ], $workspace->id);
+
+                return $invoice->refresh();
+            }
+
             $subscription = $invoice->subscription ?? $this->ensureFor($workspace);
 
             /*
@@ -321,6 +466,23 @@ class SubscriptionService
 
             return $invoice->refresh();
         });
+
+        // Pemberitahuan saldo, di luar transaksi dengan alasan yang sama seperti
+        // notifikasi lain: pesan yang gagal tidak boleh menggulung balik
+        // pembayaran yang uangnya sudah benar-benar masuk.
+        if ($invoice->isTopup()) {
+            $this->notifier->toWorkspace(
+                $invoice->workspace,
+                BillingMessages::balanceToppedUp(
+                    $invoice->workspace,
+                    $invoice->amount,
+                    (int) $invoice->workspace->fresh()->balance,
+                ),
+                "topup:{$invoice->id}",
+            );
+
+            return $invoice;
+        }
 
         /*
          | Dikirim di luar transaksi, dengan sengaja.

@@ -113,6 +113,21 @@
                     .'kata sandi database, secret HMAC engine, dan kredensial Google sekaligus.',
             ],
             [
+                'nama' => 'Saldo cocok dengan buku besar',
+                'baik' => $saldo->isEmpty(),
+                'kabar' => $saldo->isEmpty()
+                    ? 'Seluruh workspace pay as you go cocok.'
+                    : $saldo->count().' workspace tidak cocok: '
+                        .$saldo->map(fn ($w) => $w->name.' (saldo '.number_format($w->balance, 0, ',', '.')
+                            .', buku besar '.number_format($w->buku_besar, 0, ',', '.').')')->join('; '),
+                'akibat' => 'Saldo yang tidak bisa direkonsiliasi adalah uang pelanggan yang tidak bisa '
+                    .'dipertanggungjawabkan. Selisihnya tidak menghasilkan galat apa pun — yang '
+                    .'menemukannya akan jadi pelanggan yang merasa saldonya berkurang sendiri, dan '
+                    .'saat itu tidak ada cara tahu sejak kapan atau berapa. Periksa '
+                    .'balance_transactions workspace itu; tiap baris menyimpan sisa saldo '
+                    .'sesudahnya, jadi tempat rantainya putus bisa ditelusuri.',
+            ],
+            [
                 'nama' => 'Job gagal',
                 'baik' => $antrean['gagal'] === 0,
                 'kabar' => $antrean['gagal'] === 0

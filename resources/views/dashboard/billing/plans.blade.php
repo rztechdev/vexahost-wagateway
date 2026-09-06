@@ -169,6 +169,57 @@
             @endforeach
         </div>
 
+        {{-- ===================== Pay as you go =====================
+
+             Sengaja DI LUAR grid tiga kartu dan dengan bentuk yang berbeda.
+             Harganya per pesan, bukan per bulan; memaksanya masuk cetakan
+             kartu bulanan menghasilkan kartu bertuliskan "Rp 0/bulan" — dan
+             sakelar bulanan/tahunan di atas tidak berarti apa-apa untuknya.
+             ======================================================== --}}
+        @php $payg = \App\Support\Plan::payg(); @endphp
+
+        <div class="mt-4 rounded-xl border border-border bg-muted/30 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="font-semibold">{{ $payg->name() }}</p>
+                    <p class="mt-0.5 text-sm text-muted-foreground">{{ $payg->tagline() }}</p>
+                </div>
+
+                <p class="flex items-baseline gap-1.5">
+                    <span class="text-3xl font-semibold tracking-tight">
+                        Rp {{ number_format(config('billing.payg.price_per_message'), 0, ',', '.') }}
+                    </span>
+                    <span class="text-sm text-muted-foreground">/pesan terkirim</span>
+                </p>
+            </div>
+
+            <ul class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($payg->features() as $fitur)
+                    <li class="flex gap-2.5">
+                        <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                        <span class="text-muted-foreground">{{ $fitur }}</span>
+                    </li>
+                @endforeach
+            </ul>
+
+            @if ($bolehBayar)
+                <a href="{{ route('balance.index') }}"
+                   class="mt-5 inline-block rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition hover:bg-muted">
+                    {{ ($currentWorkspace ?? null)?->isPayg() ? 'Buka halaman Saldo' : 'Mulai dengan isi saldo' }}
+                </a>
+            @endif
+
+            {{-- Titik impasnya disebut apa adanya. Menyembunyikannya berarti
+                 menjual PAYG ke orang yang seharusnya ambil paket, lalu
+                 kehilangan mereka saat tagihannya ternyata lebih mahal. --}}
+            <p class="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+                Cocok kalau pengiriman Anda sedikit dan tidak tentu. Di atas sekitar
+                <strong>745 pesan per bulan</strong>, paket Essentials selalu lebih murah —
+                saldo tidak punya masa berlaku, tapi paket memberi jauh lebih banyak pesan
+                untuk uang yang sama.
+            </p>
+        </div>
+
         {{-- Yang paling sering ditanyakan tepat sebelum orang menekan tombol
              bayar. Menjawabnya di sini, bukan di halaman docs terpisah. --}}
         <div class="mt-10 grid gap-x-12 gap-y-5 border-t border-border pt-6 text-sm sm:grid-cols-2">

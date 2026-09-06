@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\HeaderKeamanan;
 use App\Models\Message;
 use App\Models\WaSession;
+use App\Services\Billing\BalanceService;
 use App\Services\Billing\QrisManual;
 use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
@@ -34,6 +35,7 @@ class SystemController extends Controller
         private readonly WhatsAppNotifier $notifier,
         private readonly EmailNotifier $email,
         private readonly QrisManual $qris,
+        private readonly BalanceService $balances,
     ) {}
 
     public function __invoke(Request $request): View
@@ -42,6 +44,12 @@ class SystemController extends Controller
             'engine' => $this->engine(),
 
             'keamanan' => $this->keamanan($request),
+
+            // Saldo yang tidak cocok dengan buku besarnya adalah uang pelanggan
+            // yang tidak bisa dipertanggungjawabkan — dan ia tidak menghasilkan
+            // galat apa pun. Satu-satunya cara menyadarinya adalah melihatnya
+            // tertulis di sini.
+            'saldo' => $this->balances->workspaceTidakCocok(),
 
             'email' => [
                 'siap' => $this->email->ready(),

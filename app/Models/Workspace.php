@@ -26,6 +26,8 @@ class Workspace extends Model
         'status',
         'service_until',
         'plan_slug',
+        'billing_mode',
+        'balance',
         'max_sessions',
         'monthly_message_quota',
         'api_rate_limit_per_minute',
@@ -35,6 +37,7 @@ class Workspace extends Model
     protected function casts(): array
     {
         return [
+            'balance' => 'integer',
             'is_internal' => 'boolean',
             'service_until' => 'datetime',
             'max_sessions' => 'integer',
@@ -157,6 +160,32 @@ class Workspace extends Model
     public function isFreeTier(): bool
     {
         return $this->plan_slug === config('plans.free');
+    }
+
+    /**
+     * Workspace ini membayar per pesan, bukan per bulan.
+     *
+     * Yang membatasinya saldo, bukan kuota dan bukan tanggal — jadi
+     * `current_period_end` dan `service_until` keduanya `null`, dan seluruh
+     * kode yang membaca tanggal itu harus tahan `null`. Paket coba gratis
+     * sudah punya masalah yang sama dan sudah diperbaiki; polanya sama.
+     */
+    public function isPayg(): bool
+    {
+        return $this->billing_mode === 'payg';
+    }
+
+    /** Berapa pesan lagi yang bisa dikirim dengan saldo yang tersisa. */
+    public function sisaPesanPayg(): int
+    {
+        $harga = (int) config('billing.payg.price_per_message');
+
+        return $harga > 0 ? max(0, intdiv((int) $this->balance, $harga)) : 0;
+    }
+
+    public function balanceTransactions(): HasMany
+    {
+        return $this->hasMany(BalanceTransaction::class);
     }
 
     /**

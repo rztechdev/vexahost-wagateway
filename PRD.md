@@ -473,13 +473,31 @@ antre **dan** saat kirim.
 
 ## Definisi selesai
 
-- [ ] Isi saldo lewat QRIS menambah saldo hanya setelah admin menandai lunas
-- [ ] Pesan memotong saldo saat terkirim, bukan saat antre
-- [ ] Pesan gagal tidak memotong saldo
-- [ ] Saldo habis menghentikan pengiriman dengan pesan yang bisa ditindaklanjuti
-- [ ] `workspaces.balance` selalu sama dengan jumlah `balance_transactions`
-- [ ] Halaman harga menampilkan PAYG tanpa merusak tiga kartu yang sudah ada
-- [ ] `PaygTest` menguji seluruhnya, termasuk rekonsiliasi saldo
+- [x] Isi saldo lewat QRIS menambah saldo hanya setelah admin menandai lunas
+- [x] Pesan memotong saldo saat terkirim, bukan saat antre
+- [x] Pesan gagal tidak memotong saldo
+- [x] Saldo habis menghentikan pengiriman dengan pesan yang bisa ditindaklanjuti
+- [x] `workspaces.balance` selalu sama dengan jumlah `balance_transactions`
+- [x] Halaman harga menampilkan PAYG tanpa merusak tiga kartu yang sudah ada
+- [x] `PaygTest` menguji seluruhnya, termasuk rekonsiliasi saldo
+
+**Selesai.** `PaygTest` 18 tes. Yang perlu diketahui sesi berikutnya:
+
+- **`BalanceService` satu-satunya yang menulis `workspaces.balance`**, aturan
+  yang sama dengan `SubscriptionService` untuk status langganan. Tiap perubahan
+  menulis kolom saldo DAN satu baris buku besar dalam satu transaksi, dengan
+  `lockForUpdate()` — dua worker yang memotong bersamaan tanpa itu kehilangan
+  salah satu pemotongan.
+- **Indeks unik `(workspace_id, message_id)`** yang menjaga satu pesan hanya
+  memotong sekali, bukan pemeriksaan di kode: job bisa dijalankan ulang setelah
+  gagal di tengah.
+- **Kode unik dan pajak menempel di `total`, tidak ikut jadi saldo.** Kalau
+  ikut, saldo bertambah sebesar angka yang tidak pernah dijanjikan ke siapa pun.
+- **PAYG tidak ikut `Plan::all()`** meski `sellable => true`. Seluruh pemanggil
+  `all()` merender harga bulanan; memaksanya masuk menghasilkan kartu bertuliskan
+  "Rp 0/bulan". Halaman harga merendernya sebagai blok tersendiri.
+- **Membayar tagihan topup itulah yang memindahkan workspace ke PAYG**, sama
+  seperti paket berpindah saat tagihannya lunas.
 
 ---
 

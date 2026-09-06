@@ -155,6 +155,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pay as you go
+    |--------------------------------------------------------------------------
+    |
+    | Prepaid, dan itu keputusan yang menempel pada kenyataan bahwa pembayaran
+    | di sistem ini masih dicocokkan manusia lewat QRIS. Postpaid berarti
+    | pelanggan mengirim ribuan pesan lalu menghilang — dan pesannya sudah
+    | telanjur terkirim, uangnya tidak bisa ditarik kembali.
+    |
+    | Rp 200 per pesan jauh di atas harga per pesan paket termurah (Essentials
+    | Rp 74,50), jadi PAYG tidak menggerus penjualan paket. Titik impasnya 745
+    | pesan per bulan.
+    |
+    | Minimum isi saldo Rp 50.000 (250 pesan): di bawah itu ongkos verifikasi
+    | manualnya lebih besar dari nilainya.
+    |
+    | Rupiah penuh, bilangan bulat. Jangan pernah float untuk uang.
+    |
+    */
+
+    'payg' => [
+        'price_per_message' => (int) env('PAYG_PRICE_PER_MESSAGE', 200),
+        'min_topup' => (int) env('PAYG_MIN_TOPUP', 50_000),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pajak
     |--------------------------------------------------------------------------
     |

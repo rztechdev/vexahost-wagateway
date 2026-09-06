@@ -47,6 +47,19 @@ class Invoice extends Model
         return $this->belongsTo(Workspace::class);
     }
 
+    /**
+     * Tagihan ini mengisi saldo, bukan memperpanjang langganan.
+     *
+     * Dibaca dari `plan_slug` tagihan, bukan dari keadaan workspace: keadaan
+     * workspace bisa berubah antara tagihan terbit dan dibayar, sementara
+     * tagihan yang sudah terbit adalah janji yang tidak boleh berubah artinya.
+     * Membeli PAYG dan mengisi saldo memang hal yang sama.
+     */
+    public function isTopup(): bool
+    {
+        return $this->plan_slug === 'payg';
+    }
+
     /** Kode referal yang dipakai saat tagihan ini terbit, kalau ada. */
     public function referralCode(): BelongsTo
     {

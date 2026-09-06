@@ -171,6 +171,34 @@ class MessageDispatcher
             return;
         }
 
+        /*
+         | Cabang KETIGA penegakan kuota, setelah jatah coba gratis dan kuota
+         | bulanan paket. Yang membatasi di sini bukan jumlah pesan dan bukan
+         | tanggal, melainkan saldo.
+         |
+         | Pemotongannya TIDAK terjadi di sini — ia terjadi di `SendMessageJob`
+         | setelah pesannya benar-benar terkirim. Pesan yang gagal karena
+         | nomornya tidak terdaftar tidak boleh memotong saldo pelanggan.
+         |
+         | Konsekuensinya diterima sadar: broadcast besar bisa membuat saldo
+         | minus sedikit, karena beberapa pesan berjalan bersamaan dan
+         | masing-masing sudah lolos pemeriksaan ini. Itu sebabnya saldo
+         | diperiksa dua kali — di sini saat antre, dan sekali lagi saat kirim.
+        */
+        if ($workspace->isPayg() && ! $workspace->isExempt()) {
+            $harga = (int) config('billing.payg.price_per_message');
+
+            if ((int) $workspace->balance < $harga) {
+                throw new RuntimeException(
+                    'Saldo tidak cukup untuk mengirim pesan. Isi saldo dari menu Saldo di dashboard.'
+                );
+            }
+
+            $this->warnIfBalanceLow($workspace);
+
+            return;
+        }
+
         $kuota = (int) $workspace->monthly_message_quota;
 
         if ($workspace->isExempt() || $kuota === 0) {
@@ -213,6 +241,55 @@ class MessageDispatcher
      * karena ia sendiri memakai `MessageDispatcher` dan menyuntikkannya akan
      * menutup lingkaran.
      */
+    /**
+     * Memberi tahu saat saldo menipis dan saat habis.
+     *
+     * Ambangnya 20% dari satu kali isi saldo minimum, bukan persentase dari
+     * saldo itu sendiri: "20% sisa" tidak punya arti kalau yang diisi orang
+     * berbeda-beda jumlahnya. Yang berarti bagi pelanggan adalah berapa pesan
+     * lagi yang bisa ia kirim.
+     *
+     * Notifier diambil dari container di dalam method, bukan lewat constructor,
+     * karena `WhatsAppNotifier` sendiri memakai `MessageDispatcher` — menyuntikkannya
+     * menutup lingkaran dan mematikan seluruh pengiriman pesan.
+     */
+    private function warnIfBalanceLow(Workspace $workspace): void
+    {
+        if (blank($workspace->billing_phone)) {
+            return;
+        }
+
+        $harga = (int) config('billing.payg.price_per_message');
+        $ambang = (int) (config('billing.payg.min_topup') * 0.2);
+        $saldo = (int) $workspace->balance;
+
+        // Saldo sesudah pesan ini terkirim — itu angka yang benar untuk
+        // diperingatkan, bukan saldo sebelumnya.
+        $sesudah = $saldo - $harga;
+
+        $tingkat = match (true) {
+            $sesudah < $harga => 'habis',
+            $sesudah <= $ambang => 'hampir',
+            default => null,
+        };
+
+        if ($tingkat === null) {
+            return;
+        }
+
+        app(WhatsAppNotifier::class)->toWorkspace(
+            $workspace,
+            $tingkat === 'habis'
+                ? BillingMessages::balanceExhausted($workspace)
+                : BillingMessages::balanceLow($workspace, $sesudah, intdiv($sesudah, $harga)),
+            // Penandanya memuat ambangnya, bukan tanggal: saldo yang diisi
+            // ulang lalu menipis lagi harus diperingatkan lagi, dan penanda
+            // per bulan membuat peringatan kedua tidak pernah keluar.
+            "balance:{$tingkat}:{$workspace->id}:".intdiv($saldo, max($ambang, 1)),
+            24 * 40,
+        );
+    }
+
     private function warnIfQuotaLow(Workspace $workspace, int $terpakai, int $kuota): void
     {
         if (blank($workspace->billing_phone)) {

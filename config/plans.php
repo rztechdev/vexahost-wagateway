@@ -90,6 +90,55 @@ return [
             ],
         ],
 
+        /*
+        | Pay as you go — bentuk harga yang berbeda dari yang lain.
+        |
+        | Rp 200 per pesan, saldo diisi di depan. Angkanya sengaja jauh di atas
+        | harga per pesan paket termurah (Essentials: Rp 74,50) supaya PAYG
+        | TIDAK menggerus penjualan paket. Titik impasnya 745 pesan per bulan;
+        | di atas itu Essentials selalu lebih murah, dan itu cerita jualan yang
+        | bersih: PAYG untuk yang kirimnya sedikit dan tidak tentu, paket untuk
+        | yang rutin.
+        |
+        | `price_monthly => 0` karena tidak ada harga bulanan sama sekali; harga
+        | sebenarnya ada di `config('billing.payg.price_per_message')`. Batas di
+        | bawah tetap ditulis lengkap supaya seluruh kode yang membaca
+        | `limits()`, `maxApiKeys()`, dan `messageRetentionDays()` tetap bekerja
+        | tanpa satu pun pemeriksaan khusus. Yang membatasi pengiriman di sini
+        | bukan `monthly_message_quota` melainkan saldo — jadi kuotanya 0, yang
+        | di seluruh kode ini sudah berarti "tanpa batas".
+        |
+        | `payg => true` yang membuatnya tidak ikut `Plan::all()`: halaman harga
+        | merendernya sebagai kartu keempat dengan bentuk sendiri, dan dropdown
+        | admin tidak boleh memindahkan pelanggan berlangganan ke sini secara
+        | tidak sengaja.
+        */
+        'payg' => [
+            'name' => 'Pay as you go',
+            'tagline' => 'Bayar per pesan, tanpa langganan bulanan.',
+            'price_monthly' => 0,
+            'highlight' => false,
+            'sellable' => true,
+            'payg' => true,
+
+            'max_sessions' => 1,
+            'monthly_message_quota' => 0,
+            'max_api_keys' => 3,
+            'max_members' => 2,
+            'message_retention_days' => 30,
+            'api_rate_limit_per_minute' => 60,
+
+            'features' => [
+                '1 nomor WhatsApp aktif',
+                'Rp 200 per pesan terkirim',
+                'Saldo diisi di depan, minimum Rp 50.000',
+                'Pesan gagal tidak memotong saldo',
+                '3 API key',
+                'Riwayat pesan 30 hari',
+                'Webhook, template, dan OTP',
+            ],
+        ],
+
         'essentials' => [
             'name' => 'Essentials',
             'tagline' => 'Satu usaha dengan satu nomor.',
