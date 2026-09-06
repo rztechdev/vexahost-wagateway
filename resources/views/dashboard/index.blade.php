@@ -119,4 +119,73 @@
             @endforelse
         </x-tabel>
     </x-section>
+    {{-- ===================== Tur pengenalan =====================
+
+         Muncul SEKALI untuk pendaftar baru. Akun yang sudah ada ditandai
+         "sudah melihat" oleh migrasinya, jadi tur ini tidak pernah menuntun
+         pelanggan lama melewati hal yang sudah mereka kerjakan tiap hari.
+
+         Tiap kalimat di bawah menyebutkan sesuatu yang benar-benar berlaku di
+         kode — jumlah jatah, apa yang terjadi saat deploy ulang, dan siapa yang
+         menerima kejadian webhook. Tur yang menjanjikan hal yang tidak ada
+         lebih merugikan daripada tidak ada tur sama sekali: ia membuat orang
+         mencari fitur yang tidak pernah dibuat, lalu menyimpulkan produknya
+         rusak.
+
+         Naikkan `versi` kalau isinya berubah besar — jangan hapus barisnya.
+         ======================================================== --}}
+    <x-tur-pengenalan kunci="dashboard.mulai" :versi="1" :langkah="[
+        [
+            'judul' => 'Selamat datang di Flustra WA',
+            'isi' => 'Gateway ini menghubungkan nomor WhatsApp Anda dengan aplikasi mana pun lewat REST API. '
+                .'Tur singkat ini menunjukkan urutan yang perlu Anda lalui — sekitar satu menit, '
+                .'dan hanya muncul sekali.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'sessions.index\']',
+            'judul' => '1. Tautkan nomor WhatsApp',
+            'isi' => 'Mulai dari sini. Buat sesi, lalu scan kode QR-nya sekali dengan WhatsApp di ponsel Anda — '
+                .'sama seperti WhatsApp Web. Kredensialnya kami simpan, jadi nomor tersambung sendiri '
+                .'setiap kali server di-deploy ulang; tidak ada scan kedua.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'messages.compose\']',
+            'judul' => '2. Coba kirim satu pesan',
+            'isi' => 'Kirim ke nomor Anda sendiri lebih dulu untuk memastikan jalurnya benar. '
+                .'Setiap pesan yang terkirim tercatat di Riwayat Pesan lengkap dengan statusnya — '
+                .'terkirim, sampai, atau dibaca.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'api-keys.index\']',
+            'judul' => '3. Sambungkan aplikasi Anda',
+            'isi' => 'Buat API key di sini, lalu pakai sebagai header X-Api-Key. Kuncinya bisa dibuka lagi '
+                .'kapan saja dari halaman ini, jadi tidak perlu disalin ke catatan pribadi.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'webhooks.index\']',
+            'judul' => 'Menerima pesan masuk',
+            'isi' => 'Webhook mengirim kejadian ke URL Anda: pesan masuk, perubahan status pengiriman, '
+                .'dan keadaan nomor. Punya beberapa website? Satu webhook bisa ditautkan ke satu API key, '
+                .'jadi tiap website hanya menerima kejadian miliknya.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'billing.index\']',
+            'judul' => 'Jatah coba gratis Anda',
+            'isi' => 'Workspace baru dapat 1 nomor dan 5 pesan gratis — dihitung seumur hidup workspace, '
+                .'bukan per bulan. Setelah itu pilih paket di sini untuk melanjutkan. '
+                .'Pembelian pertama dapat harga khusus.',
+        ],
+        [
+            'target' => '[data-tur-menu=\'tickets.index\']',
+            'judul' => 'Kalau ada yang macet',
+            'isi' => 'Kirim tiket dari sini dan tim kami menjawabnya lewat halaman yang sama, '
+                .'plus kabar ke WhatsApp dan email Anda. Bantuan tetap terbuka walau langganan Anda '
+                .'sedang tidak aktif.',
+        ],
+        [
+            'judul' => 'Itu saja',
+            'isi' => 'Langkah pertama Anda: buka menu Sesi WhatsApp dan tautkan satu nomor. '
+                .'Contoh kode untuk PHP, Laravel, Node, dan Python ada di menu Dokumentasi.',
+        ],
+    ]" />
 @endsection

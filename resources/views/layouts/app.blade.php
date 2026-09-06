@@ -173,7 +173,13 @@
                         @endif
                         @foreach ($tautan as $item)
                             @php $eksternal = $item['eksternal'] ?? false; @endphp
-                            <a href="{{ ($eksternal || $punyaWorkspace) ? route($item['rute']) : route('onboarding.create') }}"
+                            {{-- Penanda untuk tur pengenalan. Memakai nama rute,
+                                 bukan urutan atau kelas CSS: keduanya berubah
+                                 tiap kali menunya ditata ulang, dan tur yang
+                                 menunjuk sudut kosong layar lebih buruk
+                                 daripada tur yang tidak ada. --}}
+                            <a data-tur-menu="{{ $item['rute'] }}"
+                               href="{{ ($eksternal || $punyaWorkspace) ? route($item['rute']) : route('onboarding.create') }}"
                                @if ($eksternal) target="_blank" rel="noopener" @endif
                                class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm {{ ! $eksternal && $punyaWorkspace && $aktif($item) ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
                                 <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $item['ikon'] }}"/></svg>

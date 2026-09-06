@@ -20,6 +20,7 @@
     "dependencies": {
         "@alpinejs/collapse": "^3.16.1",
         "alpinejs": "^3.16.1",
+        "driver.js": "^1.8.0",
         "qrcode": "^1.5.4",
         "sweetalert2": "^11.26.25"
     }

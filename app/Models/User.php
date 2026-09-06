@@ -44,6 +44,26 @@ class User extends Authenticatable
         ];
     }
 
+    public function guideProgress(): HasMany
+    {
+        return $this->hasMany(UserGuideProgress::class);
+    }
+
+    /**
+     * Sudah pernah melihat sebuah tur pengenalan.
+     *
+     * `$version` ada supaya tur yang isinya berubah besar bisa ditampilkan ulang
+     * kepada yang sudah pernah melihatnya — naikkan versinya di tempat tur itu
+     * dipasang, bukan hapus barisnya.
+     */
+    public function hasSeenGuide(string $guideKey, int $version = 1): bool
+    {
+        return $this->guideProgress()
+            ->where('guide_key', $guideKey)
+            ->where('guide_version', '>=', $version)
+            ->exists();
+    }
+
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class, 'workspace_members')

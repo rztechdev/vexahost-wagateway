@@ -3,6 +3,10 @@ import collapse from '@alpinejs/collapse';
 import QRCode from 'qrcode';
 import Swal from 'sweetalert2';
 
+// Tur pengenalan untuk pendaftar baru. Modulnya menonaktifkan dirinya sendiri
+// kalau halaman tidak memuat data tur, jadi tidak ada percabangan di sini.
+import './tur-pengenalan';
+
 Alpine.plugin(collapse);
 window.Alpine = Alpine;
 

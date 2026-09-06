@@ -29,6 +29,7 @@ use App\Http\Controllers\Dashboard\WebhookController;
 use App\Http\Controllers\Dashboard\WorkspaceController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EnterpriseLeadController;
+use App\Http\Controllers\OnboardingGuideController;
 use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +86,16 @@ Route::middleware('auth')->group(function (): void {
     Route::get('onboarding', [WorkspaceController::class, 'createForm'])->name('onboarding.create');
     Route::post('onboarding', [WorkspaceController::class, 'create'])->name('onboarding.store');
     Route::post('workspaces/{id}/switch', [WorkspaceController::class, 'switch'])->name('workspaces.switch');
+
+    /*
+    | Mencatat bahwa sebuah tur pengenalan sudah selesai atau dilewati.
+    |
+    | Di luar grup `workspace` dengan sengaja: turnya juga muncul di halaman
+    | onboarding, tempat pengguna belum punya workspace sama sekali.
+    */
+    Route::post('onboarding/tur/{guideKey}', [OnboardingGuideController::class, 'ack'])
+        ->where('guideKey', '[a-z0-9\-\.]+')
+        ->name('onboarding.guides.ack');
 
     /*
     | Bantuan sengaja HANYA memakai `workspace`, tanpa `subscription`.

@@ -111,8 +111,8 @@
                 </a>
             </div>
 
-            {{-- Spacer atas fleksibel agar form terdorong jauh lebih ke bawah di layar --}}
-            <div class="flex-1 min-h-[40px] sm:min-h-[80px] lg:min-h-[140px] xl:min-h-[180px]"></div>
+            {{-- Spacer atas khusus desktop agar form terdorong lebih ke bawah di layar besar, di mobile disembunyikan agar rapat dengan header --}}
+            <div class="hidden lg:block lg:flex-1 lg:min-h-[140px] xl:min-h-[180px]"></div>
 
             {{-- Form Wrapper (Dibuat Lebih ke Bawah) --}}
             <div class="w-full @yield('container_width', 'max-w-[390px]') mx-auto pb-6 sm:pb-8 lg:pb-10">
