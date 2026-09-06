@@ -21,7 +21,12 @@ class WebhookController extends Controller
         $workspace = EnsureWorkspaceSelected::from($request);
 
         return view('dashboard.webhooks.index', [
-            'webhooks' => $workspace->webhooks()->latest()->get(),
+            'webhooks' => $workspace->webhooks()->with('apiKey')->latest()->get(),
+
+            // Hanya kunci yang masih hidup boleh ditawarkan: menawarkan kunci
+            // yang sudah dicabut berarti menawarkan webhook yang tidak akan
+            // pernah menerima apa pun.
+            'apiKeys' => $workspace->apiKeys()->whereNull('revoked_at')->orderBy('name')->get(),
             'deliveries' => WebhookDelivery::whereIn('webhook_id', $workspace->webhooks()->pluck('id'))
                 ->latest()
                 ->limit(20)
@@ -37,8 +42,16 @@ class WebhookController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
         $data = $request->validate([
             'url' => ['required', 'url:http,https', 'max:500'],
+            // Wajib milik workspace ini. Tanpa penjagaan itu, id kunci milik
+            // workspace lain bisa dititipkan lewat form dan webhook-nya
+            // menerima kejadian yang bukan haknya.
+            'api_key_id' => ['nullable', 'integer', Rule::exists('api_keys', 'id')
+                ->where('workspace_id', $workspace->id)
+                ->whereNull('revoked_at')],
             'events' => ['nullable', 'array'],
             'events.*' => [Rule::in([
                 WebhookDispatcher::EVENT_MESSAGE_RECEIVED,
@@ -48,13 +61,17 @@ class WebhookController extends Controller
             ])],
         ]);
 
-        $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->create([
+        $webhook = $workspace->webhooks()->create([
             'url' => $data['url'],
+            'api_key_id' => $data['api_key_id'] ?? null,
             'events' => $data['events'] ?? null,
             'secret' => Str::random(48),
         ]);
 
-        AuditLog::record('webhook.created', $webhook, ['url' => $webhook->url]);
+        AuditLog::record('webhook.created', $webhook, [
+            'url' => $webhook->url,
+            'api_key_id' => $webhook->api_key_id,
+        ]);
 
         return back()->with('status', 'Webhook ditambahkan. Simpan signing secret-nya untuk memverifikasi payload.');
     }

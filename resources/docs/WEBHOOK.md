@@ -31,6 +31,30 @@ Gunakan tombol **Kirim uji coba** untuk memastikan endpoint Anda menerimanya den
 | `session.status` | Nomor tersambung, terputus, atau bermasalah |
 | `session.qr` | QR baru tersedia |
 
+## Beberapa website di satu workspace
+
+Punya toko online, aplikasi kasir, dan CRM sekaligus? Anda tidak perlu workspace terpisah untuk masing-masing.
+
+Saat menambah webhook, kolom **Berlaku untuk** menentukan siapa yang menerimanya:
+
+| Pilihan | Menerima |
+|---|---|
+| **Seluruh workspace** | Semua kejadian, dari integrasi mana pun |
+| **Satu API key** | `message.status` hanya untuk pesan yang dikirim API key itu, plus semua pesan masuk |
+
+Jadi kalau toko online Anda memakai API key A dan kasir memakai API key B, status pengiriman pesan yang dikirim toko online **hanya** sampai ke webhook milik A. Kasir tidak menerima kabar tentang pesan yang bukan miliknya, dan sebaliknya.
+
+**Dua kejadian sengaja tetap sampai ke semua:**
+
+- **`message.received`** — pesan masuk tidak punya "pengirim" dari sisi Anda, jadi tidak ada dasar untuk menentukan integrasi mana yang seharusnya menerimanya. Menebak di sini berarti pesan pelanggan Anda hilang di sistem yang menunggunya.
+- **`session.status` dan `session.qr`** — nomor yang terputus memengaruhi seluruh integrasi Anda sekaligus, bukan salah satunya.
+
+Pesan yang Anda kirim dari **dashboard** tidak berasal dari API key mana pun, jadi statusnya sampai ke webhook tingkat workspace. Kalau Anda ingin tetap menerima kabar itu, sisakan satu webhook **Seluruh workspace**.
+
+> Webhook yang sudah Anda daftarkan sebelum fitur ini ada tetap berjalan persis seperti sebelumnya — semuanya webhook tingkat workspace, dan tidak ada satu pun kejadian yang berhenti sampai.
+
+Kalau API key-nya Anda cabut, webhook-nya **tidak ikut terhapus**: ia turun menjadi webhook tingkat workspace, lengkap dengan signing secret yang sama. Integrasi Anda tidak perlu dipasang ulang.
+
 ## Bentuk kiriman
 
 ```json

@@ -267,10 +267,21 @@ webhook workspace.
 
 ## Definisi selesai
 
-- [ ] Webhook lama (tanpa `api_key_id`) tetap menerima semua kejadian seperti sebelumnya
-- [ ] `message.status` dari API key A tidak sampai ke webhook API key B
-- [ ] Pesan dari dashboard tetap sampai ke webhook workspace
-- [ ] `WebhookRoutingTest` menguji ketiganya
+- [x] Webhook lama (tanpa `api_key_id`) tetap menerima semua kejadian seperti sebelumnya
+- [x] `message.status` dari API key A tidak sampai ke webhook API key B
+- [x] Pesan dari dashboard tetap sampai ke webhook workspace
+- [x] `WebhookRoutingTest` menguji ketiganya
+
+**Selesai.** `WebhookRoutingTest` punya 8 tes, bukan 3: yang empat lagi menjaga
+`message.received` sampai ke semua, `session.*` hanya ke webhook workspace,
+`messages.api_key_id` benar-benar terisi lewat API dan benar-benar kosong dari
+dashboard, dan API key yang dicabut **menurunkan** webhook-nya jadi tingkat
+workspace alih-alih menghapusnya — pelanggan tidak kehilangan signing secret
+yang sudah tertanam di aplikasi mereka.
+
+Migrasinya pakai schema builder polos, tanpa SQL mentah, jadi ia dirender
+per-driver dan lulus di SQLite maupun MySQL. Bentuk payload tidak disentuh
+sama sekali.
 
 ---
 

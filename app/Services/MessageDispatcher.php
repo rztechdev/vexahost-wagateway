@@ -48,6 +48,19 @@ class MessageDispatcher
         $message = Message::create([
             'workspace_id' => $workspace->id,
             'wa_session_id' => $session->id,
+            /*
+             | API key yang mengantrekan pesan ini, kalau ada.
+             |
+             | DISIMPAN SAAT ANTRE, bukan dibaca lagi saat kirim. Pengiriman
+             | terjadi di dalam job — di sana tidak ada request, jadi tidak ada
+             | yang bisa ditanya "API key mana yang sedang dipakai". Tanpa kolom
+             | ini, webhook `message.status` tidak punya cara tahu integrasi
+             | mana yang berhak menerimanya.
+             |
+             | `null` berarti dikirim dari dashboard, dan itu benar: statusnya
+             | jatuh ke webhook tingkat workspace.
+            */
+            'api_key_id' => $attributes['api_key_id'] ?? null,
             'direction' => 'outbound',
             'chat_id' => PhoneNumber::toChatId($to),
             'to_number' => $normalized ?? $to,

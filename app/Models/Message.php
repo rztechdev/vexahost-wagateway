@@ -13,6 +13,7 @@ class Message extends Model
     protected $fillable = [
         'workspace_id',
         'wa_session_id',
+        'api_key_id',
         'direction',
         'wa_message_id',
         'chat_id',

@@ -118,11 +118,14 @@ class SendMessageJob implements ShouldQueue
             'error' => null,
         ]);
 
+        // API key dibaca dari BARIS PESAN, bukan dari request: di dalam job
+        // tidak ada request sama sekali, dan pesan ini bisa saja diantrekan
+        // berjam-jam yang lalu.
         $webhooks->dispatch($session->workspace, WebhookDispatcher::EVENT_MESSAGE_STATUS, [
             'message_id' => $message->id,
             'status' => 'sent',
             'to' => $message->to_number,
-        ]);
+        ], $message->api_key_id);
     }
 
     private function fail(Message $message, string $error, MessageDispatcher $dispatcher, WebhookDispatcher $webhooks): void
@@ -137,7 +140,7 @@ class SendMessageJob implements ShouldQueue
                 'status' => 'failed',
                 'error' => $error,
                 'to' => $message->to_number,
-            ]);
+            ], $message->api_key_id);
         }
     }
 }

@@ -10,6 +10,7 @@ class Webhook extends Model
 {
     protected $fillable = [
         'workspace_id',
+        'api_key_id',
         'url',
         'secret',
         'events',
@@ -32,6 +33,24 @@ class Webhook extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /**
+     * API key yang memiliki webhook ini, kalau ada.
+     *
+     * `null` berarti webhook tingkat workspace — ia menerima kejadian yang
+     * tidak punya API key pemicu, dan itu perilaku bawaan seluruh baris yang
+     * dibuat sebelum kolom ini ada.
+     */
+    public function apiKey(): BelongsTo
+    {
+        return $this->belongsTo(ApiKey::class);
+    }
+
+    /** Webhook tingkat workspace: berlaku untuk seluruh integrasi. */
+    public function untukSeluruhWorkspace(): bool
+    {
+        return $this->api_key_id === null;
     }
 
     public function deliveries(): HasMany

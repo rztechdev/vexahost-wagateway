@@ -260,7 +260,7 @@ class EngineEventController extends Controller
             'message_id' => $message->id,
             'status' => $status,
             'to' => $message->to_number,
-        ]);
+        ], $message->api_key_id);
     }
 
     private function notifySessionStatus(WaSession $session, string $status): void

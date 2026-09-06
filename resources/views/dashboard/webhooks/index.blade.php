@@ -21,6 +21,24 @@
                        class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
             </div>
             <div>
+                <label class="mb-1 block text-sm font-medium" for="api_key_id">Berlaku untuk</label>
+                <select id="api_key_id" name="api_key_id"
+                        class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
+                    <option value="">Seluruh workspace — menerima semua kejadian</option>
+                    @foreach ($apiKeys as $key)
+                        <option value="{{ $key->id }}" @selected(old('api_key_id') == $key->id)>
+                            API key: {{ $key->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Pilih satu API key kalau Anda punya beberapa website di workspace ini — status
+                    pengiriman hanya sampai ke webhook milik API key yang mengirim pesannya, jadi
+                    tiap website tahu kejadian mana yang miliknya. Pesan masuk dan kejadian sesi
+                    tetap sampai ke semua, karena keduanya tidak berasal dari integrasi tertentu.
+                </p>
+            </div>
+            <div>
                 <span class="mb-1 block text-sm font-medium">Event</span>
                 <div class="grid gap-2 sm:grid-cols-2">
                     @foreach ($availableEvents as $value => $label)
@@ -47,6 +65,15 @@
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="truncate font-mono text-sm">{{ $webhook->url }}</p>
+                                <p class="mt-1 text-xs">
+                                    @if ($webhook->untukSeluruhWorkspace())
+                                        <span class="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">seluruh workspace</span>
+                                    @else
+                                        <span class="rounded bg-primary/10 px-1.5 py-0.5 text-primary">
+                                            API key: {{ $webhook->apiKey?->name ?? 'sudah dicabut' }}
+                                        </span>
+                                    @endif
+                                </p>
                                 <p class="mt-1 text-xs text-muted-foreground">
                                     {{ $webhook->events ? implode(', ', $webhook->events) : 'semua event' }}
                                     @if ($webhook->consecutive_failures > 0)

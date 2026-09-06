@@ -32,6 +32,7 @@ class MessageController extends ApiController
             $message = $this->dispatcher->queue($session, $data['to'], [
                 'type' => 'text',
                 'body' => $data['message'],
+                'api_key_id' => $this->apiKey($request)->id,
             ]);
         } catch (\RuntimeException $e) {
             return $this->fail($e->getMessage(), 422);
@@ -66,6 +67,7 @@ class MessageController extends ApiController
                 'media_path' => $path,
                 'media_mime' => $file->getClientMimeType(),
                 'media_filename' => $file->getClientOriginalName(),
+                'api_key_id' => $this->apiKey($request)->id,
             ]);
         } catch (\RuntimeException $e) {
             Storage::disk('media')->delete($path);
@@ -94,6 +96,7 @@ class MessageController extends ApiController
         $result = $this->dispatcher->queueBulk($session, $data['to'], [
             'type' => 'text',
             'body' => $data['message'],
+            'api_key_id' => $this->apiKey($request)->id,
         ]);
 
         return $this->ok([
@@ -132,6 +135,7 @@ class MessageController extends ApiController
             $message = $this->dispatcher->queue($session, $data['to'], [
                 'type' => 'text',
                 'body' => $template->render($data['variables'] ?? []),
+                'api_key_id' => $this->apiKey($request)->id,
             ]);
         } catch (\RuntimeException $e) {
             return $this->fail($e->getMessage(), 422);
