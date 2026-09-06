@@ -50,6 +50,10 @@
         ],
         'Akun' => [
             ['rute' => 'billing.index', 'label' => 'Langganan', 'cocok' => ['billing.*'], 'ikon' => 'M2 7h20v12H2zM2 11h20M6 15h4'],
+            // Selalu ada, termasuk saat langganannya mati — rutenya memang di
+            // luar middleware `subscription`, dan menyembunyikan menunya di
+            // sini akan membatalkan seluruh maksud itu.
+            ['rute' => 'tickets.index', 'label' => 'Bantuan', 'cocok' => ['tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
             // Hanya untuk workspace PAYG. Menampilkannya ke pelanggan
             // berlangganan berarti menu yang isinya selalu nol dan tidak
             // pernah bisa dipakai — dan menu mati mengajari orang mengabaikan

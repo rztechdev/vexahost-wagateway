@@ -188,6 +188,11 @@ class Workspace extends Model
         return $this->hasMany(BalanceTransaction::class);
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
     /**
      * Pesan keluar sepanjang umur workspace, dijumlahkan dari agregat bulanan.
      *

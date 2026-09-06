@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
 use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
+use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Auth\AuthController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\MessageController;
 use App\Http\Controllers\Dashboard\SessionController;
 use App\Http\Controllers\Dashboard\TemplateController;
+use App\Http\Controllers\Dashboard\TicketController;
 use App\Http\Controllers\Dashboard\WebhookController;
 use App\Http\Controllers\Dashboard\WorkspaceController;
 use App\Http\Controllers\DocsController;
@@ -59,6 +61,28 @@ Route::middleware('auth')->group(function (): void {
     Route::get('onboarding', [WorkspaceController::class, 'createForm'])->name('onboarding.create');
     Route::post('onboarding', [WorkspaceController::class, 'create'])->name('onboarding.store');
     Route::post('workspaces/{id}/switch', [WorkspaceController::class, 'switch'])->name('workspaces.switch');
+
+    /*
+    | Bantuan sengaja HANYA memakai `workspace`, tanpa `subscription`.
+    |
+    | Grup di bawah menolak semua selain GET saat langganan tidak berlaku — dan
+    | itu berarti pelanggan yang layanannya mati tidak bisa membuat tiket sama
+    | sekali. Justru merekalah yang paling butuh menghubungi kami; satu-satunya
+    | jalur yang tersisa jadi mencari nomor kami sendiri, dan yang tidak
+    | menemukannya berhenti jadi pelanggan tanpa pernah bilang kenapa.
+    |
+    | Kalau suatu saat rute bantuan dipindahkan ke dalam grup di bawah, seluruh
+    | maksud fitur ini hilang tanpa satu pun galat yang terlihat. `HelpdeskTest`
+    | menjaganya.
+    */
+    Route::middleware('workspace')->group(function (): void {
+        Route::get('bantuan', [TicketController::class, 'index'])->name('tickets.index');
+        Route::post('bantuan', [TicketController::class, 'store'])->name('tickets.store');
+        Route::get('bantuan/{id}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('bantuan/{id}/balas', [TicketController::class, 'reply'])->name('tickets.reply');
+        Route::post('bantuan/{id}/tutup', [TicketController::class, 'close'])->name('tickets.close');
+        Route::get('bantuan/{id}/lampiran/{messageId}', [TicketController::class, 'attachment'])->name('tickets.attachment');
+    });
 
     /*
     | `subscription` menempel di dalam `workspace`, bukan menggantikannya: ia
@@ -184,6 +208,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     | sini cuma catatan berapa terutang ke siapa dan tombol menandainya sudah
     | ditransfer — tidak ada uang yang bergerak sendiri.
     */
+    /*
+    | Tiket. Saringan bawaannya "perlu dijawab", pola yang sama dengan halaman
+    | Tagihan: daftar yang bawaannya menampilkan segalanya membuat yang menunggu
+    | tenggelam di antara yang sudah selesai.
+    */
+    Route::get('tiket', [AdminTicketController::class, 'index'])->name('tickets');
+    Route::get('tiket/{id}', [AdminTicketController::class, 'show'])->name('tickets.show');
+    Route::post('tiket/{id}/balas', [AdminTicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('tiket/{id}/status', [AdminTicketController::class, 'status'])->name('tickets.status');
+    Route::get('tiket/{id}/lampiran/{messageId}', [AdminTicketController::class, 'attachment'])->name('tickets.attachment');
+
     Route::get('reseller', [AdminReferralController::class, 'index'])->name('referrals');
     Route::post('reseller', [AdminReferralController::class, 'store'])->name('referrals.store');
     Route::post('reseller/{id}/aktif', [AdminReferralController::class, 'toggle'])->name('referrals.toggle');

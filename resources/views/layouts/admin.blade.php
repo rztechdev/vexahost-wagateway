@@ -31,6 +31,7 @@
             ['rute' => 'admin.invoices', 'label' => 'Tagihan', 'cocok' => ['admin.invoices', 'admin.invoices.*'], 'ikon' => 'M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2zM8 8h8M8 12h8M8 16h5'],
             ['rute' => 'admin.sessions', 'label' => 'Sesi WhatsApp', 'cocok' => ['admin.sessions', 'admin.sessions.*'], 'ikon' => 'M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z'],
             ['rute' => 'admin.messages', 'label' => 'Lalu Lintas Pesan', 'ikon' => 'M4 4h16v12H5.17L4 17.17V4zM8 9h8M8 12h5'],
+            ['rute' => 'admin.tickets', 'label' => 'Tiket', 'cocok' => ['admin.tickets', 'admin.tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
             ['rute' => 'admin.referrals', 'label' => 'Reseller', 'cocok' => ['admin.referrals', 'admin.referrals.*'], 'ikon' => 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'],
         ],
         'Akun & Jejak' => [
@@ -44,14 +45,23 @@
     /*
      | Angka pada menu.
      |
-     | Hanya satu yang ditampilkan: tagihan yang menunggu tindakan manusia.
-     | Lencana pada setiap menu berubah jadi hiasan yang diabaikan mata; satu
-     | lencana yang muncul hanya saat memang ada pekerjaan justru terbaca.
+     | Hanya yang benar-benar menunggu TINDAKAN MANUSIA yang diberi angka, dan
+     | sejauh ini cuma ada dua: bukti pembayaran yang belum diperiksa, dan tiket
+     | yang belum dijawab. Lencana pada setiap menu berubah jadi hiasan yang
+     | diabaikan mata; lencana yang muncul hanya saat memang ada pekerjaan justru
+     | terbaca. Jangan menambahkan lencana untuk angka yang sekadar informatif.
+     |
+     | Tiket ikut di sini karena tanpa satu pun tanda di navigasi, tiket yang
+     | masuk cuma terlihat oleh yang kebetulan membuka halamannya — dan tiket
+     | yang tidak terlihat adalah pelanggan yang mengira kami tidak menjawab.
     */
     $perluDiperiksa = \App\Models\Invoice::whereNotNull('proof_path')->where('status', '!=', 'paid')->count()
         + \App\Models\Invoice::where('status', 'pending')->whereNull('proof_path')->count();
 
-    $lencanaMenu = ['admin.invoices' => $perluDiperiksa];
+    $lencanaMenu = [
+        'admin.invoices' => $perluDiperiksa,
+        'admin.tickets' => \App\Models\Ticket::where('status', 'open')->count(),
+    ];
 
     $aktif = function (array $item): bool {
         return request()->routeIs(...($item['cocok'] ?? [$item['rute']]));

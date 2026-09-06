@@ -556,11 +556,29 @@ ticket_messages
 
 ## Definisi selesai
 
-- [ ] Pelanggan dengan langganan mati tetap bisa membuat dan membalas tiket
-- [ ] Admin dikabari lewat WhatsApp saat ada tiket baru dan balasan
-- [ ] Pelanggan dikabari saat dibalas
-- [ ] Lampiran tidak bisa dibuka workspace lain
-- [ ] `HelpdeskTest` menguji keempatnya
+- [x] Pelanggan dengan langganan mati tetap bisa membuat dan membalas tiket
+- [x] Admin dikabari lewat WhatsApp saat ada tiket baru dan balasan
+- [x] Pelanggan dikabari saat dibalas
+- [x] Lampiran tidak bisa dibuka workspace lain
+- [x] `HelpdeskTest` menguji keempatnya
+
+**Selesai.** `HelpdeskTest` 14 tes. Yang perlu dijaga sesi berikutnya:
+
+- **Rute bantuan HANYA memakai middleware `workspace`, tidak pernah
+  `subscription`.** Ada tes struktural yang membaca middleware tiap rutenya
+  (`test_rute_bantuan_tidak_pernah_tunduk_pada_middleware_langganan`), bukan
+  cuma tes perilaku — memindahkannya ke dalam grup itu akan menghapus seluruh
+  maksud fitur ini tanpa satu pun galat yang terlihat.
+- **Isi balasan tidak pernah ikut keluar** lewat WhatsApp maupun email. Tiket
+  bisa memuat kunci API yang ditempelkan pelanggan sendiri saat melaporkan
+  masalah, dan keduanya diteruskan serta diarsipkan di tempat yang tidak kami
+  kendalikan.
+- **Nama admin tidak pernah tampil ke pelanggan** — yang menjawab adalah
+  Flustra, bukan orang tertentu. Itu sebabnya `ticket_messages.user_id` null
+  untuk balasan admin, dan `is_from_admin` ada terpisah sebagai penanda: null
+  juga terjadi saat akun penanyanya dihapus.
+- Lampiran di disk `media` yang privat, diambil lewat rute yang selalu
+  berangkat dari workspace — pola `billing.proof`.
 
 ---
 
