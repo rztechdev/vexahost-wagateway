@@ -16,6 +16,11 @@ class BootstrapController extends Controller
     public function __invoke(): JsonResponse
     {
         $sessions = WaSession::query()
+            // Workspace yang layanannya sudah mati tidak ikut dipulihkan.
+            // Tanpa ini, tiap engine di-deploy ulang seluruh sesi milik
+            // pelanggan yang menunggak kembali hidup dan memakan slot dari
+            // tiga yang tersedia untuk semua pelanggan.
+            ->layananHidup()
             ->where('driver', 'wwebjs')
             ->where('auto_reconnect', true)
             ->where(function ($query): void {

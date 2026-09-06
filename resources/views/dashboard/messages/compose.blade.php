@@ -41,18 +41,40 @@
                     <p class="mt-1 text-xs text-muted-foreground">Bisa lebih dari satu — pisahkan dengan baris baru atau koma. Format 08xx maupun 62xx sama-sama diterima.</p>
                 </div>
 
-                @if ($templates->isNotEmpty())
-                    <div>
-                        <label class="mb-1 block text-sm font-medium">Isi dari template</label>
-                        <select class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary"
-                                @change="if ($el.value) body = $el.value">
-                            <option value="">— pilih template —</option>
-                            @foreach ($templates as $template)
-                                <option value="{{ $template->body }}">{{ $template->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
+                {{-- Template bawaan selalu ada, template sendiri menyusul di
+                     kelompoknya sendiri. Tanpa yang bawaan, halaman ini kosong
+                     bagi pendaftar baru — dan halaman kosong adalah tempat
+                     orang berhenti mencoba. --}}
+                <div>
+                    <label for="template" class="mb-1 block text-sm font-medium">Isi dari template</label>
+                    <select id="template"
+                            class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary"
+                            @change="if ($el.value) body = $el.value">
+                        <option value="">— tulis sendiri —</option>
+
+                        @if ($templates->isNotEmpty())
+                            <optgroup label="Template workspace ini">
+                                @foreach ($templates as $template)
+                                    <option value="{{ $template->body }}">{{ $template->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+
+                        @foreach ($templateBawaan as $kategori => $daftar)
+                            <optgroup label="Bawaan · {{ $kategori }}">
+                                @foreach ($daftar as $bawaan)
+                                    <option value="{{ $bawaan['body'] }}">{{ $bawaan['name'] }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        Bagian di dalam <code>@{{ kurung }}</code> adalah isian yang harus Anda ganti sebelum kirim.
+                        Yang tidak diganti akan terkirim apa adanya —
+                        <a href="{{ route('templates.index') }}" class="text-primary hover:underline">salin ke template sendiri</a>
+                        kalau ingin mengubahnya permanen.
+                    </p>
+                </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium" for="message">Pesan</label>

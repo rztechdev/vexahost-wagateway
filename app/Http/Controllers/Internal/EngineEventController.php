@@ -149,6 +149,36 @@ class EngineEventController extends Controller
 
     private function onIncomingMessage(WaSession $session, array $payload): void
     {
+        /*
+         | Pesan masuk ikut berhenti saat langganan mati.
+         |
+         | Sampai 6 September 2026 hanya pengiriman keluar yang ditutup, dan
+         | pesan masuk tetap tercatat serta tetap dikirim ke webhook pelanggan
+         | sepanjang masa tenggang. Itu berarti integrasi mereka tetap berjalan
+         | separuh — separuh yang justru paling banyak dipakai orang yang
+         | memakai gateway ini untuk mencatat percakapan ke CRM — tanpa satu
+         | rupiah pun dibayar.
+         |
+         | Yang TIDAK hilang, dan wajib disebut supaya tidak menakutkan lebih
+         | dari semestinya: pesannya sendiri tetap ada di WhatsApp pelanggan.
+         | Kita perangkat tertaut, bukan pemilik akunnya — yang berhenti cuma
+         | pencatatan dan penerusannya ke sistem mereka.
+         |
+         | Yang sengaja TIDAK ikut ditutup: peristiwa siklus hidup sesi (qr,
+         | ready, disconnected) dan ack pesan yang sudah telanjur terkirim.
+         | Keduanya justru yang memberi tahu sistem pelanggan bahwa nomornya
+         | berhenti; membisukannya berarti kegagalan yang tidak bisa dilacak
+         | siapa pun.
+        */
+        if (! $session->workspace?->isActive()) {
+            Log::info('Pesan masuk diabaikan karena langganan tidak aktif', [
+                'workspace_id' => $session->workspace_id,
+                'session_id' => $session->id,
+            ]);
+
+            return;
+        }
+
         $message = Message::create([
             'workspace_id' => $session->workspace_id,
             'wa_session_id' => $session->id,

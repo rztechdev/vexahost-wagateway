@@ -155,6 +155,63 @@ class EngineCallbackTest extends TestCase
         );
     }
 
+    /**
+     * Pesan masuk ikut berhenti saat langganan mati.
+     *
+     * Sebelum ini cuma pengiriman keluar yang ditutup, sementara pesan masuk
+     * tetap dicatat dan tetap diteruskan ke webhook — integrasi pelanggan tetap
+     * berjalan separuh tanpa satu rupiah pun dibayar, dan separuh itu justru
+     * yang paling banyak dipakai orang yang memakai gateway ini untuk mencatat
+     * percakapan ke CRM.
+     */
+    public function test_pesan_masuk_diabaikan_saat_langganan_mati(): void
+    {
+        $this->session->update(['status' => 'connected', 'phone_number' => '6281111111111']);
+        $this->workspace->forceFill(['status' => 'suspended'])->save();
+
+        // Engine tetap dijawab 200: membalas galat membuatnya mengulang
+        // peristiwa yang sama berkali-kali untuk keadaan yang tidak akan
+        // berubah sampai ada yang membayar.
+        $this->postEvent([
+            'session_id' => $this->session->id,
+            'event' => 'message',
+            'payload' => [
+                'wa_message_id' => 'false_628_XYZ',
+                'chat_id' => '6289999999999@c.us',
+                'from' => '6289999999999',
+                'type' => 'text',
+                'body' => 'Halo min',
+            ],
+        ])->assertOk();
+
+        $this->assertSame(0, Message::where('direction', 'inbound')->count());
+        $this->assertSame(0, $this->workspace->fresh()->currentUsage()->messages_received);
+    }
+
+    /** Masa berlaku yang lewat juga menutup, tanpa menunggu job harian. */
+    public function test_pesan_masuk_diabaikan_saat_masa_berlaku_lewat(): void
+    {
+        $this->session->update(['status' => 'connected', 'phone_number' => '6281111111111']);
+        $this->workspace->forceFill([
+            'status' => 'active',
+            'service_until' => now()->subMinute(),
+        ])->save();
+
+        $this->postEvent([
+            'session_id' => $this->session->id,
+            'event' => 'message',
+            'payload' => [
+                'wa_message_id' => 'false_628_ABC',
+                'chat_id' => '6289999999999@c.us',
+                'from' => '6289999999999',
+                'type' => 'text',
+                'body' => 'Halo',
+            ],
+        ])->assertOk();
+
+        $this->assertSame(0, Message::where('direction', 'inbound')->count());
+    }
+
     public function test_pesan_masuk_tercatat_dan_menaikkan_hitungan(): void
     {
         $this->session->update(['status' => 'connected', 'phone_number' => '6281111111111']);

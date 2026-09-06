@@ -44,7 +44,7 @@
     </script>
 </head>
 <body class="min-h-full bg-background text-foreground antialiased font-sans selection:bg-primary/20 selection:text-primary">
-    <div class="min-h-screen grid lg:grid-cols-[1.15fr_1fr] relative overflow-x-hidden">
+    <div class="min-h-screen grid lg:grid-cols-[1.35fr_1fr] relative overflow-x-hidden">
         
         {{-- ===================== SISI KIRI: HERO / BRAND PANEL ===================== --}}
         <div class="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden bg-[#123524] text-white select-none">
@@ -87,15 +87,15 @@
                 </div>
             </div>
 
-            {{-- Footer Kiri: Copyright --}}
-            <div class="relative z-10 text-xs text-slate-400 font-normal flex items-center justify-between">
-                <span>&copy; {{ date('Y') }} Flustra WA. All rights reserved.</span>
+            {{-- Footer Kiri: Copyright Resmi PT --}}
+            <div class="relative z-10 text-xs text-slate-400 font-normal flex flex-wrap items-center justify-between gap-2">
+                <span>&copy; {{ date('Y') }} PT FLUSTRA FINANCES ARTHA. Hak cipta dilindungi undang-undang.</span>
                 <span class="text-slate-500 text-[11px]">Gateway Notifikasi Resmi</span>
             </div>
         </div>
 
         {{-- ===================== SISI KANAN: FORM PANEL ===================== --}}
-        <div class="relative flex flex-col justify-between min-h-screen bg-background p-6 sm:p-10 lg:p-12 overflow-y-auto">
+        <div class="relative flex flex-col justify-between min-h-screen bg-background p-6 sm:p-8 lg:p-10 xl:p-12 overflow-y-auto">
             
             {{-- Topbar Kanan --}}
             <div class="flex items-center justify-between gap-4 w-full">
@@ -133,13 +133,13 @@
             </div>
 
             {{-- Form Wrapper (Tengah Vertikal) --}}
-            <div class="my-auto py-8 w-full @yield('container_width', 'max-w-md') mx-auto">
+            <div class="my-auto py-6 sm:py-8 w-full @yield('container_width', 'max-w-[390px]') mx-auto">
                 @yield('content')
             </div>
 
             {{-- Footer Khusus Mobile --}}
             <div class="lg:hidden text-center text-xs text-muted-foreground pt-4 border-t border-border/70">
-                &copy; {{ date('Y') }} Flustra WA. All rights reserved.
+                &copy; {{ date('Y') }} PT FLUSTRA FINANCES ARTHA. Hak cipta dilindungi undang-undang.
             </div>
         </div>
 

@@ -6,6 +6,10 @@
     // Ditentukan sekali di atas: formulir apa pun di halaman ini hanya
     // ditampilkan kalau langganannya memang berlaku.
     $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+
+    // Nomor yang berhenti karena tagihan bukan kerusakan, dan tidak boleh
+    // terbaca seperti kerusakan.
+    $alasanLangganan = ($currentSubscription ?? null)?->alasanNomorBerhenti();
 @endphp
 
     @include('partials.sesi-perlu-dihubungkan')
@@ -65,13 +69,28 @@
                     </td>
                     <td class="px-4 py-3 sm:px-3">
                         <x-session-status :status="$session->status" />
-                        @if ($session->last_error)
+
+                        {{-- Galat teknis disembunyikan saat penyebabnya
+                             langganan: blok di atas sudah menjelaskannya sekali
+                             untuk seluruh daftar, dan mengulanginya di tiap
+                             baris membuat pesan yang sama tercetak berkali-kali. --}}
+                        @if (! $terkunci && $session->last_error)
                             <p class="mt-1.5 max-w-56 text-xs leading-relaxed text-destructive">{{ $session->last_error }}</p>
                         @endif
                     </td>
                     <td class="px-4 py-3 sm:px-3">
                         <div class="flex flex-wrap justify-end gap-1.5">
-                            @if ($session->status !== 'connected')
+                            @if ($terkunci)
+                                {{-- Seluruh tindakan di sini POST, dan seluruh POST
+                                     ditolak `EnsureSubscriptionActive` selama langganan
+                                     mati. Menampilkannya berarti empat tombol yang
+                                     hanya bisa gagal; satu tautan yang benar-benar
+                                     menyelesaikan masalahnya jauh lebih berguna. --}}
+                                <a href="{{ route('billing.plans') }}"
+                                   class="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:opacity-90">
+                                    Perpanjang untuk memakai lagi
+                                </a>
+                            @elseif ($session->status !== 'connected')
                                 <form method="POST" action="{{ route('sessions.connect', $session->id) }}">
                                     @csrf
                                     <button class="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">Hubungkan</button>
@@ -85,6 +104,7 @@
                                 </form>
                             @endif
 
+                            @unless ($terkunci)
                             <form method="POST" action="{{ route('sessions.logout', $session->id) }}"
                                   data-konfirmasi="Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.">
                                 @csrf
@@ -99,6 +119,7 @@
                                 @csrf @method('DELETE')
                                 <button class="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
                             </form>
+                            @endunless
                         </div>
                     </td>
                 </tr>

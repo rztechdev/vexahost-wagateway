@@ -44,6 +44,52 @@
 
     @endif
 
+    {{-- ===================== Template bawaan =====================
+
+         Selalu ada, untuk semua workspace, tanpa perlu dibuat lebih dulu.
+         Menyalinnya membuat salinan yang jadi milik workspace sepenuhnya —
+         sejak itu ia tidak ikut berubah lagi kalau kami memperbaiki kalimat
+         bawaannya, dan itu memang yang diinginkan: orang yang sudah
+         menyesuaikannya dengan gaya bahasanya sendiri tidak boleh kehilangannya
+         karena kami mengganti satu kata.
+         ============================================================= --}}
+    <x-section judul="Template bawaan"
+               sub="Siap dipakai langsung dari halaman Kirim Pesan. Salin ke sini kalau ingin mengubah kalimatnya.">
+        <x-tabel :kepala="['Template' => '', 'Isi' => '', 'Tindakan' => 'text-right']">
+            @foreach ($templateBawaan as $kategori => $daftar)
+                <tr class="bg-muted/30">
+                    <td colspan="3" class="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:px-3">
+                        {{ $kategori }}
+                    </td>
+                </tr>
+                @foreach ($daftar as $bawaan)
+                    <tr class="align-top transition hover:bg-muted/40">
+                        <td class="whitespace-nowrap px-4 py-3 font-medium sm:px-3">{{ $bawaan['name'] }}</td>
+                        <td class="px-4 py-3 sm:px-3">
+                            <pre class="max-w-lg whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-muted-foreground">{{ $bawaan['body'] }}</pre>
+                            @if ($bawaan['variables'] !== [])
+                                <p class="mt-1.5 text-xs text-muted-foreground">
+                                    Isian:
+                                    @foreach ($bawaan['variables'] as $v)
+                                        <code class="rounded bg-muted px-1">{{ $v }}</code>@if (! $loop->last), @endif
+                                    @endforeach
+                                </p>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-right sm:px-3">
+                            <form method="POST" action="{{ route('templates.copy', $bawaan['slug']) }}">
+                                @csrf
+                                <button class="whitespace-nowrap rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition hover:bg-muted">
+                                    {{ in_array($bawaan['slug'], $slugTerpakai, true) ? 'Salin lagi' : 'Salin ke saya' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            @endforeach
+        </x-tabel>
+    </x-section>
+
     <x-section judul="Template tersimpan" rapat>
     <div class="space-y-4">
         @forelse ($templates as $template)

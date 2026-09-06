@@ -86,7 +86,34 @@ Menambah halaman publik: buat berkas di `resources/docs/`, daftarkan di katalog 
 
 **Status langganan hanya berpindah lewat `SubscriptionService`.** Tiap perpindahan menyentuh `subscriptions.status` *dan* `workspaces.status` sekaligus. Keduanya harus selalu sepakat: langganan lewat jatuh tempo dengan workspace masih `active` berarti pelanggan mengirim tanpa membayar; sebaliknya berarti layanan mati padahal tagihannya lunas. Tidak ada controller, job, atau perintah yang boleh menulis salah satunya sendiri.
 
-**Lewat jatuh tempo memutus pengiriman, bukan nomor.** `past_due` menandai workspace `suspended` — dengan itu `MessageDispatcher::guardWorkspace()` dan `AuthenticateApiKey` yang sudah ada ikut berlaku tanpa satu pun pemeriksaan tambahan. Sesi baru dilepas setelah `BILLING_GRACE_DAYS` (30 hari), dan memakai `disconnect()` **bukan** `logout()`: logout membuang kredensial di kedua sisi, jadi pelanggan yang kembali membayar diminta scan QR ulang — alasan paling sering orang tidak jadi kembali.
+**Penegakan langganan punya jalur otomatis, bukan cuma tombol.** Yang menahan pemakaian tanpa membayar ada lima, dan `PenegakanLanggananTest` menjaga seluruhnya sebagai satu daftar: `EnsureSubscriptionActive` (menolak semua POST), `AuthenticateApiKey` (menolak API key workspace mati), `MessageDispatcher::guardWorkspace()` (menolak pengiriman), `SendMessageJob` (memeriksa ulang sebelum kirim), dan `WaSession::scopeLayananHidup()`.
+
+Yang terakhir menutup dua jalur yang menjalankan sesi **tanpa ada manusia yang menekan apa pun**, dan keduanya dulu tidak memandang status workspace sama sekali: `SyncSessionStatusJob` memanggil `connect()` tiap menit untuk sesi `disconnected` — jadi sesi yang baru dilepas `releaseSessions()` karena menunggak dijalankan lagi semenit kemudian, tiap menit, selamanya — dan `BootstrapController` menyuruh engine memulihkan seluruh sesi tiap boot, termasuk milik yang menunggak. Yang bocor di situ bukan pengiriman pesan (itu tetap ditolak) melainkan sumber daya paling langka: satu dari **tiga** slot sesi untuk seluruh pelanggan, plus pesan masuk dan webhook yang tetap mengalir. Penegakan yang bisa dibatalkan oleh penjadwal kita sendiri bukan penegakan. Kalau menambah jalur baru yang menjalankan sesi otomatis, ia wajib lewat `layananHidup()`.
+
+**Tangga penangguhan, dan kenapa tiap anak tangganya begitu.**
+
+| Kapan | Yang berhenti | Yang tetap jalan |
+|---|---|---|
+| Jatuh tempo lewat (`past_due`) | pengiriman keluar, **pesan masuk, webhook** | dashboard, riwayat, WhatsApp di ponsel pelanggan |
+| +3 hari (`suspended`) | nomor dilepas dari gateway | riwayat, template, webhook, API key, anggota |
+| Tagihan lunas | — | nomor tersambung **sendiri** dalam hitungan menit |
+
+`past_due` menandai workspace `suspended` — dengan itu `MessageDispatcher::guardWorkspace()` dan `AuthenticateApiKey` yang sudah ada ikut berlaku tanpa satu pun pemeriksaan tambahan.
+
+Pelepasan memakai `disconnect()`, **bukan** `logout()`: `logout()` membuang cadangan kredensial (`$session->backups()->delete()`) dan memaksa scan QR ulang saat pelanggan kembali. Karena cadangannya utuh, sambung ulang setelah pembayaran berjalan sendiri lewat `SyncSessionStatusJob` — pelanggan tidak menekan apa pun. `PulihSetelahBayarTest` menjaga ketiga syaratnya sekaligus (cadangan tidak terhapus, workspace hidup lagi, penjadwal mau menjalankan ulang); kalau salah satu rusak, seluruh tangga ini berubah dari "menghemat kapasitas" menjadi "menghukum yang telat bayar".
+
+**Pesan masuk ikut ditutup (6 Sep 2026).** Sebelumnya hanya pengiriman keluar yang berhenti, sementara pesan masuk tetap dicatat dan tetap diteruskan ke webhook sepanjang masa tenggang — integrasi pelanggan tetap berjalan separuh, dan separuh itu justru yang paling banyak dipakai orang yang memakai gateway ini untuk mencatat percakapan ke CRM. Penjagaannya di `EngineEventController::onIncomingMessage()`. Yang sengaja **tidak** ikut ditutup: peristiwa siklus hidup sesi (`qr`, `ready`, `disconnected`) dan ack pesan yang sudah telanjur terkirim — keduanya justru yang memberi tahu sistem pelanggan bahwa nomornya berhenti, dan membisukannya menghasilkan kegagalan yang tidak bisa dilacak siapa pun.
+
+Kalimat yang wajib ikut tiap kali keadaan ini dijelaskan: **pesannya sendiri tidak hilang.** Kita perangkat tertaut, jadi pesan yang dikirim orang tetap sampai ke WhatsApp di ponsel pelanggan; yang berhenti cuma pencatatan dan penerusannya. Tanpa kalimat itu, "pesan masuk berhenti" terbaca seperti nomornya diblokir.
+
+**Masa tenggang 3 hari, turun dari 30 lalu 14.** Angka 30 dulu dibenarkan dengan alasan yang ternyata keliru — dikira melepas sesi memaksa scan ulang. Tidak. Lalu sejak pesan masuk ikut ditutup, jendela ini berhenti memberi apa pun kepada pelanggan: pengiriman mati, penerimaan mati, webhook mati, dan yang tersisa cuma sesi menyala tanpa melayani apa-apa sambil memakan satu dari **tiga** slot untuk seluruh pelanggan. Tidak nol karena melepas lalu menyambung lagi adalah operasi nyata yang bisa gagal; tiga hari membuat pelanggan yang bayarnya cepat — dan pembayarannya masih diperiksa manusia — tidak perlu melewati siklus itu sama sekali.
+
+**Nomor yang berhenti wajib mengatakan kenapa.** `Subscription::alasanNomorBerhenti()` satu-satunya sumbernya. Sebelum ada ini, sesi yang dilepas cuma berubah jadi "Terputus" tanpa sepatah kata pun — dan pelanggan menyimpulkan satu-satunya hal yang masuk akal: ada yang rusak. Lalu menekan Hubungkan berulang kali, gagal terus, dan menghubungi kami untuk masalah yang sebenarnya cuma tagihan. Kalimatnya tidak dirender merah dan tidak lewat `last_error`: itu kolom untuk gangguan, dan tagihan bukan gangguan.
+
+**Satu keadaan, satu penjelasan, satu tempat.** Halaman Sesi pernah menampilkan tiga kotak beruntun yang mengatakan hal yang sama dengan kalimat berbeda — spanduk layout, blok kunci formulir, dan spanduk alasan. Sekarang spanduk layout tidak muncul di `billing.*` dan `sessions.*` karena keduanya punya penjelasan sendiri yang lebih lengkap, dan alasan nomor berhenti menumpang di blok kunci, bukan jadi kotak keempat. Dan selama terkunci, tombol tindakan sesi **tidak dirender sama sekali** — seluruhnya POST, seluruhnya ditolak middleware; empat tombol yang cuma bisa gagal kalah berguna dari satu tautan Perpanjang.
+
+
+
 
 **Workspace baru lahir di paket coba gratis (6 Sep 2026).** `ensureFor()` memberi paket `coba` berstatus `trialing` **tanpa tanggal berakhir**, workspace-nya `active`, dan batasnya batas terkecil: 1 nomor, 1 API key, dan **5 pesan seumur hidup workspace**. Pendaftar baru memang boleh menautkan nomor dan menguji integrasinya — yang membatasi jumlah pesan, bukan status.
 
@@ -152,6 +179,20 @@ Kalau `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra terputus, **seluru
 
 **Halaman depan memakai ritme, bukan kartu.** Sampai 5 Sep 2026 tiga bagian berturut-turut memakai kotak `border` berukuran sama — tiga belas kotak identik beruntun, dan tidak ada satu pun bagian yang terasa lebih penting dari yang lain. Sekarang kartu berbingkai hanya enam di seluruh halaman (tiga kartu harga, dua panel kode, satu panel ilustrasi), dan bagian dibedakan dengan berselang antara latar polos dan `bg-muted/30`. Kalau menambah bagian baru, ikuti selang-selingnya — jangan menambah kotak.
 
+**Pengecualian dikelola dari panel admin, dan hanya dari sana.** Menu **Pengecualian** (`/admin/pengecualian`) memegang tiga hal sekaligus, digabung karena ketiganya menjawab pertanyaan yang sama — siapa yang tidak tunduk pada aturan biasa, dan kenapa:
+
+- **Nomor istimewa** (`special_numbers`) — nomor milik perusahaan sendiri. Tidak menghitung `max_sessions` workspace mana pun, tidak ikut dilepas saat langganan mati, dan pengiriman darinya tidak dihalangi status workspace. Batasnya penting dan dijaga tes: **menumpang tidak membebaskan yang ditumpangi** — workspace pelanggan yang kebetulan menampung nomor kami tetap ditagih untuk nomor-nomornya sendiri. Pengecualian yang bocor lebih jauh dari maksudnya adalah cara paling halus sebuah SaaS berhenti menagih tanpa ada yang menyadarinya.
+- **Akun bebas** (`users.is_exempt`) — seluruh workspace milik akun itu bebas, **termasuk yang dibuat besok**. Penandanya di orangnya, bukan di workspace-nya, supaya tidak ada yang perlu ingat menandai lagi.
+- **Pengirim pemberitahuan** — `notify_workspace_id` di `app_settings`, env cuma cadangan.
+
+Satu sumber kebenaran: `Workspace::isExempt()` = `is_internal || owner->is_exempt`. Seluruh titik penegakan memakainya. Menambah pemeriksaan baru yang cuma membaca `is_internal` menghasilkan pengecualian yang berlaku di satu tempat tapi tidak di tempat lain, dan pemiliknya baru tahu dari kegagalan.
+
+**Pengirim pemberitahuan dipilih dari panel, bukan dari env.** Env-nya tetap dibaca sebagai cadangan, tapi urutan pemasangan lewat env mustahil: id workspace baru ada setelah workspace-nya dibuat lewat dashboard, jadi mengisinya berarti deploy, buat workspace, salin id, deploy lagi — dan selama dua deploy itu seluruh pemberitahuan diam tanpa gejala. Halaman Pengecualian memuat langkah pemasangannya apa adanya, **termasuk bahwa menautkan nomor WhatsApp selalu butuh satu kali scan QR**. Tidak ada cara melewatinya: kita perangkat tertaut. Yang benar dijanjikan bukan "tanpa scan" melainkan "sekali saja, dan tidak pernah lagi sesudahnya" — karena kredensialnya dicadangkan dan nomor tersambung sendiri tiap deploy.
+
+**Ada tombol Kirim tes, dan pesan gagalnya menyebut langkah yang kurang.** `WhatsAppNotifier::kirimTes()` membedakan tiga keadaan yang butuh tindakan berbeda — pengirim belum dipilih, sudah dipilih tapi nomornya belum discan, engine sedang mati — karena `ready()` yang cuma menjawab ya/tidak tidak cukup untuk memasang. Tanpa tombol ini, satu-satunya cara memastikan jalurnya benar adalah menunggu peristiwa penagihan sungguhan, dan yang menemukan kesalahannya jadi pelanggan yang tidak dikabari.
+
+Di dalam workspace pengirim, sesi bernomor istimewa didahulukan — nomor itu tidak pernah ikut dilepas, jadi pemberitahuan penagihan kami tidak bisa ikut mati bersama pelanggan yang menunggak.
+
 **Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
 
 **Satu produk, satu cara mengirim.** Driver `fonnte` (layanan gateway berbayar milik pihak lain) dan slot `cloud_api` yang tidak pernah diimplementasi sudah dihapus sampai ke kelasnya. Keduanya dulu muncul sebagai pilihan di form pembuatan sesi — halaman pertama yang dilihat pelanggan baru menawarkan produk orang lain dan sebuah janji yang belum ada. `wa_sessions.driver` sekarang mencatat, bukan menawarkan pilihan; API menolak nilai selain `wwebjs`. Jangan menambahkan penyalur pihak ketiga ke sini lagi; kalau sebuah kebutuhan menuntut jalur resmi Meta, arahkan keluar — alasannya di [docs/PERBANDINGAN_PROVIDER.md](docs/PERBANDINGAN_PROVIDER.md).
@@ -173,6 +214,12 @@ Kalau `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra terputus, **seluru
 **Dashboard tidak boleh mengandalkan callback saja untuk status sesi.** Satu event `ready` yang hilang membuat modal QR menampilkan "Menyiapkan sesi" tanpa akhir. Endpoint `sessions.status` menanyakan engine langsung selama sesi belum `connected`/`failed`, jadi keadaan sebenarnya muncul dalam hitungan detik tanpa menunggu `SyncSessionStatusJob` yang berjalan tiap menit — dan tanpa bergantung pada Scheduled Task Coolify yang bisa saja belum dipasang.
 
 **`QR_TTL_SECONDS` jangan di bawah 60.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap sampai ~60 detik; masa berlaku lebih pendek membuat modal QR berkedip kosong.
+
+**Engine dev TIDAK memakai `--watch`, dan itu disengaja (6 Sep 2026).** Restart otomatis bagus untuk API tanpa keadaan; engine ini memegang Chromium dan sesi WhatsApp yang hidup, dan **restart di tengah scan QR membuang hasil scan-nya tanpa satu pun pesan** — di layar pengguna modalnya diam di "100% riwayat chat tersalin" sampai menit-menit, persis seperti gangguan sungguhan. Ini sudah terjadi: log engine memuat delapan baris `Restarting 'src/server.js'` pada sesi yang sedang discan, dan status sesinya kembali ke `qr` sendiri.
+
+`npm --prefix engine run dev` sekarang menjalankan engine polos. Yang butuh muat-ulang otomatis saat menyunting `engine/src` pakai `dev:watch` — dan jangan menjalankannya sambil menautkan nomor. Produksi tidak pernah terpengaruh: `start.sh` memanggil `node engine/src/server.js` tanpa flag apa pun.
+
+Cara memastikan gejalanya ini dan bukan yang lain: `grep -c Restarting` di log engine. Kalau lebih dari nol selama scan berlangsung, penyebabnya di sini — bukan di whatsapp-web.js dan bukan di riwayat chat yang besar.
 
 **Laravel Pail tidak disertakan di `npm run all`** — butuh `pcntl` yang tidak ada di PHP Windows, dan `--kill-others` membuat matinya Pail menjatuhkan proses lain.
 

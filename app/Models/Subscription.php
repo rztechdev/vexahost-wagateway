@@ -112,6 +112,51 @@ class Subscription extends Model
         return $this->isUsable() && $sisa >= 0 && $sisa <= $withinDays;
     }
 
+    /**
+     * Kenapa nomor workspace ini sedang tidak berjalan — kalau memang karena
+     * langganan, bukan karena gangguan.
+     *
+     * Sebelum ini, sesi yang dilepas `suspend()` cuma berubah menjadi
+     * "Terputus" tanpa satu kata pun penjelasan, dan pelanggan menyimpulkan
+     * satu-satunya hal yang masuk akal: ada yang rusak. Lalu mereka menekan
+     * Hubungkan berulang kali, gagal terus, dan menghubungi kami untuk masalah
+     * yang sebenarnya cuma tagihan belum dibayar.
+     *
+     * Dikembalikan `null` kalau langganannya sehat, supaya pemanggilnya tidak
+     * perlu tahu aturan mana yang berlaku.
+     *
+     * @return array{judul: string, pesan: string}|null
+     */
+    public function alasanNomorBerhenti(): ?array
+    {
+        if ($this->isUsable()) {
+            return null;
+        }
+
+        if ($this->status === 'suspended') {
+            return [
+                'judul' => 'Nomor dilepas karena langganan belum diperpanjang',
+                'pesan' => 'Kredensialnya masih kami simpan — setelah pembayaran, nomor yang sama '
+                    .'tersambung sendiri tanpa perlu scan QR lagi. WhatsApp di ponsel Anda tidak '
+                    .'terpengaruh sama sekali.',
+            ];
+        }
+
+        if ($this->status === 'past_due') {
+            $lepas = $this->sessionsCutOffAt();
+
+            return [
+                'judul' => 'Layanan berhenti sementara',
+                'pesan' => 'Pengiriman keluar, pesan masuk, dan webhook semuanya berhenti. '
+                    .'WhatsApp di ponsel Anda tidak terpengaruh — pesan yang masuk tetap ada di sana, '
+                    .'yang berhenti hanya pencatatan dan penerusannya ke sistem Anda'
+                    .($lepas ? ', dan nomor dilepas dari gateway kalau belum dibayar sampai '.$lepas->translatedFormat('j F Y').'.' : '.'),
+            ];
+        }
+
+        return null;
+    }
+
     /** Sedang memakai jatah coba gratis. */
     public function isFreeTier(): bool
     {

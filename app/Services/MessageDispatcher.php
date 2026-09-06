@@ -27,7 +27,17 @@ class MessageDispatcher
     {
         $workspace = $session->workspace;
 
-        $this->guardWorkspace($workspace);
+        /*
+         | Nomor milik perusahaan sendiri lewat tanpa pemeriksaan tagihan.
+         |
+         | Diperiksa dari SESI-nya, bukan dari workspace-nya: nomor itu bisa
+         | menumpang di workspace pelanggan mana pun, dan menumpangnya tidak
+         | boleh membuat seluruh workspace itu ikut bebas. Yang dibebaskan
+         | nomornya, bukan tempat ia tertaut.
+        */
+        if (! $session->isSpecial()) {
+            $this->guardWorkspace($workspace);
+        }
 
         $normalized = PhoneNumber::normalize($to);
 
@@ -150,7 +160,7 @@ class MessageDispatcher
 
         $kuota = (int) $workspace->monthly_message_quota;
 
-        if ($workspace->is_internal || $kuota === 0) {
+        if ($workspace->isExempt() || $kuota === 0) {
             return;
         }
 

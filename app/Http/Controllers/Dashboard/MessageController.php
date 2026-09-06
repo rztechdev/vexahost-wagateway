@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Services\MessageDispatcher;
+use App\Support\TemplateBawaan;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,11 @@ class MessageController extends Controller
                 ->orderBy('name')
                 ->get(),
             'templates' => EnsureWorkspaceSelected::from($request)->templates()->where('is_active', true)->get(),
+
+            // Template bawaan tersedia untuk semua workspace tanpa perlu dibuat
+            // lebih dulu — halaman ini kosong bagi pendaftar baru, dan halaman
+            // kosong adalah tempat orang berhenti mencoba.
+            'templateBawaan' => TemplateBawaan::perKategori(),
         ]);
     }
 

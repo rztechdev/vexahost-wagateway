@@ -82,7 +82,7 @@ class BillingCycleJob implements ShouldQueue
                 foreach ($langganan as $subscription) {
                     $workspace = $subscription->workspace;
 
-                    if (! $workspace || $workspace->is_internal) {
+                    if (! $workspace || $workspace->isExempt()) {
                         continue;
                     }
 
@@ -158,7 +158,7 @@ class BillingCycleJob implements ShouldQueue
             ->where('current_period_end', '<', now())
             ->chunkById(100, function ($langganan) use ($subscriptions): void {
                 foreach ($langganan as $subscription) {
-                    if ($subscription->workspace?->is_internal) {
+                    if ($subscription->workspace?->isExempt()) {
                         continue;
                     }
 
@@ -184,7 +184,7 @@ class BillingCycleJob implements ShouldQueue
             ->where('past_due_at', '<', $batas)
             ->chunkById(50, function ($langganan) use ($subscriptions): void {
                 foreach ($langganan as $subscription) {
-                    if ($subscription->workspace?->is_internal) {
+                    if ($subscription->workspace?->isExempt()) {
                         continue;
                     }
 

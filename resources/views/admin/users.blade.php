@@ -27,6 +27,9 @@
                                 @if ($user->is_super_admin)
                                     <span class="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">super admin</span>
                                 @endif
+                                @if ($user->is_exempt)
+                                    <span class="ml-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">bebas tagihan</span>
+                                @endif
                             </td>
                             <td class="px-5 py-2.5 text-muted-foreground">{{ $user->email }}</td>
                             <td class="px-5 py-2.5">{{ $user->workspaces_count }}</td>
@@ -43,6 +46,20 @@
                                           data-konfirmasi-ya="Ya, atur ulang">
                                         @csrf
                                         <button class="text-muted-foreground hover:text-foreground hover:underline">Atur ulang sandi</button>
+                                    </form>
+
+                                    {{-- Pembebasan ditandai per ORANG, bukan per
+                                         workspace: workspace yang ia buat besok ikut
+                                         bebas tanpa ada yang perlu ingat menandainya
+                                         lagi. Daftar lengkapnya di menu Pengecualian. --}}
+                                    <form method="POST" action="{{ route('admin.exemptions.users.toggle', $user->id) }}"
+                                          data-konfirmasi="{{ $user->is_exempt
+                                              ? 'Cabut pembebasan untuk '.$user->email.'? Seluruh workspace miliknya kembali ditagih seperti pelanggan biasa.'
+                                              : 'Bebaskan '.$user->email.' dari penagihan? Seluruh workspace miliknya — termasuk yang dibuat nanti — bisa dipakai penuh tanpa berlangganan.' }}">
+                                        @csrf
+                                        <button class="hover:underline {{ $user->is_exempt ? 'text-destructive' : 'text-muted-foreground hover:text-foreground' }}">
+                                            {{ $user->is_exempt ? 'Cabut bebas tagihan' : 'Bebaskan tagihan' }}
+                                        </button>
                                     </form>
 
                                 @if ($user->id !== auth()->id())

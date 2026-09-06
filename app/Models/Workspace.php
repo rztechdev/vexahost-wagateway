@@ -135,6 +135,11 @@ class Workspace extends Model
      */
     public function isActive(): bool
     {
+        // Workspace yang dibebaskan tidak pernah mati karena tagihan.
+        if ($this->isExempt()) {
+            return true;
+        }
+
         if ($this->status !== 'active') {
             return false;
         }
@@ -223,9 +228,55 @@ class Workspace extends Model
         return $this->currentUsage()->messages_sent < $this->monthly_message_quota;
     }
 
+    /**
+     * Bebas dari penagihan sepenuhnya.
+     *
+     * Dua sumbernya sengaja dipisah. `is_internal` menandai workspace tertentu
+     * — dipasang per workspace dari panel admin. `users.is_exempt` menandai
+     * ORANGNYA, sehingga workspace yang ia buat besok ikut bebas tanpa ada yang
+     * perlu ingat menandainya lagi; itu yang dibutuhkan untuk akun perusahaan
+     * sendiri, yang workspace-nya bertambah seiring waktu.
+     *
+     * Dipakai di semua tempat yang dulu memeriksa `is_internal` langsung.
+     * Menambah pemeriksaan baru yang cuma membaca `is_internal` berarti
+     * pengecualian yang berlaku di satu tempat tapi tidak di tempat lain — dan
+     * pemiliknya baru tahu dari kegagalan, bukan dari halaman mana pun.
+     */
+    public function isExempt(): bool
+    {
+        return (bool) $this->is_internal || (bool) $this->owner?->is_exempt;
+    }
+
+    /**
+     * Nomor istimewa milik perusahaan tidak menghitung jatah sesi siapa pun.
+     *
+     * Karena itu jumlah yang dibandingkan bukan seluruh sesi, melainkan sesi
+     * yang benar-benar dibayar. Tanpa ini, menautkan nomor perusahaan di
+     * workspace pelanggan akan memakan jatah nomor yang sudah mereka bayar.
+     */
     public function canAddSession(): bool
     {
-        return $this->sessions()->count() < $this->max_sessions;
+        if ($this->isExempt()) {
+            return true;
+        }
+
+        return $this->sessionsTerhitung() < $this->max_sessions;
+    }
+
+    /** Jumlah sesi yang menghitung jatah paket — nomor istimewa tidak ikut. */
+    public function sessionsTerhitung(): int
+    {
+        $istimewa = SpecialNumber::daftar();
+
+        if ($istimewa === []) {
+            return $this->sessions()->count();
+        }
+
+        return $this->sessions()
+            ->where(function ($q) use ($istimewa): void {
+                $q->whereNull('phone_number')->orWhereNotIn('phone_number', $istimewa);
+            })
+            ->count();
     }
 
     /**

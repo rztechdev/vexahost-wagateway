@@ -97,16 +97,33 @@ return [
     | dan tagihan yang baru terbit di hari jatuh tempo berarti setiap pelanggan
     | mengalami layanan berhenti minimal sekali.
     |
-    | `grace_days` adalah jarak antara "pengiriman berhenti" dan "sesi diputus".
-    | Memutus sesi berarti pelanggan harus scan QR ulang saat kembali membayar,
-    | dan itu alasan nomor satu orang tidak kembali. Selama masa ini nomornya
-    | tetap tertaut, hanya tidak bisa dipakai mengirim.
+    | `grace_days` adalah jarak antara "pengiriman berhenti" dan "nomor dilepas".
+    |
+    | Dulu 30 hari, dengan alasan yang ternyata keliru: dikira melepas sesi
+    | memaksa scan QR ulang saat pelanggan kembali. Tidak — `suspend()` memakai
+    | `disconnect()`, bukan `logout()`, jadi kredensialnya tetap tersimpan di
+    | store Laravel dan nomor yang sama tersambung sendiri begitu tagihan lunas.
+    | Yang benar-benar hilang saat dilepas cuma otomatisasinya; WhatsApp-nya
+    | sendiri tetap hidup di ponsel pelanggan, karena kita perangkat tertaut,
+    | bukan pemilik akunnya.
+    |
+    | Sejak pesan masuk ikut ditutup saat langganan mati (6 Sep 2026), jendela
+    | ini nyaris tidak memberi apa-apa lagi kepada pelanggan: pengiriman mati,
+    | penerimaan mati, webhook mati. Yang tersisa cuma sesi yang menyala tanpa
+    | melayani apa pun — sambil memakan satu dari tiga slot untuk SELURUH
+    | pelanggan. Karena itu 3 hari, bukan 14 apalagi 30.
+    |
+    | Tidak nol, dan alasannya bukan kemurahan hati: melepas lalu menyambungkan
+    | lagi adalah operasi nyata yang bisa gagal (engine memulihkan kredensial
+    | dari store). Tiga hari membuat pelanggan yang membayar cepat — dan
+    | pembayarannya masih diperiksa manusia — tidak perlu melewati siklus itu
+    | sama sekali.
     |
     */
 
     'invoice_due_days' => (int) env('BILLING_INVOICE_DUE_DAYS', 7),
     'issue_days_before' => (int) env('BILLING_ISSUE_DAYS_BEFORE', 3),
-    'grace_days' => (int) env('BILLING_GRACE_DAYS', 30),
+    'grace_days' => (int) env('BILLING_GRACE_DAYS', 3),
     'reminder_days' => [7, 3, 1, 0],
 
     /*

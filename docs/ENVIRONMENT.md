@@ -199,6 +199,12 @@ BILLING_TAX_PERCENT=0           # 0 = harga yang dipajang sudah final, tanpa bar
 # Kosong = seluruh pemberitahuan diam, tanpa satu pun yang gagal secara
 # terlihat. Panel admin menampilkan peringatan merah di halaman Ringkasan
 # selama keadaan ini berlangsung — itu satu-satunya gejalanya.
+#
+# SEJAK 6 SEP 2026 INI CUMA CADANGAN. Pilihannya ada di panel admin, menu
+# Pengecualian, dan disimpan di tabel `app_settings` — itu yang dibaca lebih
+# dulu. Alasannya urutan pemasangan lewat env mustahil: id workspace baru ada
+# setelah workspace-nya dibuat lewat dashboard, jadi mengisinya di sini berarti
+# deploy, buat workspace, salin id, deploy lagi.
 BILLING_NOTIFY_WORKSPACE_ID=
 
 # Nomor WhatsApp tim, untuk pemberitahuan yang butuh tindakan manusia —

@@ -238,6 +238,51 @@ matikan() {
 # Yang dilepas dengan mematikan pengawas itu: server tidak lagi restart sendiri
 # saat `.env` berubah. Di produksi berkas itu memang tidak pernah berubah saat
 # container hidup — perubahan env datang lewat redeploy Coolify.
+# ============================================================================
+# Migrasi database — DIJALANKAN DI SINI, bukan diketik manusia setelah deploy.
+# ============================================================================
+#
+# Sampai 6 September 2026 migrasi adalah langkah manual di terminal Coolify
+# (docs/DEPLOYMENT.md §Deploy). Itu bekerja selama perubahannya kecil, dan
+# gagal total pada rilis yang menambah kolom yang dibaca hampir tiap
+# permintaan: kalau langkahnya terlewat satu kali, container menyala normal,
+# lolos health check, lalu SETIAP halaman jatuh dengan "column not found" —
+# termasuk halaman masuk. Aplikasi terlihat hidup dari luar dan mati total dari
+# dalam, dan yang menemukannya pelanggan.
+#
+# Aman dijalankan tiap boot karena satu tahap = satu container: tidak ada dua
+# proses yang bisa bermigrasi bersamaan. `--force` wajib di produksi — Laravel
+# menolak jalan tanpa konfirmasi interaktif.
+#
+# `--isolated` sengaja TIDAK dipakai walau terlihat lebih aman. Ia mengambil
+# kunci lewat cache, dan `CACHE_STORE=database` berarti kuncinya disimpan di
+# tabel `cache_locks` — tabel yang justru baru dibuat oleh migrasi ini sendiri.
+# Di database yang masih kosong hasilnya ayam-telur: migrasi gagal dengan
+# "Table 'cache_locks' doesn't exist" sebelum satu tabel pun sempat dibuat.
+# Sudah diuji langsung di MySQL kosong, bukan dugaan.
+#
+# Kalau GAGAL, container berhenti di sini dan tidak menyalakan apa pun. Itu
+# disengaja: aplikasi yang melayani permintaan dengan skema database setengah
+# jadi jauh lebih berbahaya daripada container yang jelas-jelas mati — yang
+# pertama merusak data, yang kedua cuma perlu diperbaiki lalu di-deploy ulang.
+echo "[start.sh] Menjalankan migrasi database."
+
+if ! php artisan migrate --force; then
+    cat >&2 <<'GAGAL'
+[start.sh] ============================================================
+[start.sh] MIGRASI GAGAL. Container dihentikan sebelum melayani apa pun.
+[start.sh]
+[start.sh] Aplikasi TIDAK dinyalakan dengan sengaja: melayani permintaan
+[start.sh] dengan skema database setengah jadi merusak data, sementara
+[start.sh] container yang mati cuma perlu diperbaiki lalu di-deploy ulang.
+[start.sh]
+[start.sh] Periksa: DB_HOST/DB_DATABASE/DB_USERNAME di environment resource,
+[start.sh] dan baris galat tepat di atas kotak ini.
+[start.sh] ============================================================
+GAGAL
+    exit 1
+fi
+
 echo "[start.sh] Menyalakan web, engine WhatsApp, worker, dan penjadwal dalam satu container."
 
 php artisan serve --host=0.0.0.0 --port="$PORT_WEB" --no-reload &

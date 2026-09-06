@@ -24,6 +24,7 @@
             $subscription->isUsable() && $sisa >= 0 => $sisa === 0
                 ? 'berakhir hari ini'
                 : ($sisa === 1 ? 'tinggal 1 hari' : 'tinggal '.$sisa.' hari'),
+            $subscription->current_period_end !== null => 'masa berlakunya sudah lewat',
             default => 'belum ada masa berlaku berjalan',
         };
 
@@ -76,12 +77,14 @@
     @elseif ($subscription->status === 'past_due')
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3.5 text-destructive">
             <div class="min-w-0">
-                <p class="font-medium">Pengiriman pesan sedang berhenti.</p>
+                <p class="font-medium">Layanan sedang berhenti.</p>
                 <p class="mt-0.5 text-sm leading-relaxed">
-                    Nomor WhatsApp Anda <strong>masih tertaut</strong> dan tidak perlu discan ulang.
+                    Pengiriman keluar, pesan masuk, dan webhook semuanya berhenti.
+                    <strong>WhatsApp di ponsel Anda tidak terpengaruh.</strong>
                     @if ($subscription->sessionsCutOffAt())
-                        Sesi baru akan dilepas kalau belum dibayar sampai
-                        {{ $subscription->sessionsCutOffAt()->translatedFormat('j F Y') }}.
+                        Nomor dilepas dari gateway kalau belum dibayar sampai
+                        {{ $subscription->sessionsCutOffAt()->translatedFormat('j F Y') }} —
+                        dan itu pun tanpa perlu scan QR lagi saat Anda kembali.
                     @endif
                 </p>
             </div>
@@ -134,7 +137,7 @@
                 tautanLabel="Ganti paket"
                 ikon="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
 
-        <x-stat label="{{ $subscription->isUsable() ? 'Berlaku sampai' : 'Berakhir' }}"
+        <x-stat label="{{ $subscription->isUsable() ? 'Berlaku sampai' : ($subscription->current_period_end ? 'Berakhir pada' : 'Masa berlaku') }}"
                 :nilai="$tanggalAkhir"
                 :sub="$subSisa"
                 :nada="$nadaSisa"
@@ -178,6 +181,78 @@
                 <span>{{ number_format($dipakai) }} terpakai · {{ $persenBar }}%</span>
                 <span>{{ number_format(max(0, $kuota - $dipakai)) }} tersisa</span>
             </div>
+        </x-section>
+    @endif
+
+    {{-- ===================== Apa yang terjadi selanjutnya =====================
+
+         Ditampilkan hanya saat memang sedang berjalan menuju sesuatu. Yang
+         membuat pelanggan panik bukan layanan yang berhenti, melainkan tidak
+         tahu apa yang berhenti, kapan, dan apa yang hilang permanen. Tanggalnya
+         nyata, bukan "beberapa hari".
+         ============================================================= --}}
+    @if (in_array($subscription->status, ['past_due', 'suspended'], true))
+        @php
+            $lepas = $subscription->sessionsCutOffAt();
+            $sudahLepas = $subscription->status === 'suspended';
+        @endphp
+
+        <x-section judul="Apa yang terjadi dengan nomor Anda" rapat>
+            <ol class="space-y-4 text-sm">
+                <li class="flex gap-3">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-destructive"></span>
+                    <span>
+                        <span class="font-medium">Layanan berhenti</span>
+                        <span class="ml-2 text-muted-foreground">
+                            {{ $subscription->past_due_at?->translatedFormat('j F Y') ?? 'sudah berlaku' }}
+                        </span>
+                        <span class="mt-0.5 block leading-relaxed text-muted-foreground">
+                            Pengiriman keluar, pesan masuk, dan webhook berhenti bersamaan.
+                            Pesan yang masuk tetap ada di WhatsApp ponsel Anda.
+                        </span>
+                    </span>
+                </li>
+
+                <li class="flex gap-3">
+                    <span @class([
+                        'mt-1.5 h-2 w-2 shrink-0 rounded-full',
+                        'bg-destructive' => $sudahLepas,
+                        'bg-border' => ! $sudahLepas,
+                    ])></span>
+                    <span>
+                        <span class="font-medium">Nomor dilepas dari gateway</span>
+                        <span class="ml-2 text-muted-foreground">
+                            {{ $sudahLepas ? 'sudah terjadi' : ($lepas?->translatedFormat('j F Y') ?? '—') }}
+                        </span>
+                        <span class="mt-0.5 block leading-relaxed text-muted-foreground">
+                            WhatsApp di ponsel Anda tidak terpengaruh — kami hanya perangkat tertaut.
+                            Kredensialnya tetap kami simpan.
+                        </span>
+                    </span>
+                </li>
+
+                <li class="flex gap-3">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-border"></span>
+                    <span>
+                        <span class="font-medium">Riwayat pesan tetap tersimpan</span>
+                        <span class="ml-2 text-muted-foreground">{{ $currentWorkspace->messageRetentionDays() }} hari</span>
+                        <span class="mt-0.5 block leading-relaxed text-muted-foreground">
+                            Template, webhook, API key, dan anggota tim tidak dihapus karena tidak membayar.
+                        </span>
+                    </span>
+                </li>
+
+                <li class="flex gap-3">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"></span>
+                    <span>
+                        <span class="font-medium text-primary">Begitu tagihan lunas, semuanya kembali sendiri</span>
+                        <span class="mt-0.5 block leading-relaxed text-muted-foreground">
+                            Nomor yang sama tersambung otomatis dalam hitungan menit, tanpa scan QR,
+                            tanpa Anda menekan apa pun.
+                        </span>
+                    </span>
+                </li>
+            </ol>
         </x-section>
     @endif
 

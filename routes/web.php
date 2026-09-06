@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
+use App\Http\Controllers\Admin\ExemptionController as AdminExemptionController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
@@ -101,6 +102,7 @@ Route::middleware('auth')->group(function (): void {
 
         Route::get('templates', [TemplateController::class, 'index'])->name('templates.index');
         Route::post('templates', [TemplateController::class, 'store'])->name('templates.store');
+        Route::post('templates/bawaan/{slug}', [TemplateController::class, 'copyBuiltin'])->name('templates.copy');
         Route::put('templates/{id}', [TemplateController::class, 'update'])->name('templates.update');
         Route::delete('templates/{id}', [TemplateController::class, 'destroy'])->name('templates.destroy');
 
@@ -152,6 +154,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('pesan', AdminMessageController::class)->name('messages');
     Route::get('audit', AdminAuditController::class)->name('audit');
     Route::get('sistem', AdminSystemController::class)->name('system');
+
+    /*
+    | Pemberitahuan dan pengecualian di satu halaman: ketiganya menjawab
+    | pertanyaan yang sama — siapa yang tidak tunduk pada aturan biasa.
+    */
+    Route::get('pengecualian', [AdminExemptionController::class, 'index'])->name('exemptions');
+    Route::post('pengecualian/nomor', [AdminExemptionController::class, 'storeNumber'])->name('exemptions.numbers.store');
+    Route::delete('pengecualian/nomor/{id}', [AdminExemptionController::class, 'destroyNumber'])->name('exemptions.numbers.destroy');
+    Route::post('pengecualian/akun/{id}', [AdminExemptionController::class, 'toggleUser'])->name('exemptions.users.toggle');
+    Route::post('pengecualian/pengirim', [AdminExemptionController::class, 'saveNotifier'])->name('exemptions.notifier');
+    Route::post('pengecualian/pengirim/tes', [AdminExemptionController::class, 'testNotifier'])->name('exemptions.notifier.test');
 
     Route::get('pengguna', [AdminUserController::class, 'index'])->name('users');
     Route::post('pengguna/{id}/super-admin', [AdminUserController::class, 'toggleSuperAdmin'])->name('users.super');

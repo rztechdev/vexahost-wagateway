@@ -1,5 +1,7 @@
 @props(['subscription', 'aksi' => 'memakai fitur ini'])
 
+@php $alasan = $subscription->alasanNomorBerhenti(); @endphp
+
 {{-- Pengganti formulir saat langganan belum/tidak berlaku.
 
      `EnsureSubscriptionActive` sudah menolak setiap POST dari workspace yang
@@ -40,4 +42,15 @@
             {{ $belumPernah ? 'Pilih paket' : 'Perpanjang langganan' }}
         </a>
     </div>
+
+    {{-- Nasib nomor yang SUDAH tertaut — pertanyaan yang berbeda dari "kenapa
+         saya tidak bisa menambah", dan yang jauh lebih mendesak. Digabung ke
+         satu blok, bukan spanduk sendiri: tiga kotak beruntun yang mengatakan
+         hal yang sama membuat ketiganya berhenti dibaca. --}}
+    @if ($alasan)
+        <div class="mt-4 border-t border-border pt-4">
+            <p class="text-sm font-medium">{{ $alasan['judul'] }}</p>
+            <p class="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{{ $alasan['pesan'] }}</p>
+        </div>
+    @endif
 </div>

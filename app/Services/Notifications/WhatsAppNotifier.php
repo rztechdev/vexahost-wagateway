@@ -2,9 +2,11 @@
 
 namespace App\Services\Notifications;
 
+use App\Models\AppSetting;
 use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\MessageDispatcher;
+use App\Support\EngineError;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -46,7 +48,7 @@ class WhatsAppNotifier
      */
     public function toWorkspace(Workspace $workspace, string $pesan, ?string $sekali = null, int $ingatJam = 24): bool
     {
-        if ($workspace->is_internal || blank($workspace->billing_phone)) {
+        if ($workspace->isExempt() || blank($workspace->billing_phone)) {
             return false;
         }
 
@@ -81,6 +83,69 @@ class WhatsAppNotifier
     public function ready(): bool
     {
         return $this->senderSession() !== null;
+    }
+
+    /**
+     * Mengirim pesan percobaan, dan menjelaskan kenapa kalau gagal.
+     *
+     * `ready()` cuma menjawab ya/tidak, dan itu tidak cukup untuk memasang:
+     * "tidak siap" bisa berarti workspace pengirim belum dipilih, sudah dipilih
+     * tapi nomornya belum discan, atau sudah discan tapi engine sedang mati.
+     * Ketiganya butuh tindakan yang berbeda, dan menebaknya sendiri adalah
+     * pekerjaan yang tidak perlu ada.
+     *
+     * Sengaja TIDAK memakai penanda sekali-kirim: percobaan yang menolak
+     * berjalan dua kali tidak ada gunanya.
+     *
+     * @return array{berhasil: bool, pesan: string}
+     */
+    public function kirimTes(string $tujuan): array
+    {
+        $nomor = PhoneNumber::normalize($tujuan);
+
+        if ($nomor === null) {
+            return ['berhasil' => false, 'pesan' => 'Nomor tujuan tidak dikenali. Pakai format 08xx atau 62xx.'];
+        }
+
+        $workspaceId = AppSetting::ambil('notify_workspace_id', config('billing.notify_workspace_id'));
+
+        if (blank($workspaceId)) {
+            return ['berhasil' => false, 'pesan' => 'Workspace pengirim belum dipilih di halaman ini.'];
+        }
+
+        $workspace = Workspace::find($workspaceId);
+
+        if (! $workspace) {
+            return ['berhasil' => false, 'pesan' => 'Workspace pengirim yang tersimpan sudah tidak ada. Pilih ulang.'];
+        }
+
+        if (! $this->senderSession()) {
+            $jumlah = $workspace->sessions()->count();
+
+            return ['berhasil' => false, 'pesan' => $jumlah === 0
+                ? "Workspace {$workspace->name} belum punya sesi sama sekali. Buat sesi di dashboard, lalu scan QR-nya."
+                : "Sesi di workspace {$workspace->name} ada tapi belum tersambung. Buka menu Sesi WhatsApp, klik Hubungkan, lalu scan QR-nya."];
+        }
+
+        try {
+            $this->dispatcher->queue($this->senderSession(), $nomor, [
+                'body' => '*Tes pemberitahuan Flustra WA*
+
+'
+                    .'Kalau pesan ini sampai, jalur pemberitahuan sudah benar: tagihan, pengingat masa '
+                    .'berlaku, dan kabar bukti pembayaran akan terkirim lewat nomor yang sama.
+
+'
+                    .'Dikirim '.now()->translatedFormat('j F Y, H:i').'.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Tes pemberitahuan gagal', ['error' => $e->getMessage()]);
+
+            return ['berhasil' => false, 'pesan' => EngineError::pesan($e)];
+        }
+
+        return ['berhasil' => true, 'pesan' => 'Pesan masuk antrean pengiriman ke '.PhoneNumber::mask($nomor)
+            .'. Kalau tidak sampai dalam satu menit, periksa halaman Lalu Lintas Pesan.'];
     }
 
     private function send(string $tujuan, string $pesan, ?string $sekali, int $ingatJam): bool
@@ -129,17 +194,38 @@ class WhatsAppNotifier
      * yang kebetulan tersambung: memilih sendiri berarti suatu hari
      * pemberitahuan tagihan keluar dari nomor pelanggan lain.
      */
+    /**
+     * Sesi yang dipakai mengirim SELURUH pemberitahuan.
+     *
+     * Urutannya disengaja: setelan dari panel admin lebih dulu, baru env.
+     *
+     * Dulu hanya env, dan itu menghasilkan urutan pemasangan yang mustahil —
+     * id workspace baru ada setelah workspace-nya dibuat lewat dashboard, jadi
+     * mengisinya berarti deploy, buat workspace, salin id, deploy lagi. Selama
+     * dua deploy itu seluruh pemberitahuan diam tanpa satu pun gejala. Sekarang
+     * cukup dipilih dari halaman Pemberitahuan di panel admin.
+     *
+     * Nomor istimewa didahulukan di dalam workspace itu: kalau nomor perusahaan
+     * ditautkan di sana, dialah yang mengirim — dan ia tidak pernah ikut
+     * dilepas saat ada langganan yang mati.
+     */
     private function senderSession(): ?WaSession
     {
-        $workspaceId = config('billing.notify_workspace_id');
+        $workspaceId = AppSetting::ambil('notify_workspace_id', config('billing.notify_workspace_id'));
 
         if (blank($workspaceId)) {
             return null;
         }
 
-        return Workspace::find($workspaceId)
+        $sesi = Workspace::find($workspaceId)
             ?->sessions()
             ->where('status', 'connected')
-            ->first();
+            ->get();
+
+        if (! $sesi || $sesi->isEmpty()) {
+            return null;
+        }
+
+        return $sesi->first(fn (WaSession $s) => $s->isSpecial()) ?? $sesi->first();
     }
 }

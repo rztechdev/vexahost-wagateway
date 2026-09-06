@@ -25,7 +25,7 @@ class HealthController extends ApiController
                 'messages_sent' => $usage->messages_sent,
                 'messages_received' => $usage->messages_received,
                 'messages_failed' => $usage->messages_failed,
-                'quota' => $workspace->is_internal ? null : $workspace->monthly_message_quota,
+                'quota' => $workspace->isExempt() ? null : $workspace->monthly_message_quota,
             ],
         ]);
     }

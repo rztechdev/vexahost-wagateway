@@ -23,6 +23,7 @@ class SyncSessionStatusJob implements ShouldQueue
     public function handle(SessionService $sessions): void
     {
         $candidates = WaSession::query()
+            ->with('workspace')
             ->whereIn('status', ['connected', 'connecting', 'disconnected'])
             ->where('driver', 'wwebjs')
             ->get();
@@ -36,7 +37,18 @@ class SyncSessionStatusJob implements ShouldQueue
                     Log::warning('Sesi WhatsApp terputus', ['session_id' => $session->id]);
                 }
 
-                if ($session->status === 'disconnected' && $session->auto_reconnect) {
+                /*
+                 | Menyelaraskan status boleh untuk sesi mana pun — itu cuma
+                 | membaca. Yang TIDAK boleh adalah menjalankannya lagi untuk
+                 | workspace yang layanannya sudah mati: `releaseSessions()`
+                 | melepasnya setelah masa tenggang, lalu job ini menjalankannya
+                 | lagi satu menit kemudian, tiap menit, selamanya. Penegakan
+                 | langganan yang bisa dibatalkan oleh penjadwal kita sendiri
+                 | bukan penegakan.
+                */
+                if ($session->status === 'disconnected'
+                    && $session->auto_reconnect
+                    && $session->workspace?->isActive()) {
                     $sessions->connect($session);
                 }
             } catch (\Throwable $e) {

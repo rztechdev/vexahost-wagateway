@@ -35,6 +35,7 @@
         'Akun & Jejak' => [
             ['rute' => 'admin.users', 'label' => 'Pengguna', 'cocok' => ['admin.users', 'admin.users.*'], 'ikon' => 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm10 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
             ['rute' => 'admin.audit', 'label' => 'Catatan Audit', 'ikon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4'],
+            ['rute' => 'admin.exemptions', 'label' => 'Pengecualian', 'cocok' => ['admin.exemptions', 'admin.exemptions.*'], 'ikon' => 'M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8L12 2z'],
             ['rute' => 'admin.system', 'label' => 'Sistem', 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h2m14 0h2M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4'],
         ],
     ];

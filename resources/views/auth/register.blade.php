@@ -1,16 +1,16 @@
 @extends('layouts.auth')
 
 @section('title', 'Daftar Akun - Flustra WA Gateway')
-@section('container_width', 'max-w-lg')
+@section('container_width', 'max-w-[460px]')
 
 @section('content')
 <div>
     {{-- Header Form --}}
-    <div class="mb-7">
-        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+    <div class="mb-6">
+        <h2 class="text-2xl sm:text-[1.7rem] font-bold tracking-tight text-foreground">
             Daftar Akun Baru
         </h2>
-        <p class="mt-2 text-xs sm:text-sm text-muted-foreground">
+        <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground">
             Mulai kelola pesan dan otomatisasi WhatsApp Anda bersama Flustra
         </p>
     </div>

@@ -345,6 +345,13 @@ class SubscriptionService
                 continue;
             }
 
+            // Nomor perusahaan sendiri tidak ikut dilepas kalau workspace yang
+            // ditumpanginya menunggak — melepasnya berarti pemberitahuan
+            // penagihan kami sendiri ikut mati bersama pelanggan yang menunggak.
+            if ($session->isSpecial()) {
+                continue;
+            }
+
             try {
                 $this->sessions->disconnect($session);
             } catch (\Throwable $e) {

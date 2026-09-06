@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\MessageTemplate;
+use App\Support\TemplateBawaan;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +16,53 @@ class TemplateController extends Controller
 {
     public function index(Request $request): View
     {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
         return view('dashboard.templates.index', [
-            'templates' => EnsureWorkspaceSelected::from($request)->templates()->orderBy('name')->get(),
+            'templates' => $workspace->templates()->orderBy('name')->get(),
+            'templateBawaan' => TemplateBawaan::perKategori(),
+            'slugTerpakai' => $workspace->templates()->pluck('slug')->all(),
+        ]);
+    }
+
+    /**
+     * Menyalin template bawaan menjadi milik workspace.
+     *
+     * Menyalin, bukan menautkan: sejak disalin ia milik pelanggan sepenuhnya
+     * dan tidak pernah ikut berubah kalau kami memperbaiki kalimat bawaannya.
+     * Itu memang yang diinginkan — orang yang sudah menyesuaikan template
+     * dengan gaya bahasanya sendiri tidak boleh tiba-tiba kehilangannya karena
+     * kami mengganti satu kata.
+     */
+    public function copyBuiltin(Request $request, string $slug): RedirectResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+        $bawaan = TemplateBawaan::cari($slug);
+
+        if (! $bawaan) {
+            return back()->withErrors(['template' => 'Template bawaan itu sudah tidak ada.']);
+        }
+
+        // Slug unik per workspace; yang sudah punya salinannya diberi akhiran
+        // supaya menyalin dua kali tidak gagal dengan galat database.
+        $slugBaru = $bawaan['slug'];
+        $n = 2;
+        while ($workspace->templates()->where('slug', $slugBaru)->exists()) {
+            $slugBaru = $bawaan['slug'].'-'.$n++;
+        }
+
+        $workspace->templates()->create([
+            'name' => $bawaan['name'],
+            'slug' => $slugBaru,
+            'body' => $bawaan['body'],
+            'variables' => $bawaan['variables'],
+            'is_active' => true,
+        ]);
+
+        return back()->with('swal', [
+            'tipe' => 'success',
+            'judul' => 'Template disalin',
+            'pesan' => '"'.$bawaan['name'].'" sekarang milik workspace ini dan bisa Anda ubah sesuka hati.',
         ]);
     }
 

@@ -275,9 +275,16 @@
                  SETIAP halaman dashboard, bukan hanya di halaman Langganan —
                  pelanggan yang gateway-nya berjalan lancar justru yang paling
                  jarang membuka halaman itu. --}}
-            @isset($currentSubscription)
+            {{-- Spanduk ini menyusul pengguna ke SETIAP halaman, kecuali dua yang
+                 sudah punya penjelasannya sendiri yang jauh lebih lengkap:
+                 Langganan (dengan tanggal dan tangga apa yang terjadi
+                 selanjutnya) dan Sesi (dengan nasib nomor yang sudah tertaut).
+                 Tanpa pengecualian ini, halaman Sesi menampilkan tiga kotak
+                 beruntun yang mengatakan hal yang sama dengan kalimat berbeda —
+                 dan ketiganya berhenti dibaca. --}}
+            @if (isset($currentSubscription) && ! request()->routeIs('billing.*', 'sessions.*'))
                 {{-- Yang belum pernah berlangganan butuh kalimat yang berbeda dari
-                     yang langganannya berhenti. "Pengiriman pesan sedang berhenti"
+                     yang langganannya berhenti. "Layanan sedang berhenti"
                      tidak masuk akal bagi orang yang belum pernah mengirim apa pun,
                      dan kalimat yang salah di layar pertama membuat pendaftar baru
                      mengira ada yang rusak. --}}
@@ -326,11 +333,11 @@
                 @elseif (! $currentSubscription->isUsable())
                     <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         <span>
-                            <strong>Pengiriman pesan sedang berhenti.</strong>
+                            <strong>Layanan sedang berhenti.</strong>
                             @if ($currentSubscription->status === 'suspended')
-                                Langganan ditangguhkan dan sesi sudah dilepas.
+                                Nomor sudah dilepas dari gateway. WhatsApp di ponsel Anda tidak terpengaruh.
                             @else
-                                Nomor Anda masih tertaut dan tidak perlu discan ulang.
+                                Pengiriman, pesan masuk, dan webhook berhenti — WhatsApp di ponsel Anda tidak terpengaruh.
                             @endif
                         </span>
                         {{-- Menuju halaman paket, bukan ringkasan: yang dibutuhkan
@@ -353,7 +360,7 @@
                         </a>
                     </div>
                 @endif
-            @endisset
+            @endif
 
             @if (session('status'))
                 <div class="mb-5 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">

@@ -63,17 +63,21 @@ Yang terjadi bertahap, dan tidak ada satu pun tahap yang menghapus data Anda.
 
 **Sejak tanggal berakhir:**
 
-- Pengiriman pesan berhenti — lewat dashboard maupun lewat API.
-- Nomor WhatsApp Anda **tetap tertaut**. Tidak perlu discan ulang.
+- Layanan berhenti seluruhnya: pengiriman keluar, pencatatan pesan masuk, dan webhook.
+- **WhatsApp di ponsel Anda tidak terpengaruh.** Pesan yang dikirim orang ke nomor Anda tetap sampai dan tetap ada di WhatsApp Anda — yang berhenti hanya pencatatan dan penerusannya ke sistem Anda.
 - Dashboard tetap terbuka. Riwayat pesan, template, webhook, dan API key bisa dilihat seperti biasa.
 
-**Setelah 30 hari:**
+**Setelah 3 hari:**
 
-- Sesi dilepas untuk membebaskan sumber daya. Menghubungkan kembali setelah membayar dilakukan dari halaman **Sesi** — dan kalau cadangan sesinya masih ada, nomornya menyala tanpa scan ulang.
+- Nomor dilepas dari gateway untuk membebaskan kapasitas.
+- **WhatsApp di ponsel Anda tidak terpengaruh sama sekali.** Kami hanya perangkat tertaut, bukan pemilik akunnya — nomor Anda tetap bisa dipakai seperti biasa dari ponsel. Yang berhenti hanya otomatisasinya.
+- Kredensial sesinya tetap kami simpan. Anda **tidak** perlu scan QR lagi saat kembali.
 
-**Data Anda tidak dihapus karena tidak membayar.** Riwayat pesan mengikuti masa retensi paket Anda seperti biasa.
+**Data Anda tidak dihapus karena tidak membayar.** Riwayat pesan mengikuti masa retensi paket Anda seperti biasa; template, webhook, API key, dan anggota tim tidak disentuh.
 
-Begitu tagihan lunas, layanan menyala kembali seketika.
+**Begitu tagihan ditandai lunas, nomor yang sama tersambung sendiri** dalam hitungan menit. Anda tidak perlu menekan apa pun.
+
+Tanggal persisnya selalu terlihat di halaman **Langganan** — bukan "beberapa hari lagi", melainkan tanggalnya.
 
 ---
 

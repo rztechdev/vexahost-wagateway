@@ -524,11 +524,11 @@
 {{-- ===================== Harga ===================== --}}
 <section id="harga" class="border-y border-border/60 bg-muted/30 py-20 sm:py-28">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ tahunan: false }">
-        <div class="max-w-2xl">
+        <div class="mx-auto max-w-2xl text-center">
             <h2 class="muncul text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Bayar sesuai besarnya pemakaian
             </h2>
-            <p class="muncul mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground" style="--tunda: 60ms">
+            <p class="muncul mx-auto mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground" style="--tunda: 60ms">
                 Semua paket memakai gateway, API, dan dashboard yang sama. Yang membedakan hanya seberapa besar Anda memakainya.
             </p>
 
@@ -565,7 +565,7 @@
 
         <div class="mt-12 grid items-stretch gap-8 lg:grid-cols-3">
             @foreach ($paket as $i => $p)
-                <div class="muncul relative flex flex-col justify-between rounded-3xl border p-7 sm:p-8 transition-all duration-300 {{ $p['sorot'] ? 'border-primary bg-card ring-2 ring-primary/20 shadow-xl lg:-translate-y-2' : 'border-border/80 bg-card hover:border-primary/40 hover:shadow-md' }}"
+                <div class="muncul relative flex flex-col justify-between rounded-2xl border p-7 sm:p-8 transition-all duration-300 {{ $p['sorot'] ? 'border-primary bg-card ring-2 ring-primary/20 shadow-xl lg:-translate-y-2' : 'border-border/80 bg-card hover:border-primary/40 hover:shadow-md' }}"
                      style="--tunda: {{ $i * 90 }}ms">
                     @if ($p['sorot'])
                         <div class="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -714,22 +714,53 @@ Http::withHeaders([
                 Pertanyaan yang sering muncul
             </h2>
             <p class="muncul mt-2 text-xs sm:text-sm text-muted-foreground" style="--tunda: 60ms">
-                Jawaban ringkas seputar nomor, integrasi, dan batas pemakaian gateway.
+                Semua informasi lengkap yang Anda butuhkan seputar penautan nomor, integrasi API, keamanan data, fitur webhook, dan batas pemakaian gateway.
             </p>
         </div>
 
         <div class="mt-8 divide-y divide-border/60 border-y border-border/60" x-data="{ terbuka: 0 }">
             @php
                 $tanya = [
-                    ['Apakah nomor saya terkunci di sini?', 'Tidak. Putuskan tautannya dari dashboard, lalu tautkan nomor baru kapan saja.'],
-                    ['Berapa lama pemasangannya?', 'Menautkan nomor pertama biasanya di bawah satu menit. Sisanya tinggal menempelkan API key ke aplikasi Anda.'],
-                    ['Apa yang terjadi kalau kuota habis?', 'Pengiriman berhenti di batas paket dan tercatat di dashboard, bukan gagal diam-diam.'],
-                    ['Bagaimana kalau aplikasi saya bukan Laravel?', 'Antarmukanya REST biasa berbasis JSON. Contoh siap salin tersedia untuk PHP, Node.js, dan Python.'],
-                    ['Apakah sesi nomor aman dari pemblokiran?', 'Pesan diantrekan dengan jeda acak natural per nomor untuk meminimalkan risiko deteksi spam oleh WhatsApp.'],
+                    [
+                        'Apakah nomor WhatsApp saya terkunci di platform ini?',
+                        'Tidak sama sekali. Anda memegang kendali penuh atas nomor WhatsApp yang ditautkan. Anda dapat memutuskan tautan (disconnect) kapan saja melalui dashboard dan menggantinya dengan nomor baru tanpa biaya tambahan atau birokrasi verifikasi yang rumit. Riwayat log pesan sebelumnya tetap tersimpan aman di akun Anda.',
+                    ],
+                    [
+                        'Berapa lama waktu yang dibutuhkan untuk pemasangan pertama kali?',
+                        'Proses penautan nomor pertama hanya membutuhkan waktu sekitar 30–60 detik melalui scan kode QR di dashboard Flustra WA. Setelah nomor terhubung dan API Key diterbitkan, integrasi ke aplikasi Anda dapat selesai dalam hitungan menit cukup dengan mengirimkan satu HTTP POST request standar berisi format JSON.',
+                    ],
+                    [
+                        'Apa yang terjadi jika kuota pesan bulanan saya habis?',
+                        'Sistem tidak akan membiarkan pesan gagal secara diam-diam (silent failure). Gateway akan mengembalikan respon HTTP 429 Too Many Requests dengan pesan error yang jelas dan detail. Seluruh status pengiriman tercatat secara transparan di dashboard, dan Anda dapat melakukan upgrade paket seketika kapan saja untuk melanjutkan pengiriman tanpa perlu pairing ulang nomor.',
+                    ],
+                    [
+                        'Bagaimana jika aplikasi backend saya tidak menggunakan framework Laravel?',
+                        'Flustra WA Gateway dibangun menggunakan standar terbuka REST API berbasis JSON murni. Layanan ini kompatibel 100% dengan bahasa pemrograman, runtime, atau framework apa pun—mulai dari Node.js (Express, NestJS), Python (Django, FastAPI), PHP native, Go, Java (Spring), C# (.NET), hingga platform no-code seperti Make, Zapier, dan n8n. Dokumentasi kami menyediakan contoh kode siap salin untuk berbagai bahasa.',
+                    ],
+                    [
+                        'Apakah nomor WhatsApp saya aman dari risiko pemblokiran (banned)?',
+                        'Kami menerapkan arsitektur antrean cerdas (smart queue engine) dengan jeda acak natural (dynamic jitter) antar-pesan untuk mensimulasikan pola interaksi manusia dan menghindari deteksi bot oleh WhatsApp. Selain itu, kami menyarankan pengiriman pesan yang relevan (transaksional, OTP, notifikasi pesanan) dan menghindari spam massal ke nomor yang tidak pernah berinteraksi dengan Anda.',
+                    ],
+                    [
+                        'Bisakah saya menggunakan nomor WhatsApp biasa (Personal) atau wajib WhatsApp Business?',
+                        'Anda bebas menggunakan jenis nomor apa pun, baik WhatsApp Personal standar maupun WhatsApp Business biasa. Anda tidak diwajibkan memiliki centang hijau (green tick) ataupun akun Facebook Business Manager yang rumit. Cukup pastikan nomor kartu SIM aktif dan sudah terdaftar di aplikasi WhatsApp resmi ponsel Anda.',
+                    ],
+                    [
+                        'Apakah gateway mendukung pengiriman file media seperti PDF, dokumen, dan gambar?',
+                        'Ya, tentu saja. Selain pesan teks reguler, API Flustra WA Gateway mendukung pengiriman berbagai jenis media digital, termasuk gambar (JPEG, PNG), dokumen dokumen faktur/tagihan (PDF, spreadsheet XLSX), audio, hingga pesan lokasi. Cukup sertakan URL media publik yang valid pada payload API pengiriman media.',
+                    ],
+                    [
+                        'Apakah pesan masuk dari pelanggan dapat diterima dan diproses otomatis (Webhook)?',
+                        'Ya, sangat bisa. Anda dapat mengonfigurasikan URL Webhook di dashboard untuk menerima notifikasi pesan masuk secara real-time. Setiap kali pelanggan mengirimkan balasan, gateway akan langsung meneruskan payload data ke endpoint server Anda, memungkinkan Anda membangun bot interaktif, integrasi CRM, atau ticketing helpdesk pelanggan.',
+                    ],
+                    [
+                        'Bagaimana dengan keamanan dan privasi data pesan pelanggan saya?',
+                        'Keamanan dan privasi data Anda adalah prioritas utama kami. Seluruh lalu lintas data antara aplikasi Anda, gateway kami, dan server WhatsApp dienkripsi menggunakan protokol SSL/TLS 256-bit standar perbankan. Kami tidak pernah membagikan atau menjual isi pesan pelanggan Anda, dan log pesan hanya dapat diakses oleh pemilik akun untuk keperluan audit.',
+                    ],
                 ];
             @endphp
             @foreach ($tanya as $i => [$judul, $isi])
-                <div class="muncul py-4" style="--tunda: {{ $i * 50 }}ms">
+                <div class="muncul py-4" style="--tunda: {{ $i * 40 }}ms">
                     <button @click="terbuka = terbuka === {{ $i }} ? null : {{ $i }}"
                             type="button"
                             class="flex w-full items-center justify-between gap-4 text-left font-medium text-foreground text-sm sm:text-base">
