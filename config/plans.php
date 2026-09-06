@@ -182,6 +182,53 @@ return [
             ],
         ],
 
+        /*
+        | Enterprise — harganya tidak ada di sini, dan itu memang bentuknya.
+        |
+        | Batas dan harga yang berlaku hidup di tabel `enterprise_plans`, satu
+        | baris per workspace, karena kesepakatan enterprise dinegosiasikan per
+        | pelanggan. Baris di katalog ini hanya ada supaya `Plan::exists()`
+        | mengenali slug-nya saat tagihan terbit dan supaya namanya dibaca dari
+        | satu tempat yang sama dengan paket lain.
+        |
+        | `sellable => false`: tidak ada yang bisa membelinya sendiri lewat
+        | halaman harga — yang ada di sana tombol "Hubungi kami".
+        |
+        | Angka di bawah TIDAK semuanya cadangan, dan bedanya penting. Tiga yang
+        | ditegakkan di jalur pengiriman — `max_sessions`,
+        | `monthly_message_quota`, `api_rate_limit_per_minute` — disalin ke kolom
+        | `workspaces` dari baris kesepakatan saat tagihannya lunas, jadi nilai
+        | di sini cuma dipakai kalau baris itu hilang. Tiga sisanya
+        | (`max_api_keys`, `max_members`, `message_retention_days`) dibaca
+        | LANGSUNG dari sini setiap kali, seperti paket lain — jadi merekalah
+        | yang benar-benar berlaku untuk pelanggan Enterprise, dan `0` di
+        | keduanya berarti tanpa batas, mengikuti perjanjian yang sama dengan
+        | Elite.
+        */
+        'enterprise' => [
+            'name' => 'Enterprise',
+            'tagline' => 'Batas dan harga disusun mengikuti kebutuhan Anda.',
+            'price_monthly' => 0,
+            'highlight' => false,
+            'sellable' => false,
+
+            'max_sessions' => 1,
+            'monthly_message_quota' => 0,
+            'max_api_keys' => 0,
+            'max_members' => 0,
+            'message_retention_days' => 365,
+            'api_rate_limit_per_minute' => 300,
+
+            'features' => [
+                'Jumlah nomor WhatsApp sesuai kebutuhan',
+                'Kuota pesan disusun bersama',
+                'API key tanpa batas',
+                'Retensi riwayat pesan lebih panjang',
+                'Prioritas penanganan tiket',
+                'Pendampingan integrasi',
+            ],
+        ],
+
         'essentials' => [
             'name' => 'Essentials',
             'tagline' => 'Satu usaha dengan satu nomor.',

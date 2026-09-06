@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
+use App\Http\Controllers\Admin\EnterpriseController as AdminEnterpriseController;
 use App\Http\Controllers\Admin\ExemptionController as AdminExemptionController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Dashboard\TicketController;
 use App\Http\Controllers\Dashboard\WebhookController;
 use App\Http\Controllers\Dashboard\WorkspaceController;
 use App\Http\Controllers\DocsController;
+use App\Http\Controllers\EnterpriseLeadController;
 use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +63,19 @@ Route::middleware('guest')->group(function (): void {
     Route::get('reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
     Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
+
+/*
+| Form "Hubungi kami" paket Enterprise — terbuka untuk tamu.
+|
+| Yang paling sering butuh lebih dari Elite adalah orang yang sedang menimbang
+| apakah produk ini sanggup, bukan pelanggan yang sudah masuk. Memaksa mereka
+| mendaftar lebih dulu berarti kehilangan mereka di langkah yang tidak perlu ada.
+| Rate limit-nya wajib: form publik tanpa batas adalah undangan bagi bot untuk
+| mengisi tabelnya sampai permintaan sungguhan tidak bisa ditemukan lagi.
+*/
+Route::post('enterprise/hubungi', [EnterpriseLeadController::class, 'store'])
+    ->middleware('throttle:enterprise')
+    ->name('enterprise.contact');
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
@@ -232,6 +247,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     | Tagihan: daftar yang bawaannya menampilkan segalanya membuat yang menunggu
     | tenggelam di antara yang sudah selesai.
     */
+    /*
+    | Enterprise: permintaan penawaran dan kesepakatan yang menjawabnya.
+    | Saringan bawaannya "baru" — permintaan yang tenggelam adalah calon
+    | pelanggan terbesar yang pergi tanpa pernah dijawab.
+    */
+    Route::get('enterprise', [AdminEnterpriseController::class, 'index'])->name('enterprise');
+    Route::get('enterprise/{id}', [AdminEnterpriseController::class, 'show'])->name('enterprise.show');
+    Route::post('enterprise/{id}/status', [AdminEnterpriseController::class, 'updateStatus'])->name('enterprise.status');
+    Route::post('enterprise/{id}/kesepakatan', [AdminEnterpriseController::class, 'storePlan'])->name('enterprise.plan.store');
+    Route::post('enterprise/{id}/kesepakatan/{planId}/tagihan', [AdminEnterpriseController::class, 'issueInvoice'])->name('enterprise.plan.invoice');
+    Route::post('enterprise/{id}/kesepakatan/{planId}/matikan', [AdminEnterpriseController::class, 'deactivatePlan'])->name('enterprise.plan.deactivate');
+
     Route::get('tiket', [AdminTicketController::class, 'index'])->name('tickets');
     Route::get('tiket/{id}', [AdminTicketController::class, 'show'])->name('tickets.show');
     Route::post('tiket/{id}/balas', [AdminTicketController::class, 'reply'])->name('tickets.reply');

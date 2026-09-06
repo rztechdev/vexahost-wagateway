@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Mail\PembayaranDiterima;
 use App\Mail\TagihanTerbit;
 use App\Models\AuditLog;
+use App\Models\EnterprisePlan;
 use App\Models\Invoice;
 use App\Models\ReferralCode;
 use App\Models\Subscription;
@@ -345,6 +346,82 @@ class SubscriptionService
     }
 
     /**
+     * Menerbitkan tagihan untuk kesepakatan Enterprise.
+     *
+     * Memakai JALUR TAGIHAN YANG SUDAH ADA — QRIS, unggah bukti, admin menandai
+     * lunas — persis seperti isi saldo. Tidak ada alur pembayaran ketiga di
+     * produk ini; yang membedakannya cuma dari mana harga dan batasnya datang.
+     *
+     * Harga perkenalan dan kode referal sengaja TIDAK berlaku di sini: harga
+     * Enterprise sudah hasil negosiasi, dan memotongnya lagi berarti angka yang
+     * disepakati dengan pelanggan bukan angka yang ditagihkan.
+     */
+    public function issueEnterpriseInvoice(EnterprisePlan $custom, string $period): Invoice
+    {
+        if (! in_array($period, ['monthly', 'yearly'], true)) {
+            throw new RuntimeException("Periode '{$period}' tidak dikenali.");
+        }
+
+        $workspace = $custom->workspace;
+
+        if (! $workspace) {
+            throw new RuntimeException('Kesepakatan ini tidak menunjuk workspace mana pun.');
+        }
+
+        if (! $custom->is_active) {
+            throw new RuntimeException('Kesepakatan ini sudah tidak berlaku.');
+        }
+
+        $subscription = $this->ensureFor($workspace);
+        $amount = $custom->price($period);
+
+        if ($amount <= 0) {
+            throw new RuntimeException('Harga kesepakatan belum diisi.');
+        }
+
+        $tax = (int) round($amount * config('billing.tax_percent') / 100);
+
+        $invoice = DB::transaction(function () use ($workspace, $subscription, $custom, $period, $amount, $tax) {
+            $code = $this->allocateUniqueCode($amount + $tax);
+
+            $invoice = Invoice::create([
+                'number' => 'INV-WA-'.Str::ulid(),
+                'external_id' => (string) Str::ulid(),
+                'workspace_id' => $workspace->id,
+                'subscription_id' => $subscription->id,
+                'plan_slug' => 'enterprise',
+                'period' => $period,
+                'amount' => $amount,
+                'tax_amount' => $tax,
+                'discount_amount' => 0,
+                'intro_discount_amount' => 0,
+                'unique_code' => $code,
+                'total' => $amount + $tax + $code,
+                'status' => 'pending',
+                'channel' => 'qris_manual',
+                'due_at' => now()->addDays(config('billing.invoice_due_days')),
+            ]);
+
+            $invoice->forceFill([
+                'number' => 'INV-WA-'.str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT),
+            ])->save();
+
+            AuditLog::record('invoice.issued', $invoice, [
+                'jenis' => 'enterprise',
+                'kesepakatan' => $custom->name,
+                'periode' => $period,
+                'total' => $invoice->total,
+            ], $workspace->id);
+
+            return $invoice;
+        });
+
+        $this->email->toWorkspace($workspace, new TagihanTerbit($invoice), "invoice-issued:{$invoice->id}");
+
+        return $invoice;
+    }
+
+    /**
      * Memindahkan workspace ke pay as you go.
      *
      * `service_until` dan `current_period_end` dikosongkan: yang membatasi
@@ -666,6 +743,21 @@ class SubscriptionService
      */
     public function applyPlanLimits(Workspace $workspace, Plan $plan): void
     {
+        /*
+         | Enterprise mengambil batasnya dari KESEPAKATAN, bukan dari katalog.
+         |
+         | Angka di `config/plans.php` untuk slug ini sengaja kecil — ia cuma
+         | cadangan kalau baris kesepakatannya hilang. Menyalinnya apa adanya ke
+         | workspace yang membayar Enterprise berarti pelanggan membayar mahal
+         | lalu dibatasi lebih ketat daripada paket termurah, dan tidak ada satu
+         | pun galat yang muncul saat itu terjadi.
+        */
+        if ($plan->slug === 'enterprise' && $custom = EnterprisePlan::berlakuUntuk($workspace->id)) {
+            $workspace->forceFill($custom->limits() + ['plan_slug' => 'enterprise'])->save();
+
+            return;
+        }
+
         $workspace->forceFill($plan->limits() + ['plan_slug' => $plan->slug])->save();
     }
 

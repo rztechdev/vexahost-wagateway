@@ -43,6 +43,17 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute($perMinute)->by("key:{$key->id}");
         });
 
+        /*
+         | Form Enterprise terbuka untuk tamu, jadi ia butuh batasnya sendiri.
+         |
+         | Dihitung per IP saja — tamu tidak punya identitas lain — dan tiga per
+         | jam sudah jauh di atas kebutuhan orang sungguhan: satu permintaan
+         | penawaran per perusahaan, sekali. Tanpa ini, satu skrip bisa mengisi
+         | tabelnya sampai permintaan yang sungguhan tidak bisa ditemukan lagi
+         | di antara ribuan baris sampah.
+        */
+        RateLimiter::for('enterprise', fn (Request $request) => Limit::perHour(3)->by($request->ip()));
+
         // Melindungi form login dari percobaan menebak password.
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)
             ->by(mb_strtolower((string) $request->input('email')).'|'.$request->ip()));

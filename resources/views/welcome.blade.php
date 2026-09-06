@@ -746,9 +746,110 @@
             </div>
         </div>
 
-        <div class="muncul mt-10 rounded-2xl border border-border/80 bg-card p-5 text-center text-xs sm:text-sm text-muted-foreground" style="--tunda: 130ms">
-            Butuh nomor atau kuota lebih banyak dari paket Elite?
-            <a href="https://about.flustra.id/#contact" class="font-semibold text-primary underline underline-offset-4 hover:opacity-80">Hubungi kami</a> untuk penawaran khusus.
+        {{-- ===================== Enterprise =====================
+
+             Menggantikan tautan keluar ke about.flustra.id. Tautan itu
+             membuang orang yang paling siap membayar ke situs lain tepat saat
+             mereka sedang menimbang — dan tidak meninggalkan satu pun jejak
+             siapa yang pernah bertanya. Sekarang formnya di sini dan datanya
+             masuk ke panel admin.
+             ======================================================== --}}
+        @php $ent = \App\Support\Plan::get('enterprise'); @endphp
+
+        <div id="enterprise" class="muncul mt-10 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-md" style="--tunda: 130ms"
+             x-data="{ buka: {{ $errors->any() && old('name') ? 'true' : 'false' }} }">
+            <div class="flex flex-col gap-6 p-7 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
+                <div class="max-w-2xl space-y-3">
+                    <span class="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Untuk kebutuhan besar
+                    </span>
+                    <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{{ $ent->name() }}</h3>
+                    <p class="text-sm sm:text-base leading-relaxed text-muted-foreground">
+                        Butuh lebih banyak nomor, kuota di atas Elite, atau retensi riwayat yang lebih
+                        panjang? Batas dan harganya kami susun mengikuti kebutuhan Anda — bukan
+                        dipaksa masuk salah satu paket di atas.
+                    </p>
+                    <ul class="grid gap-2 pt-1 text-xs sm:text-sm sm:grid-cols-2">
+                        @foreach ($ent->features() as $f)
+                            <li class="flex items-start gap-2.5">
+                                <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                                <span class="text-muted-foreground leading-relaxed">{{ $f }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="shrink-0 text-center lg:text-right">
+                    <p class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Hubungi kami</p>
+                    <p class="mt-1 text-xs text-muted-foreground">Dijawab dalam 1&times;24 jam hari kerja</p>
+                    <button type="button" @click="buka = ! buka"
+                            class="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]">
+                        <span x-text="buka ? 'Tutup formulir' : 'Minta penawaran'">Minta penawaran</span>
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="buka" x-cloak class="border-t border-border/60 bg-muted/20 p-7 sm:p-9">
+                <form method="POST" action="{{ route('enterprise.contact') }}" class="grid gap-4 sm:grid-cols-2">
+                    @csrf
+
+                    @foreach ([
+                        ['name', 'Nama Anda', 'text', 'Nama lengkap', true],
+                        ['company', 'Perusahaan', 'text', 'PT Contoh Nusantara', false],
+                        ['email', 'Email', 'email', 'nama@perusahaan.co.id', true],
+                        ['phone', 'Nomor WhatsApp', 'tel', '08xxxxxxxxxx', true],
+                    ] as $bidang)
+                        <div>
+                            <label for="ent_{{ $bidang[0] }}" class="mb-1 block text-xs font-semibold text-foreground">
+                                {{ $bidang[1] }}@unless ($bidang[4])<span class="font-normal text-muted-foreground"> (opsional)</span>@endunless
+                            </label>
+                            <input id="ent_{{ $bidang[0] }}" name="{{ $bidang[0] }}" type="{{ $bidang[2] }}" @required($bidang[4])
+                                   value="{{ old($bidang[0]) }}" placeholder="{{ $bidang[3] }}"
+                                   class="w-full rounded-xl border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                            @error($bidang[0])<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
+                        </div>
+                    @endforeach
+
+                    <div>
+                        <label for="ent_sessions" class="mb-1 block text-xs font-semibold text-foreground">
+                            Perkiraan jumlah nomor <span class="font-normal text-muted-foreground">(opsional)</span>
+                        </label>
+                        <input id="ent_sessions" name="estimated_sessions" type="number" min="1" value="{{ old('estimated_sessions') }}"
+                               placeholder="mis. 5"
+                               class="w-full rounded-xl border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                        @error('estimated_sessions')<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label for="ent_messages" class="mb-1 block text-xs font-semibold text-foreground">
+                            Perkiraan pesan per bulan <span class="font-normal text-muted-foreground">(opsional)</span>
+                        </label>
+                        <input id="ent_messages" name="estimated_messages" type="number" min="1" value="{{ old('estimated_messages') }}"
+                               placeholder="mis. 200000"
+                               class="w-full rounded-xl border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                        @error('estimated_messages')<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="ent_needs" class="mb-1 block text-xs font-semibold text-foreground">
+                            Kebutuhan khusus <span class="font-normal text-muted-foreground">(opsional)</span>
+                        </label>
+                        <textarea id="ent_needs" name="needs" rows="4" maxlength="2000"
+                                  placeholder="Ceritakan apa yang ingin Anda kerjakan — jumlah cabang, sistem yang akan disambungkan, jam sibuk, atau apa pun yang membuat paket biasa tidak cukup."
+                                  class="w-full rounded-xl border-border bg-background text-sm focus:border-primary focus:ring-primary">{{ old('needs') }}</textarea>
+                        @error('needs')<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="sm:col-span-2 flex flex-wrap items-center gap-4">
+                        <button class="inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]">
+                            Kirim permintaan
+                        </button>
+                        <p class="text-xs text-muted-foreground">
+                            Data Anda hanya dipakai untuk menyusun penawaran ini.
+                        </p>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </section>

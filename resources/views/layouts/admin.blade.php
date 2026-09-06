@@ -37,6 +37,7 @@
             ['rute' => 'admin.invoices', 'label' => 'Tagihan', 'cocok' => ['admin.invoices', 'admin.invoices.*'], 'ikon' => 'M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2zM8 8h8M8 12h8M8 16h5'],
             ['rute' => 'admin.sessions', 'label' => 'Sesi WhatsApp', 'cocok' => ['admin.sessions', 'admin.sessions.*'], 'ikon' => 'M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z'],
             ['rute' => 'admin.messages', 'label' => 'Lalu Lintas Pesan', 'ikon' => 'M4 4h16v12H5.17L4 17.17V4zM8 9h8M8 12h5'],
+            ['rute' => 'admin.enterprise', 'label' => 'Enterprise', 'cocok' => ['admin.enterprise', 'admin.enterprise.*'], 'ikon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-3M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1'],
             ['rute' => 'admin.tickets', 'label' => 'Tiket', 'cocok' => ['admin.tickets', 'admin.tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
             ['rute' => 'admin.referrals', 'label' => 'Reseller', 'cocok' => ['admin.referrals', 'admin.referrals.*'], 'ikon' => 'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'],
         ],
@@ -67,6 +68,7 @@
     $lencanaMenu = [
         'admin.invoices' => $perluDiperiksa,
         'admin.tickets' => \App\Models\Ticket::where('status', 'open')->count(),
+        'admin.enterprise' => \App\Models\EnterpriseLead::where('status', 'baru')->count(),
     ];
 
     $aktif = function (array $item): bool {
