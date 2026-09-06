@@ -101,18 +101,21 @@
         </div>
 
         {{-- ===================== SISI KANAN: FORM PANEL ===================== --}}
-        <div class="relative flex flex-col justify-center min-h-screen bg-background p-6 sm:p-8 lg:p-8 xl:p-10 overflow-y-auto">
+        <div class="relative flex flex-col min-h-screen bg-background p-6 sm:p-8 lg:p-10 xl:p-12 overflow-y-auto">
             
             {{-- Topbar Khusus Layar Mobile (Logo Brand) --}}
-            <div class="lg:hidden flex items-center justify-between gap-4 w-full mb-6">
+            <div class="lg:hidden flex items-center justify-between gap-4 w-full mb-4">
                 <a href="{{ route('welcome') }}" class="flex items-center gap-2">
                     <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-8 w-auto object-contain">
                     <span class="text-base font-bold text-foreground">Flustra WA</span>
                 </a>
             </div>
 
-            {{-- Form Wrapper (Tepat di Tengah Vertikal) --}}
-            <div class="w-full @yield('container_width', 'max-w-[390px]') mx-auto my-auto py-4">
+            {{-- Spacer atas fleksibel agar form terdorong jauh lebih ke bawah di layar --}}
+            <div class="flex-1 min-h-[40px] sm:min-h-[80px] lg:min-h-[140px] xl:min-h-[180px]"></div>
+
+            {{-- Form Wrapper (Dibuat Lebih ke Bawah) --}}
+            <div class="w-full @yield('container_width', 'max-w-[390px]') mx-auto pb-6 sm:pb-8 lg:pb-10">
                 @yield('content')
 
                 {{-- Tombol Kembali ke Website (Paling Bawah Form, Full Width seukuran Google) --}}

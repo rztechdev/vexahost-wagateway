@@ -540,6 +540,19 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
          x-data="{
              tahunan: false,
+
+             /*
+              | Dua kelompok, bukan lima kartu berjajar.
+              |
+              | Paket bulanan dan pilihan skala besar menjawab pertanyaan yang
+              | berbeda — 'berapa yang saya bayar tiap bulan' versus 'bagaimana
+              | kalau kebutuhan saya tidak berbentuk paket'. Menjajarkan
+              | kelimanya membuat pengunjung membandingkan angka yang memang
+              | tidak sebanding, lalu memilih yang paling murah alih-alih yang
+              | paling cocok.
+             */
+             kelompok: 'standar',
+
              formatRupiah(angka) {
                  return 'Rp' + new Intl.NumberFormat('id-ID').format(angka);
              },
@@ -552,8 +565,25 @@
                 Semua paket memakai gateway, API, dan dashboard yang sama. Yang membedakan hanya seberapa besar Anda memakainya.
             </p>
 
+            {{-- Pemilih kelompok. Di ATAS sakelar bulanan/tahunan karena ia
+                 menentukan apakah sakelar itu berarti sama sekali — pilihan
+                 skala besar tidak punya harga bulanan. --}}
+            <div class="muncul mt-7 inline-flex items-center rounded-2xl border border-border bg-card p-1.5 shadow-xs" style="--tunda: 75ms">
+                <button @click="kelompok = 'standar'" type="button"
+                        class="rounded-xl px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all"
+                        :class="kelompok === 'standar' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
+                    Paket bulanan
+                </button>
+                <button @click="kelompok = 'besar'" type="button"
+                        class="rounded-xl px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all"
+                        :class="kelompok === 'besar' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
+                    Skala besar &amp; fleksibel
+                </button>
+            </div>
+
             {{-- Switch Bulanan / Tahunan Modern --}}
-            <div class="muncul mt-7 inline-flex items-center rounded-2xl border border-border bg-card p-1.5 shadow-xs" style="--tunda: 90ms">
+            <div x-show="kelompok === 'standar'" x-cloak
+                 class="muncul mt-4 inline-flex items-center rounded-2xl border border-border bg-card p-1.5 shadow-xs" style="--tunda: 90ms">
                 <button @click="tahunan = false"
                         type="button"
                         class="rounded-xl px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all"
@@ -595,7 +625,7 @@
             ])->all();
         @endphp
 
-        <div class="mt-12 grid items-stretch gap-8 lg:grid-cols-3">
+        <div x-show="kelompok === 'standar'" x-cloak class="mt-12 grid items-stretch gap-8 lg:grid-cols-3">
             @foreach ($paket as $i => $p)
                 <div class="muncul relative flex flex-col justify-between rounded-2xl border p-7 sm:p-8 transition-all duration-300 {{ $p['sorot'] ? 'border-primary bg-card ring-2 ring-primary/20 shadow-xl lg:-translate-y-2' : 'border-border/80 bg-card hover:border-primary/40 hover:shadow-md' }}"
                      style="--tunda: {{ $i * 90 }}ms">
@@ -680,19 +710,28 @@
             @endforeach
         </div>
 
+        {{-- ===================== Skala besar & fleksibel =====================
+
+             Dua pilihan yang tidak berbentuk paket bulanan: bayar sesuai
+             pemakaian, dan kesepakatan yang disusun sendiri. Keduanya berdiri
+             sejajar di sini karena keduanya menjawab pertanyaan yang sama —
+             "bagaimana kalau kebutuhan saya tidak muat di tiga kartu itu".
+             ================================================================= --}}
+        <div x-show="kelompok === 'besar'" x-cloak class="mt-12 grid items-stretch gap-8 lg:grid-cols-2">
+
         {{-- ===================== Pay as you go Card ===================== --}}
         @php $payg = \App\Support\Plan::payg(); @endphp
-        <div class="muncul mt-10 relative overflow-hidden rounded-2xl border border-border/80 bg-card p-7 sm:p-9 shadow-md transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
-             style="--tunda: 270ms">
+        <div class="muncul relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card p-7 sm:p-9 shadow-md transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
+             style="--tunda: 90ms">
             <div class="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
 
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-                <div class="space-y-3 max-w-2xl">
+            <div class="flex flex-col gap-6">
+                <div class="space-y-3">
                     <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{{ $payg->name() }}</h3>
                     <p class="text-sm sm:text-base text-muted-foreground leading-relaxed">
                         {{ $payg->tagline() }} Isi saldo sesuai kebutuhan, lalu pakai kapan saja — saldo tidak punya masa kedaluwarsa dan hanya berkurang saat pesan benar-benar terkirim.
                     </p>
-                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground pt-1">
+                    <div class="flex flex-col gap-y-2 text-xs text-muted-foreground pt-1">
                         <span class="flex items-center gap-1.5">
                             <svg class="h-4 w-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                             Pesan gagal tidak memotong saldo
@@ -708,8 +747,8 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-start xl:items-center gap-5 shrink-0">
-                    <div class="sm:text-right lg:text-left xl:text-right">
+                <div class="flex flex-col items-start gap-5">
+                    <div>
                         {{-- Harga per pesan sengaja TIDAK ditampilkan di sini.
                              Angka satuan di halaman harga mengundang orang
                              menghitung sendiri lalu menyimpulkan paket bulanan
@@ -717,7 +756,7 @@
                              kirimannya rutin. Yang dijual di kartu ini bentuk
                              pembayarannya, bukan tarifnya. Rinciannya terbuka
                              penuh di halaman Saldo setelah mereka memakainya. --}}
-                        <div class="flex items-baseline gap-1.5 sm:justify-end lg:justify-start xl:justify-end">
+                        <div class="flex items-baseline gap-1.5">
                             <span class="text-xs sm:text-sm font-medium text-muted-foreground">mulai</span>
                             <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                                 Rp {{ number_format(config('billing.payg.min_topup', 50000), 0, ',', '.') }}
@@ -733,9 +772,9 @@
                 </div>
             </div>
 
-            <div class="mt-8 border-t border-border/60 pt-6">
+            <div class="mt-auto border-t border-border/60 pt-6">
                 <p class="text-xs font-semibold uppercase tracking-wider text-foreground/80 mb-3.5">Fitur paket Pay as you go:</p>
-                <ul class="grid gap-3 text-xs sm:text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <ul class="grid gap-3 text-xs sm:text-sm sm:grid-cols-2">
                     @foreach ($payg->features() as $f)
                         <li class="flex items-start gap-2.5">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
@@ -756,10 +795,10 @@
              ======================================================== --}}
         @php $ent = \App\Support\Plan::get('enterprise'); @endphp
 
-        <div id="enterprise" class="muncul mt-10 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-md" style="--tunda: 130ms"
+        <div id="enterprise" class="muncul flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-md transition-all duration-300 hover:border-primary/40 hover:shadow-xl" style="--tunda: 180ms"
              x-data="{ buka: {{ $errors->any() && old('name') ? 'true' : 'false' }} }">
-            <div class="flex flex-col gap-6 p-7 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
-                <div class="max-w-2xl space-y-3">
+            <div class="flex flex-1 flex-col gap-6 p-7 sm:p-9">
+                <div class="space-y-3">
                     <span class="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         Untuk kebutuhan besar
                     </span>
@@ -769,7 +808,7 @@
                         panjang? Batas dan harganya kami susun mengikuti kebutuhan Anda — bukan
                         dipaksa masuk salah satu paket di atas.
                     </p>
-                    <ul class="grid gap-2 pt-1 text-xs sm:text-sm sm:grid-cols-2">
+                    <ul class="grid gap-2 pt-1 text-xs sm:text-sm">
                         @foreach ($ent->features() as $f)
                             <li class="flex items-start gap-2.5">
                                 <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
@@ -779,18 +818,18 @@
                     </ul>
                 </div>
 
-                <div class="shrink-0 text-center lg:text-right">
+                <div class="mt-auto">
                     <p class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Hubungi kami</p>
                     <p class="mt-1 text-xs text-muted-foreground">Dijawab dalam 1&times;24 jam hari kerja</p>
                     <button type="button" @click="buka = ! buka"
-                            class="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]">
+                            class="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]">
                         <span x-text="buka ? 'Tutup formulir' : 'Minta penawaran'">Minta penawaran</span>
                     </button>
                 </div>
             </div>
 
             <div x-show="buka" x-cloak class="border-t border-border/60 bg-muted/20 p-7 sm:p-9">
-                <form method="POST" action="{{ route('enterprise.contact') }}" class="grid gap-4 sm:grid-cols-2">
+                <form method="POST" action="{{ route('enterprise.contact') }}" class="grid gap-4">
                     @csrf
 
                     @foreach ([
@@ -830,7 +869,7 @@
                         @error('estimated_messages')<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
                     </div>
 
-                    <div class="sm:col-span-2">
+                    <div>
                         <label for="ent_needs" class="mb-1 block text-xs font-semibold text-foreground">
                             Kebutuhan khusus <span class="font-normal text-muted-foreground">(opsional)</span>
                         </label>
@@ -840,7 +879,7 @@
                         @error('needs')<p class="mt-1 text-xs text-destructive">{{ $message }}</p>@enderror
                     </div>
 
-                    <div class="sm:col-span-2 flex flex-wrap items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-4">
                         <button class="inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 active:scale-[0.98]">
                             Kirim permintaan
                         </button>
@@ -851,6 +890,7 @@
                 </form>
             </div>
         </div>
+        </div>{{-- /kelompok skala besar --}}
     </div>
 </section>
 
