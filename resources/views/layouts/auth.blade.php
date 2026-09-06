@@ -101,25 +101,22 @@
         </div>
 
         {{-- ===================== SISI KANAN: FORM PANEL ===================== --}}
-        <div class="relative flex flex-col justify-between min-h-screen min-h-dvh bg-background p-5 sm:p-8 lg:p-10 xl:p-12 overflow-y-auto">
+        <div class="relative flex flex-col justify-center min-h-screen bg-background p-6 sm:p-8 lg:p-8 xl:p-10 overflow-y-auto">
             
             {{-- Topbar Khusus Layar Mobile (Logo Brand) --}}
-            <div class="lg:hidden flex items-center justify-between gap-4 w-full shrink-0">
+            <div class="lg:hidden flex items-center justify-between gap-4 w-full mb-6">
                 <a href="{{ route('welcome') }}" class="flex items-center gap-2">
-                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-7 w-auto object-contain">
+                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-8 w-auto object-contain">
                     <span class="text-base font-bold text-foreground">Flustra WA</span>
                 </a>
             </div>
 
-            {{-- Spacer atas khusus desktop agar form terdorong lebih ke bawah di layar besar --}}
-            <div class="hidden lg:block lg:flex-1 lg:min-h-[140px] xl:min-h-[180px]"></div>
-
-            {{-- Form Wrapper (Di mobile dibuat CENTER presisi dengan my-auto, di desktop terdorong ke bawah) --}}
-            <div class="w-full @yield('container_width', 'max-w-[390px]') mx-auto my-auto lg:my-0 py-2 sm:py-4 lg:pb-10">
+            {{-- Form Wrapper (Tepat di Tengah Vertikal) --}}
+            <div class="w-full @yield('container_width', 'max-w-[390px]') mx-auto my-auto py-4">
                 @yield('content')
 
                 {{-- Tombol Kembali ke Website (Paling Bawah Form, Full Width seukuran Google) --}}
-                <div class="mt-4 sm:mt-6 pt-4 sm:pt-5 border-t border-border/60">
+                <div class="mt-6 pt-5 border-t border-border/60">
                     <a href="{{ route('welcome') }}" 
                        class="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-2xs transition hover:bg-muted hover:border-border/80 active:scale-[0.99]">
                         <i class="bi bi-arrow-left text-base"></i>
@@ -127,9 +124,6 @@
                     </a>
                 </div>
             </div>
-
-            {{-- Counter-balance spacer bawah khusus mobile agar posisi form benar-benar center simetris terhadap header --}}
-            <div class="lg:hidden shrink-0 h-7" aria-hidden="true"></div>
         </div>
 
     </div>

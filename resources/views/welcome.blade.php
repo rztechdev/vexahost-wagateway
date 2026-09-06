@@ -544,14 +544,14 @@
              /*
               | Dua kelompok, bukan lima kartu berjajar.
               |
-              | Paket bulanan dan pilihan skala besar menjawab pertanyaan yang
-              | berbeda — 'berapa yang saya bayar tiap bulan' versus 'bagaimana
-              | kalau kebutuhan saya tidak berbentuk paket'. Menjajarkan
-              | kelimanya membuat pengunjung membandingkan angka yang memang
-              | tidak sebanding, lalu memilih yang paling murah alih-alih yang
-              | paling cocok.
+              | Bisnis dan Enterprise menjawab pertanyaan yang berbeda —
+              | 'berapa yang saya bayar tiap bulan' versus 'bagaimana kalau
+              | kebutuhan saya tidak berbentuk paket'. Menjajarkan kelimanya
+              | membuat pengunjung membandingkan angka yang memang tidak
+              | sebanding, lalu memilih yang paling murah alih-alih yang paling
+              | cocok.
              */
-             kelompok: 'standar',
+             kelompok: 'bisnis',
 
              formatRupiah(angka) {
                  return 'Rp' + new Intl.NumberFormat('id-ID').format(angka);
@@ -569,20 +569,20 @@
                  menentukan apakah sakelar itu berarti sama sekali — pilihan
                  skala besar tidak punya harga bulanan. --}}
             <div class="muncul mt-7 inline-flex items-center rounded-2xl border border-border bg-card p-1.5 shadow-xs" style="--tunda: 75ms">
-                <button @click="kelompok = 'standar'" type="button"
+                <button @click="kelompok = 'bisnis'" type="button"
                         class="rounded-xl px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all"
-                        :class="kelompok === 'standar' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
-                    Paket bulanan
+                        :class="kelompok === 'bisnis' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
+                    Bisnis
                 </button>
-                <button @click="kelompok = 'besar'" type="button"
+                <button @click="kelompok = 'enterprise'" type="button"
                         class="rounded-xl px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all"
-                        :class="kelompok === 'besar' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
-                    Skala besar &amp; fleksibel
+                        :class="kelompok === 'enterprise' ? 'bg-foreground text-background shadow-xs' : 'text-muted-foreground hover:text-foreground'">
+                    Enterprise
                 </button>
             </div>
 
             {{-- Switch Bulanan / Tahunan Modern --}}
-            <div x-show="kelompok === 'standar'" x-cloak
+            <div x-show="kelompok === 'bisnis'" x-cloak
                  class="muncul mt-4 inline-flex items-center rounded-2xl border border-border bg-card p-1.5 shadow-xs" style="--tunda: 90ms">
                 <button @click="tahunan = false"
                         type="button"
@@ -625,7 +625,7 @@
             ])->all();
         @endphp
 
-        <div x-show="kelompok === 'standar'" x-cloak class="mt-12 grid items-stretch gap-8 lg:grid-cols-3">
+        <div x-show="kelompok === 'bisnis'" x-cloak class="mt-12 grid items-stretch gap-8 lg:grid-cols-3">
             @foreach ($paket as $i => $p)
                 <div class="muncul relative flex flex-col justify-between rounded-2xl border p-7 sm:p-8 transition-all duration-300 {{ $p['sorot'] ? 'border-primary bg-card ring-2 ring-primary/20 shadow-xl lg:-translate-y-2' : 'border-border/80 bg-card hover:border-primary/40 hover:shadow-md' }}"
                      style="--tunda: {{ $i * 90 }}ms">
@@ -710,14 +710,21 @@
             @endforeach
         </div>
 
-        {{-- ===================== Skala besar & fleksibel =====================
+        {{-- ===================== Enterprise =====================
 
              Dua pilihan yang tidak berbentuk paket bulanan: bayar sesuai
              pemakaian, dan kesepakatan yang disusun sendiri. Keduanya berdiri
              sejajar di sini karena keduanya menjawab pertanyaan yang sama —
              "bagaimana kalau kebutuhan saya tidak muat di tiga kartu itu".
              ================================================================= --}}
-        <div x-show="kelompok === 'besar'" x-cloak class="mt-12 grid items-stretch gap-8 lg:grid-cols-2">
+        {{-- Lebarnya disamakan dengan kartu bulanan, bukan dibiarkan melebar.
+             Kartu Bisnis = (1216 − 2×32) ÷ 3 = 384px, jadi dua kartu di sini
+             butuh 384×2 + 32 = 800px (50rem). Tanpa batas itu, dua kartu
+             Enterprise membentang jauh lebih lebar daripada tiga kartu di
+             sebelahnya — dan sakelar yang mengubah ukuran kartu saat ditekan
+             membuat halamannya terbaca seperti dua halaman berbeda. --}}
+        <div x-show="kelompok === 'enterprise'" x-cloak
+             class="mx-auto mt-12 grid max-w-[50rem] items-stretch gap-8 sm:grid-cols-2">
 
         {{-- ===================== Pay as you go Card ===================== --}}
         @php $payg = \App\Support\Plan::payg(); @endphp
@@ -774,7 +781,7 @@
 
             <div class="mt-auto border-t border-border/60 pt-6">
                 <p class="text-xs font-semibold uppercase tracking-wider text-foreground/80 mb-3.5">Fitur paket Pay as you go:</p>
-                <ul class="grid gap-3 text-xs sm:text-sm sm:grid-cols-2">
+                <ul class="grid gap-3 text-xs sm:text-sm">
                     @foreach ($payg->features() as $f)
                         <li class="flex items-start gap-2.5">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
@@ -806,7 +813,7 @@
                     <p class="text-sm sm:text-base leading-relaxed text-muted-foreground">
                         Butuh lebih banyak nomor, kuota di atas Elite, atau retensi riwayat yang lebih
                         panjang? Batas dan harganya kami susun mengikuti kebutuhan Anda — bukan
-                        dipaksa masuk salah satu paket di atas.
+                        dipaksa masuk salah satu paket Bisnis.
                     </p>
                     <ul class="grid gap-2 pt-1 text-xs sm:text-sm">
                         @foreach ($ent->features() as $f)
@@ -890,7 +897,7 @@
                 </form>
             </div>
         </div>
-        </div>{{-- /kelompok skala besar --}}
+        </div>{{-- /kelompok Enterprise --}}
     </div>
 </section>
 

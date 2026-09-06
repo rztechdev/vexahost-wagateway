@@ -125,26 +125,19 @@ class TurPengenalanTest extends TestCase
     }
 
     /**
-     * Akun yang sudah ada sebelum tur ini dibuat ditandai oleh migrasinya.
+     * Akun lama IKUT melihat tur ini — sekali, sama seperti pendaftar baru.
      *
-     * Menampilkannya kepada pelanggan yang sudah memakai produk berbulan-bulan
-     * terbaca seperti aplikasinya lupa siapa mereka.
+     * Sebagian besar yang dituntun tur ini memang baru (saldo, Enterprise,
+     * bantuan, harga perkenalan), jadi pelanggan lama pun belum pernah
+     * melihatnya. Yang dijaga tetap "sekali saja", dan itu dijamin baris di
+     * `user_guide_progress` — bukan oleh siapa yang mendaftar kapan.
      */
-    public function test_akun_lama_tidak_ikut_melihat_tur(): void
+    public function test_akun_lama_ikut_melihat_tur_sekali(): void
     {
         $lama = User::create([
             'name' => 'Pelanggan Lama',
             'email' => 'lama@contoh.id',
             'password' => Hash::make('rahasia12345'),
-        ]);
-
-        // Meniru apa yang dikerjakan migrasinya untuk seluruh akun yang sudah
-        // ada saat tur ini dipasang.
-        UserGuideProgress::create([
-            'user_id' => $lama->id,
-            'guide_key' => self::KUNCI,
-            'guide_version' => 1,
-            'status' => 'completed',
         ]);
 
         $workspace = Workspace::create([
@@ -158,11 +151,41 @@ class TurPengenalanTest extends TestCase
 
         $workspace->members()->attach($lama->id, ['role' => 'owner']);
 
-        $this->actingAs($lama)
-            ->withSession(['current_workspace_id' => $workspace->id])
-            ->get(route('dashboard'))
+        $sesi = fn () => $this->actingAs($lama)
+            ->withSession(['current_workspace_id' => $workspace->id]);
+
+        // Kunjungan pertama: turnya muncul.
+        $sesi()->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-tur-pengenalan', false);
+
+        $sesi()->postJson(route('onboarding.guides.ack', ['guideKey' => self::KUNCI]), [
+            'status' => 'completed',
+        ])->assertOk();
+
+        // Kunjungan berikutnya: tidak lagi. "Sekali" berlaku untuk semua orang,
+        // bukan cuma untuk pendaftar baru.
+        $sesi()->get(route('dashboard'))
             ->assertOk()
             ->assertDontSee('data-tur-pengenalan', false);
+    }
+
+    /**
+     * Migrasinya TIDAK boleh menandai siapa pun sudah melihat.
+     *
+     * Kalau ia mengisi tabel lagi seperti versi pertamanya, akun lama kembali
+     * dilewati tanpa satu pun tes lain yang gagal — dan tidak ada yang
+     * menyadarinya sampai ada yang bertanya kenapa turnya tidak pernah muncul.
+     */
+    public function test_migrasi_tidak_menandai_akun_lama_sudah_melihat(): void
+    {
+        User::create([
+            'name' => 'Pelanggan Lama',
+            'email' => 'lama@contoh.id',
+            'password' => Hash::make('rahasia12345'),
+        ]);
+
+        $this->assertSame(0, UserGuideProgress::count());
     }
 
     /**

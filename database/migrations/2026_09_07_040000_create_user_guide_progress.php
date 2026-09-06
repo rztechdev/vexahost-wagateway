@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -11,6 +10,13 @@ use Illuminate\Support\Facades\Schema;
  * Disimpan di tabel, bukan di cookie atau localStorage: tur yang muncul lagi
  * karena orang berganti peramban atau membersihkan cache terbaca sebagai
  * kerusakan, dan pengguna lama tidak punya cara menutupnya selamanya.
+ *
+ * **Tabelnya sengaja dibiarkan kosong.** Akun yang sudah ada ikut melihat tur
+ * ini sekali — keputusan Ryan, 7 Sep 2026. Alasannya masuk akal: fitur yang
+ * dituntun tur ini sebagian besar memang baru (saldo, Enterprise, bantuan,
+ * harga perkenalan), jadi pelanggan lama pun belum pernah melihatnya. Yang
+ * dijaga tetap sama — **sekali saja**, dan itu dijamin baris di tabel ini,
+ * bukan oleh siapa yang mendaftar kapan.
  *
  * `guide_version` ada supaya tur yang isinya berubah besar bisa ditampilkan
  * ulang kepada yang sudah pernah melihatnya, tanpa menghapus barisnya —
@@ -33,34 +39,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['user_id', 'guide_key']);
-        });
-
-        /*
-         | Akun yang SUDAH ADA ditandai sudah pernah melihatnya.
-         |
-         | Turnya untuk pendaftar baru — orang yang belum tahu produk ini apa.
-         | Menampilkannya kepada pelanggan yang sudah memakainya berbulan-bulan
-         | bukan cuma mengganggu: ia menuntun mereka melewati hal yang sudah
-         | mereka kerjakan tiap hari, dan itu terbaca seperti aplikasinya lupa
-         | siapa mereka.
-         |
-         | Ditulis lewat query builder, bukan model: migrasi yang bergantung
-         | pada model akan ikut rusak saat modelnya berubah bertahun-tahun
-         | kemudian, dan migrasi lama harus tetap bisa dijalankan dari nol.
-        */
-        $sekarang = now();
-
-        DB::table('users')->orderBy('id')->chunk(500, function ($pengguna) use ($sekarang) {
-            DB::table('user_guide_progress')->insert(
-                $pengguna->map(fn ($u) => [
-                    'user_id' => $u->id,
-                    'guide_key' => 'dashboard.mulai',
-                    'guide_version' => 1,
-                    'status' => 'completed',
-                    'created_at' => $sekarang,
-                    'updated_at' => $sekarang,
-                ])->all()
-            );
         });
     }
 
