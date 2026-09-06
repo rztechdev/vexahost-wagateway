@@ -215,6 +215,12 @@ Di dalam workspace pengirim, sesi bernomor istimewa didahulukan — nomor itu ti
 
 **`QR_TTL_SECONDS` jangan di bawah 60.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap sampai ~60 detik; masa berlaku lebih pendek membuat modal QR berkedip kosong.
 
+**Antrean gagal tanpa gejala, jadi ia diawasi terpisah.** `queue:work` yang mati tidak menghasilkan galat, pesan merah, atau baris log baru — pesan cuma diam berstatus `queued` selamanya. Pengirimnya melihat "Mengantre" dan menyimpulkan gateway-nya lambat; penerimanya tidak menerima apa-apa dan tidak tahu ada yang mengirim. `App\Support\KesehatanAntrean` mendeteksinya dan Ringkasan admin memasang spanduk merah.
+
+Yang sulit bukan mendeteksi worker mati, melainkan **tidak memberi peringatan palsu saat antreannya memang panjang**: broadcast seribu nomor sah-sah saja menyisakan pekerjaan berjam-jam karena engine menahan tiap pesan 3–8 detik. Karena itu yang diukur **gerakannya, bukan panjangnya** — macet berarti ada pekerjaan menunggu lebih dari 10 menit DAN tidak satu pun pesan berpindah ke `sent` selama itu. Patokannya `messages.sent_at`, bukan `updated_at`, karena yang terakhir ikut berubah oleh ack WhatsApp untuk pesan lama sementara worker-nya sendiri sudah mati. `KesehatanAntreanTest` menguji kedua arahnya sekaligus.
+
+Di produksi `supervisi_worker` di `start.sh` menyalakannya lagi kalau mati, jadi spanduk ini menangkap yang lolos dari situ — worker yang menggantung, bukan yang jatuh. Di lokal `npm run all` memakai `--kill-others`: mematikan satu proses mematikan semuanya, termasuk worker, dan itu sudah sekali membuat pesan tampak "lama banget" padahal tidak ada yang rusak.
+
 **Engine dev TIDAK memakai `--watch`, dan itu disengaja (6 Sep 2026).** Restart otomatis bagus untuk API tanpa keadaan; engine ini memegang Chromium dan sesi WhatsApp yang hidup, dan **restart di tengah scan QR membuang hasil scan-nya tanpa satu pun pesan** — di layar pengguna modalnya diam di "100% riwayat chat tersalin" sampai menit-menit, persis seperti gangguan sungguhan. Ini sudah terjadi: log engine memuat delapan baris `Restarting 'src/server.js'` pada sesi yang sedang discan, dan status sesinya kembali ke `qr` sendiri.
 
 `npm --prefix engine run dev` sekarang menjalankan engine polos. Yang butuh muat-ulang otomatis saat menyunting `engine/src` pakai `dev:watch` — dan jangan menjalankannya sambil menautkan nomor. Produksi tidak pernah terpengaruh: `start.sh` memanggil `node engine/src/server.js` tanpa flag apa pun.

@@ -48,12 +48,27 @@
                 'akibat' => 'Paket tahunan bisa melampaui batas QRIS per transaksi, dan tanpa rekening tidak ada jalan lain.',
             ],
             [
-                'nama' => 'Antrean',
+                'nama' => 'Antrean bergerak',
+                'baik' => ! $antrean['macet'],
+                'kabar' => $antrean['macet']
+                    ? $antrean['menunggu'].' menunggu, tidak ada yang terkirim sejak '
+                        .($antrean['terakhirBergerak']?->diffForHumans() ?? 'entah kapan').'.'
+                    : ($antrean['menunggu'] === 0
+                        ? 'Kosong.'
+                        : $antrean['menunggu'].' menunggu dan bergerak normal.'),
+                'akibat' => 'Worker mati berarti pesan diam berstatus Mengantre selamanya — tanpa galat, '
+                    .'tanpa baris log baru. Pengirimnya mengira gateway lambat; penerimanya tidak menerima apa-apa. '
+                    .'Dianggap macet kalau tidak ada pesan yang terkirim selama '.$antrean['ambang'].' menit '
+                    .'sementara masih ada pekerjaan menunggu — panjangnya antrean sendiri bukan tanda kerusakan, '
+                    .'broadcast besar memang wajar berjam-jam.',
+            ],
+            [
+                'nama' => 'Job gagal',
                 'baik' => $antrean['gagal'] === 0,
                 'kabar' => $antrean['gagal'] === 0
-                    ? $antrean['menunggu'].' menunggu, tidak ada yang gagal.'
+                    ? 'Tidak ada yang gagal.'
                     : $antrean['gagal'].' job gagal menumpuk.',
-                'akibat' => 'Pesan dan webhook berhenti terkirim tanpa satu pun tanda di antarmuka pelanggan.',
+                'akibat' => 'Job yang gagal tidak dicoba lagi sendiri; pesannya tidak akan pernah terkirim.',
             ],
         ];
 

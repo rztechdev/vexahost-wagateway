@@ -7,9 +7,9 @@ use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\Billing\QrisManual;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\KesehatanAntrean;
 use App\Support\Plan;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -49,11 +49,8 @@ class SystemController extends Controller
                 'pajak' => (float) config('billing.tax_percent'),
             ],
 
-            'antrean' => [
-                'menunggu' => DB::table('jobs')->count(),
-                'gagal' => DB::table('failed_jobs')->count(),
-                'tertua' => optional(DB::table('jobs')->orderBy('id')->first())->available_at,
-            ],
+            'antrean' => KesehatanAntrean::periksa()
+                + ['ambang' => KesehatanAntrean::ambangMenit()],
 
             'kapasitas' => [
                 'hidup' => WaSession::whereIn('status', ['connected', 'connecting', 'qr'])->count(),

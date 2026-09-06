@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\KesehatanAntrean;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 
@@ -76,6 +77,11 @@ class OverviewController extends Controller
 
             'antrean' => DB::table('jobs')->count(),
             'antreanGagal' => DB::table('failed_jobs')->count(),
+
+            // Antrean adalah satu-satunya bagian sistem ini yang gagal tanpa
+            // gejala di mana pun: worker mati = pesan diam `queued` selamanya,
+            // tanpa galat, tanpa log baru.
+            'kesehatanAntrean' => KesehatanAntrean::periksa(),
 
             'akanBerakhir' => Subscription::with('workspace')
                 ->whereIn('status', ['trialing', 'active'])

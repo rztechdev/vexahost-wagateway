@@ -31,6 +31,21 @@
         </div>
     @endif
 
+    @if ($kesehatanAntrean['macet'])
+        <div class="mb-4 flex flex-wrap items-start gap-3 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <span>
+                <strong>Antrean tidak bergerak — worker kemungkinan mati.</strong>
+                {{ $kesehatanAntrean['menunggu'] }} pekerjaan menunggu dan tidak ada satu pun pesan
+                yang terkirim sejak
+                {{ $kesehatanAntrean['terakhirBergerak']?->diffForHumans() ?? 'entah kapan' }}.
+                Pesan pelanggan diam berstatus <em>Mengantre</em> tanpa satu pun galat —
+                mereka mengira gateway-nya lambat, penerimanya tidak menerima apa-apa.
+                Periksa proses <code>queue:work</code> di container.
+            </span>
+        </div>
+    @endif
+
     @unless ($notifikasiSiap && $nomorAdminTerisi)
         <div class="mb-4 flex flex-wrap items-start gap-3 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
