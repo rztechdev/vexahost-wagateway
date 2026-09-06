@@ -1,7 +1,7 @@
 @extends('layouts.auth')
 
 @section('title', 'Daftar Akun - Flustra WA Gateway')
-@section('container_width', 'max-w-[460px]')
+@section('container_width', 'max-w-[420px]')
 
 @section('content')
 <div>
@@ -34,6 +34,17 @@
         <div class="mb-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs sm:text-sm text-destructive flex items-start gap-2.5">
             <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-base"></i>
             <div>{{ $errors->first() }}</div>
+        </div>
+    @endif
+
+    @if (session('referral_code'))
+        <div class="mb-5 rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs sm:text-sm text-primary flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-tag-fill text-base shrink-0"></i>
+                <div>
+                    Kode referal <span class="font-bold tracking-wider uppercase font-mono">{{ session('referral_code') }}</span> terpasang: Diskon 10% untuk tagihan pertama Anda.
+                </div>
+            </div>
         </div>
     @endif
 

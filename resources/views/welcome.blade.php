@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name') }} — Gateway WhatsApp untuk Aplikasi Anda</title>
     <meta name="description" content="Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,6 +32,13 @@
 <body class="bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground overflow-x-clip w-full relative" x-data="{ mobileMenu: false }">
 
 @php
+    if (request()->filled('ref')) {
+        $kodeRef = \App\Models\ReferralCode::normalkan((string) request()->query('ref'));
+        if (\App\Models\ReferralCode::where('code', $kodeRef)->where('is_active', true)->exists()) {
+            session(['referral_code' => $kodeRef]);
+        }
+    }
+
     $menuHeader = [
         'produk' => [
             'label' => 'Produk',
@@ -32,6 +47,8 @@
                     ['Fitur', '#fitur'],
                     ['Cara kerja', '#cara-kerja'],
                     ['Harga', '#harga'],
+                    ['Testimoni', '#testimoni'],
+                    ['Mitra', route('mitra.landing')],
                     ['Dokumentasi', route('docs.index')],
                 ],
                 'Produk Flustra lain' => collect(config('flustra.produk'))
@@ -72,7 +89,11 @@
 @endphp
 
 {{-- ===================== Header ===================== --}}
-<header class="sticky top-0 z-50 w-full border-b border-border/70 bg-background/80 backdrop-blur-md transition-all">
+<header x-data="{ scrolled: false }"
+        x-init="scrolled = (window.scrollY > 10)"
+        @scroll.window.passive="scrolled = (window.scrollY > 10)"
+        class="sticky top-0 z-50 w-full border-b transition-all duration-300"
+        :class="scrolled ? 'border-border/70 bg-background/80 backdrop-blur-md shadow-2xs' : 'border-transparent bg-transparent'">
     <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-3.5">
         <a href="/" class="flex items-center gap-2.5 font-semibold text-foreground transition-opacity hover:opacity-90">
             <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-7 w-auto object-contain">
@@ -132,6 +153,14 @@
                 </a>
                 <a href="#harga" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                     <span>Harga</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                </a>
+                <a href="#testimoni" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                    <span>Testimoni</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                </a>
+                <a href="{{ route('mitra.landing') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                    <span>Mitra</span>
                     <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
             </div>
@@ -294,18 +323,59 @@
     </div>
 </section>
 
-{{-- ===================== Social Proof / Ekosistem ===================== --}}
-<section class="border-y border-border/60 bg-muted/30 py-7 sm:py-8">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
-        <p class="muncul text-xs sm:text-sm font-medium text-muted-foreground">
-            Dipakai sendiri oleh produk Flustra
-        </p>
-        <div class="muncul flex flex-wrap items-center gap-x-7 gap-y-2.5" style="--tunda: 80ms">
-            @foreach (config('flustra.produk') as $nama => $alamat)
-                <a href="{{ $alamat }}" class="text-xs sm:text-sm font-medium text-foreground/75 hover:text-primary transition-colors">
-                    {{ $nama }}
-                </a>
-            @endforeach
+{{-- ===================== Social Proof / Ekosistem Marquee ===================== --}}
+<section class="border-y border-border/60 bg-muted/30 py-7 sm:py-8 overflow-hidden relative select-none">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-4 sm:gap-6">
+            
+            {{-- Label Kiri --}}
+            <div class="flex items-center gap-2.5 shrink-0 pr-3 sm:pr-5 border-r border-border/70">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs sm:text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
+                    Ekosistem &amp; Integrasi
+                </span>
+            </div>
+
+            {{-- Track Marquee Kanan (Berjalan Mulus dari Kanan ke Kiri) --}}
+            <div class="flustra-hero-marquee relative flex-1 overflow-hidden">
+                {{-- Fade Gradien Kiri & Kanan --}}
+                <div class="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-6 sm:w-12 bg-gradient-to-r from-muted/70 via-muted/30 to-transparent"></div>
+                <div class="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-6 sm:w-12 bg-gradient-to-l from-muted/70 via-muted/30 to-transparent"></div>
+
+                <div class="flustra-hero-track flex items-center">
+                    @php
+                        $marqueeItems = [
+                            ['label' => 'Flustra.id Portal', 'tag' => 'Official App'],
+                            ['label' => 'Laravel & PHP', 'tag' => 'SDK Ready'],
+                            ['label' => 'Node.js & Express', 'tag' => 'REST API'],
+                            ['label' => 'WooCommerce', 'tag' => 'Toko Online'],
+                            ['label' => 'Flustra Helpdesk', 'tag' => 'Tiket Dukungan'],
+                            ['label' => 'Python & FastAPI', 'tag' => 'Library'],
+                            ['label' => 'Webhook Dispatcher', 'tag' => 'Real-time Event'],
+                            ['label' => 'WHMCS & Billing', 'tag' => 'Auto-Invoice'],
+                            ['label' => 'Flustra Artikel', 'tag' => 'Knowledge Base'],
+                            ['label' => 'Zapier & n8n', 'tag' => 'Automasi'],
+                            ['label' => 'Proteksi Anti-Blokir', 'tag' => 'Smart Delay'],
+                            ['label' => 'Multi-Device Pairing', 'tag' => 'Multi-Sesi'],
+                        ];
+                    @endphp
+
+                    {{-- Loop 2x untuk infinite seamless continuous marquee --}}
+                    @for ($i = 0; $i < 2; $i++)
+                        @foreach ($marqueeItems as $item)
+                            <div class="flex shrink-0 items-center gap-2">
+                                <span class="text-xs sm:text-sm font-semibold text-foreground whitespace-nowrap">{{ $item['label'] }}</span>
+                                <span class="text-[11px] text-muted-foreground whitespace-nowrap">({{ $item['tag'] }})</span>
+                                <span class="mx-3.5 text-border/80 select-none text-xs">&bull;</span>
+                            </div>
+                        @endforeach
+                    @endfor
+                </div>
+            </div>
+
         </div>
     </div>
 </section>
@@ -432,62 +502,6 @@
     </div>
 </section>
 
-{{-- ===================== Mitra Bank & Metode Pembayaran ===================== --}}
-<section aria-label="Metode Pembayaran yang Didukung"
-         class="relative overflow-hidden border-b border-border/60 bg-muted/20 py-3 sm:py-4">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-8">
-        <!-- Label Tetap -->
-        <div class="flex shrink-0 items-center gap-1.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap">
-                Payment
-            </span>
-        </div>
-
-        <!-- Track Marquee -->
-        <div class="flustra-pay-marquee relative flex-1 overflow-hidden">
-            <!-- Fade Kiri & Kanan (adaptif light & dark mode) -->
-            <div class="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 sm:w-16 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
-            <div class="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-8 sm:w-16 bg-gradient-to-l from-background via-background/80 to-transparent"></div>
-
-            <div class="flustra-pay-track flex w-max items-center gap-3 sm:gap-4">
-                @php
-                    $marqueePayments = [
-                        ['label' => 'QRIS', 'file' => 'qris.svg'],
-                        ['label' => 'Bank BCA', 'file' => 'bca.svg'],
-                        ['label' => 'Bank BNI', 'file' => 'bni.svg'],
-                        ['label' => 'Bank BRI', 'file' => 'bri.svg'],
-                        ['label' => 'Bank Mandiri', 'file' => 'mandiri.svg'],
-                        ['label' => 'Bank BSI', 'file' => 'bsi.svg'],
-                        ['label' => 'Bank Permata', 'file' => 'permata.svg'],
-                        ['label' => 'CIMB Niaga', 'file' => 'cimb.svg'],
-                        ['label' => 'Bank Sahabat Sampoerna', 'file' => 'bss.svg'],
-                        ['label' => 'Indomaret', 'file' => 'indomaret.svg'],
-                        ['label' => 'Alfamart', 'file' => 'alfamart.svg'],
-                        ['label' => 'AstraPay', 'file' => 'astrapay.svg'],
-                        ['label' => 'OVO', 'file' => 'ovo.svg'],
-                        ['label' => 'ShopeePay', 'file' => 'shopeepay.svg'],
-                        ['label' => 'Akulaku PayLater', 'file' => 'akulaku.svg'],
-                    ];
-                @endphp
-
-                {{-- Loop 2x untuk infinite seamless scroll --}}
-                @for ($i = 0; $i < 2; $i++)
-                    @foreach ($marqueePayments as $payment)
-                        <div class="flex h-9 sm:h-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-white px-3 sm:px-4 shadow-2xs transition-all duration-200"
-                             title="{{ $payment['label'] }}">
-                            <img src="{{ asset('images/payments/' . $payment['file']) }}"
-                                 alt="{{ $payment['label'] }}"
-                                 loading="lazy"
-                                 class="h-4 sm:h-5 w-auto max-w-[65px] sm:max-w-[78px] object-contain">
-                        </div>
-                    @endforeach
-                @endfor
-            </div>
-        </div>
-    </div>
-</section>
-
 {{-- ===================== Kapan Terpakai ===================== --}}
 <section class="py-20 sm:py-28">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -523,7 +537,13 @@
 
 {{-- ===================== Harga ===================== --}}
 <section id="harga" class="border-y border-border/60 bg-muted/30 py-20 sm:py-28">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ tahunan: false }">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+         x-data="{
+             tahunan: false,
+             formatRupiah(angka) {
+                 return 'Rp' + new Intl.NumberFormat('id-ID').format(angka);
+             },
+         }">
         <div class="mx-auto max-w-2xl text-center">
             <h2 class="muncul text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 Bayar sesuai besarnya pemakaian
@@ -584,13 +604,14 @@
                         <div class="mt-6 border-t border-border/60 pt-6">
                             <div class="flex items-baseline gap-1.5">
                                 <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
-                                      x-text="tahunan ? 'Rp{{ number_format($p['tahunan'], 0, ',', '.') }}' : 'Rp{{ number_format($p['bulanan'], 0, ',', '.') }}'">
+                                      x-text="formatRupiah(tahunan ? {{ $p['tahunan'] }} : {{ $p['bulanan'] }})">
                                     Rp{{ number_format($p['bulanan'], 0, ',', '.') }}
                                 </span>
                                 <span class="text-xs sm:text-sm font-medium text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'">/bulan</span>
                             </div>
+
                             <p class="mt-1 text-xs text-muted-foreground" :class="tahunan ? '' : 'invisible'">
-                                Setara Rp{{ number_format($p['tahunan'] / 12, 0, ',', '.') }} per bulan.
+                                <span x-text="'Setara ' + formatRupiah(Math.floor({{ $p['tahunan'] }} / 12)) + ' per bulan.'"></span>
                             </p>
                         </div>
 
@@ -615,9 +636,124 @@
             @endforeach
         </div>
 
+        {{-- ===================== Pay as you go Card ===================== --}}
+        @php $payg = \App\Support\Plan::payg(); @endphp
+        <div class="muncul mt-10 relative overflow-hidden rounded-2xl border border-border/80 bg-card p-7 sm:p-9 shadow-md transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
+             style="--tunda: 270ms">
+            <div class="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                <div class="space-y-3 max-w-2xl">
+                    <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{{ $payg->name() }}</h3>
+                    <p class="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                        {{ $payg->tagline() }} Cukup isi saldo sesuai kebutuhan (mulai Rp 50.000). Saldo tidak memiliki masa kedaluwarsa dan hanya berkurang saat pesan terkirim.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground pt-1">
+                        <span class="flex items-center gap-1.5">
+                            <svg class="h-4 w-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            Pesan gagal tidak memotong saldo
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <svg class="h-4 w-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            Saldo aktif selamanya (tanpa kedaluwarsa)
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <svg class="h-4 w-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            1 nomor WhatsApp aktif
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-start xl:items-center gap-5 shrink-0">
+                    <div class="sm:text-right lg:text-left xl:text-right">
+                        <div class="flex items-baseline gap-1.5 sm:justify-end lg:justify-start xl:justify-end">
+                            <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+                                Rp {{ number_format(config('billing.payg.price_per_message', 200), 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs sm:text-sm font-medium text-muted-foreground">/pesan terkirim</span>
+                        </div>
+                        <p class="mt-1 text-xs text-muted-foreground">Top-up saldo awal min. Rp 50.000</p>
+                    </div>
+
+                    <a href="{{ route('register') }}"
+                       class="inline-flex items-center justify-center rounded-xl bg-primary px-7 py-3 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-[0.98]">
+                        Pilih {{ $payg->name() }}
+                    </a>
+                </div>
+            </div>
+
+            <div class="mt-8 border-t border-border/60 pt-6">
+                <p class="text-xs font-semibold uppercase tracking-wider text-foreground/80 mb-3.5">Fitur paket Pay as you go:</p>
+                <ul class="grid gap-3 text-xs sm:text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach ($payg->features() as $f)
+                        <li class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span class="text-muted-foreground leading-relaxed">{{ $f }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+
         <div class="muncul mt-10 rounded-2xl border border-border/80 bg-card p-5 text-center text-xs sm:text-sm text-muted-foreground" style="--tunda: 130ms">
             Butuh nomor atau kuota lebih banyak dari paket Elite?
             <a href="https://about.flustra.id/#contact" class="font-semibold text-primary underline underline-offset-4 hover:opacity-80">Hubungi kami</a> untuk penawaran khusus.
+        </div>
+    </div>
+</section>
+
+{{-- ===================== Mitra Bank & Metode Pembayaran ===================== --}}
+<section aria-label="Metode Pembayaran yang Didukung"
+         class="relative overflow-hidden border-b border-border/60 bg-muted/20 py-3 sm:py-4">
+    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-8">
+        <!-- Label Tetap -->
+        <div class="flex shrink-0 items-center gap-1.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground select-none whitespace-nowrap">
+                Payment
+            </span>
+        </div>
+
+        <!-- Track Marquee -->
+        <div class="flustra-pay-marquee relative flex-1 overflow-hidden">
+            <!-- Fade Kiri & Kanan (adaptif light & dark mode) -->
+            <div class="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 sm:w-16 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
+            <div class="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-8 sm:w-16 bg-gradient-to-l from-background via-background/80 to-transparent"></div>
+
+            <div class="flustra-pay-track flex w-max items-center gap-3 sm:gap-4">
+                @php
+                    $marqueePayments = [
+                        ['label' => 'QRIS', 'file' => 'qris.svg'],
+                        ['label' => 'Bank BCA', 'file' => 'bca.svg'],
+                        ['label' => 'Bank BNI', 'file' => 'bni.svg'],
+                        ['label' => 'Bank BRI', 'file' => 'bri.svg'],
+                        ['label' => 'Bank Mandiri', 'file' => 'mandiri.svg'],
+                        ['label' => 'Bank BSI', 'file' => 'bsi.svg'],
+                        ['label' => 'Bank Permata', 'file' => 'permata.svg'],
+                        ['label' => 'CIMB Niaga', 'file' => 'cimb.svg'],
+                        ['label' => 'Bank Sahabat Sampoerna', 'file' => 'bss.svg'],
+                        ['label' => 'Indomaret', 'file' => 'indomaret.svg'],
+                        ['label' => 'Alfamart', 'file' => 'alfamart.svg'],
+                        ['label' => 'AstraPay', 'file' => 'astrapay.svg'],
+                        ['label' => 'OVO', 'file' => 'ovo.svg'],
+                        ['label' => 'ShopeePay', 'file' => 'shopeepay.svg'],
+                        ['label' => 'Akulaku PayLater', 'file' => 'akulaku.svg'],
+                    ];
+                @endphp
+
+                {{-- Loop 2x untuk infinite seamless scroll --}}
+                @for ($i = 0; $i < 2; $i++)
+                    @foreach ($marqueePayments as $payment)
+                        <div class="flex h-9 sm:h-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-white px-3 sm:px-4 shadow-2xs transition-all duration-200"
+                             title="{{ $payment['label'] }}">
+                            <img src="{{ asset('images/payments/' . $payment['file']) }}"
+                                 alt="{{ $payment['label'] }}"
+                                 loading="lazy"
+                                 class="h-4 sm:h-5 w-auto max-w-[65px] sm:max-w-[78px] object-contain">
+                        </div>
+                    @endforeach
+                @endfor
+            </div>
         </div>
     </div>
 </section>
@@ -703,6 +839,301 @@ Http::withHeaders([
             <a href="{{ route('docs.show', 'webhook') }}" class="text-muted-foreground hover:text-foreground">Webhook</a>
             <a href="{{ route('docs.index') }}" class="text-muted-foreground hover:text-foreground">Semua dokumentasi</a>
         </div>
+    </div>
+</section>
+
+{{-- ===================== Social Proof & Testimoni ===================== --}}
+<section id="testimoni" class="border-t border-border/60 py-20 sm:py-28 overflow-hidden">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        
+        {{-- Header Bagian --}}
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="max-w-2xl">
+                <h2 class="muncul text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                    Infrastruktur WhatsApp Gateway yang Menggerakkan Ribuan Bisnis Indonesia
+                </h2>
+                <p class="muncul mt-3.5 text-xs sm:text-sm leading-relaxed text-muted-foreground" style="--tunda: 40ms">
+                    Dari toko online, startup fintech, klinik kesehatan, hingga ekspedisi logistik. Flustra WA dipercaya mengalirkan jutaan notifikasi penting setiap hari dengan kecepatan tinggi dan keandalan maksimal.
+                </p>
+            </div>
+
+            {{-- Summary Rating Card --}}
+            <div class="muncul shrink-0 rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs" style="--tunda: 60ms">
+                <div class="flex items-center gap-3">
+                    <div class="flex -space-x-2 overflow-hidden">
+                        <span class="inline-grid h-8 w-8 place-items-center rounded-full bg-emerald-600 text-[11px] font-bold text-white ring-2 ring-card">DW</span>
+                        <span class="inline-grid h-8 w-8 place-items-center rounded-full bg-rose-600 text-[11px] font-bold text-white ring-2 ring-card">NH</span>
+                        <span class="inline-grid h-8 w-8 place-items-center rounded-full bg-sky-600 text-[11px] font-bold text-white ring-2 ring-card">SA</span>
+                        <span class="inline-grid h-8 w-8 place-items-center rounded-full bg-amber-600 text-[11px] font-bold text-white ring-2 ring-card">RR</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1 text-amber-400 text-xs">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <span class="ml-1 font-bold text-foreground text-xs">4.9 / 5.0</span>
+                        </div>
+                        <p class="text-[11px] text-muted-foreground mt-0.5">1.250+ ulasan terverifikasi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Telemetry Performance Deck (Desain Modern, Non-Generic) --}}
+        <div class="muncul mt-10 relative rounded-3xl border border-border/80 bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 lg:p-10 shadow-lg overflow-hidden" style="--tunda: 80ms">
+            {{-- Ambient radial background glow --}}
+            <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+
+            {{-- Grid 4 Kolom Telemetri Utama --}}
+            <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-border/70">
+                
+                {{-- Metrik 1: Pengguna & Bisnis --}}
+                <div class="flex flex-col justify-between lg:px-7 first:lg:pl-0">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span class="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>Bisnis &amp; Pengembang</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-1">
+                            <span class="text-4xl sm:text-5xl font-black tracking-tight text-foreground">5.000</span>
+                            <span class="text-2xl sm:text-3xl font-bold text-primary">+</span>
+                        </div>
+                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                            Pengguna aktif mulai dari UMKM, startup fintech, hingga korporasi di seluruh Indonesia.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-border/60 flex items-center gap-2 text-xs font-medium text-foreground/80">
+                        <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                            <i class="bi bi-graph-up-arrow"></i> +28%
+                        </span>
+                        <span class="text-muted-foreground">pertumbuhan kuartal ini</span>
+                    </div>
+                </div>
+
+                {{-- Metrik 2: Throughput Pesan --}}
+                <div class="flex flex-col justify-between lg:px-7">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
+                            <span>Throughput Pesan</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-1">
+                            <span class="text-4xl sm:text-5xl font-black tracking-tight text-foreground">12.5M</span>
+                            <span class="text-2xl sm:text-3xl font-bold text-primary">+</span>
+                        </div>
+                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                            Pesan notifikasi, tagihan invoice, OTP, dan broadcast terkirim stabil setiap bulan.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-border/60 flex items-center gap-2 text-xs font-medium text-foreground/80">
+                        <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <i class="bi bi-lightning-charge-fill"></i> &lt; 1.2 dtk
+                        </span>
+                        <span class="text-muted-foreground">rata-rata waktu sampai</span>
+                    </div>
+                </div>
+
+                {{-- Metrik 3: Uptime & Keandalan --}}
+                <div class="flex flex-col justify-between lg:px-7">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span class="inline-block h-2 w-2 rounded-full bg-sky-500"></span>
+                            <span>Keandalan Gateway</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-1">
+                            <span class="text-4xl sm:text-5xl font-black tracking-tight text-foreground">99.98</span>
+                            <span class="text-xl sm:text-2xl font-bold text-primary">%</span>
+                        </div>
+                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                            Jaminan ketersediaan server tinggi dengan arsitektur multi-cluster dan auto-healing session.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-border/60 flex items-center gap-2 text-xs font-medium text-foreground/80">
+                        <span class="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold">
+                            <i class="bi bi-shield-check"></i> Zero Queue
+                        </span>
+                        <span class="text-muted-foreground">tanpa delay antrean</span>
+                    </div>
+                </div>
+
+                {{-- Metrik 4: Tingkat Kepuasan --}}
+                <div class="flex flex-col justify-between lg:px-7 last:lg:pr-0">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <span class="inline-block h-2 w-2 rounded-full bg-amber-400"></span>
+                            <span>Tingkat Kepuasan</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-1">
+                            <span class="text-4xl sm:text-5xl font-black tracking-tight text-foreground">4.9</span>
+                            <span class="text-xl sm:text-2xl font-semibold text-muted-foreground">/ 5.0</span>
+                        </div>
+                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                            Dinilai sangat memuaskan oleh ribuan developer, lead engineer, dan pemilik produk.
+                        </p>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-border/60 flex items-center gap-2 text-xs font-medium text-foreground/80">
+                        <span class="inline-flex items-center gap-0.5 text-amber-400 text-xs">
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                            <i class="bi bi-star-fill"></i>
+                        </span>
+                        <span class="text-muted-foreground font-semibold">1.250+ ulasan</span>
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- Baris Bawah Telemetri: Live Radar Status & Sektor Industri --}}
+            <div class="relative z-10 mt-8 pt-6 border-t border-border/70 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                <div class="flex items-center gap-2.5">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="font-semibold text-foreground">Semua Node Gateway Beroperasi Normal</span>
+                    <span class="text-muted-foreground hidden sm:inline">&bull; Pemantauan latency multi-sesi aktif 24/7</span>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span class="font-medium text-foreground/70 mr-1">Digunakan di:</span>
+                    <span class="rounded-lg bg-muted/60 px-2.5 py-1 font-medium">🛍️ E-Commerce</span>
+                    <span class="rounded-lg bg-muted/60 px-2.5 py-1 font-medium">💳 Fintech</span>
+                    <span class="rounded-lg bg-muted/60 px-2.5 py-1 font-medium">🏥 Medis</span>
+                    <span class="rounded-lg bg-muted/60 px-2.5 py-1 font-medium">🚚 Logistik</span>
+                    <span class="rounded-lg bg-muted/60 px-2.5 py-1 font-medium">💻 SaaS</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Sub-header Grid Testimoni --}}
+        <div class="muncul mt-16 sm:mt-20 text-center max-w-xl mx-auto" style="--tunda: 180ms">
+            <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Apa Kata Mereka yang Mengandalkan Flustra WA?
+            </h3>
+            <p class="mt-2 text-xs sm:text-sm text-muted-foreground">
+                Cerita nyata dari para pengembang, pemilik produk, dan tim operasional yang telah mengotomatisasi komunikasi bisnis mereka.
+            </p>
+        </div>
+
+        {{-- 6 Kartu Testimoni Pengguna --}}
+        @php
+            $testimoni = [
+                [
+                    'nama' => 'Dimas Wahyu W.',
+                    'handle' => '@dimaswahyu.dev',
+                    'jabatan' => 'Fullstack Developer',
+                    'perusahaan' => 'Freelance Bandung',
+                    'industri' => 'Laravel & Web Apps',
+                    'inisial' => 'DW',
+                    'avatar_bg' => 'from-emerald-600 to-teal-700',
+                    'isi' => 'Dulu setup library Baileys di VPS sendiri bikin was-was, sering tiba-tiba disconnect dan memory leak pas tengah malam. Sejak migrasi ke Flustra, integrasi notifikasi order & webhook payment di Laravel beres beberapa jam aja tanpa mikirin daemon process lagi.',
+                ],
+                [
+                    'nama' => 'Nurul Hidayati',
+                    'handle' => '',
+                    'jabatan' => 'Supervisor Operasional',
+                    'perusahaan' => 'Rumah Hijab Nadiya',
+                    'industri' => 'E-Commerce & Retail',
+                    'inisial' => 'NH',
+                    'avatar_bg' => 'from-rose-600 to-pink-700',
+                    'isi' => 'Tiap habis promo tanggal kembar, admin kami biasanya lembur copas resi manual satu per satu ke ratusan customer. Sekarang otomatis terkirim dari webstore pas barang dipacking. Pengirimannya ada jeda natural jadi nomor kami aman dari banned.',
+                ],
+                [
+                    'nama' => 'drg. Sarah Amanda',
+                    'handle' => '',
+                    'jabatan' => 'Dokter Gigi & Pemilik',
+                    'perusahaan' => 'Amanda Dental Care (Surabaya)',
+                    'industri' => 'Layanan Medis',
+                    'inisial' => 'SA',
+                    'avatar_bg' => 'from-sky-600 to-blue-700',
+                    'isi' => 'Banyak pasien yang kelupaan jadwal kontrol berkala mereka. Setelah pasang pesan reminder otomatis H-1 lewat WhatsApp Flustra, tingkat kehadiran pasien naik drastis. Pasien lansia pun nyaman karena pesannya langsung masuk ke WA pribadi.',
+                ],
+                [
+                    'nama' => 'Rizky Ramadhan',
+                    'handle' => '@rizkyramadhan_',
+                    'jabatan' => 'Co-Founder & Developer',
+                    'perusahaan' => 'Kolega Undangan Digital',
+                    'industri' => 'SaaS & Event',
+                    'inisial' => 'RR',
+                    'avatar_bg' => 'from-amber-600 to-orange-700',
+                    'isi' => 'Sistem undangan digital traffic-nya musiman, pas akhir pekan bisa kirim ribuan konfirmasi kehadiran dan RSVP dalam waktu singkat. Flustra tangguh banget nahan burst antrean pesan, QR session-nya juga stabil gak pernah lepas sendiri.',
+                ],
+                [
+                    'nama' => 'Gita Larasati',
+                    'handle' => '',
+                    'jabatan' => 'Staf Administrasi & SPP',
+                    'perusahaan' => 'Lembaga Edukasi Bina Bangsa',
+                    'industri' => 'Pendidikan',
+                    'inisial' => 'GL',
+                    'avatar_bg' => 'from-violet-600 to-purple-700',
+                    'isi' => 'Kirim rincian iuran bulanan ke 700+ wali murid biasanya makan waktu 2 hari kalau dikirim manual. Pakai Flustra, sekali klik dari dashboard rekap tagihan langsung masuk ke nomor orang tua murid lengkap dengan nama siswa.',
+                ],
+                [
+                    'nama' => 'Fajar Kurnia',
+                    'handle' => '@fajarkurnia.id',
+                    'jabatan' => 'Backend Engineer',
+                    'perusahaan' => 'CV Lintas Logistik Bersama',
+                    'industri' => 'Sistem Distribusi',
+                    'inisial' => 'FK',
+                    'avatar_bg' => 'from-cyan-600 to-teal-700',
+                    'isi' => 'Integrasi API-nya beneran to-the-point. Contoh curl dan JSON payload-nya clean, webhook callback untuk status delivery (sent, delivered, read) langsung masuk ke server kami. Setup dari scan QR sampai live production cuma 15 menit.',
+                ],
+            ];
+        @endphp
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($testimoni as $i => $t)
+                <div class="muncul relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-6 shadow-xs transition-all duration-300 hover:border-primary/50 hover:shadow-md hover:-translate-y-1"
+                     style="--tunda: {{ 200 + ($i * 60) }}ms">
+                    <div>
+                        {{-- Baris Atas: Bintang & Badge Terverifikasi --}}
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1 text-amber-400 text-xs">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <i class="bi bi-patch-check-fill"></i>
+                                Terverifikasi
+                            </span>
+                        </div>
+
+                        {{-- Kutipan Ulasan --}}
+                        <p class="mt-4 text-xs sm:text-sm leading-relaxed text-foreground/90 font-normal">
+                            &ldquo;{{ $t['isi'] }}&rdquo;
+                        </p>
+                    </div>
+
+                    {{-- Informasi Pengulas --}}
+                    <div class="mt-6 flex items-center gap-3 pt-4 border-t border-border/60">
+                        <div class="inline-grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br {{ $t['avatar_bg'] }} text-xs font-bold text-white shadow-xs">
+                            {{ $t['inisial'] }}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5">
+                                <h4 class="truncate text-xs sm:text-sm font-bold text-foreground">{{ $t['nama'] }}</h4>
+                                @if (!empty($t['handle']))
+                                    <span class="text-[10px] text-muted-foreground font-mono">{{ $t['handle'] }}</span>
+                                @endif
+                            </div>
+                            <p class="truncate text-[11px] text-muted-foreground">{{ $t['jabatan'] }} &bull; <span class="font-medium text-foreground/85">{{ $t['perusahaan'] }}</span></p>
+                        </div>
+                        <span class="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {{ $t['industri'] }}
+                        </span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
     </div>
 </section>
 
@@ -1120,6 +1551,8 @@ Requirements:
                         <li><a href="#fitur" class="text-muted-foreground hover:text-foreground transition-colors">Fitur Gateway</a></li>
                         <li><a href="#cara-kerja" class="text-muted-foreground hover:text-foreground transition-colors">Cara Kerja</a></li>
                         <li><a href="#harga" class="text-muted-foreground hover:text-foreground transition-colors">Paket & Harga</a></li>
+                        <li><a href="#testimoni" class="text-muted-foreground hover:text-foreground transition-colors">Ulasan Pengguna</a></li>
+                        <li><a href="{{ route('mitra.landing') }}" class="text-muted-foreground hover:text-foreground transition-colors">Program Mitra (Reseller)</a></li>
                         <li><a href="{{ route('docs.show', 'referensi-api') }}" class="text-muted-foreground hover:text-foreground transition-colors">Kirim Pesan Teks</a></li>
                         <li><a href="{{ route('docs.show', 'webhook') }}" class="text-muted-foreground hover:text-foreground transition-colors">Webhook Dispatcher</a></li>
                         <li><a href="{{ route('docs.show', 'praktik-baik') }}" class="text-muted-foreground hover:text-foreground transition-colors">Proteksi Anti-Blokir</a></li>

@@ -178,7 +178,13 @@
                 }
             });
          "
-         class="space-y-6 sm:space-y-8">
+        {{-- Tombol Navigasi Kembali --}}
+        <div>
+            <a href="{{ route('billing.history') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition shadow-xs">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span>Kembali ke Riwayat Tagihan</span>
+            </a>
+        </div>
 
         {{-- Judul Halaman & Status Bar --}}
         <div class="flex flex-col gap-3 border-b border-border/70 pb-6 sm:flex-row sm:items-center sm:justify-between">

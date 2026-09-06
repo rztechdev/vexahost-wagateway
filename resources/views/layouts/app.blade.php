@@ -5,16 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') &middot; {{ config('app.name') }}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
     </script>
 </head>
 <body class="h-full bg-background text-foreground antialiased">
@@ -35,7 +41,7 @@
      | petunjuk di mana ia berada.
      */
     $menu = [
-        'Ikhtisar' => [
+        'Utama' => [
             ['rute' => 'dashboard', 'label' => 'Dashboard', 'ikon' => 'M3 12l9-9 9 9M5 10v10h14V10'],
             ['rute' => 'sessions.index', 'label' => 'Sesi WhatsApp', 'ikon' => 'M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z'],
         ],
@@ -50,10 +56,6 @@
         ],
         'Akun' => [
             ['rute' => 'billing.index', 'label' => 'Langganan', 'cocok' => ['billing.*'], 'ikon' => 'M2 7h20v12H2zM2 11h20M6 15h4'],
-            // Selalu ada, termasuk saat langganannya mati — rutenya memang di
-            // luar middleware `subscription`, dan menyembunyikan menunya di
-            // sini akan membatalkan seluruh maksud itu.
-            ['rute' => 'tickets.index', 'label' => 'Bantuan', 'cocok' => ['tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
             // Hanya untuk workspace PAYG. Menampilkannya ke pelanggan
             // berlangganan berarti menu yang isinya selalu nol dan tidak
             // pernah bisa dipakai — dan menu mati mengajari orang mengabaikan
@@ -61,7 +63,15 @@
             ...(($currentWorkspace ?? null)?->isPayg() ? [
                 ['rute' => 'balance.index', 'label' => 'Saldo', 'cocok' => ['balance.*'], 'ikon' => 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
             ] : []),
+            ['rute' => 'mitra.index', 'label' => 'Program Mitra', 'cocok' => ['mitra.*'], 'ikon' => 'M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'],
             ['rute' => 'settings', 'label' => 'Pengaturan', 'cocok' => ['settings', 'settings.*'], 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'],
+        ],
+        'Bantuan' => [
+            // Selalu ada, termasuk saat langganannya mati — rutenya memang di
+            // luar middleware `subscription`: pelanggan yang layanannya berhenti
+            // justru yang paling butuh menghubungi kami.
+            ['rute' => 'tickets.index', 'label' => 'Bantuan', 'cocok' => ['tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
+            ['rute' => 'docs.index', 'label' => 'Dokumentasi', 'eksternal' => true, 'ikon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z'],
         ],
     ];
 
@@ -97,104 +107,94 @@
     <aside class="panel-sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200 ease-out"
            :class="sidebar && 'terbuka'">
 
-        <div class="flex h-16 shrink-0 items-center gap-2.5 px-5">
-            <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-2.5 font-semibold">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="" class="h-7 w-auto shrink-0 object-contain">
-                <span class="truncate">Flustra WA</span>
+        <div class="flex h-20 shrink-0 items-center gap-3.5 px-5">
+            <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3.5">
+                <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA Gateway" class="h-11 w-auto shrink-0 object-contain">
+                <div class="flex min-w-0 flex-col">
+                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">Flustra</span>
+                    <span class="truncate text-xs font-semibold tracking-wide text-muted-foreground leading-tight">WA Gateway</span>
+                </div>
             </a>
             <button @click="sidebar = false" class="ml-auto rounded-md p-1 text-muted-foreground hover:bg-sidebar-accent lg:hidden" aria-label="Tutup menu">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
 
-        {{-- ===================== Pemilih workspace =====================
-
-             Ditaruh di sidebar, di atas menu, karena seluruh isi menu di
-             bawahnya adalah milik workspace yang sedang terpilih. Menaruhnya di
-             header kanan seperti sebelumnya memutus hubungan itu: orang
-             berpindah workspace lalu heran kenapa daftar sesinya berubah.
-             ============================================================= --}}
-        @isset($availableWorkspaces)
-            <div class="p-3" x-data="{ terbuka: false }" @click.outside="terbuka = false">
-                <button @click="terbuka = ! terbuka"
-                        class="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background/40 px-3 py-2 text-left text-sm transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                    <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground">
-                        {{ mb_strtoupper(mb_substr($currentWorkspace->name, 0, 1)) }}
-                    </span>
-                    <span class="min-w-0 flex-1">
-                        <span class="block truncate font-medium">{{ $currentWorkspace->name }}</span>
-                    </span>
-                    <svg class="h-4 w-4 shrink-0 text-muted-foreground transition-transform" :class="terbuka ? 'rotate-180' : ''"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-
-                <div x-show="terbuka" x-cloak x-transition.opacity.duration.150ms class="mt-1.5 space-y-0.5">
-                    @foreach ($availableWorkspaces as $t)
-                        <form method="POST" action="{{ route('workspaces.switch', $t->id) }}">
-                            @csrf
-                            <button class="block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm {{ $t->id === $currentWorkspace->id ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
-                                {{ $t->name }}
-                            </button>
-                        </form>
-                    @endforeach
-
-                    <a href="{{ route('onboarding.create') }}"
-                       class="block rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                        + Workspace baru
-                    </a>
-                </div>
-            </div>
-        @endisset
-
-        {{-- Menu selalu tampil, termasuk sebelum pengguna punya workspace.
-
-             Sebelum ada workspace tidak ada satu pun halaman di dalamnya yang
-             bisa dibuka — middleware memantulkan semuanya — jadi tautannya
-             diarahkan ke onboarding, tempat satu-satunya yang bisa dituju.
-             Menyembunyikan menunya sama sekali membuat pendaftar baru tidak
-             pernah tahu apa yang sebenarnya mereka dapat. --}}
-        <nav class="flex-1 space-y-6 overflow-y-auto p-3">
+        {{-- Menu selalu tampil, termasuk sebelum pengguna punya workspace. --}}
+        <nav class="flex-1 space-y-6 overflow-y-auto px-3 pt-7 pb-4">
             @php $punyaWorkspace = isset($availableWorkspaces); @endphp
             @foreach ($menu as $kelompok => $tautan)
                 <div>
-                    <p class="px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground">{{ $kelompok }}</p>
+                    <p class="px-3 pb-1.5 text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground/80">{{ $kelompok }}</p>
                     <div class="space-y-0.5">
+                        @if ($kelompok === 'Utama' && $punyaWorkspace)
+                            {{-- Dropdown Pemilih Workspace sebagai menu menurun inline --}}
+                            <div x-data="{ terbuka: false }" @click.outside="terbuka = false" class="mb-0.5">
+                                <button type="button"
+                                        @click="terbuka = ! terbuka"
+                                        class="group flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                        :class="terbuka ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-muted-foreground'">
+                                    <span class="grid h-5 w-5 shrink-0 place-items-center rounded bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground">
+                                        {{ mb_strtoupper(mb_substr($currentWorkspace->name ?? 'W', 0, 1)) }}
+                                    </span>
+                                    <span class="min-w-0 flex-1 truncate text-left font-medium text-foreground">
+                                        {{ $currentWorkspace->name }}
+                                    </span>
+                                    <svg class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200"
+                                         :class="terbuka ? 'rotate-180 text-foreground' : ''"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <path d="m6 9 6 6 6-6"/>
+                                    </svg>
+                                </button>
+
+                                <div x-show="terbuka" x-cloak x-collapse class="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border/80 pl-2.5">
+                                    @foreach ($availableWorkspaces as $t)
+                                        <form method="POST" action="{{ route('workspaces.switch', $t->id) }}">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="group flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition {{ $t->id === $currentWorkspace->id ? 'bg-sidebar-primary/10 font-semibold text-sidebar-primary' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
+                                                <span class="truncate">{{ $t->name }}</span>
+                                                @if ($t->id === $currentWorkspace->id)
+                                                    <svg class="h-3.5 w-3.5 shrink-0 text-sidebar-primary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                                    </svg>
+                                                @endif
+                                            </button>
+                                        </form>
+                                    @endforeach
+
+                                    <a href="{{ route('onboarding.create') }}"
+                                       class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                                        <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                                        <span class="truncate">+ Workspace Baru</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
                         @foreach ($tautan as $item)
-                            <a href="{{ $punyaWorkspace ? route($item['rute']) : route('onboarding.create') }}"
-                               class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm {{ $punyaWorkspace && $aktif($item) ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
+                            @php $eksternal = $item['eksternal'] ?? false; @endphp
+                            <a href="{{ ($eksternal || $punyaWorkspace) ? route($item['rute']) : route('onboarding.create') }}"
+                               @if ($eksternal) target="_blank" rel="noopener" @endif
+                               class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm {{ ! $eksternal && $punyaWorkspace && $aktif($item) ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
                                 <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $item['ikon'] }}"/></svg>
                                 <span class="truncate">{{ $item['label'] }}</span>
+                                @if ($eksternal)
+                                    <svg class="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                    </svg>
+                                @endif
                             </a>
                         @endforeach
                     </div>
                 </div>
             @endforeach
-
-            <div>
-                <p class="px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground">Bantuan</p>
-                <div class="space-y-0.5">
-                    <a href="{{ route('docs.index') }}" target="_blank" rel="noopener"
-                       class="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                        <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/>
-                        </svg>
-                        <span class="truncate">Dokumentasi</span>
-                        <svg class="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M7 17L17 7M17 7H7M17 7V17"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
         </nav>
 
-        {{-- Kaki sidebar hanya memuat satu tombol. Identitas pemakai dan menu
-             akunnya ada di kanan atas, tempat orang mencarinya di hampir semua
-             aplikasi sejenis; menaruhnya di dua tempat berarti dua daftar yang
-             harus dijaga tetap sama. --}}
-        <div class="shrink-0 border-t border-sidebar-border p-3">
+        {{-- Kaki sidebar hanya memuat satu tombol logout. --}}
+        <div class="shrink-0 border-t border-sidebar-border px-3 py-2">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <button class="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
                     Keluar
                 </button>
@@ -216,7 +216,7 @@
             <h1 class="min-w-0 truncate text-lg font-semibold">@yield('title', 'Dashboard')</h1>
 
             <div class="ml-auto flex items-center gap-1">
-                <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'"
+                <button @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light'; document.documentElement.style.colorScheme = d ? 'dark' : 'light';"
                         class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Ganti tema tampilan">
                     <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -235,10 +235,14 @@
                          bersama email — di bilah atas ia cuma mengulang sesuatu yang
                          sudah pasti diketahui orang yang sedang login. --}}
                     <button @click="profil = ! profil"
-                            class="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                            class="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary transition hover:bg-primary/20"
                             :aria-expanded="profil" aria-haspopup="true"
                             aria-label="Menu akun">
-                        {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                        @if (auth()->user()->avatarUrl())
+                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
+                        @else
+                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                        @endif
                     </button>
 
                     <div x-show="profil" x-cloak x-transition.opacity.duration.150ms
@@ -249,6 +253,9 @@
                         </div>
 
                         <div class="p-1.5">
+                            <a href="{{ route('profile.show') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                Profil saya
+                            </a>
                             @isset($availableWorkspaces)
                                 <a href="{{ route('settings') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
                                     Pengaturan workspace

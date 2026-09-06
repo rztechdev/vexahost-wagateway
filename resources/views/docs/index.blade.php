@@ -12,12 +12,7 @@
             <div class="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl"></div>
 
             <div class="relative z-10 max-w-3xl">
-                <div class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
-                    <i class="bi bi-patch-check-fill"></i>
-                    <span>Dokumentasi Developer &amp; Gateway WhatsApp</span>
-                </div>
-
-                <h1 class="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
                     Dokumentasi Flustra WA Gateway
                 </h1>
                 

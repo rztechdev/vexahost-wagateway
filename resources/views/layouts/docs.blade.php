@@ -5,17 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title') &middot; Dokumentasi {{ config('app.name') }}</title>
     <meta name="description" content="@yield('description', 'Dokumentasi Flustra WA Gateway: Panduan integrasi WhatsApp API, automasi broadcast, webhook, dan multi-sesi.')">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
     </script>
 </head>
 <body class="bg-background text-foreground antialiased font-sans"
@@ -105,7 +111,11 @@
     </div>
 
     {{-- ===================== BILAH ATAS (NAVBAR STICKY) ===================== --}}
-    <header class="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
+    <header x-data="{ scrolled: false }"
+            x-init="scrolled = (window.scrollY > 10)"
+            @scroll.window.passive="scrolled = (window.scrollY > 10)"
+            class="sticky top-0 z-40 w-full border-b transition-all duration-300"
+            :class="scrolled ? 'border-border/70 bg-background/80 backdrop-blur-md shadow-2xs' : 'border-transparent bg-transparent'">
         <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 py-3">
 
             {{-- Brand Identity --}}
@@ -129,25 +139,41 @@
             </button>
 
             {{-- Menu Kanan --}}
-            <div class="ml-auto flex items-center gap-2">
-                {{-- Quick Nav Link --}}
+            <div class="ml-auto flex items-center gap-1 sm:gap-2">
+                @php
+                    $isDocs = request()->routeIs('docs.index');
+                    $isMulaiCepat = ($activeSlug ?? null) === 'mulai-cepat';
+                    $isApi = ($activeSlug ?? null) === 'referensi-api';
+                @endphp
+
+                {{-- Quick Nav Links (Garis Bawah, Tanpa Background Hover) --}}
+                <a href="{{ route('docs.index') }}" 
+                   class="group relative hidden md:inline-flex items-center gap-1.5 px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors hover:text-foreground {{ $isDocs ? 'text-foreground' : 'text-muted-foreground' }}">
+                    <i class="bi bi-book text-xs"></i>
+                    <span>Dokumentasi</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200 {{ $isDocs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' }}"></span>
+                </a>
+
                 <a href="{{ route('docs.show', 'mulai-cepat') }}" 
-                   class="hidden md:inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                   class="group relative hidden md:inline-flex items-center gap-1.5 px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors hover:text-foreground {{ $isMulaiCepat ? 'text-foreground' : 'text-muted-foreground' }}">
                     <i class="bi bi-rocket-takeoff text-xs"></i>
                     <span>Mulai Cepat</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200 {{ $isMulaiCepat ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' }}"></span>
                 </a>
+
                 <a href="{{ route('docs.show', 'referensi-api') }}" 
-                   class="hidden md:inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                   class="group relative hidden md:inline-flex items-center gap-1.5 px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors hover:text-foreground {{ $isApi ? 'text-foreground' : 'text-muted-foreground' }}">
                     <i class="bi bi-code-slash text-xs"></i>
                     <span>Referensi API</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200 {{ $isApi ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' }}"></span>
                 </a>
 
                 <div class="hidden md:block h-4 w-px bg-border/80 mx-1"></div>
 
-                {{-- Tombol Ganti Tema --}}
+                {{-- Tombol Ganti Tema (Tanpa Background) --}}
                 <button type="button"
-                        @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'"
-                        class="grid h-9 w-9 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground active:scale-95 shadow-2xs"
+                        @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light'; document.documentElement.style.colorScheme = d ? 'dark' : 'light';"
+                        class="rounded-lg p-2 text-muted-foreground hover:text-foreground transition-colors"
                         aria-label="Ganti mode tema">
                     <svg class="hidden h-4 w-4 text-amber-400 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg class="block h-4 w-4 text-foreground dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
@@ -160,8 +186,10 @@
                         <span>Dashboard</span>
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground transition hover:bg-muted shadow-2xs">
-                        Masuk
+                    {{-- Tombol Masuk (Tanpa Background) --}}
+                    <a href="{{ route('login') }}" class="group relative hidden sm:inline-flex items-center px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                        <span>Masuk</span>
+                        <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                     </a>
                     <a href="{{ route('register') }}" class="hidden sm:inline-flex items-center rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-2xs transition hover:opacity-90 active:scale-95">
                         Mulai Gratis
@@ -169,13 +197,13 @@
                 @endauth
 
                 {{-- Search Trigger di Mobile --}}
-                <button type="button" @click="searchModal = true" class="grid h-9 w-9 place-items-center rounded-xl border border-border bg-card text-muted-foreground sm:hidden" aria-label="Cari">
-                    <i class="bi bi-search text-xs"></i>
+                <button type="button" @click="searchModal = true" class="rounded-lg p-2 text-muted-foreground hover:text-foreground sm:hidden" aria-label="Cari">
+                    <i class="bi bi-search text-base"></i>
                 </button>
 
                 {{-- Hamburger Menu di Mobile --}}
-                <button type="button" @click="sidebar = !sidebar" class="grid h-9 w-9 place-items-center rounded-xl border border-border bg-card text-muted-foreground lg:hidden" aria-label="Buka Menu">
-                    <i class="bi bi-list text-lg"></i>
+                <button type="button" @click="sidebar = !sidebar" class="rounded-lg p-2 text-muted-foreground hover:text-foreground lg:hidden" aria-label="Buka Menu">
+                    <i class="bi bi-list text-xl"></i>
                 </button>
             </div>
         </div>
@@ -283,75 +311,186 @@
         </div>
     </div>
 
-<footer class="border-t border-border py-12 bg-background">
-    <div class="mx-auto max-w-6xl px-5">
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
-            <div class="lg:col-span-2">
-                <a href="/" class="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
-                    FLUSTRA.
-                </a>
-                <p class="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                    Meningkatkan komunikasi dan notifikasi pelanggan melalui gateway WhatsApp yang tangguh.
-                </p>
-            </div>
-            
-            <div>
-                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Gateway ini</h3>
-                <ul class="mt-4 space-y-3 text-sm">
-                    <li><a href="{{ route('welcome') }}#fitur" class="text-muted-foreground hover:text-foreground">Fitur</a></li>
-                    <li><a href="{{ route('welcome') }}#harga" class="text-muted-foreground hover:text-foreground">Harga</a></li>
-                    <li><a href="{{ route('docs.index') }}" class="text-muted-foreground hover:text-foreground">Dokumentasi</a></li>
-                    <li><a href="{{ route('login') }}" class="text-muted-foreground hover:text-foreground">Masuk</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Produk Flustra</h3>
-                <ul class="mt-4 space-y-3 text-sm">
-                    @foreach (config('flustra.produk') as $nama => $alamat)
-                        <li><a href="{{ $alamat }}" class="text-muted-foreground hover:text-foreground">{{ $nama }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="text-xs font-semibold tracking-wider text-primary uppercase">Perusahaan</h3>
-                <ul class="mt-4 space-y-3 text-sm">
-                    <li><a href="https://about.flustra.id" class="text-muted-foreground hover:text-foreground">Tentang Kami</a></li>
-                    <li><a href="https://about.flustra.id/#contact" class="text-muted-foreground hover:text-foreground">Kontak</a></li>
-                    <li><a href="#" class="text-muted-foreground hover:text-foreground">Kebijakan Privasi</a></li>
-                </ul>
+{{-- ===================== Footer ===================== --}}
+<footer class="border-t border-border bg-background pt-12 sm:pt-16 pb-0">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {{-- Banner Atas: Enterprise Ready & Akselerasi Integrasi --}}
+        <div class="pb-10 border-b border-border/70">
+            <div class="grid gap-8 lg:grid-cols-12 items-center">
+                <div class="lg:col-span-7">
+                    <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                        Siap mengotomatiskan pesan WhatsApp skala besar?
+                    </h3>
+                    <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
+                        Bergabunglah dengan ratusan pengembang dan bisnis yang mengandalkan stabilitas gateway Flustra untuk pesan transaksional berkecepatan tinggi tanpa khawatir sesi terputus.
+                    </p>
+                </div>
+                <div class="lg:col-span-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    <div class="relative flex-1 min-w-0">
+                        <input type="email"
+                               placeholder="Masukkan email kantor Anda..."
+                               class="w-full rounded-xl border border-input bg-card px-3.5 py-2.5 text-xs sm:text-sm text-foreground shadow-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                               readonly
+                               onfocus="this.removeAttribute('readonly');">
+                    </div>
+                    <a href="{{ route('register') }}"
+                       class="inline-flex shrink-0 items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all text-center">
+                        Mulai Sekarang
+                    </a>
+                </div>
             </div>
         </div>
-        
-        <div class="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-            <p class="text-sm text-muted-foreground">&copy; {{ date('Y') }} Flustra WA Gateway.</p>
-            
-            <div class="flex items-center gap-4 text-muted-foreground">
-                <a href="https://www.instagram.com/flustra.id" class="hover:text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        {{-- Grid Navigasi Utama: Brand + 4 Kolom Menu --}}
+        <div class="pt-10 sm:pt-12 pb-8 sm:pb-10 grid gap-10 lg:grid-cols-12">
+            {{-- Sisi Kiri: Profil Brand & Security Pillars --}}
+            <div class="lg:col-span-4 space-y-5">
+                <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-foreground">
+                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-8 w-auto object-contain">
+                    <div class="flex flex-col">
+                        <span class="leading-none">Flustra WA Gateway</span>
+                        <span class="text-[10px] font-mono tracking-wider uppercase text-primary font-semibold mt-1">Enterprise API Platform</span>
+                    </div>
+                </a>
+
+                <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm">
+                    Infrastruktur WhatsApp Gateway berkinerja tinggi untuk pengiriman OTP, tagihan otomatis, notifikasi e-commerce, dan broadcast dengan perlindungan anti-blokir multi-sesi.
+                </p>
+
+                {{-- Pilar Keamanan & Rekayasa --}}
+                <div class="pt-1 space-y-2 text-xs text-muted-foreground">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                        <span>Enkripsi TLS 1.3 & API Token Scoped</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                        <span>Isolasi Volume Sesi Terenkripsi</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                        <span>Antrean Pesan Jeda Acak Anti-Spam</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Sisi Kanan: 4 Kolom Link Enterprise --}}
+            <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+                {{-- Kolom 1: Produk API --}}
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-primary">Produk API</h4>
+                    <ul class="mt-4 space-y-2.5 text-xs sm:text-sm">
+                        <li><a href="{{ route('welcome') }}#fitur" class="text-muted-foreground hover:text-foreground transition-colors">Fitur Gateway</a></li>
+                        <li><a href="{{ route('welcome') }}#cara-kerja" class="text-muted-foreground hover:text-foreground transition-colors">Cara Kerja</a></li>
+                        <li><a href="{{ route('welcome') }}#harga" class="text-muted-foreground hover:text-foreground transition-colors">Paket & Harga</a></li>
+                        <li><a href="{{ route('welcome') }}#testimoni" class="text-muted-foreground hover:text-foreground transition-colors">Ulasan Pengguna</a></li>
+                        <li><a href="{{ route('mitra.landing') }}" class="text-muted-foreground hover:text-foreground transition-colors">Program Mitra (Reseller)</a></li>
+                        <li><a href="{{ route('docs.show', 'referensi-api') }}" class="text-muted-foreground hover:text-foreground transition-colors">Kirim Pesan Teks</a></li>
+                        <li><a href="{{ route('docs.show', 'webhook') }}" class="text-muted-foreground hover:text-foreground transition-colors">Webhook Dispatcher</a></li>
+                        <li><a href="{{ route('docs.show', 'praktik-baik') }}" class="text-muted-foreground hover:text-foreground transition-colors">Proteksi Anti-Blokir</a></li>
+                        <li><a href="{{ route('login') }}" class="text-muted-foreground hover:text-foreground transition-colors">Console Masuk</a></li>
+                    </ul>
+                </div>
+
+                {{-- Kolom 2: Developer --}}
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-primary">Developer</h4>
+                    <ul class="mt-4 space-y-2.5 text-xs sm:text-sm">
+                        <li><a href="{{ route('docs.index') }}" class="text-muted-foreground hover:text-foreground transition-colors">Pusat Dokumentasi</a></li>
+                        <li><a href="{{ route('docs.show', 'mulai-cepat') }}" class="text-muted-foreground hover:text-foreground transition-colors">Panduan Mulai Cepat</a></li>
+                        <li><a href="{{ route('docs.show', 'referensi-api') }}" class="text-muted-foreground hover:text-foreground transition-colors">Referensi API v1.0</a></li>
+                        <li><a href="{{ route('docs.show', 'contoh-integrasi') }}" class="text-muted-foreground hover:text-foreground transition-colors">Integrasi PHP / Laravel</a></li>
+                        <li><a href="{{ route('docs.show', 'integrasi-ai-agent') }}" class="text-muted-foreground hover:text-foreground transition-colors">Integrasi AI Agent</a></li>
+                        <li><a href="{{ route('docs.show', 'koleksi-postman') }}" class="text-muted-foreground hover:text-foreground transition-colors">Koleksi Postman</a></li>
+                    </ul>
+                </div>
+
+                {{-- Kolom 3: Ekosistem Flustra --}}
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-primary">Ekosistem</h4>
+                    <ul class="mt-4 space-y-2.5 text-xs sm:text-sm">
+                        @foreach (config('flustra.produk') as $nama => $alamat)
+                            <li><a href="{{ $alamat }}" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">{{ $nama }}</a></li>
+                        @endforeach
+                        <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Flustra Financial</a></li>
+                        <li><a href="https://lynk.id/flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Lynk.id Official</a></li>
+                    </ul>
+                </div>
+
+                {{-- Kolom 4: Perusahaan & Hubungi Kami --}}
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-primary">Perusahaan</h4>
+                    <ul class="mt-4 space-y-2.5 text-xs sm:text-sm">
+                        <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Tentang Kami</a></li>
+                        <li><a href="https://about.flustra.id/#contact" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Hubungi Sales</a></li>
+                        <li><a href="https://helpdesk.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Pusat Bantuan</a></li>
+                        <li><a href="mailto:flustrasupport@gmail.com" class="text-muted-foreground hover:text-foreground transition-colors break-all">flustrasupport@gmail.com</a></li>
+                        <li><a href="https://wa.me/6282318280376" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">WhatsApp Helpdesk</a></li>
+                        <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Kebijakan Privasi</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Baris Bawah: Legal Metadata, Hak Cipta & Social Icons Lengkap (Full-Width Grounded) --}}
+    <div class="border-t border-border/70 bg-muted/40 dark:bg-muted/20 py-3 sm:py-3.5">
+        <div class="mx-auto flex max-w-[1440px] flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 text-xs text-muted-foreground">
+            <div class="text-center sm:text-left">
+                <span>&copy; {{ date('Y') }} PT FLUSTRA FINANCES ARTHA. Hak cipta dilindungi undang-undang.</span>
+            </div>
+
+            {{-- 7 Ikon Media Sosial Resmi Flustra --}}
+            <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-3.5 text-muted-foreground">
+                {{-- Instagram --}}
+                <a href="https://www.instagram.com/flustra.id" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="Instagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
                     </svg>
                 </a>
-                <a href="#" class="hover:text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                {{-- Threads --}}
+                <a href="https://www.threads.net/@flustra.id" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="Threads">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 11c-1.4-4.8-5.3-8.5-9.9-8.5C5.9 2.5 2 7.2 2 12c0 4.9 3.9 9.5 10.2 9.5 2.6 0 5-.8 6.8-2.3 1.3-1 1.9-2.6 2-4.1v-.3c0-1.8-1.1-3.3-2.7-3.3-1 0-1.9.6-2.4 1.5-1.1 1.9-2.1 3-4.2 3-2.1 0-4-1.6-4-4s1.9-4 4-4c1.7 0 3.3 1.1 3.7 2.7.2.7.1 1.4-.3 2-.4.6-1 .9-1.7.9h-2.1"></path>
                     </svg>
                 </a>
-                <a href="https://x.com/flustraid" class="hover:text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                {{-- X / Twitter --}}
+                <a href="https://x.com/flustraid" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="X / Twitter">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
                     </svg>
                 </a>
-                <a href="https://www.tiktok.com/@flustra.id" class="hover:text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                {{-- TikTok --}}
+                <a href="https://www.tiktok.com/@flustra.id" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="TikTok">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
                     </svg>
                 </a>
-                <a href="#" class="hover:text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                {{-- LinkedIn --}}
+                <a href="https://www.linkedin.com/company/flustra" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle>
+                    </svg>
+                </a>
+
+                {{-- Shopee --}}
+                <a href="https://id.shp.ee/ttH9gphS" target="_blank" rel="noopener" class="hover:text-[#EE4D2D] transition-colors" aria-label="Shopee">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 8h14l-1 13H6L5 8Z"></path>
+                        <path d="M9 8V6a3 3 0 0 1 6 0v2"></path>
+                        <path d="M14.5 11.5c-.7-.5-1.5-.7-2.4-.7-1.2 0-2.1.6-2.1 1.5 0 2.3 4.6 1.1 4.6 3.8 0 1.1-1 1.9-2.5 1.9-.9 0-1.8-.3-2.6-.9"></path>
+                    </svg>
+                </a>
+
+                {{-- Lynk.id --}}
+                <a href="https://lynk.id/flustra.id" target="_blank" rel="noopener" class="hover:text-foreground transition-colors" aria-label="Lynk.id">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="18" viewBox="0 0 38 24" fill="none">
+                        <rect x=".75" y=".75" width="36.5" height="22.5" rx="6" stroke="currentColor" stroke-width="1.5"></rect>
+                        <text x="19" y="15.6" fill="currentColor" text-anchor="middle" font-size="10" font-weight="700" font-family="Arial, sans-serif">lynk</text>
                     </svg>
                 </a>
             </div>

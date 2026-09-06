@@ -7,16 +7,22 @@
     {{-- Panel internal: tidak ada gunanya muncul di hasil pencarian. --}}
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title', 'Admin') &middot; Admin {{ config('app.name') }}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
     </script>
 </head>
 <body class="h-full bg-background text-foreground antialiased" x-data="{ sidebar: false }">
@@ -37,7 +43,7 @@
         'Akun & Jejak' => [
             ['rute' => 'admin.users', 'label' => 'Pengguna', 'cocok' => ['admin.users', 'admin.users.*'], 'ikon' => 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm10 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
             ['rute' => 'admin.audit', 'label' => 'Catatan Audit', 'ikon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4'],
-            ['rute' => 'admin.exemptions', 'label' => 'Pengecualian', 'cocok' => ['admin.exemptions', 'admin.exemptions.*'], 'ikon' => 'M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8L12 2z'],
+            ['rute' => 'admin.exemptions', 'label' => 'Pemberitahuan & Tes', 'cocok' => ['admin.exemptions', 'admin.exemptions.*'], 'ikon' => 'M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8L12 2z'],
             ['rute' => 'admin.system', 'label' => 'Sistem', 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h2m14 0h2M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4'],
         ],
     ];
@@ -84,7 +90,7 @@
            :class="sidebar && 'terbuka'">
 
         {{-- Header Sidebar: Logo & Badge Admin --}}
-        <div class="flex h-16 shrink-0 items-center gap-2.5 px-5">
+        <div class="flex h-14 shrink-0 items-center gap-2.5 px-5">
             <a href="{{ route('admin.overview') }}" class="flex min-w-0 items-center gap-2.5 font-semibold">
                 <img src="{{ asset('images/flustra-wa.png') }}" alt="" class="h-7 w-auto shrink-0 object-contain">
                 <span class="truncate text-white">Flustra WA</span>
@@ -98,15 +104,15 @@
         </div>
 
         {{-- Navigasi Menu Admin --}}
-        <nav class="flex-1 space-y-6 overflow-y-auto p-3">
+        <nav class="flex-1 space-y-3.5 overflow-y-auto px-3 py-2">
             @foreach ($adminMenu as $kelompok => $tautan)
                 <div>
-                    <p class="px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-wider text-emerald-400/60">{{ $kelompok }}</p>
+                    <p class="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-wider text-emerald-400/60">{{ $kelompok }}</p>
                     <div class="space-y-0.5">
                         @foreach ($tautan as $item)
                             @php $isAktif = $aktif($item); @endphp
                             <a href="{{ route($item['rute']) }}"
-                               class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition {{ $isAktif 
+                               class="flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition {{ $isAktif 
                                     ? 'bg-[#1a442e] font-medium text-white shadow-xs border border-emerald-500/25' 
                                     : 'text-emerald-100/70 hover:bg-[#143323] hover:text-white' }}">
                                 <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
@@ -125,10 +131,10 @@
             @endforeach
 
             <div>
-                <p class="px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-wider text-emerald-400/60">Pintasan</p>
+                <p class="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-wider text-emerald-400/60">Pintasan</p>
                 <div class="space-y-0.5">
                     <a href="{{ route('dashboard') }}"
-                       class="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-emerald-100/70 transition hover:bg-[#143323] hover:text-white">
+                       class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-emerald-100/70 transition hover:bg-[#143323] hover:text-white">
                         <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
@@ -181,7 +187,7 @@
                     <span>Ke dashboard user</span>
                 </a>
 
-                <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'"
+                <button @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light'; document.documentElement.style.colorScheme = d ? 'dark' : 'light';"
                         class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Ganti tema tampilan">
                     <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>

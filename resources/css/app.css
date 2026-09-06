@@ -166,9 +166,78 @@
         --code-payload: #ffcc80;
     }
 
-    * {
-        @apply border-border;
+    html {
+        color-scheme: light;
     }
+
+    html.dark {
+        color-scheme: dark;
+    }
+
+    /* Scrollbar kustom WebKit / Chromium (Chrome, Edge, Safari, Opera) */
+    *::-webkit-scrollbar,
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+
+    *::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+
+    *::-webkit-scrollbar-thumb,
+    ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.35);
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover,
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(156, 163, 175, 0.6);
+    }
+
+    *::-webkit-scrollbar-corner,
+    ::-webkit-scrollbar-corner {
+        background: transparent !important;
+    }
+
+    /* Scrollbar mode gelap: tidak ada track putih, thumb halus */
+    html.dark *::-webkit-scrollbar-track,
+    html.dark ::-webkit-scrollbar-track,
+    .dark *::-webkit-scrollbar-track,
+    .dark ::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+
+    html.dark *::-webkit-scrollbar-thumb,
+    html.dark ::-webkit-scrollbar-thumb,
+    .dark *::-webkit-scrollbar-thumb,
+    .dark ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 9999px;
+    }
+
+    html.dark *::-webkit-scrollbar-thumb:hover,
+    html.dark ::-webkit-scrollbar-thumb:hover,
+    .dark *::-webkit-scrollbar-thumb:hover,
+    .dark ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    /* Firefox (tidak mendukung ::-webkit-scrollbar) */
+    @supports not selector(::-webkit-scrollbar) {
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+        }
+
+        html.dark,
+        html.dark * {
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+    }
+
     html, body {
         overflow-x: clip;
         max-width: 100%;
@@ -424,23 +493,32 @@
 .doc-body input[type='checkbox'] { margin-right: 0.4rem; }
 
 /* ---------------------------------------------------------------------------
-   Marquee metode pembayaran.
+   Marquee metode pembayaran & hero ekosistem.
    --------------------------------------------------------------------------- */
-@keyframes flustra-pay-scroll {
+@keyframes flustra-marquee-scroll {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
 }
 
 .flustra-pay-track {
-    animation: flustra-pay-scroll 35s linear infinite;
+    animation: flustra-marquee-scroll 35s linear infinite;
     will-change: transform;
 }
 
-.flustra-pay-marquee:hover .flustra-pay-track {
+.flustra-hero-track {
+    display: flex;
+    width: max-content;
+    animation: flustra-marquee-scroll 30s linear infinite;
+    will-change: transform;
+}
+
+.flustra-pay-marquee:hover .flustra-pay-track,
+.flustra-hero-marquee:hover .flustra-hero-track {
     animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .flustra-pay-track { animation: none; }
+    .flustra-pay-track,
+    .flustra-hero-track { animation: none; }
 }
 

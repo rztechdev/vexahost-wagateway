@@ -30,6 +30,15 @@ class ReferralCode extends Model
         'max_redemptions',
         'expires_at',
         'is_active',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
+        'whatsapp_number',
+        'notes',
+        'approval_status',
+        'rejection_reason',
+        'approved_at',
+        'approved_by',
         'created_by',
     ];
 
@@ -37,6 +46,7 @@ class ReferralCode extends Model
     {
         return [
             'expires_at' => 'datetime',
+            'approved_at' => 'datetime',
             'is_active' => 'boolean',
             'discount_percent' => 'integer',
             'commission_percent' => 'integer',
@@ -55,9 +65,19 @@ class ReferralCode extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function redemptions(): HasMany
     {
         return $this->hasMany(ReferralRedemption::class);
+    }
+
+    public function payoutRequests(): HasMany
+    {
+        return $this->hasMany(PayoutRequest::class);
     }
 
     /**
@@ -98,11 +118,30 @@ class ReferralCode extends Model
             return false;
         }
 
+        if ($this->approval_status !== 'approved') {
+            return false;
+        }
+
         if ($this->expires_at !== null && $this->expires_at->isPast()) {
             return false;
         }
 
         return $this->max_redemptions === null || $this->redeemed_count < $this->max_redemptions;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->approval_status === 'pending';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === 'rejected';
     }
 
     /** Potongan untuk sebuah nominal, dalam rupiah penuh. */

@@ -13,11 +13,14 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Dashboard\ApiKeyController;
 use App\Http\Controllers\Dashboard\BalanceController;
 use App\Http\Controllers\Dashboard\BillingController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\MessageController;
+use App\Http\Controllers\Dashboard\MitraController;
+use App\Http\Controllers\Dashboard\ProfileController;
 use App\Http\Controllers\Dashboard\SessionController;
 use App\Http\Controllers\Dashboard\TemplateController;
 use App\Http\Controllers\Dashboard\TicketController;
@@ -28,6 +31,7 @@ use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('welcome');
+Route::get('mitra', [MitraController::class, 'landing'])->name('mitra.landing');
 
 /*
 | Dokumentasi. Terbuka untuk publik: isinya penjelasan cara kerja dan cara
@@ -51,6 +55,11 @@ Route::middleware('guest')->group(function (): void {
 
     Route::get('auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
     Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+    Route::get('forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
@@ -82,6 +91,16 @@ Route::middleware('auth')->group(function (): void {
         Route::post('bantuan/{id}/balas', [TicketController::class, 'reply'])->name('tickets.reply');
         Route::post('bantuan/{id}/tutup', [TicketController::class, 'close'])->name('tickets.close');
         Route::get('bantuan/{id}/lampiran/{messageId}', [TicketController::class, 'attachment'])->name('tickets.attachment');
+
+        Route::get('profil', [ProfileController::class, 'show'])->name('profile.show');
+        Route::put('profil', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('profil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+        Route::get('mitra/dashboard', [MitraController::class, 'index'])->name('mitra.index');
+        Route::post('mitra/daftar', [MitraController::class, 'apply'])->name('mitra.apply');
+        Route::post('mitra/tarik-dana', [MitraController::class, 'requestPayout'])->name('mitra.payout');
+        Route::get('mitra/payout/{id}/invoice', [MitraController::class, 'payoutInvoice'])->name('mitra.payout.invoice');
+        Route::get('mitra/payout/{id}/download', [MitraController::class, 'downloadInvoice'])->name('mitra.payout.download');
     });
 
     /*
@@ -222,7 +241,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('reseller', [AdminReferralController::class, 'index'])->name('referrals');
     Route::post('reseller', [AdminReferralController::class, 'store'])->name('referrals.store');
     Route::post('reseller/{id}/aktif', [AdminReferralController::class, 'toggle'])->name('referrals.toggle');
+    Route::post('reseller/{id}/setujui', [AdminReferralController::class, 'approveApplication'])->name('referrals.approve');
+    Route::post('reseller/{id}/tolak', [AdminReferralController::class, 'rejectApplication'])->name('referrals.reject');
     Route::post('reseller/komisi/{id}/bayar', [AdminReferralController::class, 'markPaid'])->name('referrals.commission.paid');
+    Route::post('reseller/pencairan/{id}/bayar', [AdminReferralController::class, 'markPayoutPaid'])->name('referrals.payout.paid');
+    Route::get('reseller/pencairan/{id}/invoice', [AdminReferralController::class, 'payoutInvoice'])->name('referrals.payout.invoice');
+    Route::get('reseller/pencairan/{id}/download', [AdminReferralController::class, 'downloadInvoice'])->name('referrals.payout.download');
 
     Route::get('pengguna', [AdminUserController::class, 'index'])->name('users');
     Route::post('pengguna/{id}/super-admin', [AdminUserController::class, 'toggleSuperAdmin'])->name('users.super');

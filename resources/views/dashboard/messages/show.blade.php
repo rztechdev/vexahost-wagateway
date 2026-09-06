@@ -38,8 +38,9 @@
             </p>
         </div>
         <a href="{{ route('messages.index') }}"
-           class="shrink-0 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted">
-            Kembali ke riwayat
+           class="inline-flex items-center gap-1.5 shrink-0 rounded-lg border border-border px-3.5 py-2 text-sm font-medium transition hover:bg-muted">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <span>Kembali ke Riwayat</span>
         </a>
     </div>
 

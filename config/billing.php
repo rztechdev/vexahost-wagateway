@@ -145,7 +145,13 @@ return [
     | karena selama pembayaran dicocokkan manual, tagihan hanya menjadi lunas
     | kalau ada orang yang membukanya di panel.
     */
-    'admin_phone' => env('BILLING_ADMIN_PHONE'),
+    'admin_phone' => env('BILLING_ADMIN_PHONE', '085774410978'),
+
+    /*
+    | Biaya administrasi & penanganan pencairan komisi reseller (persen).
+    | Standar pemotongan: 5% dari total nominal komisi yang dicairkan.
+    */
+    'payout_fee_percent' => (int) env('MITRA_PAYOUT_FEE_PERCENT', 5),
 
     /*
     | Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa

@@ -13,6 +13,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
+        'company',
+        'city',
+        'address',
+        'bio',
         'google_id',
         'avatar',
         'email_verified_at',
@@ -57,5 +62,26 @@ class User extends Authenticatable
     public function canManage(Workspace $workspace): bool
     {
         return $this->is_super_admin || in_array($this->roleIn($workspace), ['owner', 'admin'], true);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar) {
+            return null;
+        }
+
+        return str_starts_with($this->avatar, 'http')
+            ? $this->avatar
+            : asset('storage/'.$this->avatar);
+    }
+
+    public function referralCode(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ReferralCode::class, 'owner_user_id');
+    }
+
+    public function payoutRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PayoutRequest::class);
     }
 }

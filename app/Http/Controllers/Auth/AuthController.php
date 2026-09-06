@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReferralCode;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Auth\Events\Registered;
@@ -51,8 +52,15 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function showRegister(): View
+    public function showRegister(Request $request): View
     {
+        if ($request->filled('ref')) {
+            $kode = ReferralCode::normalkan((string) $request->query('ref'));
+            if (ReferralCode::where('code', $kode)->where('is_active', true)->exists()) {
+                session(['referral_code' => $kode]);
+            }
+        }
+
         return view('auth.register');
     }
 

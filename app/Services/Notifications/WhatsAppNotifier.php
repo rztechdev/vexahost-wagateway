@@ -62,7 +62,7 @@ class WhatsAppNotifier
      * pembayaran baru, karena selama pencocokan masih manual, tagihan hanya
      * menjadi lunas kalau ada orang yang membukanya di panel.
      */
-    public function toAdmin(string $pesan, ?string $sekali = null, int $ingatJam = 24): bool
+    public function toAdmin(string $pesan, ?string $sekali = null, int $ingatJam = 24, array $media = []): bool
     {
         $nomor = config('billing.admin_phone');
 
@@ -70,7 +70,19 @@ class WhatsAppNotifier
             return false;
         }
 
-        return $this->send($nomor, $pesan, $sekali, $ingatJam);
+        return $this->send($nomor, $pesan, $sekali, $ingatJam, $media);
+    }
+
+    /**
+     * Mengirim pemberitahuan ke nomor WhatsApp perorangan (misal: mitra reseller).
+     */
+    public function toPhone(string $nomor, string $pesan, ?string $sekali = null, int $ingatJam = 24, array $media = []): bool
+    {
+        if (blank($nomor)) {
+            return false;
+        }
+
+        return $this->send($nomor, $pesan, $sekali, $ingatJam, $media);
     }
 
     /**
@@ -148,7 +160,7 @@ class WhatsAppNotifier
             .'. Kalau tidak sampai dalam satu menit, periksa halaman Lalu Lintas Pesan.'];
     }
 
-    private function send(string $tujuan, string $pesan, ?string $sekali, int $ingatJam): bool
+    private function send(string $tujuan, string $pesan, ?string $sekali, int $ingatJam, array $media = []): bool
     {
         $penanda = $sekali ? "wa-notif:{$sekali}" : null;
 
@@ -167,7 +179,17 @@ class WhatsAppNotifier
         }
 
         try {
-            $this->dispatcher->queue($pengirim, $tujuan, ['body' => $pesan]);
+            $attributes = ['body' => $pesan];
+            if (! empty($media)) {
+                $attributes = array_merge($attributes, [
+                    'type' => $media['type'] ?? 'document',
+                    'media_path' => $media['media_path'] ?? null,
+                    'media_mime' => $media['media_mime'] ?? 'application/pdf',
+                    'media_filename' => $media['media_filename'] ?? 'document.pdf',
+                ]);
+            }
+
+            $this->dispatcher->queue($pengirim, $tujuan, $attributes);
 
             if ($penanda) {
                 Cache::put($penanda, true, now()->addHours($ingatJam));

@@ -4,7 +4,12 @@
 @section('content')
     <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-            <a href="{{ route('admin.tickets') }}" class="text-sm text-muted-foreground hover:underline">← Semua tiket</a>
+            <div class="mb-2">
+                <a href="{{ route('admin.tickets') }}" class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition shadow-xs">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    <span>Kembali ke Semua Tiket</span>
+                </a>
+            </div>
             <h2 class="mt-1 text-lg font-semibold">{{ $ticket->subject }}</h2>
             <p class="mt-0.5 text-sm text-muted-foreground">
                 Tiket #{{ $ticket->id }} ·

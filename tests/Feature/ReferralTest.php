@@ -97,10 +97,15 @@ class ReferralTest extends TestCase
         $dibuat = [];
 
         foreach (range(1, 50) as $ke) {
+            $user = User::create([
+                'name' => "User {$ke}",
+                'email' => "user{$ke}@contoh.id",
+                'password' => Hash::make('secret'),
+            ]);
             $kode = ReferralCode::buatKode();
             ReferralCode::create([
                 'code' => $kode,
-                'owner_user_id' => $this->reseller->id,
+                'owner_user_id' => $user->id,
                 'discount_percent' => 5,
                 'commission_percent' => 5,
             ]);
@@ -141,9 +146,15 @@ class ReferralTest extends TestCase
 
     public function test_kode_kedua_di_workspace_yang_sama_ditolak(): void
     {
+        $resellerKedua = User::create([
+            'name' => 'Reseller Kedua',
+            'email' => 'reseller2@contoh.id',
+            'password' => Hash::make('rahasia12345'),
+        ]);
+
         $kedua = ReferralCode::create([
             'code' => ReferralCode::buatKode(),
-            'owner_user_id' => $this->reseller->id,
+            'owner_user_id' => $resellerKedua->id,
             'discount_percent' => 50,
             'commission_percent' => 5,
         ]);
@@ -415,8 +426,14 @@ class ReferralTest extends TestCase
             'is_super_admin' => true,
         ]);
 
+        $resellerBaru = User::create([
+            'name' => 'Reseller Baru',
+            'email' => 'reseller.baru@contoh.id',
+            'password' => Hash::make('rahasia12345'),
+        ]);
+
         $this->actingAs($admin)->post(route('admin.referrals.store'), [
-            'owner_user_id' => $this->reseller->id,
+            'owner_user_id' => $resellerBaru->id,
             'discount_percent' => 15,
             'commission_percent' => 25,
         ])->assertRedirect();
@@ -441,6 +458,25 @@ class ReferralTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('paid', $redemption->fresh()->status);
+    }
+
+    public function test_satu_akun_hanya_bisa_memiliki_satu_kode_referal_selamanya(): void
+    {
+        $admin = User::create([
+            'name' => 'Flustra Admin',
+            'email' => 'admin.unique@flustra.id',
+            'password' => Hash::make('rahasia12345'),
+            'is_super_admin' => true,
+        ]);
+
+        // Percobaan membuat kode kedua untuk reseller yang sudah punya kode harus ditolak
+        $this->actingAs($admin)->post(route('admin.referrals.store'), [
+            'owner_user_id' => $this->reseller->id,
+            'discount_percent' => 10,
+            'commission_percent' => 20,
+        ])->assertSessionHasErrors('owner_user_id');
+
+        $this->assertSame(1, ReferralCode::where('owner_user_id', $this->reseller->id)->count());
     }
 
     public function test_halaman_admin_reseller_terbuka(): void
