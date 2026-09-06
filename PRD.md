@@ -353,12 +353,26 @@ yang sudah ada.
 
 ## Definisi selesai
 
-- [ ] Kode dibuat dari panel admin, 5 huruf, tidak pernah bertabrakan
-- [ ] Diskon terlihat di halaman bayar sebelum tagihan terbit
-- [ ] Kode sendiri ditolak; kode kedua di workspace yang sama ditolak
-- [ ] Komisi baru `approved` setelah lunas; tagihan kedaluwarsa tidak menghasilkan apa pun
-- [ ] Nominal unik tetap cocok setelah diskon
-- [ ] `ReferralTest` menguji seluruh penolakan di atas, bukan cuma jalur bahagia
+- [x] Kode dibuat dari panel admin, 5 huruf, tidak pernah bertabrakan
+- [x] Diskon terlihat di halaman bayar sebelum tagihan terbit
+- [x] Kode sendiri ditolak; kode kedua di workspace yang sama ditolak
+- [x] Komisi baru `approved` setelah lunas; tagihan kedaluwarsa tidak menghasilkan apa pun
+- [x] Nominal unik tetap cocok setelah diskon
+- [x] `ReferralTest` menguji seluruh penolakan di atas, bukan cuma jalur bahagia
+
+**Selesai, kecuali dashboard reseller mandiri** — PRD sendiri mengizinkan itu
+ditunda ("boleh ditunda ke tahap kedua kalau resellernya masih sedikit dan Ryan
+yang melaporkan manual"). Panel admin `/admin/reseller` sudah menampilkan
+seluruh angkanya: komisi terutang per orang, sudah dibayar, potongan yang sudah
+diberikan, dan tombol menandai transfer.
+
+Yang perlu diingat kalau menyentuh penagihan lagi: `allocateUniqueCode()` memakai
+SQL mentah (`amount + tax_amount - discount_amount = ?`) dan sekarang **wajib**
+mengurangi diskon di situ. Tanpa suku itu, yang dijamin unik adalah nominal
+sebelum diskon — sementara yang benar-benar ditransfer pelanggan adalah nominal
+sesudahnya, dan dua uang masuk yang identik persis keadaan yang kode unik ini
+ada untuk mencegahnya. `ReferralTest` menerbitkan 8 tagihan berselang-seling
+(berdiskon dan tidak) untuk menjaganya.
 
 ---
 

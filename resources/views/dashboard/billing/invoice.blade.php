@@ -370,6 +370,13 @@
                                     </div>
                                 @endif
 
+                                @if ($invoice->discount_amount > 0)
+                                    <div class="flex justify-between text-muted-foreground">
+                                        <span>Potongan referal{{ $invoice->referralCode ? ' ('.$invoice->referralCode->code.')' : '' }}</span>
+                                        <span class="font-medium text-primary tabular-nums">−Rp {{ number_format($invoice->discount_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+
                                 @if ($invoice->unique_code > 0)
                                     <div class="flex justify-between text-muted-foreground">
                                         <span>Kode Unik Verifikasi</span>

@@ -6,6 +6,7 @@ use App\Mail\PembayaranDiterima;
 use App\Mail\TagihanTerbit;
 use App\Models\AuditLog;
 use App\Models\Invoice;
+use App\Models\ReferralCode;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
@@ -38,6 +39,7 @@ class SubscriptionService
         private readonly SessionService $sessions,
         private readonly WhatsAppNotifier $notifier,
         private readonly EmailNotifier $email,
+        private readonly ReferralService $referrals,
     ) {}
 
     /**
@@ -137,8 +139,12 @@ class SubscriptionService
      * karena keduanya akan punya kode unik berbeda dan pelanggan akan membayar
      * salah satunya sementara yang lain menggantung sampai kedaluwarsa.
      */
-    public function issueInvoice(Workspace $workspace, string $planSlug, string $period): Invoice
-    {
+    public function issueInvoice(
+        Workspace $workspace,
+        string $planSlug,
+        string $period,
+        ?ReferralCode $referral = null,
+    ): Invoice {
         if (! Plan::exists($planSlug)) {
             throw new RuntimeException("Paket '{$planSlug}' tidak ada.");
         }
@@ -165,8 +171,16 @@ class SubscriptionService
         $amount = $plan->price($period);
         $tax = (int) round($amount * config('billing.tax_percent') / 100);
 
-        $invoice = DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax) {
-            $code = $this->allocateUniqueCode($amount + $tax);
+        // Diskon dihitung SEBELUM kode unik, dan urutan itu bukan selera:
+        // `allocateUniqueCode()` menjamin nominal akhir unik di antara tagihan
+        // terbuka. Kalau diskon dipotong sesudahnya, yang dijamin unik adalah
+        // nominal sebelum diskon — dan yang benar-benar ditransfer pelanggan
+        // bisa bertabrakan dengan tagihan orang lain, persis hal yang kode unik
+        // ini ada untuk mencegahnya.
+        $diskon = $referral?->potongan($amount + $tax) ?? 0;
+
+        $invoice = DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax, $diskon, $referral) {
+            $code = $this->allocateUniqueCode($amount + $tax - $diskon);
 
             $invoice = Invoice::create([
                 // Diisi sementara lalu ditimpa: kolomnya unik dan wajib, tapi
@@ -179,8 +193,10 @@ class SubscriptionService
                 'period' => $period,
                 'amount' => $amount,
                 'tax_amount' => $tax,
+                'discount_amount' => $diskon,
+                'referral_code_id' => $referral?->id,
                 'unique_code' => $code,
-                'total' => $amount + $tax + $code,
+                'total' => $amount + $tax - $diskon + $code,
                 'status' => 'pending',
                 'channel' => 'qris_manual',
                 'due_at' => now()->addDays(config('billing.invoice_due_days')),
@@ -197,7 +213,16 @@ class SubscriptionService
                 'plan' => $planSlug,
                 'period' => $period,
                 'total' => $invoice->total,
+                'diskon' => $diskon,
+                'referral' => $referral?->code,
             ], $workspace->id);
+
+            // Di dalam transaksi bersama tagihannya: penukaran yang tercatat
+            // tanpa tagihan, atau tagihan berdiskon tanpa penukaran, keduanya
+            // menghasilkan komisi yang tidak bisa dipertanggungjawabkan.
+            if ($referral) {
+                $this->referrals->catat($referral, $invoice);
+            }
 
             return $invoice;
         });
@@ -282,6 +307,11 @@ class SubscriptionService
                 'status' => 'active',
                 'service_until' => $subscription->current_period_end,
             ])->save();
+
+            // Di dalam transaksi: komisi yang disetujui untuk tagihan yang
+            // ternyata gagal ditandai lunas adalah utang ke reseller atas uang
+            // yang tidak pernah masuk.
+            $this->referrals->setujui($invoice);
 
             AuditLog::record('invoice.paid', $invoice, [
                 'plan' => $invoice->plan_slug,
@@ -471,9 +501,15 @@ class SubscriptionService
         $min = (int) config('billing.unique_code.min');
         $max = (int) config('billing.unique_code.max');
 
+        // `discount_amount` WAJIB ikut dikurangkan di sini. Yang dijaga unik
+        // adalah nominal yang benar-benar ditransfer pelanggan, dan sejak ada
+        // kode referal, itu bukan lagi `amount + tax_amount`. Tanpa suku ini,
+        // tagihan berdiskon dan tagihan tanpa diskon bisa berakhir dengan
+        // nominal akhir yang persis sama — dan dua uang masuk yang identik
+        // adalah persis keadaan yang kode unik ini ada untuk mencegahnya.
         $terpakai = Invoice::where('status', 'pending')
             ->where('due_at', '>', now())
-            ->whereRaw('amount + tax_amount = ?', [$baseAmount])
+            ->whereRaw('amount + tax_amount - discount_amount = ?', [$baseAmount])
             ->pluck('unique_code')
             ->all();
 

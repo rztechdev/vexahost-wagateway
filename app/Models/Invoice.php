@@ -17,6 +17,8 @@ class Invoice extends Model
         'period',
         'amount',
         'tax_amount',
+        'discount_amount',
+        'referral_code_id',
         'unique_code',
         'total',
         'status',
@@ -43,6 +45,12 @@ class Invoice extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** Kode referal yang dipakai saat tagihan ini terbit, kalau ada. */
+    public function referralCode(): BelongsTo
+    {
+        return $this->belongsTo(ReferralCode::class, 'referral_code_id');
     }
 
     public function subscription(): BelongsTo

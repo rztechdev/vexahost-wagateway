@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ExemptionController as AdminExemptionController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
+use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('billing/paket', [BillingController::class, 'plans'])->name('billing.plans');
         Route::get('billing/riwayat', [BillingController::class, 'history'])->name('billing.history');
         Route::post('billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+        Route::post('billing/referal/tinjau', [BillingController::class, 'reviewReferral'])->name('billing.referral.review');
         Route::get('billing/invoices/{id}', [BillingController::class, 'invoice'])->name('billing.invoice');
         Route::post('billing/invoices/{id}/penagihan', [BillingController::class, 'saveBillingDetails'])->name('billing.details');
         Route::post('billing/invoices/{id}/bukti', [BillingController::class, 'uploadProof'])->name('billing.proof.upload');
@@ -166,6 +168,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('pengecualian/pengirim', [AdminExemptionController::class, 'saveNotifier'])->name('exemptions.notifier');
     Route::post('pengecualian/pengirim/tes', [AdminExemptionController::class, 'testNotifier'])->name('exemptions.notifier.test');
     Route::post('pengecualian/email/tes', [AdminExemptionController::class, 'testEmail'])->name('exemptions.email.test');
+
+    /*
+    | Reseller: kode referal dan komisi yang terutang.
+    |
+    | Pembayaran komisinya manual, sama seperti pembayaran masuk. Yang ada di
+    | sini cuma catatan berapa terutang ke siapa dan tombol menandainya sudah
+    | ditransfer — tidak ada uang yang bergerak sendiri.
+    */
+    Route::get('reseller', [AdminReferralController::class, 'index'])->name('referrals');
+    Route::post('reseller', [AdminReferralController::class, 'store'])->name('referrals.store');
+    Route::post('reseller/{id}/aktif', [AdminReferralController::class, 'toggle'])->name('referrals.toggle');
+    Route::post('reseller/komisi/{id}/bayar', [AdminReferralController::class, 'markPaid'])->name('referrals.commission.paid');
 
     Route::get('pengguna', [AdminUserController::class, 'index'])->name('users');
     Route::post('pengguna/{id}/super-admin', [AdminUserController::class, 'toggleSuperAdmin'])->name('users.super');

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\MasaBerlakuHabis;
 use App\Models\Invoice;
+use App\Models\ReferralRedemption;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
@@ -48,7 +49,7 @@ class BillingCycleJob implements ShouldQueue
      */
     private function expireOverdueInvoices(): void
     {
-        Invoice::where('status', 'pending')
+        $kedaluwarsa = Invoice::where('status', 'pending')
             ->where('due_at', '<', now())
             /*
              | Yang sudah ada buktinya dikecualikan.
@@ -62,7 +63,20 @@ class BillingCycleJob implements ShouldQueue
              | atas justru karena itu.
             */
             ->whereNull('proof_path')
-            ->update(['status' => 'expired', 'updated_at' => now()]);
+            ->pluck('id');
+
+        if ($kedaluwarsa->isEmpty()) {
+            return;
+        }
+
+        Invoice::whereIn('id', $kedaluwarsa)->update(['status' => 'expired', 'updated_at' => now()]);
+
+        // Penukaran kode referal ikut batal. Tagihan yang kedaluwarsa tidak
+        // pernah menghasilkan komisi — reseller dibayar untuk pelanggan yang
+        // benar-benar membayar, bukan untuk tagihan yang pernah terbit.
+        ReferralRedemption::whereIn('invoice_id', $kedaluwarsa)
+            ->where('status', 'pending')
+            ->update(['status' => 'void']);
     }
 
     /**

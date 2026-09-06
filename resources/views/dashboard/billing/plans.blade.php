@@ -4,7 +4,56 @@
 @section('content')
     @include('dashboard.billing._nav')
 
-    <div x-data="{ tahunan: '{{ $subscription->period }}' === 'yearly' }">
+    <div x-data="{
+        tahunan: '{{ $subscription->period }}' === 'yearly',
+        kode: '{{ old('referral') }}',
+        referal: null,
+        memeriksa: false,
+
+        /*
+         | Diperiksa terhadap SATU paket, tapi yang dipakai menghitung ulang tiap
+         | kartu cuma persennya. Persen tidak bergantung paket, jadi satu
+         | pemeriksaan sudah cukup — dan angka rupiah tiap kartu dihitung dengan
+         | rumus yang sama persis dengan yang di server (persen lalu dibulatkan
+         | ke bawah), supaya yang dibaca pelanggan di sini sama dengan yang
+         | tertulis di tagihannya nanti.
+        */
+        async periksa() {
+            if (! this.kode) { this.referal = null; return; }
+
+            this.memeriksa = true;
+
+            try {
+                const jawaban = await fetch('{{ route('billing.referral.review') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: this.kode,
+                        plan: '{{ collect($plans)->first()->slug }}',
+                        period: this.tahunan ? 'yearly' : 'monthly',
+                    }),
+                });
+
+                this.referal = await jawaban.json();
+            } catch (e) {
+                this.referal = { sah: false, pesan: 'Tidak bisa memeriksa kode sekarang. Coba lagi.' };
+            }
+
+            this.memeriksa = false;
+        },
+
+        potongan(harga) {
+            return this.referal?.sah ? Math.floor(harga * this.referal.persen / 100) : 0;
+        },
+
+        rupiah(angka) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+        },
+    }">
         <div class="mb-6 flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1 rounded-lg bg-muted p-1">
                 <button type="button" @click="tahunan = false"
@@ -18,6 +67,38 @@
                 Bayar tahunan, hemat 2 bulan
             </span>
         </div>
+
+        {{-- Di atas kartu, bukan di halaman bayar: potongannya harus terlihat
+             SAAT paket dipilih, bukan setelah tagihan terbit. Yang sedang
+             diputuskan orang di layar ini adalah berapa yang akan ia bayar. --}}
+        @if ($bolehBayar)
+            <div class="mb-6 max-w-xl rounded-lg border border-border bg-card p-4">
+                <label for="referral" class="block text-sm font-medium">Punya kode referal?</label>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    <input id="referral" x-model="kode" @keydown.enter.prevent="periksa()"
+                           maxlength="16" placeholder="5 huruf, mis. KXPMR"
+                           class="min-w-40 flex-1 rounded-lg border-border bg-background text-sm uppercase focus:border-primary focus:ring-primary">
+                    <button type="button" @click="periksa()" :disabled="memeriksa || ! kode"
+                            class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted disabled:opacity-50">
+                        <span x-text="memeriksa ? 'Memeriksa…' : 'Periksa'"></span>
+                    </button>
+                </div>
+
+                <template x-if="referal">
+                    <p class="mt-2 text-sm" :class="referal.sah ? 'text-primary' : 'text-destructive'"
+                       x-text="referal.pesan"></p>
+                </template>
+
+                @error('referral')
+                    <p class="mt-2 text-sm text-destructive">{{ $message }}</p>
+                @enderror
+
+                <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    Potongan hanya berlaku untuk tagihan pertama workspace ini, dan satu workspace
+                    hanya bisa memakai satu kode.
+                </p>
+            </div>
+        @endif
 
         <div class="grid items-start gap-4 lg:grid-cols-3">
             @foreach ($plans as $plan)
@@ -48,11 +129,28 @@
                         Setara Rp {{ number_format($plan->price('yearly') / 12, 0, ',', '.') }} per bulan.
                     </p>
 
+                    {{-- Harga penuh tetap ditampilkan tercoret. Potongan yang
+                         cuma mengganti angkanya membuat orang tidak tahu berapa
+                         yang sebenarnya ia hemat. --}}
+                    <template x-if="referal?.sah">
+                        <p class="mt-1.5 text-sm">
+                            <span class="text-muted-foreground line-through"
+                                  x-text="rupiah(tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }})"></span>
+                            <span class="ml-1.5 font-semibold text-primary"
+                                  x-text="rupiah((tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }}) - potongan(tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }}))"></span>
+                            <span class="text-xs text-muted-foreground">dengan kode referal</span>
+                        </p>
+                    </template>
+
                     @if ($bolehBayar)
                         <form method="POST" action="{{ route('billing.checkout') }}" class="mt-5">
                             @csrf
                             <input type="hidden" name="plan" value="{{ $plan->slug }}">
                             <input type="hidden" name="period" :value="tahunan ? 'yearly' : 'monthly'">
+                            {{-- Hanya dikirim kalau kodenya lolos pemeriksaan:
+                                 kode salah ketik yang ikut terkirim membuat
+                                 checkout ditolak dan pilihan paketnya hilang. --}}
+                            <input type="hidden" name="referral" :value="referal?.sah ? kode : ''">
                             <button class="w-full rounded-lg px-4 py-2.5 text-sm font-medium transition {{ $plan->isHighlighted() || $ini ? 'bg-primary text-primary-foreground hover:opacity-90' : 'border border-border hover:bg-muted' }}">
                                 {{ $ini ? 'Perpanjang' : 'Pilih '.$plan->name() }}
                             </button>

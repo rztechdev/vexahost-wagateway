@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
 use App\Services\Billing\QrisManual;
+use App\Services\Billing\ReferralService;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\WhatsAppNotifier;
@@ -24,6 +25,7 @@ class BillingController extends Controller
         private readonly SubscriptionService $subscriptions,
         private readonly QrisManual $qris,
         private readonly WhatsAppNotifier $notifier,
+        private readonly ReferralService $referrals,
     ) {}
 
     /**
@@ -100,11 +102,72 @@ class BillingController extends Controller
         $data = $request->validate([
             'plan' => ['required', Rule::in(array_keys(config('plans.catalog')))],
             'period' => ['required', Rule::in(['monthly', 'yearly'])],
+            'referral' => ['nullable', 'string', 'max:16'],
         ]);
 
-        $invoice = $this->subscriptions->issueInvoice($workspace, $data['plan'], $data['period']);
+        $referral = null;
+
+        if (filled($data['referral'] ?? null)) {
+            /*
+             | Tagihan yang sudah terbit tidak diberi diskon belakangan.
+             |
+             | `issueInvoice()` mengembalikan tagihan pending yang sama untuk
+             | paket dan periode yang sama, jadi kodenya akan diterima lalu
+             | diabaikan diam-diam — pelanggan membaca "kode diterima" dan
+             | mentransfer nominal yang tidak pernah berubah. Menambal diskon ke
+             | tagihan lama juga bukan jawabannya: nominalnya ikut berubah,
+             | sementara pelanggan bisa saja sudah mentransfer angka yang lama.
+             | Membatalkan lalu menerbitkan ulang adalah satu-satunya jalan yang
+             | tidak menghasilkan dua angka untuk satu tagihan.
+            */
+            $adaTagihan = $workspace->invoices()
+                ->where('status', 'pending')
+                ->where('plan_slug', $data['plan'])
+                ->where('period', $data['period'])
+                ->where('due_at', '>', now())
+                ->first();
+
+            if ($adaTagihan) {
+                return back()->withErrors(['referral' => "Tagihan {$adaTagihan->number} untuk paket ini "
+                    .'sudah terbit tanpa kode referal. Batalkan tagihan itu dulu, lalu pilih paketnya lagi '
+                    .'dengan kodenya — supaya nominal yang Anda transfer tidak berubah di tengah jalan.']);
+            }
+
+            try {
+                $referral = $this->referrals->periksa($data['referral'], $workspace);
+            } catch (\RuntimeException $e) {
+                return back()->withErrors(['referral' => $e->getMessage()])->withInput();
+            }
+        }
+
+        $invoice = $this->subscriptions->issueInvoice($workspace, $data['plan'], $data['period'], $referral);
 
         return redirect()->route('billing.invoice', $invoice->id);
+    }
+
+    /**
+     * Meninjau kode referal sebelum tagihan terbit.
+     *
+     * Dipisah dari checkout dengan sengaja: pelanggan harus bisa melihat
+     * potongannya **sebelum** memutuskan, dan satu-satunya cara lain adalah
+     * menerbitkan tagihan dulu lalu membatalkannya kalau kodenya ternyata
+     * ditolak — memaksa orang membuat tagihan untuk sesuatu yang belum mereka
+     * putuskan.
+     */
+    public function reviewReferral(Request $request): JsonResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:16'],
+            'plan' => ['required', Rule::in(array_keys(config('plans.catalog')))],
+            'period' => ['required', Rule::in(['monthly', 'yearly'])],
+        ]);
+
+        $harga = Plan::get($data['plan'])->price($data['period']);
+        $nominal = $harga + (int) round($harga * config('billing.tax_percent') / 100);
+
+        return response()->json($this->referrals->tinjau($data['code'], $workspace, $nominal));
     }
 
     public function invoice(Request $request, int $id): View
@@ -344,6 +407,12 @@ class BillingController extends Controller
         }
 
         $invoice->forceFill(['status' => 'canceled'])->save();
+
+        // Kodenya batal ditukar, tapi barisnya TIDAK dihapus: workspace ini
+        // tetap terhitung sudah pernah memakai kode referal. Kalau barisnya
+        // dibuang, pelanggan yang sama bisa membatalkan tagihannya berulang
+        // kali sambil mencoba kode lain sampai menemukan diskon terbesar.
+        $this->referrals->batalkan($invoice);
 
         AuditLog::record('invoice.canceled', $invoice, [
             'number' => $invoice->number,
