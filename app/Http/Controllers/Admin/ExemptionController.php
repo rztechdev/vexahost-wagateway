@@ -9,6 +9,7 @@ use App\Models\SpecialNumber;
 use App\Models\User;
 use App\Models\WaSession;
 use App\Models\Workspace;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\PhoneNumber;
 use Illuminate\Contracts\View\View;
@@ -32,7 +33,7 @@ use Illuminate\Http\Request;
  */
 class ExemptionController extends Controller
 {
-    public function index(WhatsAppNotifier $notifier): View
+    public function index(WhatsAppNotifier $notifier, EmailNotifier $email): View
     {
         $workspaceId = AppSetting::ambil('notify_workspace_id', config('billing.notify_workspace_id'));
 
@@ -56,6 +57,11 @@ class ExemptionController extends Controller
             'pengirimTerpilih' => $workspaceId,
             'notifikasiSiap' => $notifier->ready(),
             'nomorAdmin' => config('billing.admin_phone'),
+
+            'emailSiap' => $email->ready(),
+            'emailPengirim' => config('mail.from.address'),
+            'emailMailer' => config('mail.default'),
+            'emailAdmin' => config('billing.support_email'),
 
             // Untuk menjelaskan akibatnya secara konkret, bukan abstrak.
             'sesiIstimewaHidup' => WaSession::whereIn('phone_number', SpecialNumber::daftar())
@@ -161,6 +167,36 @@ class ExemptionController extends Controller
         return back()->with('swal', [
             'tipe' => $hasil['berhasil'] ? 'success' : 'error',
             'judul' => $hasil['berhasil'] ? 'Pesan tes dikirim' : 'Pesan tes tidak bisa dikirim',
+            'pesan' => $hasil['pesan'],
+        ]);
+    }
+
+    /**
+     * Mengirim email percobaan ke alamat mana pun.
+     *
+     * Bertetangga dengan tombol tes WhatsApp karena keduanya menjawab
+     * pertanyaan yang sama — "apakah jalurnya benar-benar sampai" — dan punya
+     * bentuk kegagalan yang sama: diam. Brevo menolak pengirim yang belum
+     * diverifikasi dengan 550, dan penolakan itu tidak muncul di antarmuka
+     * mana pun. Tanpa tombol ini, yang menemukan kesalahannya adalah pelanggan
+     * yang tidak dikabari.
+     */
+    public function testEmail(Request $request, EmailNotifier $email): RedirectResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:180'],
+        ]);
+
+        $hasil = $email->kirimTes($data['email']);
+
+        AuditLog::record('settings.email.tested', null, [
+            'tujuan' => $data['email'],
+            'berhasil' => $hasil['berhasil'],
+        ]);
+
+        return back()->with('swal', [
+            'tipe' => $hasil['berhasil'] ? 'success' : 'error',
+            'judul' => $hasil['berhasil'] ? 'Email tes dikirim' : 'Email tes tidak bisa dikirim',
             'pesan' => $hasil['pesan'],
         ]);
     }

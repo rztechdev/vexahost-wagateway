@@ -32,6 +32,19 @@
                 'akibat' => 'Tidak ada yang memberi tahu tim saat bukti pembayaran baru masuk — dan tagihan hanya lunas kalau ada yang membukanya.',
             ],
             [
+                'nama' => 'Email keluar',
+                'baik' => $email['siap'],
+                'kabar' => $email['siap']
+                    ? 'Lewat '.($email['host'] ?: $email['mailer']).', dari '.$email['dari'].'.'
+                    : ($email['mailer'] === 'log'
+                        ? 'MAIL_MAILER masih log — isi email ditulis ke berkas log.'
+                        : 'MAIL_HOST atau MAIL_FROM_ADDRESS kosong.'),
+                'akibat' => 'Tidak ada satu pun email yang benar-benar terkirim; pemulihan kata sandi dan '
+                    .'pemberitahuan tiket cuma janji. Laravel menerima MAIL_MAILER=log tanpa keluhan '
+                    .'apa pun, jadi dari dalam aplikasi "terkirim" dan "ditulis ke log" tampak sama '
+                    .'persis. Uji dengan tombol kirim email tes di halaman Pengecualian.',
+            ],
+            [
                 'nama' => 'QRIS',
                 'baik' => $pembayaran['qris'],
                 'kabar' => $pembayaran['qris']

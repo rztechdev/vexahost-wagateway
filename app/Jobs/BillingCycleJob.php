@@ -2,11 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Mail\MasaBerlakuHabis;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -30,11 +32,11 @@ class BillingCycleJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    public function handle(SubscriptionService $subscriptions, WhatsAppNotifier $notifier): void
+    public function handle(SubscriptionService $subscriptions, WhatsAppNotifier $notifier, EmailNotifier $email): void
     {
         $this->expireOverdueInvoices();
         $this->issueRenewalInvoices($subscriptions);
-        $this->sendReminders($notifier);
+        $this->sendReminders($notifier, $email);
         $this->markPastDue($subscriptions);
         $this->suspendAfterGrace($subscriptions);
     }
@@ -124,7 +126,7 @@ class BillingCycleJob implements ShouldQueue
      * berjalan lancar justru yang paling jarang membuka dashboard — jadi di
      * praktiknya, inilah satu-satunya yang benar-benar sampai.
      */
-    private function sendReminders(WhatsAppNotifier $notifier): void
+    private function sendReminders(WhatsAppNotifier $notifier, EmailNotifier $email): void
     {
         foreach (config('billing.reminder_days') as $sisaHari) {
             $tanggal = now()->addDays($sisaHari);
@@ -133,7 +135,7 @@ class BillingCycleJob implements ShouldQueue
                 ->whereIn('status', ['trialing', 'active'])
                 ->whereBetween('current_period_end', [$tanggal->copy()->startOfDay(), $tanggal->copy()->endOfDay()])
                 ->get()
-                ->each(function (Subscription $subscription) use ($notifier, $sisaHari): void {
+                ->each(function (Subscription $subscription) use ($notifier, $email, $sisaHari): void {
                     if (! $subscription->workspace) {
                         return;
                     }
@@ -141,6 +143,15 @@ class BillingCycleJob implements ShouldQueue
                     $notifier->toWorkspace(
                         $subscription->workspace,
                         BillingMessages::expiringSoon($subscription, $sisaHari),
+                        "reminder:{$subscription->id}:{$sisaHari}",
+                    );
+
+                    // Penandanya sama, tapi awalannya berbeda di dalam masing-
+                    // masing notifier — email yang gagal tidak boleh ikut
+                    // membungkam WhatsApp untuk peristiwa yang sama.
+                    $email->toWorkspace(
+                        $subscription->workspace,
+                        new MasaBerlakuHabis($subscription, $sisaHari),
                         "reminder:{$subscription->id}:{$sisaHari}",
                     );
                 });

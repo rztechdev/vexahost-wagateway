@@ -7,6 +7,7 @@ use App\Http\Middleware\HeaderKeamanan;
 use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\Billing\QrisManual;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\KesehatanAntrean;
 use App\Support\Plan;
@@ -31,6 +32,7 @@ class SystemController extends Controller
 {
     public function __construct(
         private readonly WhatsAppNotifier $notifier,
+        private readonly EmailNotifier $email,
         private readonly QrisManual $qris,
     ) {}
 
@@ -40,6 +42,13 @@ class SystemController extends Controller
             'engine' => $this->engine(),
 
             'keamanan' => $this->keamanan($request),
+
+            'email' => [
+                'siap' => $this->email->ready(),
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'dari' => config('mail.from.address'),
+            ],
 
             'notifikasi' => [
                 'siap' => $this->notifier->ready(),

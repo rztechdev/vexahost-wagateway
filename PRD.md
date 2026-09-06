@@ -177,10 +177,30 @@ Keduanya mengirim dari `officeflustra@gmail.com`.)
 
 ## Definisi selesai
 
-- [ ] Tombol kirim email tes berhasil ke alamat mana pun
-- [ ] Halaman Sistem menunjukkan keadaan email dengan jujur
-- [ ] Tiga email penagihan terkirim di jalur yang sama dengan notifikasi WA
-- [ ] Kegagalan email **tidak pernah** menjatuhkan penagihan (pola `WhatsAppNotifier`)
+- [~] Tombol kirim email tes berhasil ke alamat mana pun
+- [x] Halaman Sistem menunjukkan keadaan email dengan jujur
+- [x] Tiga email penagihan terkirim di jalur yang sama dengan notifikasi WA
+- [x] Kegagalan email **tidak pernah** menjatuhkan penagihan (pola `WhatsAppNotifier`)
+
+**Selesai kecuali pembuktian pengiriman sungguhan.** Tombolnya ada dan
+jalurnya terbukti utuh — form → controller → `EmailNotifier::kirimTes()` →
+`AuditLog` (`settings.email.tested`) — tapi di lokal `MAIL_MAILER=log`, jadi
+yang terbukti barulah jalur gagalnya, dengan pesan yang menyebut langkah yang
+kurang. **Kotak pertama baru bisa dicentang setelah Ryan mengisi
+`MAIL_PASSWORD` di Coolify dan mendaftarkan `flustrafinances@gmail.com`
+sebagai sender di Brevo**, lalu menekan tombolnya sekali di staging.
+
+`MAIL_*` sudah terisi di `.env.production` dan `.env.staging` (keduanya
+gitignored — harus disalin manual ke Coolify), `MAIL_PASSWORD` sengaja
+dikosongkan. Tagihan terbit sengaja TIDAK punya pasangan WhatsApp: ia terbit
+di hari yang sama dengan pengingat H-3, dan dua pesan WA beruntun tentang uang
+yang sama terbaca seperti penagihan ganda.
+
+Di luar ruang lingkup tapi ikut karena menghalangi: sebelas pemanggilan
+`BillingCycleJob::handle()` di `BillingCycleTest` dulu mendaftar dependensinya
+satu per satu, jadi dependensi baru apa pun menjatuhkan sebelasnya dengan
+`ArgumentCountError`. Sekarang lewat `app()->call()`, persis seperti antrean
+menjalankannya di produksi.
 
 ---
 

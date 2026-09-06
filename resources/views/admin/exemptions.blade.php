@@ -21,12 +21,18 @@
         </div>
     @endunless
 
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <x-stat label="Pemberitahuan WhatsApp"
                 :nilai="$notifikasiSiap ? 'Berjalan' : 'Mati'"
                 :sub="$notifikasiSiap ? 'ada sesi tersambung di workspace pengirim' : 'tidak ada sesi pengirim yang siap'"
                 :nada="$notifikasiSiap ? 'netral' : 'bahaya'"
                 ikon="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+
+        <x-stat label="Email keluar"
+                :nilai="$emailSiap ? 'Berjalan' : 'Mati'"
+                :sub="$emailSiap ? 'lewat '.$emailMailer.', dari '.$emailPengirim : 'MAIL_MAILER='.$emailMailer"
+                :nada="$emailSiap ? 'netral' : 'bahaya'"
+                ikon="M4 4h16v16H4zM4 7l8 6 8-6" />
 
         <x-stat label="Nomor tim penerima"
                 :nilai="$nomorAdmin ? \App\Support\PhoneNumber::mask($nomorAdmin) : 'Belum diisi'"
@@ -121,6 +127,66 @@
                 sendiri setiap kali server di-deploy ulang — tidak ada scan kedua.
             </p>
         </div>
+    </x-section>
+
+    {{-- ===================== Email keluar =====================
+
+         Bertetangga dengan pengirim WhatsApp karena keduanya jalur
+         pemberitahuan yang sama, dengan bentuk kegagalan yang sama: diam.
+         Bedanya cuma di mana konfigurasinya hidup — WhatsApp dipilih dari
+         halaman ini, email dari env.
+         ============================================================= --}}
+    <x-section judul="Email keluar"
+               sub="Jalur kedua untuk peristiwa penagihan yang sama. Nomor tagihan boleh kosong; alamat penagihan jauh lebih jarang berubah."
+               rapat>
+        @unless ($emailSiap)
+            <div class="mb-4 flex flex-wrap items-start gap-3 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3.5 text-sm text-destructive">
+                <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                <span>
+                    <strong>Tidak ada satu pun email yang benar-benar terkirim.</strong>
+                    <code>MAIL_MAILER</code> sekarang <code>{{ $emailMailer }}</code>. Laravel menerimanya
+                    tanpa keluhan apa pun dan menulis seluruh isi email ke berkas log — dari dalam aplikasi,
+                    "terkirim" dan "ditulis ke log" tampak persis sama. Isi <code>MAIL_*</code> di env resource
+                    Coolify, lalu buktikan dengan tombol di bawah.
+                </span>
+            </div>
+        @endunless
+
+        <dl class="mb-4 max-w-2xl space-y-2.5 text-sm">
+            @foreach ([
+                'Mailer' => $emailMailer,
+                'Pengirim' => $emailPengirim ?: 'belum diisi',
+                'Alamat tim' => $emailAdmin ?: 'belum diisi',
+            ] as $label => $nilai)
+                <div class="flex justify-between gap-4 border-b border-border pb-2.5 last:border-0 last:pb-0">
+                    <dt class="text-muted-foreground">{{ $label }}</dt>
+                    <dd class="text-right font-medium">{{ $nilai }}</dd>
+                </div>
+            @endforeach
+        </dl>
+
+        {{-- Wajib ada, bukan pelengkap. Brevo menolak pengirim yang belum
+             diverifikasi dengan 550, dan penolakan itu tidak terlihat di
+             antarmuka mana pun — persis bentuk kegagalan notifikasi WhatsApp
+             yang diam. --}}
+        <form method="POST" action="{{ route('admin.exemptions.email.test') }}"
+              class="max-w-2xl rounded-lg border border-border bg-card p-4" data-validasi>
+            @csrf
+            <label for="tes_email" class="mb-1 block text-sm font-medium">Kirim email tes</label>
+            <div class="flex flex-wrap gap-2">
+                <input id="tes_email" name="email" required maxlength="180" type="email" inputmode="email"
+                       value="{{ old('email', $emailAdmin) }}" placeholder="nama@contoh.id"
+                       class="min-w-48 flex-1 rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                <button class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted">
+                    Kirim tes
+                </button>
+            </div>
+            <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Dikirim seketika, bukan lewat antrean — email yang mengantre menjawab "berhasil" sebelum
+                ada satu pun sambungan SMTP dibuka, dan itu kebalikan dari gunanya tombol ini.
+                Kalau gagal, pesan galatnya menyebutkan langkah mana yang belum selesai.
+            </p>
+        </form>
     </x-section>
 
     {{-- ===================== Nomor istimewa ===================== --}}

@@ -2,12 +2,15 @@
 
 namespace App\Services\Billing;
 
+use App\Mail\PembayaranDiterima;
+use App\Mail\TagihanTerbit;
 use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\SessionService;
 use App\Support\Plan;
@@ -34,6 +37,7 @@ class SubscriptionService
     public function __construct(
         private readonly SessionService $sessions,
         private readonly WhatsAppNotifier $notifier,
+        private readonly EmailNotifier $email,
     ) {}
 
     /**
@@ -161,7 +165,7 @@ class SubscriptionService
         $amount = $plan->price($period);
         $tax = (int) round($amount * config('billing.tax_percent') / 100);
 
-        return DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax) {
+        $invoice = DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax) {
             $code = $this->allocateUniqueCode($amount + $tax);
 
             $invoice = Invoice::create([
@@ -197,6 +201,27 @@ class SubscriptionService
 
             return $invoice;
         });
+
+        /*
+         | Di luar transaksi, sama seperti pemberitahuan lunas.
+         |
+         | Tagihan yang batal tercatat gara-gara SMTP sedang tersendat jauh
+         | lebih buruk daripada tagihan yang terbit tanpa suratnya: yang kedua
+         | masih terlihat di dashboard dan masih bisa dibayar.
+         |
+         | Ini satu-satunya peristiwa penagihan yang sengaja TIDAK punya
+         | pasangan WhatsApp. Tagihan perpanjangan terbit tiga hari sebelum
+         | masa berlaku habis — hari yang sama pengingat H-3 dikirim — dan dua
+         | pesan WhatsApp beruntun tentang uang yang sama terbaca seperti
+         | penagihan ganda.
+        */
+        $this->email->toWorkspace(
+            $workspace,
+            new TagihanTerbit($invoice),
+            "invoice-issued:{$invoice->id}",
+        );
+
+        return $invoice;
     }
 
     /**
@@ -277,6 +302,16 @@ class SubscriptionService
         $this->notifier->toWorkspace(
             $invoice->workspace,
             BillingMessages::paymentConfirmed($invoice, $invoice->workspace->subscription),
+            "invoice-paid:{$invoice->id}",
+        );
+
+        // Email menyusul di jalur yang sama persis, dan dengan alasan yang sama
+        // ia juga di luar transaksi. Nomor tagihan boleh kosong dan yang
+        // mengisinya bisa berganti ponsel; alamat penagihan jauh lebih jarang
+        // berubah dan lebih mungkin dibaca orang yang memegang anggarannya.
+        $this->email->toWorkspace(
+            $invoice->workspace,
+            new PembayaranDiterima($invoice, $invoice->workspace->subscription),
             "invoice-paid:{$invoice->id}",
         );
 

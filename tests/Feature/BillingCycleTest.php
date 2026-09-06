@@ -6,7 +6,6 @@ use App\Jobs\BillingCycleJob;
 use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
-use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -52,12 +51,27 @@ class BillingCycleTest extends TestCase
         return $subscription;
     }
 
+    /**
+     * Menjalankan siklus lewat container, bukan dengan mendaftar dependensinya
+     * satu per satu.
+     *
+     * Sebelumnya tiap pemanggilan menyebut dependensinya sendiri, dan itu
+     * berarti setiap dependensi baru di `handle()` menjatuhkan sebelas tes
+     * sekaligus dengan `ArgumentCountError` — kegagalan yang tidak ada
+     * hubungannya dengan apa pun yang sedang diuji. `app()->call()`
+     * menyelesaikan argumennya persis seperti antrean melakukannya di produksi.
+     */
+    private function jalankanSiklus(): void
+    {
+        app()->call([new BillingCycleJob, 'handle']);
+    }
+
     public function test_tagihan_perpanjangan_terbit_sebelum_periode_berakhir(): void
     {
         $workspace = $this->workspace();
         $this->langgananBerakhir($workspace, '+2 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $invoice = Invoice::first();
 
@@ -70,7 +84,7 @@ class BillingCycleTest extends TestCase
     {
         $this->langgananBerakhir($this->workspace(), '+20 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame(0, Invoice::count());
     }
@@ -79,8 +93,8 @@ class BillingCycleTest extends TestCase
     {
         $this->langgananBerakhir($this->workspace(), '+1 day');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
+        $this->jalankanSiklus();
 
         $this->assertSame(1, Invoice::count());
     }
@@ -97,7 +111,7 @@ class BillingCycleTest extends TestCase
             'connected_at' => now(),
         ]);
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame('past_due', $subscription->fresh()->status);
 
@@ -126,7 +140,7 @@ class BillingCycleTest extends TestCase
             'connected_at' => now(),
         ]);
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame('suspended', $subscription->fresh()->status);
         $this->assertSame('disconnected', $session->fresh()->status);
@@ -145,7 +159,7 @@ class BillingCycleTest extends TestCase
 
         $subscription = $this->langgananBerakhir($workspace, '-5 days');
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame(0, Invoice::count());
         $this->assertSame('active', $subscription->fresh()->status);
@@ -158,7 +172,7 @@ class BillingCycleTest extends TestCase
 
         $invoice->forceFill(['due_at' => now()->subDay()])->save();
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         // Kode uniknya harus bebas dipakai tagihan berikutnya, dan pelanggan
         // tidak boleh membayar nominal yang sudah tidak dicari siapa-siapa.
@@ -182,7 +196,7 @@ class BillingCycleTest extends TestCase
         $polos = app(SubscriptionService::class)->issueInvoice($workspace, 'elite', 'monthly');
         $polos->forceFill(['due_at' => now()->subDay()])->save();
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame('pending', $berbukti->fresh()->status, 'Bukti sudah masuk — tagihannya harus tetap terbuka.');
         $this->assertSame('expired', $polos->fresh()->status);
@@ -202,7 +216,7 @@ class BillingCycleTest extends TestCase
         $workspace = $this->workspace('belum-bayar');
         $subscription = app(SubscriptionService::class)->ensureFor($workspace);
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
 
         $this->assertSame(0, Invoice::count(), 'Yang belum pernah berlangganan tidak boleh ditagih otomatis.');
         $this->assertSame('trialing', $subscription->fresh()->status);
@@ -220,7 +234,7 @@ class BillingCycleTest extends TestCase
             'past_due_at' => now()->subDays(config('billing.grace_days') + 1),
         ])->save();
 
-        (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
+        $this->jalankanSiklus();
         $this->assertSame('suspended', $workspace->fresh()->status);
 
         $invoice = app(SubscriptionService::class)->issueInvoice($workspace, 'prime', 'monthly');

@@ -165,6 +165,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('pengecualian/akun/{id}', [AdminExemptionController::class, 'toggleUser'])->name('exemptions.users.toggle');
     Route::post('pengecualian/pengirim', [AdminExemptionController::class, 'saveNotifier'])->name('exemptions.notifier');
     Route::post('pengecualian/pengirim/tes', [AdminExemptionController::class, 'testNotifier'])->name('exemptions.notifier.test');
+    Route::post('pengecualian/email/tes', [AdminExemptionController::class, 'testEmail'])->name('exemptions.email.test');
 
     Route::get('pengguna', [AdminUserController::class, 'index'])->name('users');
     Route::post('pengguna/{id}/super-admin', [AdminUserController::class, 'toggleSuperAdmin'])->name('users.super');
