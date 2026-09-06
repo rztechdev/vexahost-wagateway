@@ -2,6 +2,17 @@
 
 Gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra, dirancang agar bisa dijual sebagai SaaS. Menggantikan proses `whatsapp-web.js` yang dulu menempel di dalam `flustra-erp`.
 
+> **Sedang berjalan: enam penambahan menuju enterprise.** Rencananya lengkap di
+> [PRD.md](PRD.md) — reseller & referal, pay as you go, keamanan, webhook per
+> API key, helpdesk, dan email Brevo. **Dikerjakan satu per satu** dalam urutan
+> yang ditentukan di PRD §0, bukan sekaligus: keenamnya menyentuh
+> `SubscriptionService`, `MessageDispatcher`, atau panel admin — tiga tempat yang
+> paling mudah rusak diam-diam. Keputusan produk yang sudah diambil Ryan ada di
+> tabel "Keputusan yang SUDAH diambil" di PRD; **jangan ditanya ulang, dan jangan
+> diusulkan alternatifnya**. Yang paling sering tergoda ditawar: helpdesk dibangun
+> **baru di dalam repo ini**, dan `flustra-helpdesk` yang sudah ada **tidak boleh
+> disambungkan** — Ryan sudah tahu project itu ada dan sudah memutuskan.
+
 **Baca dulu:** [docs/PENGANTAR.md](docs/PENGANTAR.md) lalu [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md). Peta seluruh dokumentasi internal ada di [docs/README.md](docs/README.md).
 
 ---
