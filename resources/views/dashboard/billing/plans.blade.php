@@ -55,6 +55,21 @@
         promo: {{ $berhakPromo ? 'true' : 'false' }},
 
         /*
+         | Dua kelompok, sama seperti halaman harga publik.
+         |
+         | Bisnis dan Enterprise menjawab pertanyaan yang berbeda — 'berapa yang
+         | saya bayar tiap bulan' versus 'bagaimana kalau kebutuhan saya tidak
+         | berbentuk paket'. Menjajarkan kelimanya membuat orang membandingkan
+         | angka yang memang tidak sebanding.
+         |
+         | Pelanggan yang SUDAH memakai pay as you go dibuka langsung di
+         | kelompok Enterprise: menampilkan tiga kartu bulanan lebih dulu kepada
+         | orang yang datang untuk mengisi saldo adalah satu klik yang tidak
+         | perlu ada.
+        */
+        kelompok: '{{ ($currentWorkspace ?? null)?->isPayg() ? 'enterprise' : 'bisnis' }}',
+
+        /*
          | Harga yang menjadi DASAR seluruh hitungan di kartu.
          |
          | Promo perkenalan dipotong lebih dulu, lalu kode referal memotong
@@ -162,7 +177,21 @@
             </div>
         @endif
 
-        <div class="mb-6 flex flex-wrap items-center gap-3">
+        {{-- Pemilih kelompok di ATAS sakelar periode: ia menentukan apakah
+             sakelar itu berarti sama sekali — tidak satu pun pilihan Enterprise
+             punya harga bulanan. --}}
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-1 rounded-lg bg-muted p-1">
+                <button type="button" @click="kelompok = 'bisnis'"
+                        class="rounded-md px-3.5 py-1.5 text-sm font-medium transition"
+                        :class="kelompok === 'bisnis' ? 'bg-background shadow-sm' : 'text-muted-foreground'">Bisnis</button>
+                <button type="button" @click="kelompok = 'enterprise'"
+                        class="rounded-md px-3.5 py-1.5 text-sm font-medium transition"
+                        :class="kelompok === 'enterprise' ? 'bg-background shadow-sm' : 'text-muted-foreground'">Enterprise</button>
+            </div>
+        </div>
+
+        <div x-show="kelompok === 'bisnis'" x-cloak class="mb-6 flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-1 rounded-lg bg-muted p-1">
                 <button type="button" @click="tahunan = false"
                         class="rounded-md px-3.5 py-1.5 text-sm font-medium transition"
@@ -176,7 +205,7 @@
             </span>
         </div>
 
-        <div class="grid items-start gap-4 lg:grid-cols-3">
+        <div x-show="kelompok === 'bisnis'" x-cloak class="grid items-start gap-4 lg:grid-cols-3">
             @foreach ($plans as $plan)
                 @php $ini = $plan->slug === $subscription->plan_slug; @endphp
 
@@ -279,16 +308,25 @@
             @endforeach
         </div>
 
-        {{-- ===================== Pay as you go =====================
+        {{-- ===================== Enterprise =====================
 
-             Sengaja DI LUAR grid tiga kartu dan dengan bentuk yang berbeda.
-             Harganya per pesan, bukan per bulan; memaksanya masuk cetakan
-             kartu bulanan menghasilkan kartu bertuliskan "Rp 0/bulan" — dan
-             sakelar bulanan/tahunan di atas tidak berarti apa-apa untuknya.
+             Dua pilihan yang tidak berbentuk paket bulanan: bayar sesuai
+             pemakaian, dan kesepakatan yang disusun sendiri. Keduanya berdiri
+             sejajar karena menjawab pertanyaan yang sama — "bagaimana kalau
+             kebutuhan saya tidak muat di tiga kartu itu".
+
+             Lebarnya mengikuti grid dua kolom, bukan melebar sendiri: sakelar
+             yang mengubah ukuran kartu saat ditekan membuat halamannya terbaca
+             seperti dua halaman berbeda.
              ======================================================== --}}
-        @php $payg = \App\Support\Plan::payg(); @endphp
+        @php
+            $payg = \App\Support\Plan::payg();
+            $ent = \App\Support\Plan::get('enterprise');
+        @endphp
 
-        <div class="mt-4 rounded-xl border border-border bg-muted/30 p-5">
+        <div x-show="kelompok === 'enterprise'" x-cloak class="grid items-stretch gap-4 lg:grid-cols-2">
+
+        <div class="flex flex-col rounded-xl border border-border bg-muted/30 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">
                     <p class="font-semibold">{{ $payg->name() }}</p>
@@ -307,7 +345,7 @@
                 </p>
             </div>
 
-            <ul class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <ul class="mt-4 grid gap-2 text-sm">
                 @foreach ($payg->features() as $fitur)
                     <li class="flex gap-2.5">
                         <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
@@ -323,12 +361,49 @@
                 </a>
             @endif
 
-            <p class="mt-4 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+            <p class="mt-auto border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
                 Cocok kalau pengiriman Anda sedikit dan tidak tentu. Saldo tidak punya masa
                 berlaku, jadi tidak ada yang hangus di bulan yang Anda tidak mengirim apa pun.
                 Rincian tarif dan sisa pesan ada di halaman Saldo.
             </p>
         </div>
+
+        {{-- Kartu Enterprise. Formulir penawarannya ada di halaman harga publik,
+             bukan digandakan di sini — satu form di dua tempat berarti dua
+             tempat yang harus dijaga tetap sama, dan yang menyimpang akan
+             menghasilkan penawaran dengan data yang tidak lengkap. --}}
+        <div class="flex flex-col rounded-xl border border-border bg-muted/30 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="font-semibold">{{ $ent->name() }}</p>
+                    <p class="mt-0.5 text-sm text-muted-foreground">{{ $ent->tagline() }}</p>
+                </div>
+
+                <p class="text-lg font-semibold tracking-tight">Hubungi kami</p>
+            </div>
+
+            <ul class="mt-4 grid gap-2 text-sm">
+                @foreach ($ent->features() as $fitur)
+                    <li class="flex gap-2.5">
+                        <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                        <span class="text-muted-foreground">{{ $fitur }}</span>
+                    </li>
+                @endforeach
+            </ul>
+
+            <a href="{{ route('welcome') }}#enterprise"
+               class="mt-5 inline-block rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition hover:bg-muted">
+                Minta penawaran
+            </a>
+
+            <p class="mt-auto border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+                Untuk kebutuhan yang melampaui Elite — lebih banyak nomor, kuota lebih besar,
+                atau retensi lebih panjang. Tim kami menghubungi Anda dalam 1&times;24 jam pada
+                hari kerja, lalu tagihannya terbit lewat jalur yang sama dengan paket biasa.
+            </p>
+        </div>
+
+        </div>{{-- /kelompok Enterprise --}}
 
         {{-- Yang paling sering ditanyakan tepat sebelum orang menekan tombol
              bayar. Menjawabnya di sini, bukan di halaman docs terpisah. --}}

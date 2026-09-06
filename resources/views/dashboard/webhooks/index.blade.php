@@ -15,12 +15,12 @@
     <x-card title="Tambah webhook" subtitle="Gateway akan mengirim POST JSON ke URL ini setiap kejadian yang Anda pilih.">
         <form method="POST" action="{{ route('webhooks.store') }}" class="space-y-4">
             @csrf
-            <div>
+            <div data-tur="webhook-url">
                 <label class="mb-1 block text-sm font-medium" for="url">URL tujuan</label>
                 <input id="url" name="url" type="url" required placeholder="https://app.contoh.id/webhook/whatsapp"
                        class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
             </div>
-            <div>
+            <div data-tur="webhook-pemilik">
                 <label class="mb-1 block text-sm font-medium" for="api_key_id">Berlaku untuk</label>
                 <select id="api_key_id" name="api_key_id"
                         class="w-full rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
@@ -148,4 +148,26 @@
             </div>
         @endif
     </x-section>
+    <x-tur-pengenalan kunci="webhook.mulai" :versi="1" :langkah="[
+        [
+            'target' => '[data-tur=\'webhook-url\']',
+            'judul' => 'Alamat yang kami panggil',
+            'isi' => 'Kami mengirim POST berisi JSON ke alamat ini setiap kali ada kejadian. '
+                .'Alamatnya harus bisa dijangkau dari internet — localhost tidak akan pernah '
+                .'menerima apa pun.',
+        ],
+        [
+            'target' => '[data-tur=\'webhook-pemilik\']',
+            'judul' => 'Punya beberapa website?',
+            'isi' => 'Tautkan webhook ke satu API key, dan status pengiriman hanya sampai ke '
+                .'webhook milik API key yang mengirim pesannya. Pesan masuk dan kejadian sesi '
+                .'tetap sampai ke semua — keduanya tidak berasal dari integrasi tertentu.',
+        ],
+        [
+            'judul' => 'Verifikasi tanda tangannya',
+            'isi' => 'Setiap kiriman membawa header X-Flustra-Signature. Cocokkan dengan '
+                .'signing secret Anda sebelum memproses isinya — tanpa itu, siapa pun yang tahu '
+                .'alamat webhook Anda bisa mengirim data palsu ke sana.',
+        ],
+    ]" />
 @endsection

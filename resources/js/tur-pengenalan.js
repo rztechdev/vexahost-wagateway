@@ -1,5 +1,6 @@
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import '../css/tur-pengenalan.css';
 
 /**
  * Tur pengenalan untuk pendaftar baru.

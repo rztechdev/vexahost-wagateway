@@ -28,7 +28,7 @@
                     </select>
                 </div>
 
-                <div>
+                <div data-tur="tiket-prioritas">
                     <label for="priority" class="mb-1 block text-sm font-medium">Prioritas</label>
                     <select id="priority" name="priority"
                             class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
@@ -46,7 +46,7 @@
                           class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">{{ old('body') }}</textarea>
             </div>
 
-            <div>
+            <div data-tur="tiket-lampiran">
                 <label for="lampiran" class="mb-1 block text-sm font-medium">Lampiran <span class="font-normal text-muted-foreground">(opsional)</span></label>
                 <input id="lampiran" name="lampiran" type="file"
                        accept=".{{ implode(',.', $jenisLampiran) }}"
@@ -102,4 +102,30 @@
             </table>
         @endif
     </x-section>
+    <x-tur-pengenalan kunci="tiket.mulai" :versi="1" :langkah="[
+        [
+            'judul' => 'Bantuan selalu terbuka',
+            'isi' => 'Halaman ini tetap bisa dipakai walau langganan Anda sedang tidak aktif. '
+                .'Justru saat layanan berhenti Anda paling butuh menghubungi kami.',
+        ],
+        [
+            'target' => '[data-tur=\'tiket-prioritas\']',
+            'judul' => 'Pilih prioritas apa adanya',
+            'isi' => 'Tinggi hanya untuk yang benar-benar menghentikan pekerjaan Anda. '
+                .'Kalau semua tiket bertanda tinggi, tandanya berhenti berarti apa-apa dan yang '
+                .'benar-benar mendesak ikut tenggelam.',
+        ],
+        [
+            'target' => '[data-tur=\'tiket-lampiran\']',
+            'judul' => 'Tangkapan layar sangat membantu',
+            'isi' => 'Lampiran hanya bisa dibuka anggota workspace Anda dan tim kami. '
+                .'Periksa dulu sebelum mengirim — tangkapan layar dashboard sering ikut memuat '
+                .'API key Anda.',
+        ],
+        [
+            'judul' => 'Setelah tiket terkirim',
+            'isi' => 'Kami mengabari Anda lewat WhatsApp dan email begitu ada jawaban. '
+                .'Isi jawabannya sendiri tidak ikut dikirim — Anda membacanya di halaman ini.',
+        ],
+    ]" />
 @endsection

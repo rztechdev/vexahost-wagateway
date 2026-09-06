@@ -9,7 +9,7 @@
                 :nada="$saldo < $harga ? 'bahaya' : 'netral'"
                 ikon="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
 
-        <x-stat label="Sisa pesan"
+        <x-stat data-tur="saldo-sisa" label="Sisa pesan"
                 :nilai="number_format($sisaPesan, 0, ',', '.')"
                 :sub="'Rp '.number_format($harga, 0, ',', '.').' per pesan terkirim'"
                 ikon="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
@@ -124,7 +124,7 @@
          pelanggan yang sudah dibayar di depan, dan angka tunggal tanpa
          rinciannya tidak bisa diperiksa maupun dibantah oleh yang memilikinya.
          ======================================================== --}}
-    <x-section judul="Riwayat mutasi"
+    <x-section data-tur="saldo-mutasi" judul="Riwayat mutasi"
                sub="Setiap perubahan saldo, dengan sisa setelahnya. 100 terakhir."
                class="mt-5">
         @if ($mutasi->isEmpty())
@@ -160,4 +160,25 @@
             </table>
         @endif
     </x-section>
+    <x-tur-pengenalan kunci="saldo.mulai" :versi="1" :langkah="[
+        [
+            'target' => '[data-tur=\'saldo-sisa\']',
+            'judul' => 'Saldo dihitung per pesan terkirim',
+            'isi' => 'Angka ini perkiraan berapa pesan lagi yang bisa Anda kirim. '
+                .'Pesan yang gagal — misalnya nomor tujuan tidak terdaftar di WhatsApp — '
+                .'tidak memotong saldo sama sekali.',
+        ],
+        [
+            'judul' => 'Saldo tidak kedaluwarsa',
+            'isi' => 'Tidak ada tanggal berakhir dan tidak ada yang hangus di bulan yang Anda '
+                .'tidak mengirim apa pun. Yang membatasi pengiriman adalah saldo, bukan waktu.',
+        ],
+        [
+            'target' => '[data-tur=\'saldo-mutasi\']',
+            'judul' => 'Setiap mutasi tercatat',
+            'isi' => 'Tiap baris menyimpan sisa saldo sesudahnya, jadi Anda bisa menelusuri '
+                .'sendiri ke mana saldo Anda pergi — tanpa perlu percaya begitu saja pada satu '
+                .'angka di atas.',
+        ],
+    ]" />
 @endsection

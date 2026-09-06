@@ -24,7 +24,7 @@
     {{-- Formulir tetap berbingkai: ia satu-satunya hal di halaman ini yang
          menunggu keputusan, dan bingkainya yang memisahkannya dari daftar. --}}
     <div class="rounded-xl border border-border bg-card p-4 shadow-xs">
-        <form method="POST" action="{{ route('sessions.store') }}" class="flex flex-wrap items-end gap-3">
+        <form data-tur="buat-sesi" method="POST" action="{{ route('sessions.store') }}" class="flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-48 flex-1">
                 <label class="mb-1 block text-sm font-medium" for="name">Nama sesi</label>
@@ -42,7 +42,7 @@
     </div>
     @endif
 
-    <x-section judul="Nomor tertaut"
+    <x-section data-tur="daftar-sesi" judul="Nomor tertaut"
                sub="{{ $sessions->count() }} dari {{ $currentWorkspace->max_sessions }} nomor yang diizinkan paket Anda.">
         <x-tabel :kepala="['Sesi' => '', 'Nomor' => '', 'Status' => '', 'Tindakan' => 'text-right']">
             @forelse ($sessions as $session)
@@ -260,4 +260,29 @@ function qrModal(autoOpenId) {
 }
 </script>
 @endpush
+    {{-- Tur halaman ini. Kuncinya sendiri, jadi menutup tur di dashboard tidak
+         ikut membungkam yang di sini — tiap halaman punya hal yang perlu
+         dijelaskan sekali, dan sekali itu terjadi saat halamannya dibuka. --}}
+    <x-tur-pengenalan kunci="sesi.mulai" :versi="1" :langkah="[
+        [
+            'target' => '[data-tur=\'buat-sesi\']',
+            'judul' => 'Buat sesi dulu, baru scan',
+            'isi' => 'Satu sesi mewakili satu nomor WhatsApp. Namanya bebas dan hanya untuk Anda '
+                .'sendiri — dipakai membedakan nomor kalau paket Anda mengizinkan lebih dari satu.',
+        ],
+        [
+            'target' => '[data-tur=\'daftar-sesi\']',
+            'judul' => 'Scan QR sekali saja',
+            'isi' => 'Tekan Hubungkan, lalu scan kode QR-nya dari WhatsApp di ponsel Anda '
+                .'(Perangkat Tertaut). Kredensialnya kami simpan, jadi nomor tersambung sendiri '
+                .'setiap kali server di-deploy ulang — tidak ada scan kedua.',
+        ],
+        [
+            'judul' => 'Kalau nomornya terputus',
+            'isi' => 'Baris sesi akan menyebutkan alasannya. Terputus karena tagihan akan '
+                .'tersambung sendiri setelah pembayaran dikonfirmasi; terputus karena ponsel lama '
+                .'offline cukup ditekan Hubungkan lagi. Jangan hapus sesinya — menghapus berarti '
+                .'harus scan ulang dari nol.',
+        ],
+    ]" />
 @endsection

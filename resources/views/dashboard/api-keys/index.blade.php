@@ -19,7 +19,7 @@
         <p class="mb-4 mt-0.5 text-sm text-muted-foreground">
             Dipakai aplikasi Anda untuk memanggil REST API gateway lewat header <code>X-Api-Key</code>.
         </p>
-        <form method="POST" action="{{ route('api-keys.store') }}" class="flex flex-wrap items-end gap-3">
+        <form data-tur="buat-kunci" method="POST" action="{{ route('api-keys.store') }}" class="flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-48 flex-1">
                 <label class="mb-1 block text-sm font-medium" for="key-name">Nama</label>
@@ -43,7 +43,7 @@
 
     @endif
 
-    <x-section judul="Kunci workspace {{ $currentWorkspace->name }}"
+    <x-section data-tur="daftar-kunci" judul="Kunci workspace {{ $currentWorkspace->name }}"
                sub="Setiap workspace punya kuncinya sendiri. Kunci di sini tidak berlaku untuk workspace lain."
                rapat>
         @if ($keys->isEmpty())
@@ -165,4 +165,25 @@
             </p>
         @endif
     </x-section>
+    <x-tur-pengenalan kunci="apikey.mulai" :versi="1" :langkah="[
+        [
+            'target' => '[data-tur=\'buat-kunci\']',
+            'judul' => 'Satu kunci per aplikasi',
+            'isi' => 'Beri nama sesuai aplikasi yang memakainya — Toko Online, Kasir, CRM. '
+                .'Kalau suatu saat satu kunci harus dicabut, hanya aplikasi itu yang berhenti, '
+                .'bukan semuanya sekaligus.',
+        ],
+        [
+            'target' => '[data-tur=\'daftar-kunci\']',
+            'judul' => 'Kunci bisa dibuka lagi',
+            'isi' => 'Berbeda dengan kebanyakan layanan, kunci di sini tidak hilang setelah '
+                .'ditampilkan sekali. Anda bisa membukanya lagi kapan saja dari halaman ini — '
+                .'jadi tidak perlu menyalinnya ke catatan pribadi atau grup chat.',
+        ],
+        [
+            'judul' => 'Cara memakainya',
+            'isi' => 'Kirim sebagai header X-Api-Key di setiap permintaan. Contoh lengkap untuk '
+                .'PHP, Laravel, Node.js, dan Python ada di menu Dokumentasi.',
+        ],
+    ]" />
 @endsection

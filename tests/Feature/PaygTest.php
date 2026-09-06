@@ -398,6 +398,45 @@ class PaygTest extends TestCase
             ->assertSee('per pesan terkirim');
     }
 
+    /**
+     * Halaman paket di dashboard punya kelompok yang sama dengan halaman harga
+     * publik — Bisnis dan Enterprise, dengan PAYG dan Enterprise di kelompok
+     * kedua.
+     *
+     * Dua halaman yang menjual hal yang sama dengan bentuk berbeda membuat
+     * pelanggan mengira ada pilihan yang hanya tersedia di salah satunya.
+     */
+    public function test_halaman_paket_punya_kelompok_bisnis_dan_enterprise(): void
+    {
+        $this->berlangganan($this->workspace);
+
+        $this->actingAs($this->pemilik)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->get(route('billing.plans'))
+            ->assertOk()
+            ->assertSee('>Bisnis<', false)
+            ->assertSee('>Enterprise<', false)
+            ->assertSee('Pay as you go')
+            ->assertSee('Minta penawaran');
+    }
+
+    /**
+     * Yang sudah memakai PAYG dibuka langsung di kelompok Enterprise.
+     *
+     * Menampilkan tiga kartu bulanan lebih dulu kepada orang yang datang untuk
+     * mengisi saldo adalah satu klik yang tidak perlu ada.
+     */
+    public function test_workspace_payg_dibuka_di_kelompok_enterprise(): void
+    {
+        $this->jadikanPayg(50_000);
+
+        $this->actingAs($this->pemilik)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->get(route('billing.plans'))
+            ->assertOk()
+            ->assertSee("kelompok: 'enterprise'", false);
+    }
+
     /** PAYG tidak boleh muncul di daftar paket bulanan mana pun. */
     public function test_payg_tidak_ikut_daftar_paket_bulanan(): void
     {
