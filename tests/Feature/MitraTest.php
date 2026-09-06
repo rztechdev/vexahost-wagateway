@@ -279,7 +279,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) Str::uuid(),
+            'external_id' => (string) Str::ulid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-001',
             'plan_slug' => 'pro',
@@ -343,7 +343,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) Str::uuid(),
+            'external_id' => (string) Str::ulid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-002',
             'plan_slug' => 'starter',
@@ -404,7 +404,7 @@ class MitraTest extends TestCase
         ]);
 
         $invoice = Invoice::create([
-            'external_id' => (string) Str::uuid(),
+            'external_id' => (string) Str::ulid(),
             'workspace_id' => $workspaceKlien->id,
             'number' => 'INV-2026-003',
             'plan_slug' => 'enterprise',
