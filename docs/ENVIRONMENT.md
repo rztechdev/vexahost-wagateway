@@ -157,6 +157,13 @@ Variabel berikut sama bentuknya di ketiga tahap; yang berbeda hanya isinya.
 sana akan menghasilkan kode QR yang benar-benar bisa dibayar orang.
 
 ```env
+> **Aturan kutip berlaku untuk SEMUA nilai bernilai lebih dari satu kata, bukan
+> hanya QRIS.** `APP_NAME=Flustra WA Gateway` tanpa kutip menolak seluruh berkas
+> dengan `Failed to parse dotenv file ... unexpected whitespace` dan aplikasi
+> tidak boot sama sekali — bukan sekadar kehilangan nama aplikasinya. Ini sudah
+> terjadi di `.env.production` dan tidak ketahuan sampai berkasnya benar-benar
+> dicoba dimuat, karena Coolify menyetel env-nya lewat jalur lain.
+
 # QRIS statis milik merchant, string panjang berawalan 00020101021126...
 # Kosong = halaman pembayaran hanya menampilkan instruksi transfer bank,
 # bukan kode QR rusak. Pakai QRIS MERCHANT, bukan QRIS akun pribadi: akun

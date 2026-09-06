@@ -28,9 +28,9 @@
         @endif
     </form>
 
-    <x-panel :sub="$workspaces->total().' workspace'">
+    <x-section :sub="$workspaces->total().' workspace'">
         <table class="w-full min-w-[64rem] text-sm">
-            <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                     <th class="px-5 py-2.5 font-medium">Workspace</th>
                     <th class="px-5 py-2.5 font-medium">Paket</th>
@@ -104,7 +104,7 @@
                 @endforelse
             </tbody>
         </table>
-    </x-panel>
+    </x-section>
 
     <div class="mt-4">{{ $workspaces->links() }}</div>
 @endsection

@@ -22,7 +22,10 @@
                     @else
                         Workspace baru dimulai kosong: nomor, API key, kuota, dan riwayat pesannya terpisah penuh
                         dari workspace Anda yang sekarang. Setelah dibuat, Anda berpindah antar workspace lewat
-                        pemilih di kanan atas.
+                        pemilih di kiri atas.
+                        <strong class="font-medium text-foreground">Langganannya juga terpisah</strong> — masa coba
+                        gratis hanya berlaku sekali per akun, jadi workspace ini baru bisa dipakai setelah
+                        tagihannya lunas.
                     @endif
                 </div>
                 <button class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">

@@ -76,6 +76,11 @@ class DocsRepository
                     'title' => 'API Key & Keamanan',
                     'summary' => 'Membuat, memakai, dan menjaga kunci akses tetap aman.',
                 ],
+                'integrasi-ai-agent' => [
+                    'file' => 'INTEGRASI_AI_AGENT.md',
+                    'title' => 'Integrasi AI Agent',
+                    'summary' => 'Prompt dan panduan integrasi untuk Claude Code, Cursor, Antigravity, OpenCode, dan Codex.',
+                ],
             ],
 
             'Panduan' => [

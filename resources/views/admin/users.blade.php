@@ -8,10 +8,9 @@
         <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Cari</button>
     </form>
 
-    <x-card>
-        <div class="-mx-5 overflow-x-auto">
+    <x-section>
             <table class="w-full min-w-[40rem] text-sm">
-                <thead class="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                         <th class="px-5 py-2 font-medium">Nama</th>
                         <th class="px-5 py-2 font-medium">Email</th>
@@ -20,9 +19,9 @@
                         <th class="px-5 py-2"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-border">
                     @forelse ($users as $user)
-                        <tr class="border-b border-border last:border-0">
+                        <tr class="transition hover:bg-muted/40">
                             <td class="px-5 py-2.5 font-medium">
                                 {{ $user->name }}
                                 @if ($user->is_super_admin)
@@ -63,12 +62,11 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-5 py-4 text-muted-foreground">Tidak ada pengguna yang cocok.</td></tr>
+                        <x-kosong :kolom="5" judul="Tidak ada pengguna yang cocok" pesan="Coba ubah kata kuncinya." />
                     @endforelse
                 </tbody>
             </table>
-        </div>
-    </x-card>
+    </x-section>
 
     <div class="mt-4">{{ $users->links() }}</div>
 @endsection

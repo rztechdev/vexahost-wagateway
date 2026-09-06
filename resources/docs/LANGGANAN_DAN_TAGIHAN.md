@@ -13,7 +13,7 @@ Semua paket memakai gateway, API, dan dashboard yang sama. Yang membedakan hanya
 | Per bulan | Rp 149.000 | Rp 249.000 | Rp 449.000 |
 | Per tahun | Rp 1.490.000 | Rp 2.490.000 | Rp 4.490.000 |
 | Nomor WhatsApp aktif | 1 | 1 | 2 |
-| Pesan keluar per bulan | 3.000 | 25.000 | 100.000 |
+| Pesan keluar per bulan | 2.000 | 10.000 | 50.000 |
 | API key | 3 | 10 | tanpa batas |
 | Batas API per menit | 60 | 120 | 300 |
 | Riwayat pesan | 30 hari | 90 hari | 12 bulan |

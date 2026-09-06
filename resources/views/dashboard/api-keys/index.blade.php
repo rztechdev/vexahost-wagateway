@@ -2,7 +2,23 @@
 @section('title', 'API Keys')
 
 @section('content')
-    <x-card title="Buat API key" subtitle="Dipakai aplikasi Anda untuk memanggil REST API gateway lewat header X-Api-Key.">
+@php
+    // Ditentukan sekali di atas: formulir di halaman ini hanya ditampilkan
+    // kalau langganannya memang berlaku. Penolakan sebenarnya tetap di
+    // EnsureSubscriptionActive — ini supaya tombolnya tidak ada sejak awal.
+    $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+@endphp
+
+    @if ($terkunci)
+        <x-kunci-langganan :subscription="$currentSubscription" aksi="membuat API key" />
+    @else
+    {{-- Formulir tetap berbingkai: satu-satunya bagian halaman ini yang
+         menunggu tindakan, dan bingkainya yang memisahkannya dari daftar. --}}
+    <div class="rounded-xl border border-border bg-card p-4 shadow-xs">
+        <p class="font-semibold">Buat API key</p>
+        <p class="mb-4 mt-0.5 text-sm text-muted-foreground">
+            Dipakai aplikasi Anda untuk memanggil REST API gateway lewat header <code>X-Api-Key</code>.
+        </p>
         <form method="POST" action="{{ route('api-keys.store') }}" class="flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-48 flex-1">
@@ -23,18 +39,21 @@
             Scope <code>otp</code> memberi kemampuan mengirim kode verifikasi. Jangan diberikan ke kunci integrasi biasa —
             kunci yang bocor dengan scope ini bisa dipakai membombardir nomor orang lain dan membuat nomor Anda diblokir.
         </p>
-    </x-card>
+    </div>
 
-    <x-card class="mt-6" title="Kunci workspace {{ $currentWorkspace->name }}"
-            subtitle="Setiap workspace punya kuncinya sendiri. Kunci di sini tidak berlaku untuk workspace lain.">
+    @endif
+
+    <x-section judul="Kunci workspace {{ $currentWorkspace->name }}"
+               sub="Setiap workspace punya kuncinya sendiri. Kunci di sini tidak berlaku untuk workspace lain."
+               rapat>
         @if ($keys->isEmpty())
-            <p class="text-sm text-muted-foreground">Belum ada API key di workspace ini.</p>
+            <p class="py-8 text-center text-sm text-muted-foreground">Belum ada API key di workspace ini.</p>
         @else
-            <div class="space-y-4">
+            <div class="divide-y divide-border">
                 @foreach ($keys as $key)
                     @php $baru = session('kunci_baru_id') == $key->id; @endphp
 
-                    <div class="rounded-xl border p-4 {{ $baru ? 'border-primary/40 bg-primary/5' : 'border-border' }}"
+                    <div class="py-4 first:pt-0 last:pb-0 {{ $baru ? '-mx-3 rounded-lg bg-primary/5 px-3' : '' }}"
                          x-data="{ terlihat: false, disalin: '' }">
 
                         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -47,9 +66,9 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 @if ($key->revoked_at)
-                                    <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">dicabut</span>
+                                    <x-badge>Dicabut</x-badge>
                                 @else
-                                    <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">aktif</span>
+                                    <x-badge warna="hijau" titik>Aktif</x-badge>
                                     @if ($bolehLihatKunci)
                                         <form method="POST" action="{{ route('api-keys.destroy', $key->id) }}"
                                               data-konfirmasi="Cabut kunci {{ $key->name }}? Aplikasi yang memakainya akan langsung ditolak.">
@@ -138,12 +157,12 @@
         @endif
 
         @if ($bolehLihatKunci)
-            <p class="mt-4 border-t border-border pt-4 text-xs text-muted-foreground">
+            <p class="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
                 Kunci disimpan terenkripsi supaya Anda bisa membukanya lagi kapan saja — tidak perlu mencatatnya di tempat lain,
                 dan tempat lain itulah yang paling sering menjadi sumber kebocoran. Siapa pun yang bisa masuk ke akun Anda sebagai
                 owner atau admin juga bisa membukanya, jadi jaga akun ini sebaik Anda menjaga kuncinya. Kunci yang sudah terlanjur
                 tersebar sebaiknya dicabut, bukan dipakai ulang.
             </p>
         @endif
-    </x-card>
+    </x-section>
 @endsection

@@ -2,6 +2,16 @@
 @section('title', 'Webhooks')
 
 @section('content')
+@php
+    // Ditentukan sekali di atas: formulir di halaman ini hanya ditampilkan
+    // kalau langganannya memang berlaku. Penolakan sebenarnya tetap di
+    // EnsureSubscriptionActive — ini supaya tombolnya tidak ada sejak awal.
+    $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+@endphp
+
+    @if ($terkunci)
+        <x-kunci-langganan :subscription="$currentSubscription" aksi="menambah webhook" />
+    @else
     <x-card title="Tambah webhook" subtitle="Gateway akan mengirim POST JSON ke URL ini setiap kejadian yang Anda pilih.">
         <form method="POST" action="{{ route('webhooks.store') }}" class="space-y-4">
             @csrf
@@ -25,7 +35,9 @@
         </form>
     </x-card>
 
-    <x-card title="Webhook terdaftar" class="mt-6">
+    @endif
+
+    <x-section judul="Webhook terdaftar">
         @if ($webhooks->isEmpty())
             <p class="text-sm text-muted-foreground">Belum ada webhook.</p>
         @else
@@ -78,25 +90,24 @@
                 @endforeach
             </div>
         @endif
-    </x-card>
+    </x-section>
 
-    <x-card title="Pengiriman terakhir" class="mt-6">
+    <x-section judul="Pengiriman terakhir">
         @if ($deliveries->isEmpty())
             <p class="text-sm text-muted-foreground">Belum ada pengiriman.</p>
         @else
-            <div class="-mx-5 overflow-x-auto">
-                <table class="w-full min-w-[600px] text-sm">
-                    <thead class="text-left text-xs uppercase text-muted-foreground">
-                        <tr class="border-b border-border">
+                            <table class="w-full min-w-[600px] text-sm">
+                    <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
                             <th class="px-5 py-2">Waktu</th>
                             <th class="px-5 py-2">Event</th>
                             <th class="px-5 py-2">Kode</th>
                             <th class="px-5 py-2">Balasan</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-border">
                         @foreach ($deliveries as $delivery)
-                            <tr class="border-b border-border last:border-0 hover:bg-muted/50">
+                            <tr class="transition hover:bg-muted/40">
                                 <td class="whitespace-nowrap px-5 py-2 text-muted-foreground">{{ $delivery->created_at->format('d M H:i:s') }}</td>
                                 <td class="px-5 py-2 font-mono text-xs">{{ $delivery->event }}</td>
                                 <td class="px-5 py-2">
@@ -109,5 +120,5 @@
                 </table>
             </div>
         @endif
-    </x-card>
+    </x-section>
 @endsection

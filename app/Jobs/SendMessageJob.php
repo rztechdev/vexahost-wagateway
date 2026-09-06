@@ -50,6 +50,32 @@ class SendMessageJob implements ShouldQueue
             return;
         }
 
+        /*
+         | Diperiksa lagi di sini, bukan hanya saat diantrekan.
+         |
+         | Antara antre dan kirim bisa lewat berjam-jam: tiap pesan ditahan
+         | jeda anti-ban, antrean berjalan per sesi, dan job yang gagal
+         | diulang dengan backoff. Broadcast beberapa ribu nomor yang
+         | diantrekan menit terakhir sebelum langganan habis dulu tetap
+         | terkirim seluruhnya setelah layanannya mati — tanpa satu pun
+         | pemeriksaan di antaranya, karena penjagaan kuota dan status hanya
+         | berjalan di `MessageDispatcher::queue()`.
+         |
+         | Ditandai gagal, bukan dilepas untuk diulang: langganan tidak akan
+         | hidup kembali dalam tiga kali backoff, dan pesan yang menggantung
+         | di antrean berhari-hari lalu tiba-tiba terkirim saat pembayaran
+         | masuk jauh lebih buruk daripada pesan yang jelas-jelas gagal.
+        */
+        $workspace = $session->workspace;
+
+        if ($workspace && ! $workspace->isActive()) {
+            $this->fail($message, $workspace->serviceExpired()
+                ? 'Masa berlaku langganan habis sebelum pesan ini sempat terkirim.'
+                : 'Workspace sedang tidak aktif saat pesan ini akan dikirim.', $dispatcher, $webhooks);
+
+            return;
+        }
+
         $message->update(['status' => 'sending', 'attempts' => $message->attempts + 1]);
 
         try {

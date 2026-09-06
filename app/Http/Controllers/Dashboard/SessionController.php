@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
 use App\Models\WaSession;
 use App\Services\SessionService;
+use App\Support\EngineError;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -51,7 +52,12 @@ class SessionController extends Controller
         try {
             $this->sessions->connect($session);
         } catch (\Throwable $e) {
-            return back()->withErrors(['session' => 'Gagal menghubungi engine: '.$e->getMessage()]);
+            Log::warning('Gagal menjalankan sesi dari dashboard', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['session' => EngineError::pesan($e)]);
         }
 
         AuditLog::record('session.connect', $session);
@@ -63,7 +69,27 @@ class SessionController extends Controller
     {
         $session = $this->find($request, $id);
 
-        $this->sessions->disconnect($session);
+        try {
+            $this->sessions->disconnect($session);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal menghentikan sesi lewat dashboard', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            /*
+             | Barisnya tetap ditandai berhenti. Engine yang tidak menjawab
+             | berarti ia tidak sedang menjalankan sesi ini juga — menolak
+             | permintaan berhenti hanya menyisakan baris yang mengaku hidup
+             | padahal tidak ada yang menjalankannya, dan tombol Hentikan yang
+             | tidak pernah bisa berhasil.
+            */
+            $session->update(['status' => 'disconnected', 'qr_payload' => null]);
+            AuditLog::record('session.disconnect', $session, ['engine' => 'tidak menjawab']);
+
+            return back()->with('status', 'Sesi ditandai berhenti. '.EngineError::pesan($e));
+        }
+
         AuditLog::record('session.disconnect', $session);
 
         return back()->with('status', 'Sesi dihentikan.');
@@ -73,7 +99,32 @@ class SessionController extends Controller
     {
         $session = $this->find($request, $id);
 
-        $this->sessions->logout($session);
+        try {
+            $this->sessions->logout($session);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal memutus tautan nomor lewat dashboard', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            /*
+             | Berbeda dari Hentikan: di sini keadaan lokal TIDAK diubah.
+             |
+             | Memutus tautan membuang kredensial di kedua sisi, dan kegagalan
+             | yang paling sering di sini adalah habis waktu (15 detik) — bukan
+             | bukti bahwa perintahnya tidak sampai. Menandai nomornya terputus
+             | padahal engine masih memegangnya menghasilkan dashboard yang
+             | bilang "belum tertaut" sementara nomor aslinya masih menerima
+             | pesan, dan itu jauh lebih membingungkan daripada tombol yang
+             | jujur bilang gagal. `SyncSessionStatusJob` merapikan keadaan
+             | sebenarnya dalam satu menit.
+            */
+            return back()->withErrors([
+                'session' => EngineError::pesan($e)
+                    .' Kalau perintahnya ternyata sudah sampai, status nomor menyesuaikan sendiri dalam satu menit.',
+            ]);
+        }
+
         AuditLog::record('session.logout', $session);
 
         return back()->with(

@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
+use App\Support\Plan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -55,39 +56,91 @@ class BillingTest extends TestCase
     }
 
     /**
-     * Workspace baru TIDAK mendapat masa gratis.
+     * Workspace baru lahir di paket coba gratis, bukan langsung berbayar dan
+     * bukan pula terkunci total.
      *
-     * Masa gratis sampai akhir bulan hanya milik akun yang sudah ada sebelum
-     * produk ini dijual, dan diberikan sekali oleh migrasi. Kalau keadaan
-     * bawaannya `trialing`, setiap pendaftar baru ikut memakai produk berbayar
-     * secara cuma-cuma tanpa pernah diputuskan siapa pun.
+     * Jatahnya lima pesan SEUMUR HIDUP workspace, tanpa tanggal berakhir. Yang
+     * paling mudah salah di sini adalah memperlakukannya sebagai kuota bulanan
+     * biasa: angkanya kembali penuh tiap tanggal 1, dan lima pesan gratis
+     * berubah diam-diam menjadi lima pesan gratis setiap bulan selamanya.
      */
-    public function test_workspace_baru_belum_berlangganan_dan_belum_bisa_dipakai(): void
+    public function test_workspace_baru_dapat_masa_coba_lima_pesan(): void
     {
         $this->actingAs($this->owner)->get(route('billing.index'))->assertOk();
 
         $workspace = $this->workspace->fresh();
+        $subscription = $workspace->subscription;
 
-        $this->assertSame('unpaid', $workspace->subscription->status);
-        $this->assertNull($workspace->subscription->current_period_end);
-        $this->assertFalse($workspace->subscription->isUsable());
+        $this->assertSame(config('plans.free'), $subscription->plan_slug);
+        $this->assertSame('trialing', $subscription->status);
+        $this->assertTrue($subscription->isUsable());
 
-        // Dan cerminnya di workspace, tempat penegakan pengiriman membaca.
-        $this->assertSame('suspended', $workspace->status);
+        // Tanpa tanggal berakhir: yang menghabiskannya jumlah pesan, bukan waktu.
+        $this->assertNull($subscription->current_period_end);
+        $this->assertNull($workspace->service_until);
+
+        // Dan workspace-nya HIDUP — pendaftar baru memang boleh menautkan nomor.
+        $this->assertSame('active', $workspace->status);
+        $this->assertTrue($workspace->isActive());
+        $this->assertTrue($workspace->isFreeTier());
+        $this->assertSame(5, $workspace->monthly_message_quota);
     }
 
-    public function test_workspace_baru_tidak_bisa_membuat_sesi_sebelum_membayar(): void
+    public function test_masa_coba_boleh_menautkan_nomor(): void
     {
         $this->actingAs($this->owner)->get(route('billing.index'));
 
-        // Diarahkan ke halaman paket, bukan ke ringkasan: yang dibutuhkan orang
-        // yang belum pernah berlangganan adalah memilih, bukan membaca lagi
-        // bahwa ia belum berlangganan.
         $this->actingAs($this->owner)
             ->post(route('sessions.store'), ['name' => 'CS'])
-            ->assertRedirect(route('billing.plans'));
+            ->assertRedirect(route('sessions.index'));
 
-        $this->assertSame(0, $this->workspace->sessions()->count());
+        $this->assertSame(1, $this->workspace->sessions()->count());
+    }
+
+    /**
+     * Formulirnya ikut hilang saat langganan mati, bukan cuma penolakan di
+     * belakang layar.
+     *
+     * Halaman Sesi dulu tetap menampilkan kotak "Buat sesi" lengkap dengan
+     * tombolnya. Penolakannya sudah benar — `EnsureSubscriptionActive` melempar
+     * POST-nya ke halaman langganan — tapi pengguna baru tahu setelah mengisi
+     * nama dan menekan tombol, lalu mendarat di halaman lain tanpa isian yang
+     * tadi diketiknya. Tombol yang hanya bisa gagal lebih buruk daripada tombol
+     * yang tidak ada.
+     */
+    public function test_formulir_disembunyikan_saat_langganan_mati(): void
+    {
+        $this->langganan()->forceFill(['status' => 'past_due'])->save();
+
+        $halaman = [
+            route('sessions.index') => 'sessions.store',
+            route('api-keys.index') => 'api-keys.store',
+            route('templates.index') => 'templates.store',
+            route('webhooks.index') => 'webhooks.store',
+            route('messages.compose') => 'messages.send',
+        ];
+
+        foreach ($halaman as $url => $rutePengirim) {
+            $isi = $this->actingAs($this->owner)->get($url)->assertOk()->getContent();
+
+            $this->assertStringNotContainsString(
+                'action="'.route($rutePengirim).'"',
+                $isi,
+                "Formulir {$rutePengirim} masih tampil padahal langganan sedang mati."
+            );
+        }
+    }
+
+    /**
+     * Selama masa coba formulirnya justru HARUS ada — di situlah orang menguji
+     * gateway-nya sebelum memutuskan membayar.
+     */
+    public function test_formulir_tetap_ada_selama_masa_coba(): void
+    {
+        $this->actingAs($this->owner)
+            ->get(route('sessions.index'))
+            ->assertOk()
+            ->assertSee('action="'.route('sessions.store').'"', false);
     }
 
     public function test_membayar_membuka_workspace_yang_belum_pernah_berlangganan(): void
@@ -202,9 +255,11 @@ class BillingTest extends TestCase
         // Batas ditegakkan dari kolom workspace, jadi pembayaranlah yang harus
         // menyalinnya ke sana — kalau tidak, pelanggan membayar Elite dan tetap
         // dibatasi angka Essentials tanpa satu pun pesan galat yang menjelaskan.
-        $this->assertSame(2, $workspace->max_sessions);
-        $this->assertSame(100_000, $workspace->monthly_message_quota);
-        $this->assertSame(300, $workspace->api_rate_limit_per_minute);
+        $elite = Plan::get('elite')->limits();
+
+        $this->assertSame($elite['max_sessions'], $workspace->max_sessions);
+        $this->assertSame($elite['monthly_message_quota'], $workspace->monthly_message_quota);
+        $this->assertSame($elite['api_rate_limit_per_minute'], $workspace->api_rate_limit_per_minute);
         $this->assertSame('active', $workspace->subscription->status);
     }
 
@@ -301,7 +356,9 @@ class BillingTest extends TestCase
         // Menganggap unggahan sebagai pembayaran berarti siapa pun bisa
         // menyalakan layanannya sendiri dengan gambar apa saja dari galeri.
         $this->assertSame('pending', $invoice->status);
-        $this->assertSame('unpaid', $this->workspace->fresh()->subscription->status);
+
+        // Masih di paket coba gratis: yang memindahkannya cuma markPaid().
+        $this->assertSame(config('plans.free'), $this->workspace->fresh()->subscription->plan_slug);
     }
 
     /**

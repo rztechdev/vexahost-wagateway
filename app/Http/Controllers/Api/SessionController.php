@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\WaSession;
 use App\Services\SessionService;
+use App\Support\EngineError;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SessionController extends ApiController
 {
@@ -51,7 +53,12 @@ class SessionController extends ApiController
         try {
             $session = $this->sessions->connect($session);
         } catch (\Throwable $e) {
-            return $this->fail('Gagal menghubungkan sesi: '.$e->getMessage(), 502);
+            Log::warning('Gagal menjalankan sesi lewat API', [
+                'session_id' => $session->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->fail(EngineError::pesan($e), 502);
         }
 
         return $this->ok($this->present($session));
@@ -59,12 +66,44 @@ class SessionController extends ApiController
 
     public function disconnect(Request $request, string $id): JsonResponse
     {
-        return $this->ok($this->present($this->sessions->disconnect($this->find($request, $id))));
+        $session = $this->find($request, $id);
+
+        try {
+            $session = $this->sessions->disconnect($session);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal menghentikan sesi lewat API', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Sama dengan dashboard: engine yang tidak menjawab berarti ia
+            // tidak sedang menjalankan sesi ini juga.
+            $session->update(['status' => 'disconnected', 'qr_payload' => null]);
+        }
+
+        return $this->ok($this->present($session));
     }
 
     public function logout(Request $request, string $id): JsonResponse
     {
-        return $this->ok($this->present($this->sessions->logout($this->find($request, $id))));
+        $session = $this->find($request, $id);
+
+        try {
+            $session = $this->sessions->logout($session);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal memutus tautan nomor lewat API', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Keadaan lokal tidak diubah — kegagalan tersering di sini adalah
+            // habis waktu, bukan bukti bahwa perintahnya tidak sampai.
+            // 502, bukan 500: yang gagal layanan di belakang kami, dan klien
+            // yang membaca kode ini tahu permintaannya sendiri tidak salah.
+            return $this->fail(EngineError::pesan($e), 502);
+        }
+
+        return $this->ok($this->present($session));
     }
 
     /**

@@ -92,11 +92,30 @@ class Subscription extends Model
         return now()->startOfDay()->diffInDays($this->current_period_end->startOfDay(), false);
     }
 
+    /**
+     * Langganan tanpa tanggal berakhir tidak pernah "akan berakhir".
+     *
+     * Paket coba gratis berada persis di keadaan itu: `trialing` dengan
+     * `current_period_end` kosong. Tanpa penjagaan ini `daysRemaining()`
+     * menjawab 0 — dibaca sebagai "berakhir hari ini" — dan spanduk kuning di
+     * seluruh dashboard mengumumkan tanggal berakhir yang tidak ada, lalu
+     * jatuh dengan galat saat mencoba mencetaknya.
+     */
     public function isExpiringSoon(int $withinDays = 7): bool
     {
+        if ($this->current_period_end === null) {
+            return false;
+        }
+
         $sisa = $this->daysRemaining();
 
         return $this->isUsable() && $sisa >= 0 && $sisa <= $withinDays;
+    }
+
+    /** Sedang memakai jatah coba gratis. */
+    public function isFreeTier(): bool
+    {
+        return $this->plan_slug === config('plans.free');
     }
 
     /**

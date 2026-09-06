@@ -26,9 +26,9 @@
         @endif
     </form>
 
-    <x-panel :sub="number_format($entri->total()).' catatan'">
+    <x-section :sub="number_format($entri->total()).' catatan'">
         <table class="w-full min-w-[62rem] text-sm">
-            <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                     <th class="px-5 py-2.5 font-medium">Waktu</th>
                     <th class="px-5 py-2.5 font-medium">Tindakan</th>
@@ -81,7 +81,7 @@
                 @endforelse
             </tbody>
         </table>
-    </x-panel>
+    </x-section>
 
     <div class="mt-4">{{ $entri->links() }}</div>
 @endsection

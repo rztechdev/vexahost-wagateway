@@ -247,8 +247,9 @@ class AdminPanelTest extends TestCase
         $this->assertSame(0, $workspace->monthly_message_quota);
 
         // Satu pelanggan yang butuh kuota lebih tidak boleh mengubah apa yang
-        // didapat seluruh pelanggan pada paket yang sama.
-        $this->assertSame('essentials', $workspace->subscription->plan_slug);
+        // didapat seluruh pelanggan pada paket yang sama — paketnya tetap yang
+        // tadi, hanya angkanya yang dilonggarkan untuk workspace ini saja.
+        $this->assertSame(config('plans.free'), $workspace->subscription->plan_slug);
     }
 
     public function test_super_admin_tidak_bisa_mencabut_haknya_sendiri(): void

@@ -60,13 +60,43 @@ class Plan
         return $slug !== null && isset(config('plans.catalog')[$slug]);
     }
 
-    /** @return array<int, self> Seluruh katalog, urut seperti di config. */
+    /**
+     * Paket yang bisa dibeli, urut seperti di config.
+     *
+     * Paket coba gratis sengaja tidak ikut: ia muncul di katalog supaya batas
+     * dan namanya dibaca dari satu tempat yang sama dengan paket lain, tapi
+     * tidak ada yang bisa membelinya. Menampilkannya di halaman harga berarti
+     * menawarkan tombol beli yang tidak akan pernah ada di baliknya, dan di
+     * dropdown admin berarti seseorang suatu saat memindahkan pelanggan
+     * berbayar ke jatah lima pesan.
+     *
+     * @return array<int, self>
+     */
     public static function all(): array
     {
-        return array_map(
-            fn (string $slug) => self::get($slug),
-            array_keys(config('plans.catalog'))
-        );
+        return array_values(array_filter(
+            array_map(
+                fn (string $slug) => self::get($slug),
+                array_keys(config('plans.catalog'))
+            ),
+            fn (self $plan) => $plan->isSellable()
+        ));
+    }
+
+    /** Paket coba gratis untuk workspace baru. */
+    public static function free(): self
+    {
+        return self::get(config('plans.free'));
+    }
+
+    public function isSellable(): bool
+    {
+        return (bool) ($this->attributes['sellable'] ?? true);
+    }
+
+    public function isFree(): bool
+    {
+        return $this->slug === config('plans.free');
     }
 
     public function name(): string

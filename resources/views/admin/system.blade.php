@@ -61,7 +61,7 @@
     @endphp
 
     {{-- ===================== Ikhtisar kesehatan ===================== --}}
-    <x-panel :judul="$bermasalah === 0 ? 'Semua pemeriksaan lolos' : $bermasalah.' hal perlu dibereskan'"
+    <x-section :judul="$bermasalah === 0 ? 'Semua pemeriksaan lolos' : $bermasalah.' hal perlu dibereskan'"
              sub="Semua yang di bawah ini bisa berhenti bekerja tanpa satu pun galat yang terlihat."
              @class(['mb-5', 'border-destructive' => $bermasalah > 0])>
         <table class="w-full min-w-[52rem] text-sm">
@@ -90,11 +90,11 @@
                 @endforeach
             </tbody>
         </table>
-    </x-panel>
+    </x-section>
 
     <div class="grid gap-5 lg:grid-cols-2">
         {{-- ===================== Kapasitas ===================== --}}
-        <x-panel judul="Kapasitas sesi" sub="Batas yang menentukan berapa pelanggan bisa dilayani sama sekali." rapat>
+        <x-section judul="Kapasitas sesi" sub="Batas yang menentukan berapa pelanggan bisa dilayani sama sekali." rapat>
             <p class="text-3xl font-semibold tabular-nums">
                 {{ $kapasitas['hidup'] }}<span class="text-lg font-normal text-muted-foreground">/{{ $kapasitas['batas'] }}</span>
             </p>
@@ -110,10 +110,10 @@
             <p class="mt-2 text-sm text-muted-foreground">
                 Pesan gagal 24 jam terakhir: <strong class="{{ $pesanGagal24Jam > 0 ? 'text-destructive' : '' }}">{{ number_format($pesanGagal24Jam) }}</strong>
             </p>
-        </x-panel>
+        </x-section>
 
         {{-- ===================== Irama siklus ===================== --}}
-        <x-panel judul="Irama penagihan" sub="Angka yang menentukan kapan pelanggan ditagih dan kapan layanannya berhenti." rapat>
+        <x-section judul="Irama penagihan" sub="Angka yang menentukan kapan pelanggan ditagih dan kapan layanannya berhenti." rapat>
             <dl class="space-y-2.5 text-sm">
                 @foreach ([
                     'Tagihan terbit sebelum habis' => $siklus['terbit_sebelum'].' hari',
@@ -129,15 +129,15 @@
                     </div>
                 @endforeach
             </dl>
-        </x-panel>
+        </x-section>
     </div>
 
     {{-- ===================== Paket ===================== --}}
-    <x-panel judul="Paket yang sedang berlaku"
+    <x-section judul="Paket yang sedang berlaku"
              sub="Dibaca dari config/plans.php — sumber yang sama dengan halaman harga dan penegakan batas."
              class="mt-5">
         <table class="w-full min-w-[52rem] text-sm">
-            <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                     <th class="px-5 py-2.5 font-medium">Paket</th>
                     <th class="px-5 py-2.5 text-right font-medium">Bulanan</th>
@@ -162,10 +162,10 @@
                 @endforeach
             </tbody>
         </table>
-    </x-panel>
+    </x-section>
 
     {{-- ===================== Lingkungan ===================== --}}
-    <x-panel judul="Lingkungan" class="mt-5" rapat>
+    <x-section judul="Lingkungan" class="mt-5" rapat>
         <dl class="grid gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
             @foreach ([
                 'Tahap' => $lingkungan['app_env'],
@@ -192,5 +192,5 @@
                 </dd>
             </div>
         </dl>
-    </x-panel>
+    </x-section>
 @endsection

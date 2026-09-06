@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Support\DocsRepository;
+use App\Support\Plan;
 use Tests\TestCase;
 
 class DocsTest extends TestCase
@@ -125,5 +126,41 @@ class DocsTest extends TestCase
 
         $this->assertNotEmpty($page['toc']);
         $this->assertStringContainsString('id="'.$page['toc'][0]['id'].'"', $page['html']);
+    }
+
+    /**
+     * Tabel paket di halaman publik harus sama dengan `config/plans.php`.
+     *
+     * Angkanya ditulis dua kali — sekali sebagai config yang ditegakkan, sekali
+     * sebagai tabel Markdown yang dibaca calon pelanggan — dan itu memang
+     * terpaksa: berkas dokumentasi tidak bisa memanggil config. Yang tidak
+     * boleh terjadi adalah keduanya berbeda tanpa ada yang tahu. Halaman harga
+     * yang menjanjikan angka berbeda dari yang ditegakkan adalah janji yang
+     * kita langgar di hadapan orang yang baru saja membayar — dan ini sudah
+     * sekali nyaris terjadi: kuota diturunkan di config, tabelnya tertinggal.
+     */
+    public function test_tabel_paket_di_docs_sama_dengan_config(): void
+    {
+        $isi = file_get_contents(resource_path('docs/LANGGANAN_DAN_TAGIHAN.md'));
+
+        foreach (Plan::all() as $plan) {
+            $batas = $plan->limits();
+
+            $angka = [
+                'harga bulanan' => 'Rp '.number_format($plan->price('monthly'), 0, ',', '.'),
+                'harga tahunan' => 'Rp '.number_format($plan->price('yearly'), 0, ',', '.'),
+                'kuota pesan' => number_format($batas['monthly_message_quota'], 0, ',', '.'),
+                'batas API' => (string) $batas['api_rate_limit_per_minute'],
+            ];
+
+            foreach ($angka as $apa => $nilai) {
+                $this->assertStringContainsString(
+                    $nilai,
+                    $isi,
+                    "{$apa} paket {$plan->name()} ({$nilai}) tidak ada di tabel docs publik — "
+                    .'config dan halaman yang dibaca pelanggan sudah berbeda.'
+                );
+            }
+        }
     }
 }

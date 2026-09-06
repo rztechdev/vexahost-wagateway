@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Providers\ProviderManager;
+use App\Support\EngineError;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class SessionService
@@ -51,11 +53,23 @@ class SessionService
             // membuat sesi dikeluarkan dari daftar pemulihan otomatis di
             // BootstrapController, jadi nomor yang sebenarnya masih tertaut
             // tampak putus dan seolah harus di-scan ulang setiap deploy.
-            $session->update(['status' => 'disconnected', 'last_error' => $e->getMessage()]);
+            // `last_error` ikut tampil di kartu sesi dan di modal QR, jadi ia
+            // sama-sama muka pengguna — rincian teknisnya ke log, bukan ke sini.
+            Log::warning('Engine tidak terjangkau saat menjalankan sesi', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $session->update(['status' => 'disconnected', 'last_error' => EngineError::pesan($e)]);
 
             throw $e;
         } catch (\Throwable $e) {
-            $session->update(['status' => 'failed', 'last_error' => $e->getMessage()]);
+            Log::error('Engine menolak menjalankan sesi', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $session->update(['status' => 'failed', 'last_error' => EngineError::pesan($e)]);
 
             throw $e;
         }

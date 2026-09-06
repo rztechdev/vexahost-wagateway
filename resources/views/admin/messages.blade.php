@@ -59,9 +59,9 @@
     {{-- Isi pesan sengaja tidak ditampilkan: yang dibutuhkan untuk menelusuri
          gangguan adalah status, tujuan, dan galatnya. Isi percakapan pelanggan
          bukan urusan panel operasional. --}}
-    <x-panel :sub="number_format($messages->total()).' pesan cocok'">
+    <x-section :sub="number_format($messages->total()).' pesan cocok'">
         <table class="w-full min-w-[62rem] text-sm">
-            <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                     <th class="px-5 py-2.5 font-medium">Waktu</th>
                     <th class="px-5 py-2.5 font-medium">Workspace</th>
@@ -110,7 +110,7 @@
                 @endforelse
             </tbody>
         </table>
-    </x-panel>
+    </x-section>
 
     <div class="mt-4">{{ $messages->links() }}</div>
 @endsection

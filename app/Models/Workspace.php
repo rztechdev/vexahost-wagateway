@@ -24,6 +24,7 @@ class Workspace extends Model
         'billing_name',
         'billing_email',
         'status',
+        'service_until',
         'plan_slug',
         'max_sessions',
         'monthly_message_quota',
@@ -35,6 +36,7 @@ class Workspace extends Model
     {
         return [
             'is_internal' => 'boolean',
+            'service_until' => 'datetime',
             'max_sessions' => 'integer',
             'monthly_message_quota' => 'integer',
             'api_rate_limit_per_minute' => 'integer',
@@ -119,9 +121,54 @@ class Workspace extends Model
             : $this->plan()->messageRetentionDays();
     }
 
+    /**
+     * Layanannya benar-benar berjalan sekarang.
+     *
+     * Dua syarat, bukan satu. Kolom `status` diubah oleh `BillingCycleJob`
+     * pukul 08:00, sementara masa berlaku habis pukul 23:59:59 — tanpa
+     * pemeriksaan tanggal di sini, ada delapan jam tiap periode ketika
+     * langganan sudah habis tapi kolomnya belum sempat berubah, dan seluruh
+     * penegakan (pengiriman lewat dashboard maupun REST API) meloloskannya.
+     *
+     * `service_until` kosong berarti tidak ada tanggal berakhir sama sekali —
+     * keadaan paket coba gratis, yang dibatasi jumlah pesan, bukan waktu.
+     */
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        return $this->service_until === null || $this->service_until->isFuture();
+    }
+
+    /** Masa berlakunya lewat, apa pun yang tertulis di kolom status. */
+    public function serviceExpired(): bool
+    {
+        return $this->service_until !== null && $this->service_until->isPast();
+    }
+
+    /** Workspace ini sedang memakai jatah coba gratis. */
+    public function isFreeTier(): bool
+    {
+        return $this->plan_slug === config('plans.free');
+    }
+
+    /**
+     * Pesan keluar sepanjang umur workspace, dijumlahkan dari agregat bulanan.
+     *
+     * Jatah coba gratis dihitung seumur hidup, bukan per bulan: kalau ia
+     * memakai `currentUsage()` seperti kuota paket berbayar, angkanya kembali
+     * penuh tiap tanggal 1 dan lima pesan gratis berubah menjadi lima pesan
+     * gratis setiap bulan, selamanya.
+     *
+     * Dihitung dari `usage_counters` — bukan dari tabel `messages` — karena
+     * baris pesan dipangkas mengikuti retensi paket, dan jatah yang sudah
+     * terpakai tidak boleh ikut terhapus bersamanya.
+     */
+    public function freeMessagesUsed(): int
+    {
+        return (int) $this->usageCounters()->sum('messages_sent');
     }
 
     /**

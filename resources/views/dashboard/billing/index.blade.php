@@ -7,171 +7,215 @@
     @php
         $sisa = $subscription->daysRemaining();
         $paket = $subscription->plan();
+        $ls = \App\Support\StatusBadge::subscription($subscription->status);
         $kuota = (int) $currentWorkspace->monthly_message_quota;
         $persen = $kuota > 0 ? min(100, round($usage->messages_sent / max($kuota, 1) * 100)) : null;
+        $sesiTerpakai = $currentWorkspace->sessions()->count();
+        $gratis = $subscription->isFreeTier();
+        $terpakaiGratis = $gratis ? $currentWorkspace->freeMessagesUsed() : 0;
+
+        // Disusun di PHP, bukan di dalam atribut Blade: kutip ganda di dalam
+        // atribut ber-kutip ganda memotong nilainya diam-diam.
+        // Masa coba tidak punya tanggal berakhir sama sekali; tanpa cabang ini
+        // `daysRemaining()` menjawab 0 dan ubinnya mengumumkan "berakhir hari
+        // ini" untuk langganan yang justru tidak akan pernah berakhir.
+        $subSisa = match (true) {
+            $gratis => 'tidak ada batas waktu, hanya batas jumlah pesan',
+            $subscription->isUsable() && $sisa >= 0 => $sisa === 0
+                ? 'berakhir hari ini'
+                : ($sisa === 1 ? 'tinggal 1 hari' : 'tinggal '.$sisa.' hari'),
+            default => 'belum ada masa berlaku berjalan',
+        };
+
+        $tanggalAkhir = $subscription->current_period_end && ! $subscription->isUnpaid()
+            ? $subscription->current_period_end->translatedFormat('j M Y')
+            : ($gratis ? 'Tanpa batas waktu' : '—');
+
+        $nadaSisa = ! $gratis && $subscription->isUsable() && $sisa >= 0 && $sisa <= 7 ? 'perhatian' : 'netral';
     @endphp
 
-    {{-- ===================== Keadaan langganan =====================
+    {{-- ===================== Yang butuh tindakan =====================
 
-         Pertanyaan yang paling sering dibawa orang ke halaman ini cuma satu:
-         "berapa lama lagi ini berlaku?" Jawabannya karena itu ditaruh paling
-         atas dan paling besar, bukan diselipkan di antara daftar paket.
-         ============================================================= --}}
-    <div class="grid gap-4 lg:grid-cols-3">
-        <x-card class="lg:col-span-2">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <p class="text-sm text-muted-foreground">Paket sekarang</p>
-                    <p class="mt-1 flex flex-wrap items-center gap-2.5 text-3xl font-semibold tracking-tight">
-                        {{ $paket->name() }}
-                        <span @class([
-                            'rounded-full px-2.5 py-1 text-xs font-medium',
-                            'bg-primary/10 text-primary' => in_array($subscription->status, ['active', 'trialing'], true),
-                            'bg-destructive/10 text-destructive' => in_array($subscription->status, ['past_due', 'suspended'], true),
-                            'bg-muted text-muted-foreground' => $subscription->status === 'canceled',
-                        ])>{{ $subscription->statusLabel() }}</span>
-                    </p>
-                </div>
-
-                @if ($bolehBayar)
-                    <a href="{{ route('billing.plans') }}"
-                       class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted">
-                        Ganti paket
-                    </a>
-                @endif
-            </div>
-
-            @if ($subscription->current_period_end && ! $subscription->isUnpaid())
-                <div class="mt-6 border-t border-border pt-5">
-                    <div class="flex flex-wrap items-end justify-between gap-4">
-                        <div>
-                            <p class="text-sm text-muted-foreground">
-                                {{ $subscription->isUsable() ? 'Berlaku sampai' : 'Berakhir' }}
-                            </p>
-                            <p class="mt-1 text-lg font-medium">
-                                {{ $subscription->current_period_end->translatedFormat('j F Y') }}
-                            </p>
-                        </div>
-
-                        @if ($subscription->isUsable() && $sisa >= 0)
-                            <p class="text-sm text-muted-foreground">
-                                {{ $sisa === 0 ? 'berakhir hari ini' : ($sisa === 1 ? 'tinggal 1 hari' : "tinggal {$sisa} hari") }}
-                            </p>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
-            {{-- Keadaan yang butuh tindakan diberi warna; keadaan normal tidak.
-                 Kalau semuanya berwarna, tidak ada yang menonjol. --}}
-            @if ($subscription->isUnpaid())
-                <div class="mt-5 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3.5 text-sm text-primary">
-                    <p class="font-medium">Workspace ini belum berlangganan.</p>
-                    <p class="mt-1 leading-relaxed">
-                        Pilih paket untuk menautkan nomor WhatsApp dan mulai mengirim pesan.
-                        Riwayat, template, dan API key tetap bisa Anda siapkan lebih dulu.
-                    </p>
-                </div>
-            @elseif ($subscription->status === 'past_due')
-                <div class="mt-5 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3.5 text-sm text-destructive">
-                    <p class="font-medium">Pengiriman pesan sedang berhenti.</p>
-                    <p class="mt-1 leading-relaxed">
-                        Nomor WhatsApp Anda <strong>masih tertaut</strong> dan tidak perlu discan ulang.
-                        @if ($subscription->sessionsCutOffAt())
-                            Sesi baru akan dilepas kalau belum dibayar sampai
-                            {{ $subscription->sessionsCutOffAt()->translatedFormat('j F Y') }}.
-                        @endif
-                    </p>
-                </div>
-            @elseif ($subscription->status === 'suspended')
-                <div class="mt-5 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3.5 text-sm text-destructive">
-                    <p class="font-medium">Langganan ditangguhkan dan sesi sudah dilepas.</p>
-                    <p class="mt-1 leading-relaxed">
-                        Riwayat dan pengaturan Anda tetap tersimpan. Setelah pembayaran,
-                        nomor bisa dihubungkan lagi dari halaman Sesi.
-                    </p>
-                </div>
-            @elseif ($subscription->isExpiringSoon())
-                <div class="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3.5 text-sm text-amber-700 dark:text-amber-300">
-                    Perpanjang sebelum {{ $subscription->current_period_end->translatedFormat('j F Y') }}
-                    supaya pengiriman tidak terputus.
-                </div>
-            @endif
-        </x-card>
-
-        {{-- ===================== Pemakaian ===================== --}}
-        <x-card>
-            <p class="text-sm text-muted-foreground">Pesan keluar bulan ini</p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight">
-                {{ number_format($usage->messages_sent) }}
-            </p>
-            <p class="mt-0.5 text-sm text-muted-foreground">
-                dari {{ $kuota === 0 ? 'kuota tanpa batas' : number_format($kuota).' kuota paket' }}
-            </p>
-
-            @if ($persen !== null)
-                <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div class="h-full rounded-full {{ $persen >= 90 ? 'bg-destructive' : 'bg-primary' }}"
-                         style="width: {{ $persen }}%"></div>
-                </div>
-                <p class="mt-2 text-xs text-muted-foreground">{{ $persen }}% terpakai</p>
-            @endif
-
-            <dl class="mt-6 space-y-2.5 border-t border-border pt-5 text-sm">
-                <div class="flex justify-between gap-4">
-                    <dt class="text-muted-foreground">Nomor aktif</dt>
-                    <dd class="font-medium">{{ $currentWorkspace->sessions()->count() }} / {{ $currentWorkspace->max_sessions }}</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-muted-foreground">Riwayat pesan</dt>
-                    <dd class="font-medium">{{ $currentWorkspace->messageRetentionDays() }} hari</dd>
-                </div>
-                <div class="flex justify-between gap-4">
-                    <dt class="text-muted-foreground">Batas API</dt>
-                    <dd class="font-medium">{{ $currentWorkspace->api_rate_limit_per_minute }}/menit</dd>
-                </div>
-            </dl>
-        </x-card>
-    </div>
-
-    {{-- ===================== Tagihan yang menunggu =====================
-
-         Yang butuh tindakan sekarang tidak berbagi tempat dengan yang sudah
-         selesai; riwayat punya halamannya sendiri.
+         Paling atas, sebelum angka apa pun: orang yang layanannya sedang mati
+         tidak sedang mencari statistik pemakaiannya. Hanya satu yang muncul
+         pada satu waktu, dan tidak ada yang muncul saat keadaannya normal.
          ============================================================= --}}
     @if ($tagihanTerbuka)
-        <x-card class="mt-4 border-primary/50">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <p class="font-semibold">Tagihan {{ $tagihanTerbuka->number }} menunggu pembayaran</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ $tagihanTerbuka->plan()->name() }} · {{ $tagihanTerbuka->periodLabel() }} ·
-                        Rp {{ number_format($tagihanTerbuka->total, 0, ',', '.') }}
-                        @if ($tagihanTerbuka->due_at)
-                            · bayar sebelum {{ $tagihanTerbuka->due_at->translatedFormat('j F Y, H:i') }}
-                        @endif
-                    </p>
-                </div>
-                <a href="{{ route('billing.invoice', $tagihanTerbuka->id) }}"
-                   class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                    Lihat cara bayar
-                </a>
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
+            <div class="min-w-0">
+                <p class="font-medium">Tagihan {{ $tagihanTerbuka->number }} menunggu pembayaran</p>
+                <p class="mt-0.5 text-sm text-muted-foreground">
+                    {{ $tagihanTerbuka->plan()->name() }} · {{ $tagihanTerbuka->periodLabel() }} ·
+                    Rp {{ number_format($tagihanTerbuka->total, 0, ',', '.') }}
+                    @if ($tagihanTerbuka->due_at)
+                        · bayar sebelum {{ $tagihanTerbuka->due_at->translatedFormat('j F Y, H:i') }}
+                    @endif
+                </p>
             </div>
-        </x-card>
-    @elseif ($bolehBayar && ! $subscription->isUsable())
-        <x-card class="mt-4 border-primary/50">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <p class="text-sm">Pilih paket untuk menyalakan kembali layanan Anda.</p>
+            <a href="{{ route('billing.invoice', $tagihanTerbuka->id) }}"
+               class="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                Lihat cara bayar
+            </a>
+        </div>
+    @elseif ($subscription->isUnpaid())
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
+            <div class="min-w-0">
+                <p class="font-medium">Workspace ini belum berlangganan.</p>
+                <p class="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                    Pilih paket untuk menautkan nomor WhatsApp dan mulai mengirim pesan.
+                    Riwayat, template, dan API key tetap bisa Anda siapkan lebih dulu.
+                </p>
+            </div>
+            @if ($bolehBayar)
                 <a href="{{ route('billing.plans') }}"
-                   class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                   class="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
                     Pilih paket
                 </a>
+            @endif
+        </div>
+    @elseif ($subscription->status === 'past_due')
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3.5 text-destructive">
+            <div class="min-w-0">
+                <p class="font-medium">Pengiriman pesan sedang berhenti.</p>
+                <p class="mt-0.5 text-sm leading-relaxed">
+                    Nomor WhatsApp Anda <strong>masih tertaut</strong> dan tidak perlu discan ulang.
+                    @if ($subscription->sessionsCutOffAt())
+                        Sesi baru akan dilepas kalau belum dibayar sampai
+                        {{ $subscription->sessionsCutOffAt()->translatedFormat('j F Y') }}.
+                    @endif
+                </p>
             </div>
-        </x-card>
+            @if ($bolehBayar)
+                <a href="{{ route('billing.plans') }}"
+                   class="shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:opacity-90">
+                    Perpanjang
+                </a>
+            @endif
+        </div>
+    @elseif ($subscription->status === 'suspended')
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3.5 text-destructive">
+            <div class="min-w-0">
+                <p class="font-medium">Langganan ditangguhkan dan sesi sudah dilepas.</p>
+                <p class="mt-0.5 text-sm leading-relaxed">
+                    Riwayat dan pengaturan Anda tetap tersimpan. Setelah pembayaran,
+                    nomor bisa dihubungkan lagi dari halaman Sesi.
+                </p>
+            </div>
+            @if ($bolehBayar)
+                <a href="{{ route('billing.plans') }}"
+                   class="shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:opacity-90">
+                    Pilih paket
+                </a>
+            @endif
+        </div>
+    @elseif ($subscription->isExpiringSoon())
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3.5 text-amber-700 dark:text-amber-300">
+            <p class="min-w-0">
+                Perpanjang sebelum {{ $subscription->current_period_end->translatedFormat('j F Y') }}
+                supaya pengiriman tidak terputus.
+            </p>
+            @if ($bolehBayar)
+                <a href="{{ route('billing.plans') }}"
+                   class="shrink-0 rounded-lg border border-current px-4 py-2 text-sm font-medium transition hover:bg-amber-500/10">
+                    Perpanjang sekarang
+                </a>
+            @endif
+        </div>
     @endif
 
+    {{-- ===================== Angka =====================
+
+         Satu-satunya baris berkotak. Sisanya mengalir langsung di atas latar.
+         ============================================================= --}}
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <x-stat label="Paket sekarang" :nilai="$paket->name()" :sub="$ls['label']"
+                :nada="$subscription->isUsable() ? 'netral' : 'bahaya'"
+                :tautan="$bolehBayar ? route('billing.plans') : null"
+                tautanLabel="Ganti paket"
+                ikon="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+
+        <x-stat label="{{ $subscription->isUsable() ? 'Berlaku sampai' : 'Berakhir' }}"
+                :nilai="$tanggalAkhir"
+                :sub="$subSisa"
+                :nada="$nadaSisa"
+                ikon="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+
+        <x-stat label="{{ $gratis ? 'Jatah coba terpakai' : 'Pesan keluar bulan ini' }}"
+                :nilai="$gratis ? $terpakaiGratis : number_format($usage->messages_sent)"
+                :sub="$gratis
+                    ? 'dari '.$kuota.' pesan gratis, sekali seumur workspace'
+                    : ($kuota === 0 ? 'kuota tanpa batas' : 'dari '.number_format($kuota).' kuota paket')"
+                :nada="$persen !== null && $persen >= 90 ? 'bahaya' : 'netral'"
+                ikon="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+
+        <x-stat label="Nomor aktif"
+                :nilai="$sesiTerpakai.' / '.$currentWorkspace->max_sessions"
+                :sub="$sesiTerpakai >= $currentWorkspace->max_sessions ? 'batas paket tercapai' : 'masih ada ruang untuk nomor baru'"
+                :nada="$sesiTerpakai >= $currentWorkspace->max_sessions ? 'perhatian' : 'netral'"
+                ikon="M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z" />
+    </div>
+
+    {{-- ===================== Pemakaian ===================== --}}
+    @if ($persen !== null)
+        @php
+            // Jatah coba dihitung seumur hidup workspace, kuota berbayar per
+            // bulan. Batangnya sama, angka di baliknya tidak — dan kalimat yang
+            // salah di sini membuat orang menunggu jatah yang tidak akan pulih.
+            $dipakai = $gratis ? $terpakaiGratis : $usage->messages_sent;
+            $persenBar = min(100, (int) round($dipakai / max($kuota, 1) * 100));
+        @endphp
+
+        <x-section :judul="$gratis ? 'Jatah coba gratis' : 'Pemakaian kuota bulan ini'"
+                   :sub="$gratis
+                       ? 'Dihitung sekali untuk seumur workspace ini — tidak pulih di bulan berikutnya.'
+                       : 'Dihitung ulang setiap awal bulan. Sisa kuota tidak dibawa ke bulan berikutnya.'"
+                   rapat>
+            <div class="h-2 overflow-hidden rounded-full bg-muted">
+                <div class="h-full rounded-full {{ $persenBar >= 90 ? 'bg-destructive' : 'bg-primary' }}"
+                     style="width: {{ $persenBar }}%"></div>
+            </div>
+            <div class="mt-2 flex flex-wrap justify-between gap-2 text-sm text-muted-foreground">
+                <span>{{ number_format($dipakai) }} terpakai · {{ $persenBar }}%</span>
+                <span>{{ number_format(max(0, $kuota - $dipakai)) }} tersisa</span>
+            </div>
+        </x-section>
+    @endif
+
+    {{-- ===================== Batas paket =====================
+
+         Angka yang ditegakkan, bukan yang dijanjikan halaman harga: yang tampil
+         di sini adalah kolom `workspaces` yang benar-benar dipakai saat menolak
+         atau meloloskan pengiriman.
+         ============================================================= --}}
+    <x-section judul="Batas yang berlaku untuk workspace ini">
+        <x-tabel :kepala="['Batas' => '', 'Berlaku' => 'text-right']">
+            <tr class="transition hover:bg-muted/40">
+                <td class="px-4 py-2.5 sm:px-3">Nomor WhatsApp</td>
+                <td class="px-4 py-2.5 text-right font-medium tabular-nums sm:px-3">{{ $currentWorkspace->max_sessions }}</td>
+            </tr>
+            <tr class="transition hover:bg-muted/40">
+                <td class="px-4 py-2.5 sm:px-3">{{ $gratis ? 'Jatah pesan' : 'Kuota pesan per bulan' }}</td>
+                <td class="px-4 py-2.5 text-right font-medium tabular-nums sm:px-3">
+                    @if ($gratis)
+                        {{ $kuota }} <span class="text-xs font-normal text-muted-foreground">sekali seumur workspace</span>
+                    @else
+                        {{ $kuota === 0 ? 'Tanpa batas' : number_format($kuota) }}
+                    @endif
+                </td>
+            </tr>
+            <tr class="transition hover:bg-muted/40">
+                <td class="px-4 py-2.5 sm:px-3">Batas permintaan API</td>
+                <td class="px-4 py-2.5 text-right font-medium tabular-nums sm:px-3">{{ $currentWorkspace->api_rate_limit_per_minute }}/menit</td>
+            </tr>
+            <tr class="transition hover:bg-muted/40">
+                <td class="px-4 py-2.5 sm:px-3">Riwayat pesan disimpan</td>
+                <td class="px-4 py-2.5 text-right font-medium tabular-nums sm:px-3">{{ $currentWorkspace->messageRetentionDays() }} hari</td>
+            </tr>
+        </x-tabel>
+    </x-section>
+
     @unless ($bolehBayar)
-        <p class="mt-4 text-sm text-muted-foreground">
+        <p class="mt-6 text-sm text-muted-foreground">
             Hanya owner atau admin workspace yang bisa mengurus langganan.
         </p>
     @endunless

@@ -73,7 +73,7 @@
 
         {{-- Yang paling sering ditanyakan tepat sebelum orang menekan tombol
              bayar. Menjawabnya di sini, bukan di halaman docs terpisah. --}}
-        <div class="mt-8 grid gap-x-12 gap-y-5 border-t border-border pt-6 text-sm sm:grid-cols-2">
+        <div class="mt-10 grid gap-x-12 gap-y-5 border-t border-border pt-6 text-sm sm:grid-cols-2">
             <div>
                 <p class="font-medium">Paket berpindah saat tagihan lunas</p>
                 <p class="mt-1 leading-relaxed text-muted-foreground">

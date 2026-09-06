@@ -2,7 +2,7 @@
 @section('title', 'Riwayat Pesan')
 
 @section('content')
-    <x-card>
+    <x-section rapat>
         <form method="GET" class="flex flex-wrap items-end gap-3">
             <div class="min-w-40 flex-1">
                 <label class="mb-1 block text-sm font-medium" for="q">Cari</label>
@@ -37,16 +37,15 @@
             </div>
             <button class="rounded-lg border border-input bg-background px-4 py-2 text-sm hover:bg-muted">Filter</button>
         </form>
-    </x-card>
+    </x-section>
 
-    <x-card class="mt-4">
+    <x-section>
         @if ($messages->isEmpty())
-            <p class="text-sm text-muted-foreground">Tidak ada pesan yang cocok.</p>
+            <p class="py-6 text-center text-sm text-muted-foreground">Tidak ada pesan yang cocok dengan saringan ini.</p>
         @else
-            <div class="-mx-5 overflow-x-auto">
-                <table class="w-full min-w-[760px] text-sm">
-                    <thead class="text-left text-xs uppercase text-muted-foreground">
-                        <tr class="border-b border-border">
+                            <table class="w-full min-w-[760px] text-sm">
+                    <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
                             <th class="px-5 py-2">Waktu</th>
                             <th class="px-5 py-2">Sesi</th>
                             <th class="px-5 py-2">Arah</th>
@@ -55,9 +54,9 @@
                             <th class="px-5 py-2">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-border">
                         @foreach ($messages as $m)
-                            <tr class="border-b border-border hover:bg-muted/50 last:border-0">
+                            <tr class="transition hover:bg-muted/40">
                                 <td class="whitespace-nowrap px-5 py-2 text-muted-foreground">
                                     <a href="{{ route('messages.show', $m->id) }}" class="hover:underline">{{ $m->created_at->format('d M H:i:s') }}</a>
                                 </td>
@@ -66,9 +65,8 @@
                                 <td class="whitespace-nowrap px-5 py-2 font-mono text-xs">{{ $m->to_number ?? $m->from_number }}</td>
                                 <td class="max-w-sm truncate px-5 py-2 text-muted-foreground">{{ $m->body }}</td>
                                 <td class="px-5 py-2">
-                                    <span class="rounded-full px-2 py-0.5 text-xs {{ $m->status === 'failed' ? 'bg-destructive/10 text-destructive' : ($m->status === 'queued' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary') }}">
-                                        {{ $m->status }}
-                                    </span>
+                                    @php $lm = \App\Support\StatusBadge::message($m->status); @endphp
+                                    <x-badge :warna="$lm['warna']">{{ $lm['label'] }}</x-badge>
                                 </td>
                             </tr>
                         @endforeach
@@ -78,5 +76,5 @@
 
             <div class="mt-4">{{ $messages->links() }}</div>
         @endif
-    </x-card>
+    </x-section>
 @endsection

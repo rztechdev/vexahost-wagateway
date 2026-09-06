@@ -281,7 +281,39 @@
                      tidak masuk akal bagi orang yang belum pernah mengirim apa pun,
                      dan kalimat yang salah di layar pertama membuat pendaftar baru
                      mengira ada yang rusak. --}}
-                @if ($currentSubscription->isUnpaid())
+                @if ($currentSubscription->isFreeTier())
+                    {{-- Sisa jatah, bukan sisa hari. Masa coba ini tidak punya
+                         tanggal berakhir; yang menghabiskannya adalah pesan
+                         kelima, dan angka itulah yang harus terlihat sebelum
+                         seseorang membangun integrasi di atasnya. --}}
+                    @php
+                        $jatahGratis = (int) $currentWorkspace->monthly_message_quota;
+                        $terpakaiGratis = $currentWorkspace->freeMessagesUsed();
+                        $sisaGratis = max(0, $jatahGratis - $terpakaiGratis);
+                    @endphp
+                    <div @class([
+                        'mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm',
+                        'border-primary/20 bg-primary/10 text-primary' => $sisaGratis > 0,
+                        'border-destructive/20 bg-destructive/10 text-destructive' => $sisaGratis === 0,
+                    ])>
+                        <span>
+                            @if ($sisaGratis > 0)
+                                <strong>Masa coba gratis: sisa {{ $sisaGratis }} dari {{ $jatahGratis }} pesan.</strong>
+                                Nomor Anda tetap tertaut setelah jatahnya habis — yang berhenti hanya pengirimannya.
+                            @else
+                                <strong>Jatah {{ $jatahGratis }} pesan gratis sudah habis.</strong>
+                                Nomor Anda masih tertaut dan tidak perlu discan ulang. Pilih paket untuk mengirim lagi.
+                            @endif
+                        </span>
+                        <a href="{{ route('billing.plans') }}" @class([
+                            'shrink-0 rounded-lg px-3 py-1.5 font-medium',
+                            'bg-primary text-primary-foreground hover:opacity-90' => $sisaGratis > 0,
+                            'bg-destructive text-white hover:opacity-90' => $sisaGratis === 0,
+                        ])>
+                            {{ $sisaGratis > 0 ? 'Lihat paket' : 'Pilih paket' }}
+                        </a>
+                    </div>
+                @elseif ($currentSubscription->isUnpaid())
                     <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
                         <span>
                             <strong>Pilih paket untuk mulai.</strong>

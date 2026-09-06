@@ -4,18 +4,26 @@
 @section('content')
     @php $persen = $kapasitas > 0 ? min(100, round($hidup / $kapasitas * 100)) : 0; @endphp
 
-    <x-card @class(['mb-4', 'border-destructive' => $persen >= 90])>
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <p class="text-sm">
-                <span class="font-semibold">{{ $hidup }} dari {{ $kapasitas }}</span>
-                <span class="text-muted-foreground">slot sesi terpakai. Tiap sesi memakan 300-500 MB RAM.</span>
-            </p>
-            <div class="h-2 min-w-48 flex-1 overflow-hidden rounded-full bg-muted">
-                <div class="h-full rounded-full {{ $persen >= 90 ? 'bg-destructive' : ($persen >= 70 ? 'bg-amber-500' : 'bg-primary') }}"
-                     style="width: {{ $persen }}%"></div>
-            </div>
-        </div>
-    </x-card>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <x-stat label="Sesi hidup" :nilai="$hidup.'/'.$kapasitas"
+                sub="tiap sesi memakan 300–500 MB RAM"
+                :nada="$persen >= 90 ? 'bahaya' : ($persen >= 70 ? 'perhatian' : 'netral')"
+                ikon="M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z" />
+
+        <x-stat label="Kapasitas terpakai" :nilai="$persen.'%'"
+                sub="batas dari WA_MAX_SESSIONS milik engine"
+                :nada="$persen >= 90 ? 'bahaya' : 'netral'"
+                ikon="M3 12h4l3 8 4-16 3 8h4" />
+
+        <x-stat label="Tersambung penuh" :nilai="$sessions->where('status', 'connected')->count()"
+                sub="di halaman ini" ikon="M20 6 9 17l-5-5" />
+
+        <x-stat label="Perlu perhatian"
+                :nilai="$sessions->whereIn('status', ['failed', 'qr'])->count()"
+                sub="gagal atau menunggu scan"
+                :nada="$sessions->whereIn('status', ['failed', 'qr'])->count() > 0 ? 'perhatian' : 'netral'"
+                ikon="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+    </div>
 
     <form method="GET" class="mb-4 flex flex-wrap gap-2">
         <select name="status" class="rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
@@ -27,10 +35,9 @@
         <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Saring</button>
     </form>
 
-    <x-card>
-        <div class="-mx-5 overflow-x-auto">
+    <x-section>
             <table class="w-full min-w-[46rem] text-sm">
-                <thead class="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                         <th class="px-5 py-2 font-medium">Sesi</th>
                         <th class="px-5 py-2 font-medium">Workspace</th>
@@ -40,9 +47,9 @@
                         <th class="px-5 py-2"></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-border">
                     @forelse ($sessions as $session)
-                        <tr class="border-b border-border last:border-0">
+                        <tr class="transition hover:bg-muted/40">
                             <td class="px-5 py-2.5 font-medium">{{ $session->name }}</td>
                             <td class="px-5 py-2.5 text-muted-foreground">{{ $session->workspace?->name ?? '—' }}</td>
                             <td class="px-5 py-2.5"><x-session-status :status="$session->status" /></td>
@@ -63,12 +70,11 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-5 py-4 text-muted-foreground">Tidak ada sesi.</td></tr>
+                        <x-kosong :kolom="6" judul="Tidak ada sesi" pesan="Belum ada nomor WhatsApp yang ditautkan di platform ini." />
                     @endforelse
                 </tbody>
             </table>
-        </div>
-    </x-card>
+    </x-section>
 
     <div class="mt-4">{{ $sessions->links() }}</div>
 @endsection

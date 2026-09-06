@@ -2,6 +2,16 @@
 @section('title', 'Template Pesan')
 
 @section('content')
+@php
+    // Ditentukan sekali di atas: formulir di halaman ini hanya ditampilkan
+    // kalau langganannya memang berlaku. Penolakan sebenarnya tetap di
+    // EnsureSubscriptionActive — ini supaya tombolnya tidak ada sejak awal.
+    $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+@endphp
+
+    @if ($terkunci)
+        <x-kunci-langganan :subscription="$currentSubscription" aksi="menyimpan template" />
+    @else
     <x-card title="Template baru">
         <x-slot:subtitle>
             Tulis placeholder dengan <code>@{{ nama }}</code> — nilainya dikirim lewat API saat pesan dibuat.
@@ -32,9 +42,12 @@
         </form>
     </x-card>
 
-    <div class="mt-6 space-y-4">
+    @endif
+
+    <x-section judul="Template tersimpan" rapat>
+    <div class="space-y-4">
         @forelse ($templates as $template)
-            <x-card>
+            <div class="border-b border-border pb-4 last:border-0">
                 <form method="POST" action="{{ route('templates.update', $template->id) }}" class="space-y-3">
                     @csrf @method('PUT')
                     <div class="flex flex-wrap items-center gap-3">
@@ -59,9 +72,12 @@
                     @csrf @method('DELETE')
                     <button class="text-xs text-destructive hover:underline">Hapus template</button>
                 </form>
-            </x-card>
+            </div>
         @empty
-            <x-card><p class="text-sm text-muted-foreground">Belum ada template.</p></x-card>
+            <p class="py-6 text-center text-sm text-muted-foreground">
+                Belum ada template. Yang Anda simpan di atas akan muncul di sini dan bisa dipanggil lewat API.
+            </p>
         @endforelse
     </div>
+    </x-section>
 @endsection

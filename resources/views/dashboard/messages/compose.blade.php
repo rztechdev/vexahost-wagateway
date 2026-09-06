@@ -2,15 +2,23 @@
 @section('title', 'Kirim Pesan')
 
 @section('content')
-    @if ($sessions->isEmpty())
-        <x-card>
-            <p class="text-sm text-muted-foreground">
-                Belum ada sesi yang terhubung.
-                <a href="{{ route('sessions.index') }}" class="text-primary hover:underline">Hubungkan satu sesi</a> dulu.
-            </p>
-        </x-card>
+@php
+    $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+@endphp
+
+    @if ($terkunci)
+        <x-kunci-langganan :subscription="$currentSubscription" aksi="mengirim pesan" />
+    @elseif ($sessions->isEmpty())
+        <p class="py-10 text-center text-sm leading-relaxed text-muted-foreground">
+            Belum ada sesi yang terhubung.<br>
+            <a href="{{ route('sessions.index') }}" class="text-primary hover:underline">Hubungkan satu sesi</a> dulu.
+        </p>
     @else
-        <x-card title="Uji coba pengiriman" subtitle="Halaman ini memakai jalur yang sama persis dengan REST API — hasilnya bisa dipakai memastikan integrasi bekerja.">
+        <div class="rounded-xl border border-border bg-card p-5 shadow-xs">
+            <p class="font-semibold">Uji coba pengiriman</p>
+            <p class="mb-5 mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                Halaman ini memakai jalur yang sama persis dengan REST API — hasilnya bisa dipakai memastikan integrasi bekerja.
+            </p>
             <form method="POST" action="{{ route('messages.send') }}" class="space-y-4" x-data="{ body: @js(old('message', '')) }">
                 @csrf
 
@@ -55,15 +63,15 @@
 
                 <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Kirim</button>
             </form>
-        </x-card>
+        </div>
 
-        <x-card title="Catatan pengiriman massal" class="mt-6">
-            <p class="text-sm text-muted-foreground">
+        <x-section judul="Catatan pengiriman massal" rapat>
+            <p class="text-sm leading-relaxed text-muted-foreground">
                 Setiap pesan diberi jeda acak
                 {{ config('gateway.throttle.min_delay_ms') / 1000 }}–{{ config('gateway.throttle.max_delay_ms') / 1000 }} detik
                 sebelum dikirim. Jeda ini disengaja: mengirim ratusan pesan beruntun tanpa jeda adalah pola tercepat
                 membuat nomor diblokir WhatsApp. Broadcast besar wajar berjalan berjam-jam.
             </p>
-        </x-card>
+        </x-section>
     @endif
 @endsection

@@ -58,24 +58,70 @@ class SubscriptionService
             return $workspace->subscription;
         }
 
+        $gratis = Plan::free();
+
+        /*
+         | Jatah coba gratis diberikan sekali per PEMILIK, bukan per workspace.
+         |
+         | Tidak ada batas berapa workspace yang boleh dibuat satu akun — dan
+         | itu memang disengaja, satu orang dengan tiga cabang membuat tiga
+         | workspace dan membayar tiga kali. Tapi kalau tiap workspace baru ikut
+         | membawa masa cobanya sendiri, akun yang sama tinggal menekan
+         | "Workspace Baru" sepuluh kali untuk mendapat sepuluh kali lima pesan
+         | gratis — masing-masing menahan satu sesi WhatsApp, dari tiga yang
+         | tersedia untuk SELURUH pelanggan. Kapasitas engine habis oleh orang
+         | yang belum membayar sepeser pun, dan yang tertahan di luar justru
+         | pelanggan berbayar.
+         |
+         | Workspace kedua dan seterusnya lahir `unpaid`: terlihat penuh, bisa
+         | disiapkan, tapi baru hidup setelah tagihannya lunas.
+        */
+        $sudahPernahCoba = Workspace::query()
+            ->where('owner_id', $workspace->owner_id)
+            ->whereKeyNot($workspace->getKey())
+            ->whereHas('subscription', fn ($q) => $q->where('plan_slug', $gratis->slug))
+            ->exists();
+
+        if ($sudahPernahCoba) {
+            $subscription = $workspace->subscription()->create([
+                'plan_slug' => config('plans.default'),
+                'period' => 'monthly',
+                'status' => 'unpaid',
+                'current_period_start' => null,
+                'current_period_end' => null,
+            ]);
+
+            $workspace->forceFill([
+                'status' => 'suspended',
+                'service_until' => null,
+            ])->save();
+
+            return $workspace->setRelation('subscription', $subscription)->subscription;
+        }
+
         $subscription = $workspace->subscription()->create([
-            'plan_slug' => config('plans.default'),
+            'plan_slug' => $gratis->slug,
             'period' => 'monthly',
-            'status' => 'unpaid',
-            'current_period_start' => null,
+            'status' => 'trialing',
+            'current_period_start' => now(),
             'current_period_end' => null,
         ]);
 
         /*
-         | Workspace ikut ditandai `suspended`.
+         | Workspace-nya HIDUP, dan itu memang maunya: pendaftar baru boleh
+         | menautkan nomor, membuat API key, dan menguji integrasinya. Yang
+         | membatasi bukan status melainkan jatah lima pesan — dihitung seumur
+         | hidup workspace di `Workspace::freeMessagesUsed()`, bukan per bulan.
          |
-         | Bukan hukuman — ini cerminnya. Seluruh penegakan yang sudah ada
-         | (`MessageDispatcher::guardWorkspace()` dan `AuthenticateApiKey`)
-         | membaca `workspaces.status`, bukan status langganan. Tanpa baris ini,
-         | workspace yang belum pernah membayar tetap `active` dan API-nya bisa
-         | dipakai penuh — batas paket ditegakkan, tapi hak memakainya tidak.
+         | `service_until` sengaja dibiarkan kosong: masa coba ini tidak punya
+         | tanggal berakhir, ia berakhir saat pesan kelima terkirim.
         */
-        $workspace->forceFill(['status' => 'suspended'])->save();
+        $this->applyPlanLimits($workspace, $gratis);
+
+        $workspace->forceFill([
+            'status' => 'active',
+            'service_until' => null,
+        ])->save();
 
         return $workspace->setRelation('subscription', $subscription)->subscription;
     }
@@ -205,7 +251,12 @@ class SubscriptionService
 
             $this->applyPlanLimits($workspace, $subscription->plan());
 
-            $workspace->forceFill(['status' => 'active'])->save();
+            // Tanggalnya ikut turun ke baris workspace supaya penolakan setelah
+            // masa berlaku habis terjadi seketika, bukan menunggu job pukul 08:00.
+            $workspace->forceFill([
+                'status' => 'active',
+                'service_until' => $subscription->current_period_end,
+            ])->save();
 
             AuditLog::record('invoice.paid', $invoice, [
                 'plan' => $invoice->plan_slug,
@@ -336,7 +387,10 @@ class SubscriptionService
             'suspended_at' => null,
         ])->save();
 
-        $subscription->workspace->forceFill(['status' => 'active'])->save();
+        $subscription->workspace->forceFill([
+            'status' => 'active',
+            'service_until' => $subscription->current_period_end,
+        ])->save();
 
         AuditLog::record('subscription.extended', $subscription, [
             'hari' => $days,

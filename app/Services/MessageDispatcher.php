@@ -112,7 +112,40 @@ class MessageDispatcher
     private function guardWorkspace(Workspace $workspace): void
     {
         if (! $workspace->isActive()) {
-            throw new RuntimeException('Workspace sedang tidak aktif.');
+            /*
+             | Dibedakan supaya pesan galatnya benar di kedua keadaan. Yang
+             | masa berlakunya lewat perlu tahu bahwa ini soal perpanjangan,
+             | bukan kerusakan — terutama karena yang membacanya sering kali
+             | bukan manusia melainkan log aplikasi lain yang memanggil API
+             | kami, dan di situlah kalimatnya menentukan apakah ada yang
+             | menindaklanjuti atau tidak.
+            */
+            throw new RuntimeException($workspace->serviceExpired()
+                ? 'Masa berlaku langganan workspace ini sudah habis. Perpanjang untuk mengirim lagi.'
+                : 'Workspace sedang tidak aktif.');
+        }
+
+        /*
+         | Jatah coba gratis dihitung seumur hidup workspace, bukan per bulan.
+         |
+         | Kalau ia ikut jalur kuota bulanan di bawah, angkanya kembali penuh
+         | tiap tanggal 1 dan lima pesan gratis diam-diam berubah menjadi lima
+         | pesan gratis setiap bulan — selamanya, untuk siapa pun yang tidak
+         | pernah membayar. Kueri tambahannya hanya berjalan untuk workspace
+         | yang memang sedang memakai paket gratis; pelanggan berbayar tidak
+         | membayar ongkosnya.
+        */
+        if ($workspace->isFreeTier()) {
+            $jatah = (int) $workspace->monthly_message_quota;
+            $terpakaiSeluruhnya = $workspace->freeMessagesUsed();
+
+            if ($terpakaiSeluruhnya >= $jatah) {
+                throw new RuntimeException(
+                    "Jatah {$jatah} pesan coba gratis sudah habis. Pilih paket untuk melanjutkan."
+                );
+            }
+
+            return;
         }
 
         $kuota = (int) $workspace->monthly_message_quota;

@@ -192,7 +192,12 @@ class BillingCycleTest extends TestCase
      * Workspace yang belum pernah berlangganan tidak ikut ditagih otomatis dan
      * tidak ikut ditangguhkan — ia memang belum pernah mulai.
      */
-    public function test_workspace_unpaid_tidak_disentuh_siklus_harian(): void
+    /**
+     * Masa coba gratis tidak punya tanggal berakhir, jadi tidak ada yang bisa
+     * ditagih perpanjangannya. Kalau siklus harian ikut menyentuhnya, pemakai
+     * coba akan menerima tagihan untuk paket yang tidak pernah mereka pilih.
+     */
+    public function test_masa_coba_gratis_tidak_disentuh_siklus_harian(): void
     {
         $workspace = $this->workspace('belum-bayar');
         $subscription = app(SubscriptionService::class)->ensureFor($workspace);
@@ -200,7 +205,9 @@ class BillingCycleTest extends TestCase
         (new BillingCycleJob)->handle(app(SubscriptionService::class), app(WhatsAppNotifier::class));
 
         $this->assertSame(0, Invoice::count(), 'Yang belum pernah berlangganan tidak boleh ditagih otomatis.');
-        $this->assertSame('unpaid', $subscription->fresh()->status);
+        $this->assertSame('trialing', $subscription->fresh()->status);
+        $this->assertNull($subscription->fresh()->current_period_end);
+        $this->assertSame('active', $workspace->fresh()->status);
     }
 
     public function test_membayar_setelah_ditangguhkan_memulihkan_layanan(): void

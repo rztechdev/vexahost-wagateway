@@ -2,20 +2,24 @@
 @section('title', 'Sesi WhatsApp')
 
 @section('content')
+@php
+    // Ditentukan sekali di atas: formulir apa pun di halaman ini hanya
+    // ditampilkan kalau langganannya memang berlaku.
+    $terkunci = ($currentSubscription ?? null) && ! $currentSubscription->isUsable();
+@endphp
+
     @include('partials.sesi-perlu-dihubungkan')
 
 <div
     x-data="qrModal(@js(session('open_qr')))"
     x-init="init()">
 
-    <x-card title="Buat sesi baru" subtitle="Satu sesi = satu nomor WhatsApp.">
-        <div class="mb-4 rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-            <strong class="font-medium text-foreground">Nomor bisa diganti kapan saja.</strong>
-            Klik <em>Putus tautan</em> pada sesi, lalu <em>Hubungkan</em> dan scan QR dengan nomor yang baru.
-            Yang dijamin justru kebalikannya: nomor yang sudah tertaut <strong class="font-medium text-foreground">tidak akan terputus sendiri</strong>
-            hanya karena server di-deploy ulang.
-        </div>
-
+    @if ($terkunci)
+        <x-kunci-langganan :subscription="$currentSubscription" aksi="menautkan nomor WhatsApp" />
+    @else
+    {{-- Formulir tetap berbingkai: ia satu-satunya hal di halaman ini yang
+         menunggu keputusan, dan bingkainya yang memisahkannya dari daftar. --}}
+    <div class="rounded-xl border border-border bg-card p-4 shadow-xs">
         <form method="POST" action="{{ route('sessions.store') }}" class="flex flex-wrap items-end gap-3">
             @csrf
             <div class="min-w-48 flex-1">
@@ -26,23 +30,25 @@
             </div>
             <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Buat sesi</button>
         </form>
-    </x-card>
+        <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Satu sesi = satu nomor WhatsApp. Nomor bisa diganti kapan saja lewat
+            <em>Putus tautan</em> lalu <em>Hubungkan</em> dan scan dengan nomor baru —
+            dan nomor yang sudah tertaut tidak akan terputus sendiri hanya karena server di-deploy ulang.
+        </p>
+    </div>
+    @endif
 
-    <div class="mt-6 grid gap-4 md:grid-cols-2">
-        @forelse ($sessions as $session)
-            <x-card>
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <h3 class="truncate font-semibold">{{ $session->name }}</h3>
-                        <p class="mt-0.5 text-sm text-muted-foreground">
-                            {{ $session->phone_number ? '+'.$session->phone_number : 'Belum tertaut ke nomor' }}
-                            @if ($session->push_name) &middot; {{ $session->push_name }} @endif
-                        </p>
-
+    <x-section judul="Nomor tertaut"
+               sub="{{ $sessions->count() }} dari {{ $currentWorkspace->max_sessions }} nomor yang diizinkan paket Anda.">
+        <x-tabel :kepala="['Sesi' => '', 'Nomor' => '', 'Status' => '', 'Tindakan' => 'text-right']">
+            @forelse ($sessions as $session)
+                <tr class="align-top transition hover:bg-muted/40">
+                    <td class="px-4 py-3 sm:px-3">
+                        <p class="font-medium">{{ $session->name }}</p>
                         {{-- ID sesi ditampilkan supaya tidak perlu ada yang menelusuri
                              URL atau memanggil API hanya untuk mengunci pengirim ke
                              satu nomor tertentu lewat WA_GATEWAY_SESSION. --}}
-                        <div class="mt-2 flex items-center gap-1.5" x-data="{ disalin: false }">
+                        <div class="mt-1 flex items-center gap-1.5" x-data="{ disalin: false }">
                             <code class="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
                                   x-ref="id">{{ $session->id }}</code>
                             <button type="button" title="Salin ID sesi"
@@ -50,51 +56,60 @@
                                     class="shrink-0 text-[11px] font-medium text-primary hover:underline"
                                     x-text="disalin ? 'Tersalin' : 'Salin ID'"></button>
                         </div>
-                    </div>
-                    <x-session-status :status="$session->status" />
-                </div>
+                    </td>
+                    <td class="whitespace-nowrap px-4 py-3 sm:px-3">
+                        {{ $session->phone_number ? '+'.$session->phone_number : '—' }}
+                        @if ($session->push_name)
+                            <span class="block text-xs text-muted-foreground">{{ $session->push_name }}</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 sm:px-3">
+                        <x-session-status :status="$session->status" />
+                        @if ($session->last_error)
+                            <p class="mt-1.5 max-w-56 text-xs leading-relaxed text-destructive">{{ $session->last_error }}</p>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 sm:px-3">
+                        <div class="flex flex-wrap justify-end gap-1.5">
+                            @if ($session->status !== 'connected')
+                                <form method="POST" action="{{ route('sessions.connect', $session->id) }}">
+                                    @csrf
+                                    <button class="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">Hubungkan</button>
+                                </form>
+                            @else
+                                <button type="button" @click="open('{{ $session->id }}')"
+                                        class="rounded-lg border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted">Lihat status</button>
+                                <form method="POST" action="{{ route('sessions.disconnect', $session->id) }}">
+                                    @csrf
+                                    <button class="rounded-lg border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted">Hentikan</button>
+                                </form>
+                            @endif
 
-                @if ($session->last_error)
-                    <p class="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{{ $session->last_error }}</p>
-                @endif
+                            <form method="POST" action="{{ route('sessions.logout', $session->id) }}"
+                                  data-konfirmasi="Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.">
+                                @csrf
+                                <button title="Putus tautan, lalu Hubungkan lagi untuk memakai nomor lain"
+                                        class="rounded-lg border border-amber-500/50 px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
+                                    Putus tautan
+                                </button>
+                            </form>
 
-                <div class="mt-4 flex flex-wrap gap-2">
-                    @if ($session->status !== 'connected')
-                        <form method="POST" action="{{ route('sessions.connect', $session->id) }}">
-                            @csrf
-                            <button class="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">Hubungkan</button>
-                        </form>
-                    @else
-                        <button type="button" @click="open('{{ $session->id }}')"
-                                class="rounded-lg border border-input bg-background px-3 py-1.5 text-sm hover:bg-muted">Lihat status</button>
-                        <form method="POST" action="{{ route('sessions.disconnect', $session->id) }}">
-                            @csrf
-                            <button class="rounded-lg border border-input bg-background px-3 py-1.5 text-sm hover:bg-muted">Hentikan</button>
-                        </form>
-                    @endif
-
-                    <form method="POST" action="{{ route('sessions.logout', $session->id) }}"
-                          data-konfirmasi="Putus tautan nomor ini? Setelah itu Anda bisa Hubungkan lagi dan scan QR dengan nomor mana pun — termasuk nomor yang berbeda.">
-                        @csrf
-                        <button title="Putus tautan, lalu Hubungkan lagi untuk memakai nomor lain"
-                                class="rounded-lg border border-amber-500/50 px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
-                            Putus tautan / ganti nomor
-                        </button>
-                    </form>
-
-                    <form method="POST" action="{{ route('sessions.destroy', $session->id) }}"
-                          data-konfirmasi="Hapus sesi {{ $session->name }} beserta backup kredensialnya?">
-                        @csrf @method('DELETE')
-                        <button class="rounded-lg border border-destructive/50 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10">Hapus</button>
-                    </form>
-                </div>
-            </x-card>
-        @empty
-            <x-card class="md:col-span-2">
-                <p class="text-sm text-muted-foreground">Belum ada sesi. Buat satu di atas, klik <strong>Hubungkan</strong>, lalu scan QR-nya dengan menu <em>Perangkat Tertaut</em> di WhatsApp.</p>
-            </x-card>
-        @endforelse
-    </div>
+                            <form method="POST" action="{{ route('sessions.destroy', $session->id) }}"
+                                  data-konfirmasi="Hapus sesi {{ $session->name }} beserta backup kredensialnya?">
+                                @csrf @method('DELETE')
+                                <button class="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <x-kosong :kolom="4" judul="Belum ada nomor tertaut"
+                          :pesan="$terkunci
+                              ? 'Nomor pertama bisa ditautkan setelah tagihan pertama Anda lunas.'
+                              : 'Buat sesi di atas, klik Hubungkan, lalu scan QR-nya lewat menu Perangkat Tertaut di WhatsApp.'" />
+            @endforelse
+        </x-tabel>
+    </x-section>
 
     {{-- Modal QR: polling tiap 3 detik hanya selama modal terbuka. --}}
     <div x-show="sessionId" x-cloak

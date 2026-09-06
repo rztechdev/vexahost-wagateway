@@ -72,12 +72,21 @@
         <div class="space-y-5">
 
             {{-- ===================== Tindakan langganan ===================== --}}
-            <x-panel judul="Langganan" sub="Perubahan di sini tidak menerbitkan tagihan." rapat>
+            <x-section judul="Langganan" sub="Perubahan di sini tidak menerbitkan tagihan." rapat>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <form method="POST" action="{{ route('admin.workspaces.plan', $workspace->id) }}" class="space-y-2">
                         @csrf
                         <label class="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pindah paket</label>
                         <select name="plan" class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                            {{-- Paket coba gratis tidak ada di daftar yang bisa
+                                 dipilih. Tanpa baris ini pilihan pertama
+                                 (Essentials) tampak terpilih untuk workspace
+                                 yang sebenarnya masih coba gratis, dan admin
+                                 yang menekan Terapkan tanpa curiga memindahkan
+                                 pelanggan ke paket yang tidak pernah dibeli. --}}
+                            @unless ($workspace->plan()->isSellable())
+                                <option value="" selected disabled>{{ $workspace->plan()->name() }} — sekarang</option>
+                            @endunless
                             @foreach ($plans as $plan)
                                 <option value="{{ $plan->slug }}" @selected($workspace->plan()->slug === $plan->slug)>{{ $plan->name() }}</option>
                             @endforeach
@@ -121,12 +130,12 @@
                         0 berarti tanpa batas. Nilai ini <strong>tertimpa</strong> saat pembayaran berikutnya menerapkan batas paket.
                     </p>
                 </form>
-            </x-panel>
+            </x-section>
 
             {{-- ===================== Sesi ===================== --}}
-            <x-panel judul="Sesi WhatsApp">
+            <x-section judul="Sesi WhatsApp">
                 <table class="w-full min-w-[36rem] text-sm">
-                    <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>
                             <th class="px-5 py-2.5 font-medium">Nama</th>
                             <th class="px-5 py-2.5 font-medium">Status</th>
@@ -149,17 +158,17 @@
                         @endforelse
                     </tbody>
                 </table>
-            </x-panel>
+            </x-section>
 
             {{-- ===================== Tagihan ===================== --}}
-            <x-panel judul="Tagihan terakhir">
+            <x-section judul="Tagihan terakhir">
                 <x-slot:aksi>
                     <a href="{{ route('admin.invoices', ['cari' => $workspace->name, 'status' => 'semua']) }}"
                        class="text-sm text-primary hover:underline">Lihat semua</a>
                 </x-slot:aksi>
 
                 <table class="w-full min-w-[38rem] text-sm">
-                    <thead class="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <thead class="border-y border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>
                             <th class="px-5 py-2.5 font-medium">Nomor</th>
                             <th class="px-5 py-2.5 font-medium">Paket</th>
@@ -188,12 +197,12 @@
                         @endforelse
                     </tbody>
                 </table>
-            </x-panel>
+            </x-section>
         </div>
 
         <div class="space-y-5">
             {{-- ===================== Pemakaian per bulan ===================== --}}
-            <x-panel judul="Pemakaian 12 bulan" rapat>
+            <x-section judul="Pemakaian 12 bulan" rapat>
                 @forelse ($pemakaian as $baris)
                     @php
                         $tinggi = $kuota > 0 ? min(100, round($baris->messages_sent / max($kuota, 1) * 100)) : 0;
@@ -212,10 +221,10 @@
                 @empty
                     <p class="text-sm text-muted-foreground">Belum ada pesan yang tercatat.</p>
                 @endforelse
-            </x-panel>
+            </x-section>
 
             {{-- ===================== Anggota ===================== --}}
-            <x-panel judul="Anggota" rapat>
+            <x-section judul="Anggota" rapat>
                 @forelse ($workspace->members as $anggota)
                     <div class="flex items-center justify-between gap-3 border-b border-border py-2 text-sm last:border-0">
                         <div class="min-w-0">
@@ -227,10 +236,10 @@
                 @empty
                     <p class="text-sm text-muted-foreground">Workspace ini tidak punya anggota.</p>
                 @endforelse
-            </x-panel>
+            </x-section>
 
             {{-- ===================== Jejak ===================== --}}
-            <x-panel judul="Jejak terakhir" sub="15 tindakan terakhir di workspace ini." rapat>
+            <x-section judul="Jejak terakhir" sub="15 tindakan terakhir di workspace ini." rapat>
                 @forelse ($audit as $jejak)
                     <div class="border-b border-border py-2 text-sm last:border-0">
                         <p class="font-mono text-xs">{{ $jejak->action }}</p>
@@ -247,7 +256,7 @@
 
                 <a href="{{ route('admin.audit', ['cari' => $workspace->name]) }}"
                    class="mt-3 inline-block text-sm text-primary hover:underline">Buka catatan audit</a>
-            </x-panel>
+            </x-section>
         </div>
     </div>
 @endsection

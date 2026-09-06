@@ -13,11 +13,22 @@
 | yang menyadarinya. Di config, setiap perubahan harga terlihat di diff git,
 | ikut di-review, dan sampai ke semua tahap lewat jalur yang sama dengan kode.
 |
-| Konsekuensinya yang harus diingat: mengubah angka di sini mengubah batas
-| SELURUH pelanggan pada paket itu seketika, termasuk yang sudah membayar.
-| Kalau suatu saat perlu mengunci harga lama untuk pelanggan lama, tempatnya
-| di kolom `subscriptions.plan_slug` — beri slug baru (mis. `prime-2027`),
-| jangan mengubah angka paket yang sedang dipakai orang.
+| Konsekuensi mengubah angka di sini TIDAK seragam, dan bedanya penting:
+|
+|   - `max_sessions`, `monthly_message_quota`, `api_rate_limit_per_minute`
+|     disalin ke kolom `workspaces` saat tagihan dibayar (`markPaid()`), jadi
+|     perubahan di sini baru berlaku untuk pelanggan lama pada pembayaran
+|     berikutnya. Itu memang yang diinginkan: menurunkan kuota di tengah
+|     periode berarti mengecilkan sesuatu yang sudah dibayar penuh.
+|   - `max_api_keys`, `max_members`, `message_retention_days` dibaca langsung
+|     dari config setiap kali, jadi perubahannya berlaku SEKETIKA untuk semua
+|     orang di paket itu. Menurunkan retensi berarti pesan lama pelanggan mulai
+|     terhapus pada job pemangkasan berikutnya — periksa dampaknya dulu.
+|
+| Menaikkan harga adalah cerita lain: harganya dibaca saat tagihan diterbitkan,
+| jadi ia langsung berlaku untuk perpanjangan siapa pun. Kalau perlu mengunci
+| harga lama untuk pelanggan lama, beri slug baru (mis. `prime-2027`); jangan
+| mengubah angka paket yang sedang dipakai orang.
 |
 | Nilai 0 berarti "tanpa batas", mengikuti perjanjian yang sudah dipakai
 | `Workspace::hasQuotaRemaining()` untuk `monthly_message_quota`.
@@ -37,12 +48,47 @@ return [
     'default' => 'essentials',
 
     /*
+    | Paket coba gratis untuk workspace yang baru dibuat.
+    |
+    | Jatahnya dihitung SEUMUR HIDUP workspace, bukan per bulan — lihat
+    | `Workspace::freeMessagesUsed()`. Kalau ia diperlakukan sebagai kuota
+    | bulanan biasa, angkanya kembali penuh tiap tanggal 1 dan "lima pesan
+    | gratis" berubah diam-diam menjadi lima pesan gratis selamanya.
+    |
+    | Paket ini `sellable => false`: ia tidak boleh muncul di halaman harga
+    | maupun di dropdown admin, karena tidak ada yang bisa membelinya.
+    */
+    'free' => 'coba',
+
+    /*
     | Harga tahunan = harga bulanan x 10. Dua bulan gratis, dan angkanya tidak
     | perlu ditulis dua kali sehingga tidak mungkin berbeda diam-diam.
     */
     'yearly_multiplier' => 10,
 
     'catalog' => [
+
+        'coba' => [
+            'name' => 'Coba Gratis',
+            'tagline' => 'Lima pesan untuk memastikan integrasinya jalan.',
+            'price_monthly' => 0,
+            'highlight' => false,
+            'sellable' => false,
+
+            'max_sessions' => 1,
+            'monthly_message_quota' => 5,
+            'max_api_keys' => 1,
+            'max_members' => 1,
+            'message_retention_days' => 7,
+            'api_rate_limit_per_minute' => 10,
+
+            'features' => [
+                '1 nomor WhatsApp aktif',
+                '5 pesan keluar — sekali seumur workspace',
+                '1 API key',
+                'Riwayat pesan 7 hari',
+            ],
+        ],
 
         'essentials' => [
             'name' => 'Essentials',
@@ -51,7 +97,7 @@ return [
             'highlight' => false,
 
             'max_sessions' => 1,
-            'monthly_message_quota' => 3_000,
+            'monthly_message_quota' => 2_000,
             'max_api_keys' => 3,
             'max_members' => 2,
             'message_retention_days' => 30,
@@ -59,24 +105,24 @@ return [
 
             'features' => [
                 '1 nomor WhatsApp aktif',
-                '3.000 pesan keluar per bulan',
+                '2.000 pesan keluar per bulan',
                 '3 API key',
-                'Webhook pesan masuk & status',
-                'Template pesan',
+                'Batas API 60 permintaan/menit',
                 'Riwayat pesan 30 hari',
                 '2 anggota tim',
+                'Webhook, template, dan OTP',
                 'Dukungan lewat email',
             ],
         ],
 
         'prime' => [
             'name' => 'Prime',
-            'tagline' => 'Volume besar dari satu nomor.',
+            'tagline' => 'Volume harian dari satu nomor.',
             'price_monthly' => 249_000,
             'highlight' => true,
 
             'max_sessions' => 1,
-            'monthly_message_quota' => 25_000,
+            'monthly_message_quota' => 10_000,
             'max_api_keys' => 10,
             'max_members' => 10,
             'message_retention_days' => 90,
@@ -84,23 +130,24 @@ return [
 
             'features' => [
                 '1 nomor WhatsApp aktif',
-                '25.000 pesan keluar per bulan',
+                '10.000 pesan keluar per bulan',
                 '10 API key',
                 'Batas API 120 permintaan/menit',
                 'Riwayat pesan 90 hari',
                 '10 anggota tim dengan peran',
-                'Dukungan lewat WhatsApp',
+                'Webhook, template, dan OTP',
+                'Dukungan lewat email',
             ],
         ],
 
         'elite' => [
             'name' => 'Elite',
-            'tagline' => 'Dua nomor dan volume tanpa khawatir.',
+            'tagline' => 'Dua nomor dan riwayat setahun penuh.',
             'price_monthly' => 449_000,
             'highlight' => false,
 
             'max_sessions' => 2,
-            'monthly_message_quota' => 100_000,
+            'monthly_message_quota' => 50_000,
             'max_api_keys' => 0,
             'max_members' => 0,
             'message_retention_days' => 365,
@@ -108,12 +155,13 @@ return [
 
             'features' => [
                 '2 nomor WhatsApp aktif',
-                '100.000 pesan keluar per bulan',
+                '50.000 pesan keluar per bulan',
                 'API key tanpa batas',
                 'Batas API 300 permintaan/menit',
                 'Riwayat pesan 12 bulan',
                 'Anggota tim tanpa batas',
-                'Dukungan WhatsApp prioritas',
+                'Webhook, template, dan OTP',
+                'Dukungan lewat email',
             ],
         ],
 
