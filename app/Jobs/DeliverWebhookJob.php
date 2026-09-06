@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Webhook;
 use App\Models\WebhookDelivery;
+use App\Services\Notifications\Notifier;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
@@ -102,5 +103,41 @@ class DeliverWebhookJob implements ShouldQueue
             // antrean tidak terus terisi kiriman yang pasti gagal.
             'is_active' => $failures < 50,
         ]);
+
+        /*
+         | Dinonaktifkan otomatis TIDAK boleh terjadi diam-diam.
+         |
+         | Sebelum ini, webhook pelanggan berhenti sendiri setelah 50 kegagalan
+         | tanpa satu pun kabar — dan yang menemukannya adalah orang yang
+         | bertanya kenapa integrasinya berhenti menerima apa pun berminggu-
+         | minggu kemudian. Peringatan di angka 25 memberi ruang memperbaiki
+         | sebelum berhenti terjadi.
+        */
+        if (! $webhook->workspace) {
+            return;
+        }
+
+        if ($failures >= 50) {
+            app(Notifier::class)->keWorkspace(
+                workspace: $webhook->workspace,
+                type: 'webhook.disabled',
+                title: 'Webhook dinonaktifkan otomatis',
+                body: $webhook->url.' gagal 50 kali berturut-turut, jadi kami berhenti mengirim ke sana. '
+                    .'Perbaiki endpoint-nya lalu aktifkan lagi dari menu Webhooks.',
+                url: route('webhooks.index'),
+                level: 'danger',
+                dedupe: "webhook-disabled:{$webhook->id}:{$failures}",
+            );
+        } elseif ($failures === 25) {
+            app(Notifier::class)->keWorkspace(
+                workspace: $webhook->workspace,
+                type: 'webhook.failing',
+                title: 'Webhook gagal 25 kali berturut-turut',
+                body: $webhook->url.' belum menjawab. Setelah 50 kegagalan kami menonaktifkannya otomatis.',
+                url: route('webhooks.index'),
+                level: 'warning',
+                dedupe: "webhook-failing:{$webhook->id}:{$failures}",
+            );
+        }
     }
 }

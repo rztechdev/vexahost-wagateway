@@ -222,6 +222,10 @@
             <h1 class="min-w-0 truncate text-lg font-semibold">@yield('title', 'Dashboard')</h1>
 
             <div class="ml-auto flex items-center gap-1">
+                {{-- Lonceng SEBELUM sakelar tema: yang menuntut tindakan berdiri
+                     lebih dulu daripada yang cuma preferensi tampilan. --}}
+                <x-lonceng audience="workspace" />
+
                 <button @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light'; document.documentElement.style.colorScheme = d ? 'dark' : 'light';"
                         class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Ganti tema tampilan">

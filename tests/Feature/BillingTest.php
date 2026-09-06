@@ -193,11 +193,14 @@ class BillingTest extends TestCase
 
         $terbuka = app(SubscriptionService::class)->issueInvoice($this->workspace, 'elite', 'monthly');
 
-        $this->actingAs($this->owner)
-            ->get(route('billing.index'))
-            ->assertOk()
-            ->assertSee($terbuka->number)
-            ->assertDontSee($lunas->number);
+        $ringkasan = $this->actingAs($this->owner)->get(route('billing.index'))->assertOk();
+
+        // Dibaca dari isi halamannya saja: lonceng di bilah atas memang
+        // menyebut nomor tagihan yang baru lunas, dan itu benar.
+        $isi = $this->isiUtama($ringkasan);
+
+        $this->assertStringContainsString($terbuka->number, $isi);
+        $this->assertStringNotContainsString($lunas->number, $isi);
 
         // Riwayat memuat keduanya.
         $this->actingAs($this->owner)

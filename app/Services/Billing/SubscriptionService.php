@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\EmailNotifier;
+use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\SessionService;
 use App\Support\Plan;
@@ -42,6 +43,7 @@ class SubscriptionService
         private readonly EmailNotifier $email,
         private readonly ReferralService $referrals,
         private readonly BalanceService $balances,
+        private readonly Notifier $notifikasi,
     ) {}
 
     /**
@@ -269,6 +271,16 @@ class SubscriptionService
             $workspace,
             new TagihanTerbit($invoice),
             "invoice-issued:{$invoice->id}",
+        );
+
+        $this->notifikasi->keWorkspace(
+            workspace: $workspace,
+            type: 'invoice.issued',
+            title: "Tagihan {$invoice->number} terbit",
+            body: 'Rp '.number_format($invoice->total, 0, ',', '.').' — jatuh tempo '
+                .$invoice->due_at?->translatedFormat('j F Y').'.',
+            url: route('billing.invoice', $invoice->id),
+            dedupe: "invoice-issued:{$invoice->id}",
         );
 
         return $invoice;
@@ -581,6 +593,17 @@ class SubscriptionService
                 "topup:{$invoice->id}",
             );
 
+            $this->notifikasi->keWorkspace(
+                workspace: $invoice->workspace,
+                type: 'balance.topped_up',
+                title: 'Saldo bertambah Rp '.number_format($invoice->amount, 0, ',', '.'),
+                body: 'Saldo sekarang Rp '
+                    .number_format((int) $invoice->workspace->fresh()->balance, 0, ',', '.').'.',
+                url: route('balance.index'),
+                level: 'success',
+                dedupe: "topup:{$invoice->id}",
+            );
+
             return $invoice;
         }
 
@@ -605,6 +628,17 @@ class SubscriptionService
             $invoice->workspace,
             new PembayaranDiterima($invoice, $invoice->workspace->subscription),
             "invoice-paid:{$invoice->id}",
+        );
+
+        $this->notifikasi->keWorkspace(
+            workspace: $invoice->workspace,
+            type: 'invoice.paid',
+            title: 'Pembayaran dikonfirmasi',
+            body: "Tagihan {$invoice->number} lunas. Layanan Anda aktif sampai "
+                .($invoice->workspace->subscription?->current_period_end?->translatedFormat('j F Y') ?? '-').'.',
+            url: route('billing.index'),
+            level: 'success',
+            dedupe: "invoice-paid:{$invoice->id}",
         );
 
         return $invoice;

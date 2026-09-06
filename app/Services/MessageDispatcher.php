@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\DB;
@@ -277,6 +278,20 @@ class MessageDispatcher
             return;
         }
 
+        app(Notifier::class)->keWorkspace(
+            workspace: $workspace,
+            type: $tingkat === 'habis' ? 'balance.exhausted' : 'balance.low',
+            title: $tingkat === 'habis'
+                ? 'Saldo habis'
+                : 'Saldo menipis — sisa sekitar '.number_format(intdiv($sesudah, $harga), 0, ',', '.').' pesan',
+            body: $tingkat === 'habis'
+                ? 'Pengiriman berhenti sampai saldo diisi. Nomor Anda tetap tertaut dan pesan masuk tetap diterima.'
+                : 'Sisa saldo Rp '.number_format(max(0, $sesudah), 0, ',', '.').'.',
+            url: route('balance.index'),
+            level: $tingkat === 'habis' ? 'danger' : 'warning',
+            dedupe: "balance:{$tingkat}:".intdiv($saldo, max($ambang, 1)),
+        );
+
         app(WhatsAppNotifier::class)->toWorkspace(
             $workspace,
             $tingkat === 'habis'
@@ -315,6 +330,25 @@ class MessageDispatcher
                 : BillingMessages::quotaWarning($workspace, $terpakai, $kuota),
             "quota:{$tingkat}:{$workspace->id}:{$periode}",
             24 * 40,
+        );
+
+        // Lonceng ikut, dengan penanda yang sama persis. Notifier diambil dari
+        // container di sini karena alasan yang sama dengan WhatsAppNotifier —
+        // apa pun yang dipakai MessageDispatcher tidak boleh disuntikkan lewat
+        // constructor, kalau tidak lingkarannya menutup.
+        app(Notifier::class)->keWorkspace(
+            workspace: $workspace,
+            type: $tingkat === 'habis' ? 'quota.exhausted' : 'quota.low',
+            title: $tingkat === 'habis'
+                ? 'Kuota pesan bulan ini habis'
+                : 'Kuota pesan tersisa '.number_format(max(0, $kuota - $terpakai), 0, ',', '.'),
+            body: $tingkat === 'habis'
+                ? 'Pengiriman berhenti sampai kuota bulan depan. Nomor Anda tetap tertaut dan pesan masuk tetap diterima.'
+                : 'Sudah terpakai '.number_format($terpakai, 0, ',', '.').' dari '
+                    .number_format($kuota, 0, ',', '.').' pesan bulan ini.',
+            url: route('billing.plans'),
+            level: $tingkat === 'habis' ? 'danger' : 'warning',
+            dedupe: "quota:{$tingkat}:{$periode}",
         );
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\MessageDispatcher;
 use App\Services\Notifications\BillingMessages;
+use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\WebhookDispatcher;
 use App\Support\PhoneNumber;
@@ -127,11 +128,27 @@ class EngineEventController extends Controller
          | disconnect dari satu kejadian yang sama tidak berubah jadi spam.
         */
         if ($sempatTersambung && $session->workspace) {
+            $penanda = 'session-down:'.$session->id.':'.optional($session->connected_at)->timestamp;
+
             app(WhatsAppNotifier::class)->toWorkspace(
                 $session->workspace,
                 BillingMessages::sessionDisconnected($session),
-                'session-down:'.$session->id.':'.optional($session->connected_at)->timestamp,
+                $penanda,
                 6,
+            );
+
+            // Penandanya sama persis dengan yang di atas, jadi rentetan
+            // disconnect dari satu kejadian yang sama tidak berubah jadi
+            // sederet baris identik di lonceng.
+            app(Notifier::class)->keWorkspace(
+                workspace: $session->workspace,
+                type: 'session.disconnected',
+                title: "Nomor {$session->name} terputus",
+                body: 'Pesan keluar dari nomor itu berhenti terkirim. Buka halaman Sesi untuk '
+                    .'menghubungkannya lagi — kredensialnya masih tersimpan.',
+                url: route('sessions.index'),
+                level: 'danger',
+                dedupe: $penanda,
             );
         }
     }

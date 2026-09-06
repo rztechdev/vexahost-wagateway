@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EnterpriseLead;
 use App\Services\Notifications\EmailNotifier;
+use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,8 +24,12 @@ use Illuminate\Http\Request;
  */
 class EnterpriseLeadController extends Controller
 {
-    public function store(Request $request, WhatsAppNotifier $notifier, EmailNotifier $email): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        WhatsAppNotifier $notifier,
+        EmailNotifier $email,
+        Notifier $notifikasi,
+    ): RedirectResponse {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'company' => ['nullable', 'string', 'max:150'],
@@ -81,6 +86,15 @@ class EnterpriseLeadController extends Controller
             $ringkas,
             "enterprise-lead:{$lead->id}",
             route('admin.enterprise.show', $lead->id),
+        );
+
+        $notifikasi->keAdmin(
+            type: 'enterprise.lead',
+            title: 'Permintaan Enterprise dari '.($lead->company ?: $lead->name),
+            body: $lead->email.' · '.$lead->phone,
+            url: route('admin.enterprise.show', $lead->id),
+            level: 'warning',
+            dedupe: "enterprise-lead:{$lead->id}",
         );
 
         return back()->with('swal', [

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\HelpdeskMessages;
+use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,7 @@ class HelpdeskService
     public function __construct(
         private readonly WhatsAppNotifier $notifier,
         private readonly EmailNotifier $email,
+        private readonly Notifier $notifikasi,
     ) {}
 
     /** Jenis lampiran yang diterima, dipakai validasi dan teks bantuan sekaligus. */
@@ -80,6 +82,16 @@ class HelpdeskService
             route('admin.tickets.show', $ticket->id),
         );
 
+        $this->notifikasi->keAdmin(
+            type: 'ticket.new',
+            title: "Tiket baru #{$ticket->id}",
+            body: $ticket->subject.' — '.($ticket->workspace?->name ?? 'workspace terhapus'),
+            url: route('admin.tickets.show', $ticket->id),
+            level: $ticket->priority === 'high' ? 'warning' : 'info',
+            dedupe: "ticket-new:{$ticket->id}",
+            workspace: $ticket->workspace,
+        );
+
         return $ticket;
     }
 
@@ -118,6 +130,15 @@ class HelpdeskService
             route('admin.tickets.show', $ticket->id),
         );
 
+        $this->notifikasi->keAdmin(
+            type: 'ticket.replied_by_customer',
+            title: "Balasan baru di tiket #{$ticket->id}",
+            body: $ticket->subject.' — kembali menunggu jawaban.',
+            url: route('admin.tickets.show', $ticket->id),
+            dedupe: "ticket-reply:{$pesan->id}",
+            workspace: $ticket->workspace,
+        );
+
         return $pesan;
     }
 
@@ -150,6 +171,16 @@ class HelpdeskService
             $ticket->workspace,
             new TiketDibalas($ticket),
             "ticket-answered:{$pesan->id}",
+        );
+
+        $this->notifikasi->keWorkspace(
+            workspace: $ticket->workspace,
+            type: 'ticket.answered',
+            title: "Tiket #{$ticket->id} sudah dibalas",
+            body: $ticket->subject,
+            url: route('tickets.show', $ticket->id),
+            level: 'success',
+            dedupe: "ticket-answered:{$pesan->id}",
         );
 
         return $pesan;

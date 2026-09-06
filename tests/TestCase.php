@@ -5,6 +5,7 @@ namespace Tests;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Testing\TestResponse;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -19,6 +20,26 @@ abstract class TestCase extends BaseTestCase
      * Yang menguji penagihannya sendiri sengaja TIDAK memakai helper ini; di
      * sana keadaan langganannya justru yang sedang diperiksa.
      */
+    /**
+     * Isi `<main>` sebuah halaman, tanpa bilah atas dan sidebar.
+     *
+     * Ada sejak lonceng notifikasi dipasang di bilah atas SETIAP halaman.
+     * `assertDontSee` atas seluruh dokumen berhenti berarti "tidak ada di
+     * daftar" — ia ikut membaca judul notifikasi, yang memang menyebut nomor
+     * tagihan dan judul tiket. Tesnya yang terlalu luas, bukan loncengnya yang
+     * salah: yang ingin dijaga selalu isi halamannya.
+     */
+    protected function isiUtama(TestResponse $response): string
+    {
+        $html = $response->getContent();
+
+        if (! preg_match('#<main[^>]*>(.*)</main>#s', $html, $cocok)) {
+            return $html;
+        }
+
+        return $cocok[1];
+    }
+
     protected function berlangganan(Workspace $workspace, string $plan = 'prime'): Subscription
     {
         $workspace->subscription()?->delete();

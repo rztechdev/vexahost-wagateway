@@ -377,10 +377,14 @@ class HelpdeskTest extends TestCase
             'body' => 'Bagaimana cara memakai webhook?',
         ]);
 
-        $this->actingAs($this->admin)->get(route('admin.tickets'))
-            ->assertOk()
-            ->assertSee('Pertanyaan kedua yang belum dijawab')
-            ->assertDontSee('Nomor terputus terus');
+        $daftar = $this->actingAs($this->admin)->get(route('admin.tickets'))->assertOk();
+
+        // Isi halamannya saja: lonceng di bilah atas memang menyebut judul
+        // tiket yang baru masuk, termasuk yang sudah dijawab.
+        $isi = $this->isiUtama($daftar);
+
+        $this->assertStringContainsString('Pertanyaan kedua yang belum dijawab', $isi);
+        $this->assertStringNotContainsString('Nomor terputus terus', $isi);
     }
 
     public function test_halaman_pelanggan_dan_admin_terbuka(): void

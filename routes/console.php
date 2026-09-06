@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\BillingCycleJob;
+use App\Jobs\PantauKesehatanJob;
 use App\Jobs\PruneOldRecordsJob;
 use App\Jobs\SyncSessionStatusJob;
 use Illuminate\Support\Facades\Schedule;
@@ -20,3 +21,14 @@ Schedule::job(new PruneOldRecordsJob)->dailyAt('03:15');
 // masih punya sehari penuh untuk membayar; pengingat tengah malam terbaca
 // keesokan paginya bersamaan dengan layanan yang sudah berhenti.
 Schedule::job(new BillingCycleJob)->dailyAt('08:00')->withoutOverlapping();
+
+/*
+| Pengawas kesehatan, tiap jam.
+|
+| Tiap jam dan bukan tiap menit: seluruh keadaan yang diawasinya berlangsung
+| berjam-jam kalau terjadi, dan memeriksanya tiap menit cuma menambah beban
+| pada server yang RAM-nya justru sedang diperebutkan. Penanda hariannya
+| membuat satu keadaan menghasilkan satu kabar per hari, berapa kali pun job
+| ini berjalan.
+*/
+Schedule::job(new PantauKesehatanJob)->hourly()->withoutOverlapping();

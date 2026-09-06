@@ -29,6 +29,7 @@ use App\Http\Controllers\Dashboard\WebhookController;
 use App\Http\Controllers\Dashboard\WorkspaceController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EnterpriseLeadController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingGuideController;
 use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
@@ -93,6 +94,16 @@ Route::middleware('auth')->group(function (): void {
     | Di luar grup `workspace` dengan sengaja: turnya juga muncul di halaman
     | onboarding, tempat pengguna belum punya workspace sama sekali.
     */
+    /*
+    | Lonceng notifikasi. Di luar grup `workspace` dengan sengaja: notifikasi
+    | juga dibaca admin yang tidak sedang memilih workspace mana pun, dan
+    | pelanggan yang workspace-nya baru saja dihapus tetap berhak membaca
+    | riwayat kabarnya.
+    */
+    Route::get('notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifikasi/{id}', [NotificationController::class, 'open'])->name('notifications.open');
+    Route::post('notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
     Route::post('onboarding/tur/{guideKey}', [OnboardingGuideController::class, 'ack'])
         ->where('guideKey', '[a-z0-9\-\.]+')
         ->name('onboarding.guides.ack');
