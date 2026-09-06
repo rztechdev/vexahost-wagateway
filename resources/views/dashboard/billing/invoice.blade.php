@@ -376,10 +376,23 @@
                                     </div>
                                 @endif
 
-                                @if ($invoice->discount_amount > 0)
+                                {{-- Dua baris terpisah, bukan satu total.
+                                     Pelanggan yang memakai kode referal berhak
+                                     tahu berapa yang datang dari kodenya, dan
+                                     resellernya berhak tahu itu juga —
+                                     satu angka gabungan membuat keduanya
+                                     mustahil diperiksa. --}}
+                                @if ($invoice->intro_discount_amount > 0)
+                                    <div class="flex justify-between text-muted-foreground">
+                                        <span>Promo pembelian pertama</span>
+                                        <span class="font-medium text-primary tabular-nums">−Rp {{ number_format($invoice->intro_discount_amount, 0, ',', '.') }}</span>
+                                    </div>
+                                @endif
+
+                                @if ($invoice->referralDiscount() > 0)
                                     <div class="flex justify-between text-muted-foreground">
                                         <span>Potongan referal{{ $invoice->referralCode ? ' ('.$invoice->referralCode->code.')' : '' }}</span>
-                                        <span class="font-medium text-primary tabular-nums">−Rp {{ number_format($invoice->discount_amount, 0, ',', '.') }}</span>
+                                        <span class="font-medium text-primary tabular-nums">−Rp {{ number_format($invoice->referralDiscount(), 0, ',', '.') }}</span>
                                     </div>
                                 @endif
 

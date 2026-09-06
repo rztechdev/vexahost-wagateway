@@ -52,6 +52,36 @@
             this.memeriksa = false;
         },
 
+        promo: {{ $berhakPromo ? 'true' : 'false' }},
+
+        /*
+         | Harga yang menjadi DASAR seluruh hitungan di kartu.
+         |
+         | Promo perkenalan dipotong lebih dulu, lalu kode referal memotong
+         | sisanya — urutan yang sama persis dengan `issueInvoice()` di server.
+         | Kalau keduanya diambil dari harga normal, angka di layar tidak akan
+         | cocok dengan tagihan yang terbit, dan yang menemukannya pelanggan
+         | yang sudah telanjur mentransfer.
+        */
+        dasar(normal, intro) {
+            return this.promo && intro ? intro : normal;
+        },
+
+        akhir(normal, intro) {
+            const d = this.dasar(normal, intro);
+
+            return d - this.potongan(d);
+        },
+
+        /** Ada potongan apa pun — promo, referal, atau keduanya. */
+        adaPotongan(normal, intro) {
+            return this.akhir(normal, intro) < normal;
+        },
+
+        persenHemat(normal, intro) {
+            return normal > 0 ? Math.round((normal - this.akhir(normal, intro)) / normal * 100) : 0;
+        },
+
         potongan(harga) {
             return this.referal?.sah ? Math.floor(harga * this.referal.persen / 100) : 0;
         },
@@ -160,26 +190,56 @@
                     <p class="font-semibold">{{ $plan->name() }}</p>
                     <p class="mt-0.5 text-sm text-muted-foreground">{{ $plan->tagline() }}</p>
 
-                    <template x-if="referal?.sah">
+                    @php
+                        // Empat angka yang dipakai Alpine di bawah, disiapkan
+                        // sekali di sini supaya ekspresinya tetap terbaca.
+                        $nBulan = $plan->price('monthly');
+                        $nTahun = $plan->price('yearly');
+                        $iBulan = $plan->introPrice('monthly') ?? 0;
+                        $iTahun = $plan->introPrice('yearly') ?? 0;
+                    @endphp
+
+                    <template x-if="adaPotongan(tahunan ? {{ $nTahun }} : {{ $nBulan }}, tahunan ? {{ $iTahun }} : {{ $iBulan }})">
                         <div class="mt-3">
                             <p class="text-xs sm:text-sm font-semibold text-muted-foreground line-through decoration-destructive">
-                                <span x-text="rupiah(tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }})"></span>
+                                <span x-text="rupiah(tahunan ? {{ $nTahun }} : {{ $nBulan }})"></span>
                             </p>
                             <p class="mt-0.5 flex items-baseline gap-1.5 flex-wrap">
                                 <span class="text-3xl font-extrabold tracking-tight text-primary"
-                                      x-text="rupiah((tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }}) - potongan(tahunan ? {{ $plan->price('yearly') }} : {{ $plan->price('monthly') }}))"></span>
+                                      x-text="rupiah(akhir(tahunan ? {{ $nTahun }} : {{ $nBulan }}, tahunan ? {{ $iTahun }} : {{ $iBulan }}))"></span>
                                 <span class="text-sm text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'"></span>
                                 <span class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                                    Hemat <span x-text="referal.persen"></span>%
+                                    Hemat <span x-text="persenHemat(tahunan ? {{ $nTahun }} : {{ $nBulan }}, tahunan ? {{ $iTahun }} : {{ $iBulan }})"></span>%
                                 </span>
                             </p>
+
+                            {{-- Kalimat ini WAJIB ikut selama promo berlaku.
+                                 Harga perkenalan tanpa keterangan "sekali" akan
+                                 dibaca sebagai harga tetap, dan yang menemukan
+                                 kebenarannya adalah pelanggan saat tagihan
+                                 kedua terbit dengan angka dua kali lipat. --}}
+                            {{-- Dijaga @if di PHP, bukan cuma x-if Alpine:
+                                 markup di dalam <template> tetap terkirim ke
+                                 browser walau tidak pernah dirender, dan
+                                 menjanjikan harga promo di HTML milik orang
+                                 yang sudah pernah membayar adalah janji yang
+                                 tidak akan dipenuhi tagihannya. --}}
+                            @if ($berhakPromo)
+                                <template x-if="tahunan ? {{ $iTahun }} : {{ $iBulan }}">
+                                    <p class="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                                        Harga pembelian pertama. Perpanjangan berikutnya
+                                        <span x-text="rupiah(tahunan ? {{ $nTahun }} : {{ $nBulan }})"></span><span x-text="tahunan ? '/tahun' : '/bulan'"></span>.
+                                    </p>
+                                </template>
+                            @endif
                         </div>
                     </template>
-                    <template x-if="! referal?.sah">
+
+                    <template x-if="! adaPotongan(tahunan ? {{ $nTahun }} : {{ $nBulan }}, tahunan ? {{ $iTahun }} : {{ $iBulan }})">
                         <p class="mt-4 flex items-baseline gap-1.5">
                             <span class="text-3xl font-semibold tracking-tight">
-                                <span x-show="! tahunan">Rp {{ number_format($plan->price('monthly'), 0, ',', '.') }}</span>
-                                <span x-show="tahunan" x-cloak>Rp {{ number_format($plan->price('yearly'), 0, ',', '.') }}</span>
+                                <span x-show="! tahunan">Rp {{ number_format($nBulan, 0, ',', '.') }}</span>
+                                <span x-show="tahunan" x-cloak>Rp {{ number_format($nTahun, 0, ',', '.') }}</span>
                             </span>
                             <span class="text-sm text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'"></span>
                         </p>

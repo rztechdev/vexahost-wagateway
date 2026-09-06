@@ -222,25 +222,62 @@ class ReferralTest extends TestCase
 
     // ===================== Nominal =====================
 
-    public function test_diskon_terpotong_dan_nominal_unik_tetap_cocok(): void
+    /**
+     * Promo perkenalan dan kode referal DITUMPUK, dan urutannya menentukan.
+     *
+     * Promo dipotong lebih dulu, lalu kode referal memotong SISANYA — bukan
+     * keduanya dari harga normal. Kalau keduanya diambil dari harga normal,
+     * potongan 47% dan 10% berjumlah 57%, sementara yang dimaksud adalah 10%
+     * dari yang tersisa sesudah promo. Selisihnya uang sungguhan.
+     */
+    public function test_promo_perkenalan_dan_referal_ditumpuk_dengan_urutan_yang_benar(): void
     {
         $invoice = app(SubscriptionService::class)
             ->issueInvoice($this->workspace, 'prime', 'monthly', $this->kode);
 
-        $harga = Plan::get('prime')->price('monthly');
+        $plan = Plan::get('prime');
+        $harga = $plan->price('monthly');
         $pajak = (int) round($harga * config('billing.tax_percent') / 100);
-        $diskon = (int) floor(($harga + $pajak) * 10 / 100);
 
-        $this->assertSame($diskon, $invoice->discount_amount);
+        $intro = $harga - $plan->introPrice('monthly');
+        $referal = (int) floor(($harga + $pajak - $intro) * 10 / 100);
+
+        $this->assertSame($intro, (int) $invoice->intro_discount_amount);
+        $this->assertSame($referal, $invoice->referralDiscount());
+        $this->assertSame($intro + $referal, (int) $invoice->discount_amount);
         $this->assertSame($this->kode->id, $invoice->referral_code_id);
 
-        // Inti tes ini: total = harga + pajak − diskon + kode unik. Kalau
-        // diskon dipotong SETELAH kode unik dihitung, angka yang ditransfer
-        // pelanggan tidak akan sama dengan yang tertulis di tagihannya.
+        // Inti tes ini: total = harga + pajak − seluruh potongan + kode unik.
+        // Kalau potongan diambil SETELAH kode unik dihitung, angka yang
+        // ditransfer pelanggan tidak akan sama dengan yang tertulis di
+        // tagihannya.
         $this->assertSame(
-            $harga + $pajak - $diskon + $invoice->unique_code,
+            $harga + $pajak - $intro - $referal + $invoice->unique_code,
             $invoice->total,
         );
+
+        // Referal dihitung dari sisa sesudah promo, BUKAN dari harga normal.
+        $this->assertLessThan(
+            (int) floor(($harga + $pajak) * 10 / 100),
+            $referal,
+            'Potongan referal dihitung dari harga normal, bukan dari sisa sesudah promo.',
+        );
+    }
+
+    /** Promo hanya sekali: perpanjangan berikutnya kembali harga normal. */
+    public function test_promo_perkenalan_hanya_untuk_pembelian_pertama(): void
+    {
+        $subscriptions = app(SubscriptionService::class);
+
+        $pertama = $subscriptions->issueInvoice($this->workspace, 'prime', 'monthly');
+        $this->assertGreaterThan(0, (int) $pertama->intro_discount_amount);
+
+        $subscriptions->markPaid($pertama);
+
+        $kedua = $subscriptions->issueInvoice($this->workspace->fresh(), 'elite', 'monthly');
+
+        $this->assertSame(0, (int) $kedua->intro_discount_amount);
+        $this->assertSame(Plan::get('elite')->price('monthly'), $kedua->amount);
     }
 
     /**

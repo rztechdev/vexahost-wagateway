@@ -163,6 +163,47 @@ class Plan
     }
 
     /**
+     * Harga perkenalan untuk pembelian PERTAMA, atau `null` kalau tidak ada.
+     *
+     * Sengaja mengembalikan `null` alih-alih harga normal: pemanggilnya perlu
+     * bisa membedakan "tidak ada promo" dari "promo kebetulan sebesar harga
+     * normal", karena yang pertama tidak boleh menampilkan harga tercoret.
+     */
+    public function introPrice(string $period): ?int
+    {
+        $kunci = $period === 'yearly' ? 'intro_price_yearly' : 'intro_price_monthly';
+        $harga = $this->attributes[$kunci] ?? null;
+
+        if ($harga === null) {
+            return null;
+        }
+
+        // Promo yang lebih mahal dari harga normal hampir pasti salah ketik,
+        // dan diam-diam menagih lebih banyak jauh lebih buruk daripada
+        // kehilangan promonya.
+        return $harga < $this->price($period) ? (int) $harga : null;
+    }
+
+    public function hasIntro(string $period): bool
+    {
+        return $this->introPrice($period) !== null;
+    }
+
+    /** Berapa rupiah yang dihemat pembeli pertama. */
+    public function introSaving(string $period): int
+    {
+        return $this->price($period) - ($this->introPrice($period) ?? $this->price($period));
+    }
+
+    /** Persen potongan perkenalan, dibulatkan — untuk lencana "hemat 47%". */
+    public function introPercent(string $period): int
+    {
+        $normal = $this->price($period);
+
+        return $normal > 0 ? (int) round($this->introSaving($period) / $normal * 100) : 0;
+    }
+
+    /**
      * Batas yang ditegakkan aplikasi. Bentuk array-nya sengaja sama persis
      * dengan nama kolom di tabel `workspaces`, supaya menerapkan paket ke
      * workspace tidak perlu penerjemahan nama satu per satu.

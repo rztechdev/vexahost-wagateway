@@ -172,15 +172,36 @@ class SubscriptionService
         $amount = $plan->price($period);
         $tax = (int) round($amount * config('billing.tax_percent') / 100);
 
-        // Diskon dihitung SEBELUM kode unik, dan urutan itu bukan selera:
-        // `allocateUniqueCode()` menjamin nominal akhir unik di antara tagihan
-        // terbuka. Kalau diskon dipotong sesudahnya, yang dijamin unik adalah
-        // nominal sebelum diskon — dan yang benar-benar ditransfer pelanggan
-        // bisa bertabrakan dengan tagihan orang lain, persis hal yang kode unik
-        // ini ada untuk mencegahnya.
-        $diskon = $referral?->potongan($amount + $tax) ?? 0;
+        /*
+         | Dua potongan, dan URUTANNYA menentukan angkanya.
+         |
+         | Promo perkenalan dipotong lebih dulu, lalu kode referal memotong
+         | SISANYA — bukan keduanya dari harga normal. Keputusan Ryan (7 Sep
+         | 2026): boleh ditumpuk. Menumpuknya dari harga normal akan membuat
+         | dua potongan 47% dan 10% berjumlah 57%, sementara yang dimaksud
+         | adalah 10% dari yang tersisa sesudah promo.
+         |
+         | Keduanya dihitung SEBELUM kode unik, dan itu bukan selera:
+         | `allocateUniqueCode()` menjamin nominal AKHIR unik di antara tagihan
+         | terbuka. Kalau potongan diambil sesudahnya, yang dijamin unik adalah
+         | nominal sebelum potongan — dan yang benar-benar ditransfer pelanggan
+         | bisa bertabrakan dengan tagihan orang lain, persis hal yang kode unik
+         | ini ada untuk mencegahnya.
+        */
+        $intro = $workspace->berhakHargaPerkenalan($planSlug, $period)
+            ? $amount - $plan->introPrice($period)
+            : 0;
 
-        $invoice = DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax, $diskon, $referral) {
+        $sesudahIntro = $amount + $tax - $intro;
+        $diskonReferal = $referral?->potongan($sesudahIntro) ?? 0;
+
+        // `discount_amount` adalah TOTAL kedua potongan, bukan cuma referal:
+        // kueri kode unik membacanya sebagai satu angka, dan memecahnya di sana
+        // berarti mengubah SQL mentah yang sudah sekali lolos SQLite lalu
+        // jatuh di MySQL. `intro_discount_amount` hanya rinciannya.
+        $diskon = $intro + $diskonReferal;
+
+        $invoice = DB::transaction(function () use ($workspace, $subscription, $planSlug, $period, $amount, $tax, $diskon, $intro, $referral) {
             $code = $this->allocateUniqueCode($amount + $tax - $diskon);
 
             $invoice = Invoice::create([
@@ -195,6 +216,7 @@ class SubscriptionService
                 'amount' => $amount,
                 'tax_amount' => $tax,
                 'discount_amount' => $diskon,
+                'intro_discount_amount' => $intro,
                 'referral_code_id' => $referral?->id,
                 'unique_code' => $code,
                 'total' => $amount + $tax - $diskon + $code,
@@ -215,6 +237,7 @@ class SubscriptionService
                 'period' => $period,
                 'total' => $invoice->total,
                 'diskon' => $diskon,
+                'promo_perkenalan' => $intro,
                 'referral' => $referral?->code,
             ], $workspace->id);
 

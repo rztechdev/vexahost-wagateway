@@ -18,6 +18,7 @@ class Invoice extends Model
         'amount',
         'tax_amount',
         'discount_amount',
+        'intro_discount_amount',
         'referral_code_id',
         'unique_code',
         'total',
@@ -45,6 +46,12 @@ class Invoice extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** Potongan yang datang dari kode referal saja, tanpa promo perkenalan. */
+    public function referralDiscount(): int
+    {
+        return max(0, (int) $this->discount_amount - (int) $this->intro_discount_amount);
     }
 
     /**

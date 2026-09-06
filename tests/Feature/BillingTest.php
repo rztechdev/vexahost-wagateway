@@ -218,7 +218,18 @@ class BillingTest extends TestCase
         $this->assertSame('prime', $invoice->plan_slug);
         $this->assertSame(249_000, $invoice->amount);
         $this->assertGreaterThan(0, $invoice->unique_code);
-        $this->assertSame($invoice->amount + $invoice->tax_amount + $invoice->unique_code, $invoice->total);
+        // Tagihan pertama workspace ini, jadi harga perkenalan ikut terpotong.
+        // Yang dijaga di sini bukan angkanya melainkan bahwa totalnya benar-benar
+        // turunan dari komponennya — kalau salah satu suku hilang dari rumus,
+        // nominal yang ditransfer pelanggan tidak akan cocok dengan tagihannya.
+        $this->assertSame(
+            $invoice->amount + $invoice->tax_amount - $invoice->discount_amount + $invoice->unique_code,
+            $invoice->total,
+        );
+        $this->assertSame(
+            249_000 - Plan::get('prime')->introPrice('monthly'),
+            (int) $invoice->intro_discount_amount,
+        );
         $this->assertStringStartsWith('INV-WA-', $invoice->number);
     }
 

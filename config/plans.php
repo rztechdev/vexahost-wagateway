@@ -66,6 +66,36 @@ return [
     */
     'yearly_multiplier' => 10,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Harga perkenalan — HANYA pembelian pertama sebuah workspace
+    |--------------------------------------------------------------------------
+    |
+    | `intro_price_monthly` dan `intro_price_yearly` di tiap paket adalah harga
+    | yang dibayar SEKALI, pada tagihan pertama workspace yang belum pernah
+    | membayar apa pun. Perpanjangan berikutnya selalu harga normal, dan itu
+    | ditegakkan di `Workspace::berhakHargaPerkenalan()` — bukan dijanjikan di
+    | teks halaman harga.
+    |
+    | Angkanya kira-kira separuh harga normal, dan itu ditanggung sadar: biaya
+    | nyata kami per workspace adalah satu Chromium yang sudah berjalan di
+    | server yang sudah dibayar bulanan, jadi pelanggan tambahan di bulan
+    | pertama nyaris tidak menambah ongkos. Yang benar-benar ditanggung adalah
+    | risiko orang berhenti setelah bulan pertama — dan itulah sebabnya promo
+    | ini tidak pernah berlaku dua kali untuk workspace yang sama.
+    |
+    | Boleh DITUMPUK dengan kode referal (keputusan Ryan, 7 Sep 2026): promo
+    | dipotong lebih dulu, lalu kode referal memotong sisanya, dan komisi
+    | reseller dihitung dari angka yang benar-benar dibayar. Konsekuensinya
+    | harus disadari saat mengubah angka di bawah — Essentials tahunan dengan
+    | referal 10% dan komisi 20% menyisakan sekitar Rp 712.800 dari harga
+    | normal Rp 1.490.000.
+    |
+    | Paket `coba` dan `payg` tidak punya harga perkenalan: yang pertama sudah
+    | gratis, yang kedua tidak punya harga bulanan sama sekali.
+    |
+    */
+
     'catalog' => [
 
         'coba' => [
@@ -156,6 +186,8 @@ return [
             'name' => 'Essentials',
             'tagline' => 'Satu usaha dengan satu nomor.',
             'price_monthly' => 149_000,
+            'intro_price_monthly' => 79_000,
+            'intro_price_yearly' => 990_000,
             'highlight' => false,
 
             'max_sessions' => 1,
@@ -181,6 +213,8 @@ return [
             'name' => 'Prime',
             'tagline' => 'Volume harian dari satu nomor.',
             'price_monthly' => 249_000,
+            'intro_price_monthly' => 129_000,
+            'intro_price_yearly' => 1_690_000,
             'highlight' => true,
 
             'max_sessions' => 1,
@@ -206,6 +240,8 @@ return [
             'name' => 'Elite',
             'tagline' => 'Dua nomor dan riwayat setahun penuh.',
             'price_monthly' => 449_000,
+            'intro_price_monthly' => 249_000,
+            'intro_price_yearly' => 2_990_000,
             'highlight' => false,
 
             'max_sessions' => 2,

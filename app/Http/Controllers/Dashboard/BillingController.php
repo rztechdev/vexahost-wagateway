@@ -72,6 +72,12 @@ class BillingController extends Controller
             'subscription' => $this->subscriptions->ensureFor($workspace),
             'plans' => Plan::all(),
             'bolehBayar' => $request->user()->canManage($workspace),
+
+            // Harga perkenalan ditawarkan HANYA kalau workspace ini memang
+            // masih berhak. Menampilkannya ke yang sudah pernah membayar adalah
+            // janji harga yang akan dibatalkan sendiri saat tagihannya terbit —
+            // dan yang membacanya baru tahu setelah melihat nominal transfernya.
+            'berhakPromo' => $workspace->belumPernahBayar(),
         ]);
     }
 

@@ -194,6 +194,37 @@ class Workspace extends Model
     }
 
     /**
+     * Workspace ini belum pernah membayar apa pun, jadi berhak harga perkenalan.
+     *
+     * Diperiksa dari TAGIHAN LUNAS, bukan dari status langganan: workspace bisa
+     * saja pernah aktif tanpa pernah membayar (paket coba gratis, akun yang
+     * dibebaskan, atau langganan yang diberikan admin), dan tidak satu pun dari
+     * itu berarti mereka sudah pernah menjadi pelanggan berbayar.
+     *
+     * Aturan yang sama persis dipakai kode referal, dan itu disengaja: keduanya
+     * potongan "sekali seumur workspace", dan dua definisi "pertama" yang
+     * berbeda akan menghasilkan tagihan yang salah satu potongannya berlaku
+     * sementara yang lain tidak — tanpa ada yang bisa menjelaskan kenapa.
+     */
+    public function belumPernahBayar(): bool
+    {
+        return ! $this->invoices()->where('status', 'paid')->exists();
+    }
+
+    /**
+     * Harga perkenalan hanya untuk yang belum pernah membayar DAN paketnya
+     * memang punya promo.
+     */
+    public function berhakHargaPerkenalan(string $planSlug, string $period): bool
+    {
+        if (! Plan::exists($planSlug)) {
+            return false;
+        }
+
+        return Plan::get($planSlug)->hasIntro($period) && $this->belumPernahBayar();
+    }
+
+    /**
      * Pesan keluar sepanjang umur workspace, dijumlahkan dari agregat bulanan.
      *
      * Jatah coba gratis dihitung seumur hidup, bukan per bulan: kalau ia

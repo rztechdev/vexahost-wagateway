@@ -580,6 +580,18 @@
                 'untuk' => $plan->tagline(),
                 'sorot' => $plan->isHighlighted(),
                 'fitur' => $plan->features(),
+
+                /*
+                 | Harga perkenalan selalu ditampilkan di halaman depan, dan itu
+                 | benar: setiap pengunjung di sini belum punya workspace, jadi
+                 | pembelian mereka PASTI yang pertama. Di dalam dashboard
+                 | ceritanya berbeda — di sana kelayakannya diperiksa per
+                 | workspace lewat `belumPernahBayar()`.
+                */
+                'promo_bulanan' => $plan->introPrice('monthly') ?? 0,
+                'promo_tahunan' => $plan->introPrice('yearly') ?? 0,
+                'hemat_bulanan' => $plan->introPercent('monthly'),
+                'hemat_tahunan' => $plan->introPercent('yearly'),
             ])->all();
         @endphp
 
@@ -602,17 +614,49 @@
                         <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground min-h-[38px]">{{ $p['untuk'] }}</p>
 
                         <div class="mt-6 border-t border-border/60 pt-6">
-                            <div class="flex items-baseline gap-1.5">
-                                <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
-                                      x-text="formatRupiah(tahunan ? {{ $p['tahunan'] }} : {{ $p['bulanan'] }})">
-                                    Rp{{ number_format($p['bulanan'], 0, ',', '.') }}
-                                </span>
-                                <span class="text-xs sm:text-sm font-medium text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'">/bulan</span>
-                            </div>
+                            @if ($p['promo_bulanan'] > 0 || $p['promo_tahunan'] > 0)
+                                {{-- Harga normal tercoret di ATAS harga promo.
+                                     Kalau cuma angka promonya yang tampil, tidak
+                                     ada yang tahu ada potongan sama sekali — dan
+                                     potongan yang tidak terlihat tidak menjual
+                                     apa pun. --}}
+                                <p class="text-xs sm:text-sm font-semibold text-muted-foreground line-through decoration-destructive/70">
+                                    <span x-text="formatRupiah(tahunan ? {{ $p['tahunan'] }} : {{ $p['bulanan'] }})"></span>
+                                </p>
+                                <div class="mt-0.5 flex items-baseline gap-1.5 flex-wrap">
+                                    <span class="text-3xl sm:text-4xl font-bold tracking-tight text-primary"
+                                          x-text="formatRupiah(tahunan ? {{ $p['promo_tahunan'] }} : {{ $p['promo_bulanan'] }})">
+                                        Rp{{ number_format($p['promo_bulanan'], 0, ',', '.') }}
+                                    </span>
+                                    <span class="text-xs sm:text-sm font-medium text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'">/bulan</span>
+                                    <span class="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                        Hemat <span x-text="tahunan ? {{ $p['hemat_tahunan'] }} : {{ $p['hemat_bulanan'] }}"></span>%
+                                    </span>
+                                </div>
 
-                            <p class="mt-1 text-xs text-muted-foreground" :class="tahunan ? '' : 'invisible'">
-                                <span x-text="'Setara ' + formatRupiah(Math.floor({{ $p['tahunan'] }} / 12)) + ' per bulan.'"></span>
-                            </p>
+                                {{-- WAJIB ikut. Harga perkenalan tanpa keterangan
+                                     "sekali" akan dibaca sebagai harga tetap, dan
+                                     yang menemukan kebenarannya adalah pelanggan
+                                     saat tagihan kedua terbit hampir dua kali
+                                     lipat. Janji yang dilanggar di hadapan orang
+                                     yang baru saja membayar. --}}
+                                <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                                    Harga pembelian pertama. Perpanjangan berikutnya
+                                    <span class="font-medium" x-text="formatRupiah(tahunan ? {{ $p['tahunan'] }} : {{ $p['bulanan'] }})"></span><span x-text="tahunan ? '/tahun' : '/bulan'"></span>.
+                                </p>
+                            @else
+                                <div class="flex items-baseline gap-1.5">
+                                    <span class="text-3xl sm:text-4xl font-bold tracking-tight text-foreground"
+                                          x-text="formatRupiah(tahunan ? {{ $p['tahunan'] }} : {{ $p['bulanan'] }})">
+                                        Rp{{ number_format($p['bulanan'], 0, ',', '.') }}
+                                    </span>
+                                    <span class="text-xs sm:text-sm font-medium text-muted-foreground" x-text="tahunan ? '/tahun' : '/bulan'">/bulan</span>
+                                </div>
+
+                                <p class="mt-1 text-xs text-muted-foreground" :class="tahunan ? '' : 'invisible'">
+                                    <span x-text="'Setara ' + formatRupiah(Math.floor({{ $p['tahunan'] }} / 12)) + ' per bulan.'"></span>
+                                </p>
+                            @endif
                         </div>
 
                         <a href="{{ route('register') }}"

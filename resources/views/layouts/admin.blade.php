@@ -82,45 +82,45 @@
          x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
          class="fixed inset-0 z-40 bg-black/50 lg:hidden"></div>
 
-    {{-- ===================== Sidebar Admin (Warna Hijau Hutan Gelap / Forest Green) =====================
-         Tetap berada di rumpun hijau Flustra, tetapi memakai hijau hutan gelap pekat (`#0c1f15`) yang
-         langsung membedakannya dari sidebar pengguna (yang berwarna sage/mint terang di light mode).
-         ============================================================================================= --}}
-    <aside class="panel-sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#173826] bg-[#0c1f15] text-emerald-100 transition-transform duration-200 ease-out select-none"
+    {{-- ===================== Sidebar Admin =====================
+         Menggunakan token warna sidebar yang sama persis dengan panel user (bg-sidebar,
+         border-sidebar-border, text-sidebar-foreground, dsb.) agar konsisten di light dan dark mode.
+         ============================================================ --}}
+    <aside class="panel-sidebar fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-200 ease-out select-none"
            :class="sidebar && 'terbuka'">
 
-        {{-- Header Sidebar: Logo & Badge Admin --}}
-        <div class="flex h-14 shrink-0 items-center gap-2.5 px-5">
-            <a href="{{ route('admin.overview') }}" class="flex min-w-0 items-center gap-2.5 font-semibold">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="" class="h-7 w-auto shrink-0 object-contain">
-                <span class="truncate text-white">Flustra WA</span>
-                <span class="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
-                    Admin
-                </span>
+        {{-- Header Sidebar: Logo & Nama Aplikasi (sama persis seperti panel user) --}}
+        <div class="flex h-20 shrink-0 items-center gap-3.5 px-5">
+            <a href="{{ route('admin.overview') }}" class="flex min-w-0 items-center gap-3.5">
+                <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA Gateway" class="h-11 w-auto shrink-0 object-contain">
+                <div class="flex min-w-0 flex-col">
+                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">Flustra</span>
+                    <span class="truncate text-xs font-semibold tracking-wide text-muted-foreground leading-tight">WA Gateway</span>
+                </div>
             </a>
-            <button @click="sidebar = false" class="ml-auto rounded-md p-1 text-emerald-200/60 hover:bg-[#143323] hover:text-white lg:hidden" aria-label="Tutup menu">
+            <button @click="sidebar = false" class="ml-auto rounded-md p-1 text-muted-foreground hover:bg-sidebar-accent lg:hidden" aria-label="Tutup menu">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
         </div>
 
         {{-- Navigasi Menu Admin --}}
-        <nav class="flex-1 space-y-3.5 overflow-y-auto px-3 py-2">
+        <nav class="flex-1 space-y-4 overflow-y-auto px-3 pt-5 pb-4">
             @foreach ($adminMenu as $kelompok => $tautan)
                 <div>
-                    <p class="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-wider text-emerald-400/60">{{ $kelompok }}</p>
+                    <p class="px-3 pb-1.5 text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground/80">{{ $kelompok }}</p>
                     <div class="space-y-0.5">
                         @foreach ($tautan as $item)
                             @php $isAktif = $aktif($item); @endphp
                             <a href="{{ route($item['rute']) }}"
-                               class="flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition {{ $isAktif 
-                                    ? 'bg-[#1a442e] font-medium text-white shadow-xs border border-emerald-500/25' 
-                                    : 'text-emerald-100/70 hover:bg-[#143323] hover:text-white' }}">
+                               class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition {{ $isAktif 
+                                    ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground' 
+                                    : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
                                 <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                                     <path d="{{ $item['ikon'] }}"/>
                                 </svg>
                                 <span class="truncate">{{ $item['label'] }}</span>
                                 @if (($lencanaMenu[$item['rute']] ?? 0) > 0)
-                                    <span class="ml-auto shrink-0 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-950">
+                                    <span class="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-primary-foreground">
                                         {{ $lencanaMenu[$item['rute']] > 99 ? '99+' : $lencanaMenu[$item['rute']] }}
                                     </span>
                                 @endif
@@ -131,22 +131,22 @@
             @endforeach
 
             <div>
-                <p class="px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-wider text-emerald-400/60">Pintasan</p>
+                <p class="px-3 pb-1.5 text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground/80">Pintasan</p>
                 <div class="space-y-0.5">
                     <a href="{{ route('dashboard') }}"
-                       class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-emerald-100/70 transition hover:bg-[#143323] hover:text-white">
+                       class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                         <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
                         <span class="truncate">Ke Dashboard User</span>
                     </a>
                     <a href="{{ route('docs.index') }}" target="_blank" rel="noopener"
-                       class="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-emerald-100/70 transition hover:bg-[#143323] hover:text-white">
+                       class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                         <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/>
                         </svg>
                         <span class="truncate">Dokumentasi</span>
-                        <svg class="ml-auto h-3.5 w-3.5 shrink-0 text-emerald-400/50 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <svg class="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M7 17L17 7M17 7H7M17 7V17"/>
                         </svg>
                     </a>
@@ -154,17 +154,11 @@
             </div>
         </nav>
 
-        {{-- Footer Sidebar: Profil Super Admin & Logout --}}
-        <div class="shrink-0 border-t border-[#173826] p-3 space-y-1">
-            <div class="flex items-center gap-2.5 px-3 py-1.5">
-                <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-emerald-500/20 text-xs font-semibold text-emerald-300">
-                    {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
-                </span>
-                <span class="min-w-0 flex-1 truncate text-xs font-medium text-emerald-100/90">{{ auth()->user()->name }}</span>
-            </div>
+        {{-- Footer Sidebar: Hanya tombol logout (sama persis seperti panel user) --}}
+        <div class="shrink-0 border-t border-sidebar-border px-3 py-2">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-emerald-100/70 transition hover:bg-[#143323] hover:text-white">
+                <button class="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
                     Keluar
                 </button>
@@ -181,18 +175,62 @@
 
             <h1 class="min-w-0 truncate text-lg font-semibold">@yield('title', 'Admin')</h1>
 
-            <div class="ml-auto flex items-center gap-2">
-                <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                    <span>Ke dashboard user</span>
-                </a>
-
+            <div class="ml-auto flex items-center gap-1">
                 <button @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light'; document.documentElement.style.colorScheme = d ? 'dark' : 'light';"
                         class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Ganti tema tampilan">
                     <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg class="block h-5 w-5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
+
+                {{-- ===================== Profil =====================
+                     Sama seperti panel user: diletakkan di kanan atas header,
+                     bukan di footer sidebar.
+                     ============================================ --}}
+                <div class="relative ml-1" x-data="{ profil: false }" @click.outside="profil = false" @keydown.escape.window="profil = false">
+                    <button @click="profil = ! profil"
+                            class="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                            :aria-expanded="profil" aria-haspopup="true"
+                            aria-label="Menu akun">
+                        @if (auth()->user()->avatarUrl())
+                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
+                        @else
+                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                        @endif
+                    </button>
+
+                    <div x-show="profil" x-cloak x-transition.opacity.duration.150ms
+                         class="absolute right-0 z-40 mt-1.5 w-60 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+                        <div class="border-b border-border px-4 py-3">
+                            <p class="truncate text-sm font-medium">{{ auth()->user()->name }}</p>
+                            <p class="truncate text-xs text-muted-foreground">{{ auth()->user()->email }}</p>
+                        </div>
+
+                        <div class="p-1.5">
+                            <a href="{{ route('profile.show') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                Profil saya
+                            </a>
+                            <a href="{{ route('dashboard') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                Dashboard user
+                            </a>
+                            @isset($availableWorkspaces)
+                                <a href="{{ route('settings') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                    Pengaturan workspace
+                                </a>
+                                <a href="{{ route('billing.index') }}" class="block rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                    Langganan &amp; tagihan
+                                </a>
+                            @endisset
+
+                            <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-border pt-1.5">
+                                @csrf
+                                <button class="block w-full rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                                    Keluar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
