@@ -25,6 +25,12 @@ class EnterpriseLead extends Model
         'phone',
         'estimated_sessions',
         'estimated_messages',
+        'want_retention_months',
+        'want_api_rate',
+        'want_onboarding',
+        'estimate_monthly',
+        'estimate_yearly',
+        'estimate_once',
         'needs',
         'status',
         'admin_note',
@@ -38,6 +44,12 @@ class EnterpriseLead extends Model
             'handled_at' => 'datetime',
             'estimated_sessions' => 'integer',
             'estimated_messages' => 'integer',
+            'want_retention_months' => 'integer',
+            'want_api_rate' => 'integer',
+            'want_onboarding' => 'boolean',
+            'estimate_monthly' => 'integer',
+            'estimate_yearly' => 'integer',
+            'estimate_once' => 'integer',
         ];
     }
 

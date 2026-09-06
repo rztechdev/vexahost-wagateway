@@ -24,6 +24,9 @@
                     'WhatsApp' => $lead->phone,
                     'Perkiraan nomor' => $lead->estimated_sessions ?? 'tidak disebut',
                     'Perkiraan pesan/bulan' => $lead->estimated_messages ? number_format($lead->estimated_messages, 0, ',', '.') : 'tidak disebut',
+                    'Retensi diminta' => $lead->want_retention_months ? $lead->want_retention_months.' bulan' : 'tidak disebut',
+                    'Batas API diminta' => $lead->want_api_rate ? $lead->want_api_rate.'/menit' : 'tidak disebut',
+                    'Pendampingan integrasi' => $lead->want_onboarding ? 'ya' : 'tidak',
                     'Akun terdaftar' => $lead->user?->email ?? 'belum punya akun',
                     'Workspace' => $lead->workspace?->name ?? '—',
                 ] as $label => $nilai)
@@ -33,6 +36,29 @@
                     </div>
                 @endforeach
             </dl>
+
+            {{-- Angka yang MEREKA lihat, dibekukan saat permintaan masuk.
+                 Harga komponennya boleh berubah kapan saja; menyebut angka
+                 lebih tinggi daripada yang tertera di layar saat pemohon
+                 memutuskan menghubungi kami adalah cara tercepat kehilangan
+                 mereka. --}}
+            @if ($lead->estimate_monthly)
+                <div class="mt-4 rounded-lg border border-primary/25 bg-primary/5 p-4">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Perkiraan yang mereka lihat di kalkulator
+                    </p>
+                    <p class="mt-1.5 text-lg font-semibold tabular-nums">
+                        Rp {{ number_format($lead->estimate_monthly, 0, ',', '.') }}
+                        <span class="text-sm font-normal text-muted-foreground">/bulan</span>
+                    </p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                        Setara Rp {{ number_format($lead->estimate_yearly, 0, ',', '.') }} per tahun
+                        @if ($lead->estimate_once)
+                            · plus Rp {{ number_format($lead->estimate_once, 0, ',', '.') }} sekali untuk pendampingan
+                        @endif
+                    </p>
+                </div>
+            @endif
 
             @if (filled($lead->needs))
                 <div class="mt-4 rounded-lg bg-muted/40 p-4">

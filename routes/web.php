@@ -75,6 +75,15 @@ Route::middleware('guest')->group(function (): void {
 | Rate limit-nya wajib: form publik tanpa batas adalah undangan bagi bot untuk
 | mengisi tabelnya sampai permintaan sungguhan tidak bisa ditemukan lagi.
 */
+/*
+| Halaman Enterprise dengan kalkulator perkiraannya.
+|
+| Alamat sendiri, bukan jangkar di halaman harga: yang menimbang Enterprise
+| butuh memasukkan angkanya lalu melihat hasilnya berubah, dan tim perlu bisa
+| mengirimkan alamatnya langsung ke calon pelanggan.
+*/
+Route::get('enterprise', [EnterpriseLeadController::class, 'show'])->name('enterprise');
+
 Route::post('enterprise/hubungi', [EnterpriseLeadController::class, 'store'])
     ->middleware('throttle:enterprise')
     ->name('enterprise.contact');

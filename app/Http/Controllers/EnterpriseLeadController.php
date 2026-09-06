@@ -6,6 +6,10 @@ use App\Models\EnterpriseLead;
 use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\PerkiraanEnterprise;
+use App\Support\PhoneNumber;
+use App\Support\Plan;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -24,6 +28,24 @@ use Illuminate\Http\Request;
  */
 class EnterpriseLeadController extends Controller
 {
+    /**
+     * Halaman Enterprise dengan kalkulator perkiraannya sendiri.
+     *
+     * Halaman tersendiri, bukan satu blok di halaman harga: yang menimbang
+     * Enterprise butuh memasukkan angkanya lalu melihat hasilnya berubah, dan
+     * itu percakapan yang tidak muat di sela-sela tiga kartu paket. Alamatnya
+     * sendiri juga berarti tim bisa mengirimkannya langsung ke calon pelanggan.
+     */
+    public function show(): View
+    {
+        return view('enterprise', [
+            'komponen' => PerkiraanEnterprise::komponen(),
+            'plan' => Plan::get('enterprise'),
+            'kapasitas' => (int) config('gateway.engine.max_sessions'),
+            'whatsapp' => PhoneNumber::normalize((string) config('billing.enterprise.whatsapp')),
+        ]);
+    }
+
     public function store(
         Request $request,
         WhatsAppNotifier $notifier,
@@ -37,6 +59,9 @@ class EnterpriseLeadController extends Controller
             'phone' => ['required', 'string', 'max:30'],
             'estimated_sessions' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'estimated_messages' => ['nullable', 'integer', 'min:1', 'max:100000000'],
+            'want_retention_months' => ['nullable', 'integer', 'in:12,24'],
+            'want_api_rate' => ['nullable', 'integer', 'in:300,600'],
+            'want_onboarding' => ['nullable', 'boolean'],
             'needs' => ['nullable', 'string', 'max:2000'],
         ], [], [
             'name' => 'nama',
@@ -47,7 +72,28 @@ class EnterpriseLeadController extends Controller
             'needs' => 'kebutuhan',
         ]);
 
+        /*
+         | Perkiraannya dihitung ULANG di server, bukan diterima dari formulir.
+         |
+         | Angka yang datang dari peramban bisa disunting siapa saja, dan
+         | penawaran yang disusun di atas angka kiriman pengunjung adalah
+         | penawaran yang harganya ditentukan pemohon. Yang tersimpan tetap
+         | angka yang MEREKA LIHAT — hitungannya sama persis, dari komponen
+         | yang sama — supaya tim tidak menyebut angka lebih tinggi daripada
+         | yang tertera di layar saat mereka memutuskan menghubungi kami.
+        */
+        $perkiraan = PerkiraanEnterprise::hitung(
+            nomor: (int) ($data['estimated_sessions'] ?? 1),
+            pesan: (int) ($data['estimated_messages'] ?? 0),
+            retensi24: (int) ($data['want_retention_months'] ?? 12) === 24,
+            api600: (int) ($data['want_api_rate'] ?? 300) === 600,
+            pendampingan: (bool) ($data['want_onboarding'] ?? false),
+        );
+
         $lead = EnterpriseLead::create($data + [
+            'estimate_monthly' => $perkiraan['bulanan'],
+            'estimate_yearly' => $perkiraan['tahunan'],
+            'estimate_once' => $perkiraan['sekali'],
             // Diisi kalau kebetulan sedang login, supaya admin tidak perlu
             // mencocokkan email dengan akun secara manual.
             'user_id' => $request->user()?->id,
@@ -74,7 +120,11 @@ class EnterpriseLeadController extends Controller
             .($lead->estimated_sessions ? "Perkiraan nomor: {$lead->estimated_sessions}\n" : '')
             .($lead->estimated_messages
                 ? 'Perkiraan pesan/bulan: '.number_format($lead->estimated_messages, 0, ',', '.')."\n"
-                : '');
+                : '')
+            // Angka yang MEREKA lihat ikut, supaya tim tidak menyebut angka
+            // lebih tinggi daripada yang tertera di layar saat pemohon
+            // memutuskan menghubungi kami.
+            .'Perkiraan di layar: Rp '.number_format($perkiraan['bulanan'], 0, ',', '.')."/bln\n";
 
         $notifier->toAdmin(
             "*Permintaan Enterprise baru*\n\n".$ringkas."\nBuka panel admin → Enterprise untuk menjawabnya.",

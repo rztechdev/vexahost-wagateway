@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\PerkiraanEnterprise;
 use App\Support\Plan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -343,11 +344,128 @@ class EnterpriseTest extends TestCase
         $this->assertNotContains('enterprise', $slug);
     }
 
+    // ===================== Kalkulator perkiraan =====================
+
+    /**
+     * Kedua sisi harus sepakat.
+     *
+     * Kalkulator berjalan di peramban supaya angkanya berubah seketika, dan
+     * server menghitungnya lagi saat permintaan masuk. Kalau keduanya
+     * menyimpang, pengunjung melihat satu angka lalu tim menerima angka lain —
+     * dan yang menemukan selisihnya adalah orang yang sudah telanjur menyebut
+     * angka pertama di percakapan.
+     */
+    public function test_perkiraan_dihitung_dari_komponennya(): void
+    {
+        $k = PerkiraanEnterprise::komponen();
+
+        // 3 nomor + 150.000 pesan = dasar + 2 nomor + 2 blok pesan.
+        $hasil = PerkiraanEnterprise::hitung(nomor: 3, pesan: 150_000);
+
+        $this->assertSame(
+            $k['base'] + (2 * $k['per_session']) + (2 * $k['per_message_block']),
+            $hasil['bulanan'],
+        );
+        $this->assertSame($hasil['bulanan'] * config('plans.yearly_multiplier'), $hasil['tahunan']);
+        $this->assertSame(0, $hasil['sekali']);
+    }
+
+    /** Blok pesan dibulatkan ke ATAS: 60.000 butuh dua blok, bukan satu koma dua. */
+    public function test_blok_pesan_dibulatkan_ke_atas(): void
+    {
+        $k = PerkiraanEnterprise::komponen();
+
+        $pas = PerkiraanEnterprise::hitung(nomor: 1, pesan: 50_000);
+        $lebihSedikit = PerkiraanEnterprise::hitung(nomor: 1, pesan: 50_001);
+
+        $this->assertSame($k['base'], $pas['bulanan'], 'Blok pertama seharusnya sudah termasuk.');
+        $this->assertSame($k['base'] + $k['per_message_block'], $lebihSedikit['bulanan']);
+    }
+
+    /**
+     * Pendampingan dibayar SEKALI dan tidak boleh masuk total bulanan.
+     *
+     * Menjumlahkannya membuat angka bulanan terbaca lebih mahal dari yang
+     * sebenarnya, dan itu menghilangkan pelanggan yang sebenarnya mampu.
+     */
+    public function test_pendampingan_tidak_masuk_total_bulanan(): void
+    {
+        $tanpa = PerkiraanEnterprise::hitung(nomor: 1, pesan: 0);
+        $dengan = PerkiraanEnterprise::hitung(nomor: 1, pesan: 0, pendampingan: true);
+
+        $this->assertSame($tanpa['bulanan'], $dengan['bulanan']);
+        $this->assertGreaterThan(0, $dengan['sekali']);
+    }
+
+    /** Angka mustahil tidak boleh menghasilkan total yang terlihat masuk akal. */
+    public function test_angka_di_luar_batas_dijepit(): void
+    {
+        $nol = PerkiraanEnterprise::hitung(nomor: 0, pesan: -5000);
+        $satu = PerkiraanEnterprise::hitung(nomor: 1, pesan: 0);
+
+        $this->assertSame($satu['bulanan'], $nol['bulanan']);
+        $this->assertGreaterThan(0, $nol['bulanan']);
+    }
+
+    public function test_halaman_enterprise_terbuka_dan_memuat_kalkulatornya(): void
+    {
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertSee('Susun kebutuhan Anda')
+            ->assertSee('Perkiraan biaya')
+            // Kalimat ini WAJIB ada: angka yang tampak pasti lalu berubah saat
+            // ditagihkan adalah janji yang dilanggar di hadapan orang yang baru
+            // saja memutuskan membeli.
+            ->assertSee('Ini perkiraan, bukan penawaran');
+    }
+
+    /**
+     * Perkiraannya dihitung ULANG di server.
+     *
+     * Angka yang datang dari peramban bisa disunting siapa saja, dan penawaran
+     * yang disusun di atas angka kiriman pengunjung adalah penawaran yang
+     * harganya ditentukan pemohon.
+     */
+    public function test_perkiraan_tersimpan_dan_dihitung_ulang_di_server(): void
+    {
+        $this->isiForm([
+            'estimated_sessions' => 3,
+            'estimated_messages' => 150_000,
+            'want_retention_months' => 24,
+            'want_api_rate' => 600,
+            'want_onboarding' => 1,
+        ])->assertRedirect();
+
+        $lead = EnterpriseLead::firstOrFail();
+
+        $seharusnya = PerkiraanEnterprise::hitung(
+            nomor: 3,
+            pesan: 150_000,
+            retensi24: true,
+            api600: true,
+            pendampingan: true,
+        );
+
+        $this->assertSame($seharusnya['bulanan'], (int) $lead->estimate_monthly);
+        $this->assertSame($seharusnya['tahunan'], (int) $lead->estimate_yearly);
+        $this->assertSame($seharusnya['sekali'], (int) $lead->estimate_once);
+        $this->assertSame(24, (int) $lead->want_retention_months);
+        $this->assertTrue((bool) $lead->want_onboarding);
+    }
+
+    public function test_pilihan_di_luar_daftar_ditolak(): void
+    {
+        $this->isiForm(['want_retention_months' => 99, 'want_api_rate' => 9999])
+            ->assertSessionHasErrors(['want_retention_months', 'want_api_rate']);
+
+        $this->assertSame(0, EnterpriseLead::count());
+    }
+
     public function test_halaman_depan_menampilkan_kartu_enterprise(): void
     {
         $this->get('/')
             ->assertOk()
             ->assertSee('Enterprise')
-            ->assertSee('Minta penawaran');
+            ->assertSee('Hitung perkiraan');
     }
 }

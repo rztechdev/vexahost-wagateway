@@ -187,6 +187,51 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Enterprise — komponen harga untuk kalkulator perkiraan
+    |--------------------------------------------------------------------------
+    |
+    | Angka di sini dipakai halaman /enterprise untuk menyusun perkiraan yang
+    | bisa dihitung sendiri pengunjung. Ia PERKIRAAN, bukan penawaran: yang
+    | mengikat tetap kesepakatan yang disusun admin di panel, dan halaman itu
+    | menyebutkannya apa adanya.
+    |
+    | Kenapa nomor yang paling mahal: biaya nyata kami per nomor adalah satu
+    | Chromium yang memakan 300–500 MB, dan RAM itu diperebutkan dengan PHP,
+    | worker, MySQL, dan tujuh aplikasi Flustra lain di server yang sama. Pesan
+    | jauh lebih murah — yang dibayar cuma waktu proses.
+    |
+    | `base` sengaja di atas harga Elite (449.000). Enterprise yang lebih murah
+    | dari paket tertinggi akan menarik orang yang sebenarnya cocok di Elite,
+    | dan tiap orang seperti itu menghabiskan waktu negosiasi untuk pendapatan
+    | yang lebih kecil.
+    |
+    */
+
+    'enterprise' => [
+        // Sudah termasuk: 1 nomor, 50.000 pesan/bln, retensi 12 bulan,
+        // API 300/menit, API key dan anggota tanpa batas.
+        'base' => (int) env('ENTERPRISE_BASE_PRICE', 750_000),
+
+        'per_session' => (int) env('ENTERPRISE_PER_SESSION', 250_000),
+        'included_sessions' => 1,
+
+        'per_message_block' => (int) env('ENTERPRISE_PER_MESSAGE_BLOCK', 150_000),
+        'message_block_size' => 50_000,
+        'included_messages' => 50_000,
+
+        'retention_24_months' => (int) env('ENTERPRISE_RETENTION_24', 200_000),
+        'api_600_per_minute' => (int) env('ENTERPRISE_API_600', 300_000),
+
+        // Sekali bayar, bukan bulanan — dan itu harus terbaca jelas di layar,
+        // kalau tidak totalnya salah dibaca sebagai biaya tetap tiap bulan.
+        'onboarding' => (int) env('ENTERPRISE_ONBOARDING', 500_000),
+
+        // Nomor WhatsApp tim, untuk tombol chat di halaman Enterprise.
+        'whatsapp' => env('ENTERPRISE_WHATSAPP', env('BILLING_ADMIN_PHONE')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pajak
     |--------------------------------------------------------------------------
     |

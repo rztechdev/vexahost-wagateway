@@ -391,7 +391,7 @@
                 @endforeach
             </ul>
 
-            <a href="{{ route('welcome') }}#enterprise"
+            <a href="{{ route('enterprise') }}"
                class="mt-5 inline-block rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition hover:bg-muted">
                 Minta penawaran
             </a>
