@@ -208,6 +208,23 @@ return [
     */
 
     'enterprise' => [
+        /*
+         | Nomor untuk tombol chat di halaman Enterprise — SENGAJA bukan
+         | `admin_phone` di atas, walaupun keduanya sama-sama nomor kami.
+         |
+         | `admin_phone` itu kotak masuk pribadi tim: arah masuk, dari gateway
+         | ke kami — bukti bayar, lead baru, peringatan sistem. Memasangnya di
+         | halaman publik berarti nomor itu ikut ter-index dan orang asing
+         | mulai mengirim ke sana, sehingga kabar yang menuntut tindakan
+         | tenggelam di antara pertanyaan calon pelanggan. Dan tidak bisa
+         | ditarik lagi setelah halamannya terlanjur tersebar.
+         |
+         | Kosong berarti tombolnya TIDAK dirender — bukan menuju wa.me tanpa
+         | nomor, yang membuka WhatsApp ke layar galat. Formulirnya tetap ada,
+         | jadi halaman ini tidak pernah kehilangan satu-satunya cara menghubungi.
+        */
+        'whatsapp' => env('ENTERPRISE_WHATSAPP'),
+
         // Sudah termasuk: 1 nomor, 50.000 pesan/bln, retensi 12 bulan,
         // API 300/menit, API key dan anggota tanpa batas.
         'base' => (int) env('ENTERPRISE_BASE_PRICE', 750_000),
@@ -226,8 +243,6 @@ return [
         // kalau tidak totalnya salah dibaca sebagai biaya tetap tiap bulan.
         'onboarding' => (int) env('ENTERPRISE_ONBOARDING', 500_000),
 
-        // Nomor WhatsApp tim, untuk tombol chat di halaman Enterprise.
-        'whatsapp' => env('ENTERPRISE_WHATSAPP', env('BILLING_ADMIN_PHONE')),
     ],
 
     /*

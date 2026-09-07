@@ -461,11 +461,73 @@ class EnterpriseTest extends TestCase
         $this->assertSame(0, EnterpriseLead::count());
     }
 
+    /**
+     * Nomor publik Enterprise BUKAN nomor kabar tim, dan itu dijaga di sini.
+     *
+     * `admin_phone` adalah kotak masuk kami sendiri — bukti bayar, lead,
+     * peringatan sistem. Kalau suatu saat ada yang menyederhanakannya jadi satu
+     * env, nomor itu ikut ter-index di halaman publik dan kabar yang menuntut
+     * tindakan tenggelam di antara chat orang asing. Nomornya juga harus sudah
+     * ternormalisasi: `wa.me` menolak awalan 0.
+     */
+    public function test_tombol_whatsapp_memakai_nomor_publik_bukan_nomor_tim(): void
+    {
+        config([
+            'billing.enterprise.whatsapp' => '082318280376',
+            'billing.admin_phone' => '085774410978',
+        ]);
+
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertSee('Chat WhatsApp')
+            ->assertSee('wa.me/6282318280376', false)
+            ->assertDontSee('6285774410978', false);
+    }
+
+    /**
+     * Tanpa nomor publik, tombolnya tidak dirender — bukan menuju wa.me kosong,
+     * yang membuka WhatsApp ke layar galat. Formulirnya tetap ada, jadi halaman
+     * ini tidak pernah kehilangan satu-satunya cara menghubungi.
+     */
+    public function test_tanpa_nomor_publik_tombol_whatsapp_tidak_muncul(): void
+    {
+        config(['billing.enterprise.whatsapp' => null]);
+
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertDontSee('Chat WhatsApp')
+            ->assertSee('name="email"', false);
+    }
+
     public function test_halaman_depan_menampilkan_kartu_enterprise(): void
     {
         $this->get('/')
             ->assertOk()
             ->assertSee('Enterprise')
             ->assertSee('Hitung perkiraan');
+    }
+
+    /**
+     * Header halaman enterprise harus persis dengan header landing page,
+     * memuat navigasi lengkap, dropdown, pencarian tema, dan drawer mobile.
+     */
+    public function test_halaman_enterprise_menampilkan_header_lengkap_seperti_halaman_depan(): void
+    {
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertSee('Flustra WA Gateway')
+            ->assertSee('images/flustra-wa.png')
+            ->assertSee('Cara Kerja')
+            ->assertSee('Fitur')
+            ->assertSee('Harga')
+            ->assertSee('Testimoni')
+            ->assertSee('Mitra')
+            ->assertSee('Docs')
+            ->assertSee('Produk')
+            ->assertSee('Developer')
+            ->assertSee('Sumber daya')
+            ->assertSee('Masuk')
+            ->assertSee('Buat akun')
+            ->assertSee('aria-label="Menu Mobile"', false);
     }
 }

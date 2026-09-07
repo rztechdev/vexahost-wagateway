@@ -213,6 +213,15 @@ BILLING_NOTIFY_WORKSPACE_ID=
 # tanpa nomor ini tidak ada yang memberi tahu bahwa ada yang perlu dibuka.
 BILLING_ADMIN_PHONE=
 
+# Nomor WhatsApp yang tampil sebagai tombol chat di halaman Enterprise
+# (`/enterprise`). Sengaja TERPISAH dari BILLING_ADMIN_PHONE di atas: yang
+# itu kotak masuk tim — arah masuk, dari gateway ke kami — dan memasangnya
+# di halaman publik membuat kabar bukti bayar tenggelam di antara chat orang
+# asing, pada nomor yang tidak bisa ditarik lagi setelah tersebar.
+# Kosong berarti tombolnya tidak dirender; formulir Enterprise tetap ada,
+# jadi halaman itu tidak pernah kehilangan satu-satunya cara menghubungi.
+ENTERPRISE_WHATSAPP=
+
 # Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa kata
 # sandi, karena pemulihan mandiri sengaja belum dibuat.
 BILLING_SUPPORT_EMAIL=flustrafinances@gmail.com
