@@ -40,7 +40,30 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+            /*
+            | HARUS lebih besar dari `$timeout` job terpanjang, dan dari
+            | `--timeout` milik `queue:work` di start.sh (240).
+            |
+            | Nilai ini mengukur berapa lama sebuah job boleh dianggap masih
+            | berjalan sebelum antrean menyimpulkan worker-nya mati dan
+            | melepasnya untuk dikerjakan ulang. Bawaan Laravel 90 detik, dan
+            | itu LEBIH PENDEK daripada hampir seluruh job di sini
+            | (SusunEksporDataJob 900, PruneOldRecordsJob 600, BillingCycleJob
+            | 300, SendMessageJob 120). Akibatnya bukan job yang gagal
+            | melainkan job yang dikerjakan DUA KALI sementara yang pertama
+            | masih berjalan.
+            |
+            | Untuk SendMessageJob artinya penerima menerima pesan yang sama
+            | dua kali — kegagalan yang sama persis dengan yang ditutup map
+            | `#kiriman` di engine (session-manager.js), kecuali map itu cuma
+            | menyimpan 15 menit, jadi percobaan ulang di luar jendela itu
+            | benar-benar mengirim ulang.
+            |
+            | 1200 dan bukan 900: SusunEksporDataJob bertimeout tepat 900, dan
+            | sama besar tetap balapan. Kalau ada job baru dengan timeout lebih
+            | panjang dari 1200, angka ini yang harus naik lebih dulu.
+            */
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 1200),
             'after_commit' => false,
         ],
 
@@ -48,7 +71,9 @@ return [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
             'queue' => env('BEANSTALKD_QUEUE', 'default'),
-            'retry_after' => (int) env('BEANSTALKD_QUEUE_RETRY_AFTER', 90),
+            // Disamakan dengan connection `database` di atas; alasannya di sana.
+            // Dijaga tests/Unit/AntreanTest.php.
+            'retry_after' => (int) env('BEANSTALKD_QUEUE_RETRY_AFTER', 1200),
             'block_for' => 0,
             'after_commit' => false,
         ],
@@ -68,7 +93,10 @@ return [
             'driver' => 'redis',
             'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
             'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 90),
+            // Disamakan dengan connection `database` di atas; alasannya di sana.
+            // Pindah ke Redis suatu saat tidak boleh menghidupkan lagi bug pesan
+            // ganda hanya karena angkanya tertinggal di connection yang lain.
+            'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 1200),
             'block_for' => null,
             'after_commit' => false,
         ],

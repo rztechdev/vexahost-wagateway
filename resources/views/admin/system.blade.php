@@ -187,6 +187,53 @@
                 <code>WA_MAX_SESSIONS</code>, bukan oleh Laravel — begitu penuh, pelanggan berikutnya yang
                 membayar tidak akan bisa menautkan nomornya.
             </p>
+            @php
+                // Selisih Chromium hidup dengan sesi yang seharusnya berjalan.
+                // Ini satu-satunya angka di halaman ini yang mendeteksi kebocoran
+                // memori SEBELUM ia jadi gangguan; sisanya melaporkan sesuatu
+                // yang sudah terjadi.
+                $bocor = $engine['bocor'] ?? null;
+            @endphp
+
+            <p class="mt-3 text-sm text-muted-foreground">
+                Proses Chromium hidup:
+                @if ($bocor === null)
+                    <strong>tidak diketahui</strong>
+                    <span class="text-xs">(engine tidak menjawab, atau /proc tidak tersedia)</span>
+                @else
+                    <strong class="{{ $bocor === 0 ? '' : 'text-destructive' }}">{{ $engine['chromium'] }}</strong>
+                    pada {{ $engine['profil'] }} profil, untuk {{ $engine['sesi'] }} sesi
+                    @if ($bocor === 0)
+                        — cocok.
+                    @else
+                        @if (($engine['duplikat'] ?? 0) > 0)
+                            — <strong class="text-destructive">{{ $engine['duplikat'] }} proses berlebih
+                            pada profil yang sama</strong>. Dua Chromium pada satu folder kredensial saling
+                            menimpa state WhatsApp Web; pelanggan melihatnya sebagai scan QR yang gagal
+                            dengan &ldquo;Execution context was destroyed&rdquo;, bukan sebagai kehabisan memori.
+                        @endif
+                        @if (($engine['yatim'] ?? 0) > 0)
+                            — <strong class="text-destructive">{{ $engine['yatim'] }} profil tanpa sesi</strong>.
+                            Masing-masing memakan 250–500 MB yang tidak akan kembali sampai container di-restart.
+                        @endif
+                    @endif
+                @endif
+            </p>
+
+            <p class="mt-3 text-sm text-muted-foreground">
+                Slot dijanjikan ke langganan berbayar:
+                <strong>{{ $kapasitas['dijanjikan'] }}</strong>/{{ $kapasitas['batas'] }}.
+                @if ($kapasitas['menunggu'] > 0)
+                    <strong class="text-destructive">{{ $kapasitas['menunggu'] }} permintaan di daftar
+                    tunggu</strong>@if ($kapasitas['menunggu_terlama'] ?? null), yang terlama sejak
+                        {{ \Illuminate\Support\Carbon::parse($kapasitas['menunggu_terlama'])->diffForHumans() }}@endif.
+                    Ini pelanggan yang mau membayar dan kita tolak — angka inilah yang menjawab
+                    kapan kapasitas perlu ditambah.
+                @else
+                    Tidak ada yang menunggu.
+                @endif
+            </p>
+
             <p class="mt-2 text-sm text-muted-foreground">
                 Pesan gagal 24 jam terakhir: <strong class="{{ $pesanGagal24Jam > 0 ? 'text-destructive' : '' }}">{{ number_format($pesanGagal24Jam) }}</strong>
             </p>

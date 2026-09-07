@@ -81,7 +81,13 @@ class ApiKeyTest extends TestCase
         $key = ApiKey::first();
 
         $this->assertNotSame($key->plainKey(), $key->key_hash);
-        $this->assertTrue(Hash::check(explode('.', $key->plainKey())[1], $key->key_hash));
+
+        // Lewat kontrak modelnya, bukan lewat Hash::check langsung: sejak
+        // rahasia API di-hash SHA-256 (alasannya di ApiKey::hashSecret), kelas
+        // inilah yang tahu bentuk hash mana yang berlaku.
+        $this->assertTrue($key->verifySecret(explode('.', $key->plainKey())[1]));
+        $this->assertNotSame($key->plainKey(), $key->key_hash_fast);
+        $this->assertFalse($key->verifySecret('bukan-rahasianya'));
     }
 
     /**

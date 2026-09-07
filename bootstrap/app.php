@@ -27,6 +27,30 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        /*
+         | Dinilai ulang bersama pembatasan percobaan API key (AuthenticateApiKey).
+         |
+         | `at: '*'` berarti X-Forwarded-For diterima dari siapa pun yang bisa
+         | menjangkau container ini. Itu terdengar buruk, dan tetap dipertahankan
+         | karena alternatifnya lebih buruk: di Coolify, proxy Traefik berada di
+         | jaringan Docker dengan alamat yang berubah tiap container dibuat
+         | ulang, jadi menyebut IP-nya secara pasti menghasilkan konfigurasi yang
+         | diam-diam berhenti benar setelah satu redeploy — dan gejalanya seluruh
+         | IP pelanggan tercatat sebagai IP proxy.
+         |
+         | Yang membuatnya bisa diterima: container ini tidak punya port yang
+         | terbuka ke internet; satu-satunya jalan masuk adalah lewat Traefik.
+         | Konsekuensinya tetap harus disadari di dua tempat, dan keduanya sudah
+         | memperhitungkannya:
+         |
+         |   - Rate limit API dihitung per WORKSPACE, bukan per IP.
+         |   - Pembatas percobaan API key yang gagal punya ember kedua per prefix
+         |     saja, justru karena ember per-IP bisa dihindari dengan memutar
+         |     X-Forwarded-For.
+         |
+         | Yang TIDAK boleh dilakukan selama baris ini apa adanya: membuat
+         | penjagaan keamanan baru yang bersandar pada IP saja.
+        */
         $middleware->trustProxies(at: '*');
 
         // Berlaku untuk SEMUA respons — halaman, API, dan callback engine

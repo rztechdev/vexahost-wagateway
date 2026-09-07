@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Internal;
 use App\Http\Controllers\Controller;
 use App\Models\WaSession;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Dipanggil engine sekali saat boot. Engine sendiri tidak menyimpan daftar
@@ -23,10 +24,25 @@ class BootstrapController extends Controller
             ->layananHidup()
             ->where('driver', 'wwebjs')
             ->where('auto_reconnect', true)
+            /*
+             | Sesi yang BELUM PERNAH tersambung tidak ikut dipulihkan otomatis.
+             |
+             | Ini sudah lama jadi maksudnya — komentar di bawah menuliskannya —
+             | tapi kuerinya tidak pernah menegakkannya: `disconnected` ikut
+             | terjaring tanpa memandang `connected_at`, dan sesi yang gagal
+             | pada percobaan pertama langsung menjadi `disconnected`.
+             |
+             | Produksi 8 September 2026 memperlihatkan akibatnya: satu nomor
+             | punya EMPAT baris sesi yang tidak satu pun pernah `connected`,
+             | dan keempatnya diserahkan ke engine setiap kali ia menyala.
+             | Baris mati itulah bahan bakar badai percobaannya.
+             |
+             | Yang hilang dengan penjagaan ini: tidak ada. Sesi yang belum
+             | pernah tertaut tidak punya kredensial untuk dipulihkan — ia cuma
+             | akan memunculkan QR yang tidak ada yang men-scan.
+            */
+            ->whereNotNull('connected_at')
             ->where(function ($query): void {
-                // Sesi yang belum pernah tersambung tidak ikut dijalankan
-                // otomatis: ia hanya akan memunculkan QR yang tidak ada yang
-                // men-scan.
                 $query->whereIn('status', ['connected', 'connecting', 'disconnected'])
                     // Yang berstatus `failed` tapi pernah tersambung tetap
                     // dipulihkan: kredensialnya masih ada di volume, dan status
@@ -36,7 +52,49 @@ class BootstrapController extends Controller
                     // berarti memaksa scan ulang untuk masalah yang sudah lewat.
                     ->orWhere(fn ($q) => $q->where('status', 'failed')->whereNotNull('connected_at'));
             })
+            /*
+             | Batas percobaan berlaku DI SINI JUGA, dan itu celah yang sempat
+             | terlewat.
+             |
+             | `SyncSessionStatusJob` sudah menghormati `connect_failures`, tapi
+             | ia hanya menyentuh sesi `disconnected`. Jalur ini berbeda: ia
+             | memulihkan `failed` yang pernah tersambung — dan justru sesi
+             | seperti itulah yang punya riwayat gagal panjang. Tanpa penjagaan
+             | di sini, tiap engine dijalankan ulang seluruh riwayat kegagalannya
+             | dilupakan dan badai percobaannya mulai lagi dari nol.
+             |
+             | `supervisi_engine` di start.sh menjalankan ulang engine 3 detik
+             | setelah ia mati. Engine yang tidak stabil karena itu memanggil
+             | bootstrap berkali-kali, dan tiap panggilan menyalakan Chromium
+             | untuk setiap sesi di daftar ini.
+             |
+             | Penghitungnya nol lagi begitu sesi benar-benar `connected`, dan
+             | juga saat pelanggan menekan Hubungkan. Jadi yang dikecualikan di
+             | sini hanya sesi yang sudah berulang kali gagal DAN belum ada
+             | manusia yang menyentuhnya.
+            */
+            ->where('connect_failures', '<', WaSession::BATAS_PERCOBAAN_SAMBUNG)
             ->get(['id', 'name', 'status']);
+
+        /*
+         | Menyerahkan sesi ke engine ADALAH percobaan penyambungan, jadi ia
+         | dihitung seperti percobaan lainnya.
+         |
+         | `supervisi_engine` di start.sh menjalankan ulang engine tiga detik
+         | setelah ia mati. Engine yang tidak stabil karena itu memanggil
+         | endpoint ini berkali-kali, dan tiap panggilan menyalakan Chromium
+         | untuk SETIAP sesi di daftar ini. Tanpa dihitung, jalur ini adalah
+         | badai percobaan yang tidak punya rem sama sekali.
+         |
+         | Satu UPDATE untuk seluruh daftar, bukan satu per baris: endpoint ini
+         | dipanggil saat engine baru menyala, yaitu saat Laravel juga sedang
+         | sibuk melayani boot-nya sendiri.
+        */
+        if ($sessions->isNotEmpty()) {
+            DB::table('wa_sessions')
+                ->whereIn('id', $sessions->pluck('id'))
+                ->increment('connect_failures');
+        }
 
         return response()->json([
             'success' => true,

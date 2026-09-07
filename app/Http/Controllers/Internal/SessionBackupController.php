@@ -33,44 +33,55 @@ class SessionBackupController extends Controller
         $path = "{$session->id}/session.zip";
         $tmp = tempnam(sys_get_temp_dir(), 'wa-backup-');
 
-        // Ditulis streaming ke file sementara supaya zip berukuran besar tidak
-        // pernah dimuat utuh ke memori PHP.
-        $in = fopen('php://input', 'rb');
-        $out = fopen($tmp, 'wb');
-        stream_copy_to_stream($in, $out);
-        fclose($in);
-        fclose($out);
+        /*
+         | Berkas sementara dibuang di `finally`, bukan setelah tiap langkah.
+         |
+         | Sebelumnya ia hanya dibuang pada dua jalur keluar yang diingat
+         | penulisnya. Jalur ketiga — `Storage::put()` yang melempar karena disk
+         | penuh atau izin salah — melewatkan penghapusannya, dan zip berukuran
+         | puluhan MB tertinggal di /tmp. Endpoint ini dipanggil tiap lima menit
+         | PER SESI, jadi kegagalan yang berulang mengubah /tmp menjadi tempat
+         | penampungan yang tidak pernah ada yang membersihkan.
+        */
+        try {
+            // Ditulis streaming ke berkas sementara supaya zip berukuran besar
+            // tidak pernah dimuat utuh ke memori PHP.
+            $in = fopen('php://input', 'rb');
+            $out = fopen($tmp, 'wb');
+            stream_copy_to_stream($in, $out);
+            fclose($in);
+            fclose($out);
 
-        $checksum = hash_file('sha256', $tmp);
-        $claimed = $request->header('X-Engine-Body-Sha256');
+            $checksum = hash_file('sha256', $tmp);
+            $claimed = $request->header('X-Engine-Body-Sha256');
 
-        if ($claimed && ! hash_equals($claimed, $checksum)) {
+            if ($claimed && ! hash_equals($claimed, $checksum)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => ['message' => 'Isi backup tidak cocok dengan checksum yang ditandatangani.'],
+                ], 422);
+            }
+
+            Storage::disk(self::DISK)->put($path, fopen($tmp, 'rb'));
+            $size = filesize($tmp);
+
+            // Satu baris per sesi: yang dibutuhkan hanya backup terbaru, dan
+            // menyimpan riwayat zip lama justru memenuhi disk tanpa guna.
+            SessionBackup::updateOrCreate(
+                ['wa_session_id' => $session->id],
+                [
+                    'disk' => self::DISK,
+                    'path' => $path,
+                    'size' => $size,
+                    'checksum' => $checksum,
+                    'backed_up_at' => now(),
+                ]
+            );
+
+            return response()->json(['success' => true, 'data' => ['size' => $size, 'checksum' => $checksum]]);
+        } finally {
             @unlink($tmp);
-
-            return response()->json([
-                'success' => false,
-                'error' => ['message' => 'Isi backup tidak cocok dengan checksum yang ditandatangani.'],
-            ], 422);
         }
-
-        Storage::disk(self::DISK)->put($path, fopen($tmp, 'rb'));
-        $size = filesize($tmp);
-        @unlink($tmp);
-
-        // Satu baris per sesi: yang dibutuhkan hanya backup terbaru, dan
-        // menyimpan riwayat zip lama justru memenuhi disk tanpa guna.
-        SessionBackup::updateOrCreate(
-            ['wa_session_id' => $session->id],
-            [
-                'disk' => self::DISK,
-                'path' => $path,
-                'size' => $size,
-                'checksum' => $checksum,
-                'backed_up_at' => now(),
-            ]
-        );
-
-        return response()->json(['success' => true, 'data' => ['size' => $size, 'checksum' => $checksum]]);
     }
 
     public function show(string $sessionId): StreamedResponse|JsonResponse

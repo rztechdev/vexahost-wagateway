@@ -36,6 +36,33 @@
 
 set -u
 
+# --- PID 1 yang menuai anak yatim -----------------------------------------
+#
+# Kalau proses Node mati mendadak (OOM kill / SIGKILL), seluruh subproses
+# Chromium-nya di-reparent ke PID 1. Bash sebagai PID 1 hanya menunggu empat pid
+# yang dikenalnya, jadi sisanya menumpuk sebagai zombie: 718 di antaranya
+# terbaca di server saat insiden 7 September 2026.
+#
+# Zombie itu sendiri BUKAN yang menjatuhkan server — `kernel.pid_max` di sana
+# 4.194.304, jadi 3.111 proses tidak pernah mendekati batas apa pun, dan yang
+# menjatuhkannya murni memori. Ia penanda churn Chromium, dan penanda yang
+# dibiarkan bertumpuk membuat setiap pengukuran lain lebih sulit dibaca.
+#
+# Jalur resminya `--init` milik Docker, dan itu tidak tersedia: Coolify 4.3.14
+# di server ini tidak punya kolom Custom Docker Options. Jadi start.sh
+# menjalankan ulang dirinya sendiri di bawah tini. Keuntungannya ia ikut masuk
+# version control, bukan tersimpan di satu kolom UI yang hilang tanpa jejak.
+#
+# tini meneruskan SIGTERM ke anaknya, jadi `matikan()` di bawah tetap berjalan
+# seperti biasa. Kalau tini tidak terpasang, seluruh blok ini dilewati dan
+# perilakunya persis seperti sebelumnya — penyapu Chromium di bawah yang
+# menanggung sisanya.
+if [ "$$" = "1" ] && [ -z "${FLUSTRA_TINI:-}" ] && command -v tini >/dev/null 2>&1; then
+    export FLUSTRA_TINI=1
+    echo "[start.sh] Menjalankan ulang di bawah tini supaya PID 1 menuai proses yatim."
+    exec tini -s -- "$0" "$@"
+fi
+
 cd "$(dirname "$0")" || exit 1
 
 mkdir -p storage/logs
@@ -110,6 +137,58 @@ PERINGATAN
     return 1
 }
 
+# Membunuh Chromium yang tertinggal dari proses engine sebelumnya.
+#
+# INVARIAN YANG MEMBUAT INI AMAN: fungsi ini hanya dipanggil tepat sebelum
+# `node engine/src/server.js` dijalankan, yaitu saat tidak ada satu pun engine
+# yang hidup. Pada saat itu, setiap Chromium yang masih berjalan dengan profil
+# kita SUDAH PASTI yatim — tidak ada lagi proses yang memegang referensinya dan
+# tidak akan pernah ada yang menutupnya. Jangan pernah memanggilnya dari tempat
+# lain; dipanggil saat engine hidup, ia memutus sesi pelanggan.
+#
+# Polanya sengaja sesempit mungkin: `--user-data-dir` yang memuat `wwebjs_auth`.
+# VPS ini menampung 20+ container lain, dan walau container terisolasi, pola
+# `pkill chrome` adalah kebiasaan yang cepat atau lambat dijalankan di tempat
+# yang salah.
+#
+# Dua tahap. Yang pertama membunuh proses browser (satu-satunya yang membawa
+# --user-data-dir). Renderer biasanya ikut mati sendiri begitu kanal IPC-nya
+# tertutup; tahap kedua menyapu yang tidak, dengan syarat induknya sudah PID 1
+# — tanda pasti bahwa ia yatim, bukan anak sah dari engine yang baru menyala.
+sapu_chromium_yatim() {
+    local jumlah=0
+    # Akar /proc bisa diarahkan ke pohon tiruan untuk memverifikasi pemilihannya
+    # tanpa Chromium sungguhan. Produksi tidak pernah menyetel variabel ini.
+    local proc="${PROC_ROOT:-/proc}"
+
+    if command -v pkill >/dev/null 2>&1; then
+        pkill -9 -f -- '--user-data-dir=[^ ]*wwebjs_auth' 2>/dev/null && jumlah=1
+    fi
+
+    # Tahap dua: sisa proses Chromium yatim (PPID 1) di bawah folder puppeteer.
+    local pid ppid cmd
+    for pid in $(ls "$proc" 2>/dev/null | grep -E '^[0-9]+$'); do
+        [ -r "$proc/$pid/cmdline" ] || continue
+
+        cmd="$(tr '\0' ' ' < "$proc/$pid/cmdline" 2>/dev/null)"
+
+        case "$cmd" in
+            *puppeteer*chrome*|*wwebjs_auth*) ;;
+            *) continue ;;
+        esac
+
+        ppid="$(awk '/^PPid:/{print $2}' "$proc/$pid/status" 2>/dev/null)"
+
+        [ "$ppid" = "1" ] || continue
+
+        kill -9 "$pid" 2>/dev/null && jumlah=$((jumlah + 1))
+    done
+
+    if [ "$jumlah" -gt 0 ]; then
+        echo "[start.sh] Menyapu Chromium yatim dari proses engine sebelumnya."
+    fi
+}
+
 supervisi_engine() {
     local tunggu=0
 
@@ -129,6 +208,10 @@ supervisi_engine() {
     periksa_chromium || true
 
     while [ ! -f "$TANDA_BERHENTI" ]; do
+        # Sebelum menyalakan engine, bukan sesudah: pada titik ini tidak ada
+        # engine yang hidup, jadi Chromium mana pun yang cocok pasti yatim.
+        sapu_chromium_yatim
+
         node engine/src/server.js &
         echo $! > "$PIDFILE_ENGINE"
         wait $! || true
@@ -172,14 +255,52 @@ supervisi_worker() {
 # Menggantikan Scheduled Task di Coolify. Scheduled Task berjalan di container
 # yang dibuat khusus untuk itu — build ulang kecil tiap menit; ini cuma satu
 # proses PHP yang tidur di antara pemeriksaan.
+# `schedule:run` dalam loop bash, BUKAN `schedule:work`.
+#
+# Keduanya melakukan hal yang sama; bedanya siapa yang jadi induk proses.
+# `ScheduleWorkCommand` (vendor/laravel/framework/.../ScheduleWorkCommand.php:61)
+# menelurkan satu proses PHP anak tiap menit lewat
+# `Process::fromShellCommandline(...)->start()`. Dalam bentuk di bawah, induknya
+# bash, dan bash memanggil wait() untuk setiap perintah yang dijalankannya.
+#
+# JANGAN membaca ini sebagai perbaikan zombie. Zombie yang terekam di produksi
+# 8 September 2026 induknya `php artisan serve`, bukan penjadwal — sudah
+# diidentifikasi langsung dari server:
+#
+#     25 zombie <- pid 2082    php artisan serve --host=0.0.0.0 --port=80
+#     13 zombie <- pid 510122  php artisan serve --host=0.0.0.0 --port=80
+#
+# Sumbernya sengaja TIDAK dikejar dalam perubahan ini: dengan `pid_max`
+# 4.194.304 di server itu, 38 zombie tidak berbahaya, dan deploy yang sudah
+# besar bukan tempat menambah perubahan lagi. Tercatat sebagai utang teknis di
+# docs/CUTOVER.md.
+#
+# Yang benar-benar dibeli bentuk di bawah karena itu bukan hilangnya zombie
+# melainkan satu lapis proses yang berkurang: induk yang menuai anaknya sendiri,
+# dan satu proses PHP lebih sedikit per menit di container yang RAM-nya sedang
+# diperebutkan.
+#
+# Atribusi awal kami — "zombie = Chromium yang di-reparent ke PID 1" — juga
+# keliru. `tini` tetap dipertahankan karena ia murah dan tetap benar untuk yatim
+# sungguhan, tapi ia tidak menyentuh zombie yang induknya masih hidup: reaper
+# PID 1 hanya menuai anak yang induknya sudah mati.
+#
+# Menunggu sampai detik ke-00 dan bukan `sleep 60`: `schedule:run` memutuskan
+# apa yang jatuh tempo dari jam saat ia berjalan, dan `sleep 60` menghanyut
+# beberapa detik tiap putaran sampai satu menit terlewat sama sekali. Yang
+# hilang karena itu bukan pekerjaan kecil melainkan satu giliran penuh
+# SyncSessionStatusJob.
 supervisi_penjadwal() {
     while [ ! -f "$TANDA_BERHENTI" ]; do
-        php artisan schedule:work
+        # Tidur sampai pergantian menit berikutnya.
+        sleep $((60 - $(date +%-S)))
 
         [ -f "$TANDA_BERHENTI" ] && break
 
-        echo "[start.sh] schedule:work berhenti, dijalankan ulang dalam 2 detik."
-        sleep 2
+        # Dijalankan di latar lalu ditunggu, supaya penanda berhenti tetap bisa
+        # diperiksa tanpa menunggu `schedule:run` yang kebetulan lama selesai.
+        php artisan schedule:run >/dev/null 2>&1 &
+        wait $! || true
     done
 }
 

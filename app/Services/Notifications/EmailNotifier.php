@@ -97,6 +97,30 @@ class EmailNotifier
     }
 
     /**
+     * Kabar bebas untuk satu workspace, tanpa pemanggilnya perlu menyusun
+     * mailable sendiri.
+     *
+     * Pasangan `kabarTim()` untuk arah yang berlawanan, dan ada karena alasan
+     * yang sama: jalur yang menuntut pemanggilnya membuat mailable akan
+     * dilewatkan sebagian pemanggil, dan jalur yang cuma separuh terpasang
+     * lebih buruk daripada yang tidak ada — ia menciptakan harapan bahwa kabar
+     * selalu sampai lewat email.
+     *
+     * Mengembalikan `false` tanpa melempar untuk workspace yang tidak punya
+     * alamat penagihan maupun pemilik. Email itu pelengkap; lonceng di dalam
+     * aplikasi yang jadi patokan bahwa kabarnya sampai.
+     */
+    public function kabarWorkspace(
+        Workspace $workspace,
+        string $judul,
+        string $isi,
+        ?string $tautan = null,
+        ?string $sekali = null,
+    ): bool {
+        return $this->toWorkspace($workspace, new KabarTim($judul, $isi, $tautan), $sekali);
+    }
+
+    /**
      * Kabar untuk tim, memakai teks yang sama dengan pemberitahuan WhatsApp.
      *
      * Ada supaya tiap pemanggil cukup menambah SATU baris di sebelah panggilan

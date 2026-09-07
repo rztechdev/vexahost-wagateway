@@ -6,6 +6,7 @@ use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Providers\ProviderManager;
 use App\Support\EngineError;
+use App\Support\KapasitasPlatform;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -20,6 +21,25 @@ class SessionService
             throw new RuntimeException(
                 "Workspace sudah memakai seluruh jatah sesi ({$workspace->max_sessions})."
             );
+        }
+
+        /*
+         | Batas platform, bukan batas workspace.
+         |
+         | `canAddSession()` di atas cuma tahu jatah paket workspace ini. Yang
+         | tidak diketahui siapa pun sampai detik terakhir adalah bahwa SELURUH
+         | platform hanya sanggup menjalankan `WA_MAX_SESSIONS` nomor sekaligus.
+         | Tanpa pemeriksaan ini, baris sesinya lahir dengan sukses, muncul di
+         | dashboard sebagai nomor yang tinggal dihubungkan, lalu gagal
+         | selamanya di tombol Hubungkan.
+         |
+         | Diperiksa di sini dan bukan cuma di checkout karena keduanya menjaga
+         | hal berbeda: checkout menjaga pelanggan BARU dari membayar sia-sia,
+         | ini menjaga pelanggan lama yang jatah paketnya masih sisa dari
+         | membuat sesi yang tidak akan pernah jalan.
+        */
+        if (! $workspace->isExempt() && KapasitasPlatform::slotHabis()) {
+            throw new RuntimeException(KapasitasPlatform::kalimat());
         }
 
         // Sesi dihapus lunak, tapi indeks unik (workspace_id, name) tidak peduli
@@ -144,6 +164,7 @@ class SessionService
                     'connected_at' => $session->connected_at ?? now(),
                     'last_seen_at' => now(),
                     'last_error' => null,
+                    'connect_failures' => 0,
                 ];
             }
 
@@ -157,12 +178,23 @@ class SessionService
     {
         $state = $this->providers->for($session)->status($session);
 
-        $session->update([
+        $perubahan = [
             'status' => $state['status'],
             'phone_number' => $state['phone_number'] ?? $session->phone_number,
             'push_name' => $state['push_name'] ?? $session->push_name,
             'last_seen_at' => now(),
-        ]);
+        ];
+
+        // Sesi yang terbaca `connected` di engine sudah membuktikan dirinya,
+        // walau event `ready`-nya kebetulan hilang di jalan. Tanpa reset di
+        // sini, sesi yang sehat bisa tetap membawa sisa penghitung dari
+        // rentetan kegagalan lama dan menyerah terlalu cepat pada putus
+        // berikutnya.
+        if ($state['status'] === 'connected') {
+            $perubahan['connect_failures'] = 0;
+        }
+
+        $session->update($perubahan);
 
         return $session;
     }

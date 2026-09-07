@@ -109,9 +109,69 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    /*
+    | Dua jenis data dengan aturan yang berbeda, dan bedanya bukan teknis.
+    |
+    | DATA BISNIS \u2014 riwayat pesan \u2014 adalah yang dibayar pelanggan, dan lamanya
+    | mengikuti paket (`Workspace::messageRetentionDays()`, config/plans.php).
+    | Tidak ada satu angka di sini yang boleh memangkasnya lebih pendek dari
+    | yang dijanjikan paketnya.
+    |
+    | DATA TEKNIS \u2014 log kiriman webhook, catatan audit, notifikasi, sisa antrean
+    | \u2014 tidak dibayar siapa pun dan tidak dibuka siapa pun setelah beberapa hari.
+    | Ia dipangkas agresif, karena justru inilah yang tumbuh paling cepat: satu
+    | pesan keluar menghasilkan sampai empat kejadian webhook, dan tiap kejadian
+    | yang gagal menghasilkan satu baris per percobaan.
+    */
     'retention' => [
+        // Cadangan saja. Yang berlaku `Workspace::messageRetentionDays()` dari
+        // paketnya; angka ini dipakai kalau paketnya tidak menyebut apa-apa.
         'messages_days' => (int) env('RETENTION_MESSAGES_DAYS', 90),
-        'webhook_deliveries_days' => (int) env('RETENTION_WEBHOOK_DAYS', 30),
+
+        // Kiriman webhook yang GAGAL: satu-satunya yang benar-benar dibuka
+        // orang, dan dibukanya dalam hitungan jam setelah integrasinya rusak.
+        'webhook_deliveries_days' => (int) env('RETENTION_WEBHOOK_DAYS', 7),
+
+        // Kiriman webhook yang BERHASIL: tidak pernah dibuka siapa pun, dan
+        // jumlahnya sebagian besar dari tabel itu.
+        'webhook_ok_hours' => (int) env('RETENTION_WEBHOOK_OK_HOURS', 48),
+
+        // Catatan audit menjawab \"siapa yang melakukan itu\" \u2014 pertanyaan yang
+        // muncul saat ada sengketa, bukan saat ada gangguan. Setahun melampaui
+        // satu siklus sengketa penuh.
+        'audit_days' => (int) env('RETENTION_AUDIT_DAYS', 365),
+
+        // Notifikasi yang SUDAH DIBACA. Yang belum dibaca tidak pernah dibuang
+        // berapa pun umurnya \u2014 kabar yang hilang sebelum sempat dilihat adalah
+        // persis kegagalan yang lonceng ini dibuat untuk mencegahnya.
+        'notifications_days' => (int) env('RETENTION_NOTIFICATIONS_DAYS', 90),
+
+        'failed_jobs_days' => (int) env('RETENTION_FAILED_JOBS_DAYS', 30),
+        'job_batches_days' => (int) env('RETENTION_JOB_BATCHES_DAYS', 7),
+
+        // Halaman status menggambar 90 hari; setahun lebih memberi ruang untuk
+        // klaim kredit SLA yang diajukan belakangan.
+        'status_daily_days' => (int) env('RETENTION_STATUS_DAILY_DAYS', 400),
+    ],
+
+    /*
+    | Bentuk pemangkasannya, bukan lamanya.
+    |
+    | Tidak ada DELETE tanpa batas di mana pun. MySQL yang dipakai gateway ini
+    | juga dipakai flustra-erp: satu DELETE atas ratusan ribu baris menahan
+    | kunci dan menggelembungkan undo log untuk SELURUH aplikasi di server itu,
+    | dan gejalanya muncul di tempat yang tidak ada hubungannya dengan kita.
+    */
+    'pemangkasan' => [
+        'potongan' => (int) env('PANGKAS_POTONGAN', 1000),
+
+        // Jeda antar potongan, memberi ruang bernapas untuk kueri lain.
+        'jeda_ms' => (int) env('PANGKAS_JEDA_MS', 200),
+
+        // Batas atas baris per tabel per jalan. Sisanya diambil jalan
+        // berikutnya. Pemangkasan yang berjalan berjam-jam adalah pemangkasan
+        // yang bertabrakan dengan jam sibuk.
+        'batas_per_tabel' => (int) env('PANGKAS_BATAS_PER_TABEL', 200000),
     ],
 
 ];

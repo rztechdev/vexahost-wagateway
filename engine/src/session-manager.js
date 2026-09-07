@@ -4,6 +4,9 @@ import pkg from 'whatsapp-web.js';
 import { config } from './config.js';
 import { laravel } from './laravel.js';
 import { logger } from './logger.js';
+import { sapuFolderYatim } from './penyapu.js';
+import { bebaskanProfil, jalurProfil } from './profil.js';
+import { tutupChromium } from './chromium.js';
 import { SendQueue } from './queue.js';
 import { LaravelStore } from './stores/laravel-store.js';
 
@@ -33,6 +36,51 @@ export class SessionManager {
     #kiriman = new Map();
 
     /**
+     * Pabrik client, bisa diganti saat pengujian.
+     *
+     * Tanpa seam ini tidak ada satu pun perilaku SessionManager yang bisa
+     * diuji: `new Client()` menyalakan Chromium sungguhan, jadi menguji batas
+     * waktu inisialisasi berarti menunggu browser nyata gagal memuat WhatsApp
+     * Web. Bawaannya tetap client sungguhan; produksi tidak berubah.
+     */
+    #buatClient;
+
+    /**
+     * Akar /proc. Bisa diarahkan ke pohon tiruan saat pengujian supaya
+     * penjagaan tabrakan profil benar-benar dilewati `start()`, bukan cuma
+     * diuji sebagai fungsi lepas. Produksi tidak pernah menyetelnya.
+     */
+    #procRoot;
+
+    /**
+     * Pengirim sinyal. Ikut bisa diganti bersama `procRoot` supaya perilaku
+     * "profil tidak bisa dibebaskan" bisa diuji tanpa proses yang benar-benar
+     * menolak mati — proses seperti itu tidak bisa dibuat-buat, dan memakai pid
+     * proses uji sendiri sebagai umpan justru membunuh penguji.
+     */
+    #killProses;
+
+    constructor({ buatClient, procRoot = '/proc', killProses } = {}) {
+        this.#procRoot = procRoot;
+        this.#killProses = killProses;
+        this.#buatClient =
+            buatClient ??
+            ((sessionId) =>
+                new Client({
+                    authStrategy: new RemoteAuth({
+                        clientId: sessionId,
+                        dataPath: config.dataPath,
+                        store: this.#store,
+                        backupSyncIntervalMs: config.backupIntervalMs,
+                    }),
+                    puppeteer: {
+                        headless: true,
+                        args: config.puppeteerArgs,
+                    },
+                }));
+    }
+
+    /**
      * Menjalankan ulang seluruh sesi yang tercatat di Laravel.
      *
      * Inilah yang membuat redeploy tidak lagi memaksa scan QR: daftar sesi ada
@@ -53,6 +101,28 @@ export class SessionManager {
         }
 
         logger.info({ count: sessions.length }, 'Memulihkan sesi tersimpan');
+
+        /*
+         | Membuang folder kredensial milik sesi yang sudah tidak ada.
+         |
+         | Dijalankan SEBELUM sesi dinyalakan, dan itu yang membuatnya aman:
+         | folder milik sesi yang benar-benar dipakai disentuh ulang tiap kali
+         | sesinya jalan, jadi umurnya tidak pernah mendekati tujuh hari. Sesi
+         | yang akan dipulihkan di bawah ikut dikecualikan secara eksplisit,
+         | supaya tidak bergantung pada mtime sama sekali.
+         |
+         | Kegagalannya tidak boleh menahan pemulihan: ruang disk yang tidak
+         | jadi dibebaskan jauh lebih murah daripada nomor yang tidak jadi
+         | tersambung.
+        */
+        try {
+            await sapuFolderYatim({
+                dataPath: config.dataPath,
+                kecuali: sessions.map(({ session_id: id }) => id),
+            });
+        } catch (error) {
+            logger.warn({ err: error.message }, 'Penyapuan folder kredensial yatim dilewati');
+        }
 
         for (const { session_id: sessionId, name } of sessions) {
             try {
@@ -104,8 +174,18 @@ export class SessionManager {
             return this.#sessions.get(sessionId);
         }
 
-        // Dua permintaan start yang datang bersamaan akan membuat dua Chromium
-        // untuk satu sesi yang sama, dan keduanya berebut folder kredensial.
+        /*
+         | Dua permintaan start yang datang bersamaan akan membuat dua Chromium
+         | untuk satu sesi yang sama, dan keduanya berebut folder kredensial.
+         |
+         | Penjagaan ini dulu hampir tidak berguna: tidak ada satu pun `await`
+         | antara pemeriksaan di atas dan `#sessions.set()` di bawah, jadi tidak
+         | ada celah untuk disisipi. Sejak pembebasan profil ditambahkan — dan
+         | pembebasan itu MENUNGGU proses lama benar-benar mati — celahnya nyata
+         | dan bisa selebar beberapa detik. Justru di celah itulah permintaan
+         | kedua akan menyalakan Chromium di atas profil yang sedang dibersihkan
+         | untuk yang pertama.
+        */
         if (this.#starting.has(sessionId)) {
             throw new Error('Sesi sedang dalam proses dijalankan.');
         }
@@ -119,23 +199,53 @@ export class SessionManager {
         this.#starting.add(sessionId);
 
         try {
-            const client = new Client({
-                authStrategy: new RemoteAuth({
-                    clientId: sessionId,
-                    dataPath: config.dataPath,
-                    store: this.#store,
-                    backupSyncIntervalMs: config.backupIntervalMs,
-                }),
-                puppeteer: {
-                    headless: true,
-                    args: config.puppeteerArgs,
-                },
+            /*
+             | SATU PROFIL, SATU CHROMIUM. Ditegakkan terhadap sistem operasi,
+             | bukan terhadap `#sessions`.
+             |
+             | Map itu justru KOSONG di kasus yang bermasalah: `initialize()`
+             | yang gagal menghapus entry-nya, lalu `destroy()` mengembalikan
+             | sukses tanpa menutup apa pun. Sesudah itu tidak ada satu pun
+             | struktur data di dalam Node yang tahu prosesnya masih hidup —
+             | jadi pemeriksaan `#sessions.has()` di atas melewatkannya, dan
+             | Chromium baru lahir di atas profil yang masih dipegang yang lama.
+             |
+             | Produksi 8 September 2026: empat Chromium pada satu profil,
+             | seluruhnya anak dari satu proses Node. Gejalanya bukan kehabisan
+             | memori melainkan `Execution context was destroyed` di layar
+             | pelanggan yang sedang men-scan.
+             |
+             | `await` di sini menahan `start()` beberapa detik saat memang ada
+             | yang harus dibunuh, dan itu benar: memulai lebih cepat di atas
+             | profil yang belum bebas persis kerusakan yang sedang dicegah.
+            */
+            const profil = jalurProfil(config.dataPath, sessionId);
+            const bebas = await bebaskanProfil(profil, {
+                proc: this.#procRoot,
+                ...(this.#killProses ? { kill: this.#killProses } : {}),
             });
+
+            if (bebas.bandel.length > 0) {
+                throw new Error(
+                    `Profil sesi masih dipegang proses ${bebas.bandel.join(', ')} yang tidak bisa dimatikan.`
+                );
+            }
+
+            const client = this.#buatClient(sessionId);
 
             this.#bindEvents(sessionId, client);
 
-            const entry = { client, status: 'connecting', phoneNumber: null, pushName: null, loadingPercent: null };
+            const entry = {
+                client,
+                status: 'connecting',
+                phoneNumber: null,
+                pushName: null,
+                loadingPercent: null,
+                pengukurInit: null,
+            };
             this.#sessions.set(sessionId, entry);
+
+            this.#pasangPengukurInit(sessionId, entry);
 
             // initialize() sengaja tidak di-await: memulihkan sesi bisa memakan
             // puluhan detik, dan pemanggil hanya perlu tahu prosesnya dimulai.
@@ -144,29 +254,72 @@ export class SessionManager {
                 logger.error({ sessionId, err: error.message }, 'Inisialisasi client gagal');
 
                 entry.status = 'failed';
+                this.#lepasPengukurInit(entry);
                 await laravel.event(sessionId, 'auth_failure', { message: error.message });
                 this.#sessions.delete(sessionId);
 
                 // initialize() menyalakan Chromium lebih dulu, baru memuat
                 // WhatsApp Web. Kalau gagal setelah tahap itu, prosesnya sudah
                 // hidup — dan begitu entry dibuang, tidak ada lagi yang
-                // memegang referensinya. Tanpa destroy() di sini tiap start
+                // memegang referensinya. Tanpa penutupan di sini tiap start
                 // yang gagal meninggalkan Chromium yatim ±400 MB yang tidak
                 // pernah kembali sampai server kehabisan memori.
-                try {
-                    await client.destroy();
-                } catch (closeError) {
-                    logger.warn(
-                        { sessionId, err: closeError.message },
-                        'Chromium sisa start yang gagal tidak bisa ditutup'
-                    );
-                }
+                //
+                // Lewat tutupChromium(), bukan client.destroy() langsung:
+                // destroy() melewati browser.close() kalau websocket CDP-nya
+                // sudah putus, dan justru start yang gagal karena kehabisan
+                // memori adalah keadaan yang paling mungkin memutus websocket
+                // itu lebih dulu.
+                await tutupChromium(client, sessionId);
             });
 
             return entry;
         } finally {
             this.#starting.delete(sessionId);
         }
+    }
+
+    /**
+     * Menyalakan pengukur batas waktu inisialisasi untuk satu sesi.
+     *
+     * Yang dijaga adalah sesi yang menggantung TANPA gagal — keadaan yang tidak
+     * menghasilkan galat, tidak menghasilkan event, dan tidak bisa dilihat dari
+     * mana pun kecuali dari fakta bahwa slotnya tidak pernah kembali.
+     */
+    #pasangPengukurInit(sessionId, entry) {
+        entry.pengukurInit = setTimeout(async () => {
+            // Sesi bisa sudah diganti oleh start() berikutnya; yang dihentikan
+            // harus sesi yang sama dengan yang dulu memasang pengukurnya.
+            if (this.#sessions.get(sessionId) !== entry) return;
+
+            logger.error(
+                { sessionId, batasMs: config.initTimeoutMs },
+                'Sesi tidak selesai menginisialisasi dalam batas waktu; dihentikan',
+            );
+
+            entry.status = 'failed';
+
+            await laravel.event(sessionId, 'auth_failure', {
+                message: 'Nomor tidak selesai tersambung dalam batas waktu. Coba hubungkan lagi.',
+            });
+
+            await this.stop(sessionId);
+        }, config.initTimeoutMs);
+
+        // Pengukur ini tidak boleh menahan proses tetap hidup saat engine
+        // hendak berhenti — SIGTERM sudah punya urutannya sendiri di server.js.
+        entry.pengukurInit.unref?.();
+    }
+
+    /**
+     * Melepas pengukur. Dipanggil pada setiap bukti bahwa WhatsApp Web hidup,
+     * dan pada setiap jalur yang mengakhiri sesi.
+     */
+    #lepasPengukurInit(entry) {
+        if (!entry?.pengukurInit) return;
+
+        clearTimeout(entry.pengukurInit);
+        entry.pengukurInit = null;
     }
 
     /**
@@ -199,14 +352,15 @@ export class SessionManager {
 
         if (!entry) return;
 
+        this.#lepasPengukurInit(entry);
         this.#sessions.delete(sessionId);
         this.#queue.forget(sessionId);
 
-        try {
-            await entry.client.destroy();
-        } catch (error) {
-            logger.warn({ sessionId, err: error.message }, 'Gagal menutup client dengan rapi');
-        }
+        // Satu-satunya penutup Chromium di seluruh engine. Ia harus menutup
+        // pada SETIAP jalur — destroy() yang melempar, destroy() yang
+        // menggantung, dan destroy() yang kembali sukses tanpa menutup apa pun.
+        // Ketiganya ditangani tutupChromium(); alasan lengkapnya di chromium.js.
+        await tutupChromium(entry.client, sessionId);
     }
 
     /**
@@ -217,8 +371,18 @@ export class SessionManager {
         const entry = this.#sessions.get(sessionId);
 
         if (entry) {
+            // Dibatasi waktu karena `Client.logout()` diawali
+            // `pupPage.evaluate()` pada halaman yang mungkin sudah tidak
+            // menjawab. Tanpa batas, logout yang menggantung tidak pernah
+            // sampai ke stop() di bawah — dan stop() itulah yang memastikan
+            // Chromium-nya mati.
             try {
-                await entry.client.logout();
+                await Promise.race([
+                    entry.client.logout(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('logout() melewati batas waktu')), 15_000),
+                    ),
+                ]);
             } catch (error) {
                 logger.warn({ sessionId, err: error.message }, 'Logout WhatsApp gagal');
             }
@@ -355,6 +519,11 @@ export class SessionManager {
             const entry = this.#sessions.get(sessionId);
             if (entry) entry.status = 'qr';
 
+            // Bukti pertama bahwa Chromium hidup dan WhatsApp Web memuat. Mulai
+            // dari sini yang ditunggu adalah manusia yang men-scan, dan menunggu
+            // manusia tidak boleh punya batas waktu.
+            this.#lepasPengukurInit(entry);
+
             // Dirender jadi PNG di sini supaya Laravel dan dashboard tidak perlu
             // library QR sama sekali — cukup menaruhnya di <img src>.
             const image = await qrcode.toDataURL(qr, { width: 320, margin: 1 });
@@ -365,6 +534,8 @@ export class SessionManager {
         client.on('authenticated', async () => {
             const entry = this.#sessions.get(sessionId);
             if (entry) entry.status = 'connecting';
+
+            this.#lepasPengukurInit(entry);
 
             await laravel.event(sessionId, 'authenticated');
         });
@@ -380,11 +551,18 @@ export class SessionManager {
         client.on('loading_screen', (percent) => {
             const entry = this.#sessions.get(sessionId);
             if (entry) entry.loadingPercent = Number(percent);
+
+            // Menarik riwayat chat besar memang bisa makan menit-menit, dan itu
+            // pekerjaan yang sah. Yang dijaga pengukur adalah sesi yang tidak
+            // menunjukkan kemajuan apa pun — bukan sesi yang lambat.
+            this.#lepasPengukurInit(entry);
         });
 
         client.on('auth_failure', async (message) => {
             const entry = this.#sessions.get(sessionId);
             if (entry) entry.status = 'failed';
+
+            this.#lepasPengukurInit(entry);
 
             await laravel.event(sessionId, 'auth_failure', { message });
         });
@@ -401,6 +579,8 @@ export class SessionManager {
                 entry.pushName = pushName;
                 entry.loadingPercent = null;
             }
+
+            this.#lepasPengukurInit(entry);
 
             logger.info({ sessionId }, 'Sesi siap');
 

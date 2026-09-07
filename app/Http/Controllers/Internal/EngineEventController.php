@@ -94,6 +94,11 @@ class EngineEventController extends Controller
             'connected_at' => now(),
             'last_seen_at' => now(),
             'last_error' => null,
+            // Satu-satunya bukti yang tidak bisa dibantah bahwa penyambungannya
+            // berhasil. Penghitung percobaan otomatis kembali nol HANYA di sini
+            // dan pada permintaan manusia — bukan pada `connecting`, yang justru
+            // status yang dipegang sesi macet selamanya.
+            'connect_failures' => 0,
         ]);
 
         $this->notifySessionStatus($session, 'connected');
@@ -160,6 +165,22 @@ class EngineEventController extends Controller
             'qr_payload' => null,
             'last_error' => $payload['message'] ?? 'Autentikasi WhatsApp gagal.',
         ]);
+
+        /*
+         | Kegagalan yang BENAR-BENAR dilaporkan ikut dihitung.
+         |
+         | `SyncSessionStatusJob` sudah menghitung percobaannya sendiri, tapi ia
+         | hanya menyentuh sesi `disconnected`. Percobaan yang dimulai dari
+         | tempat lain tidak pernah terhitung di mana pun: pemulihan otomatis
+         | saat engine menyala (`BootstrapController` memulihkan `failed` yang
+         | pernah tersambung), dan tombol Hubungkan.
+         |
+         | Produksi 8 September 2026 menunjukkan persis lubang itu: dua sesi
+         | berstatus `failed` punya Chromium hidup, dan salah satunya beranak
+         | tiap menit. `failed` tidak pernah masuk daftar kandidat penjadwal,
+         | jadi penghitungnya tidak pernah naik, jadi tidak ada yang berhenti.
+        */
+        $session->catatPercobaanSambung();
 
         $this->notifySessionStatus($session, 'failed');
     }

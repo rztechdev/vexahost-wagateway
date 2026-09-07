@@ -81,6 +81,7 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 | [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) | **Dari VPS kosong sampai gateway melayani permintaan** — pasang Coolify, DNS, database, satu resource, verifikasi |
 | [ENVIRONMENT.md](ENVIRONMENT.md) | Tiga tahap: development, staging, production |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Rincian tiap resource Coolify, plus uji regresi wajib |
+| [CUTOVER.md](CUTOVER.md) | **Deploy perbaikan kebocoran memori** — checklist sebelum menekan Deploy, lima menit sesudahnya, dan rollback (termasuk satu arah yang tidak bisa dibalik begitu saja) |
 | [OPERASIONAL.md](OPERASIONAL.md) | Pemantauan, pemulihan, pemecahan masalah, skala, keamanan |
 | [FAQ.md](FAQ.md) | Pertanyaan yang sering muncul |
 

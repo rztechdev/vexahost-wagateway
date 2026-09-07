@@ -84,6 +84,30 @@ export const config = {
      */
     maxSessions: angka('WA_MAX_SESSIONS', 3),
 
+    /**
+     * Batas waktu satu sesi boleh berada di tahap inisialisasi.
+     *
+     * `client.initialize()` sengaja tidak di-await, dan itu benar — memulihkan
+     * sesi memakan puluhan detik dan pemanggilnya cuma perlu tahu prosesnya
+     * dimulai. Yang tidak ada sebelumnya: apa pun yang membatalkannya kalau ia
+     * TIDAK PERNAH selesai dan TIDAK PERNAH gagal. Chromium menyala, WhatsApp
+     * Web tidak pernah selesai memuat, dan entry-nya diam berstatus
+     * `connecting` selamanya.
+     *
+     * Akibatnya berlapis dan tidak satu pun terlihat sebagai galat: Chromium
+     * hidup terus, ia menahan satu dari WA_MAX_SESSIONS slot untuk SELURUH
+     * pelanggan, `SyncSessionStatusJob` tidak menolong (ia hanya menyambungkan
+     * ulang yang `disconnected`), dan `start()` mengembalikan entry yang sama
+     * sehingga tombol Hubungkan tidak pernah bisa memperbaikinya. Hanya
+     * redeploy yang bisa.
+     *
+     * Pengukurnya dilepas begitu ada bukti pertama bahwa WhatsApp Web hidup
+     * (`qr` atau `loading_screen`), BUKAN saat `ready`. Menunggu `ready` berarti
+     * memutus sesi yang sedang menarik riwayat chat besar — pekerjaan sah yang
+     * memang bisa makan menit-menit.
+     */
+    initTimeoutMs: angka('WA_INIT_TIMEOUT_MS', 180_000),
+
     logLevel: process.env.ENGINE_LOG_LEVEL || process.env.LOG_LEVEL || 'info',
 
     /**

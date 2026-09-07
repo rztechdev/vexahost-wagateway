@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
+use App\Models\WaitlistEntry;
 use App\Services\Billing\QrisManual;
 use App\Services\Billing\ReferralService;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\EmailNotifier;
+use App\Services\Notifications\PeringatanSistem;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\KapasitasPlatform;
 use App\Support\PhoneNumber;
 use App\Support\Plan;
 use Illuminate\Contracts\View\View;
@@ -112,6 +115,87 @@ class BillingController extends Controller
             'period' => ['required', Rule::in(['monthly', 'yearly'])],
             'referral' => ['nullable', 'string', 'max:16'],
         ]);
+
+        /*
+         | Kapasitas platform diperiksa DI SINI, sebelum satu rupiah pun
+         | ditagihkan.
+         |
+         | Satu-satunya tempat yang tahu soal `WA_MAX_SESSIONS` dulu adalah
+         | engine, dan ia baru menjawabnya saat pelanggan menekan Hubungkan —
+         | yaitu setelah mendaftar, memilih paket, mentransfer, dan menunggu
+         | buktinya diperiksa manusia. Seluruh langkah itu berhasil, lalu
+         | langkah terakhir gagal dengan alasan yang sepenuhnya urusan kami.
+         |
+         | Menolak uang terdengar salah sampai dibandingkan dengan
+         | alternatifnya: menerimanya untuk layanan yang tidak bisa kami berikan.
+         | Yang dihitung komitmen paket, bukan sesi yang sedang menyala — sesi
+         | yang kebetulan mati tetap milik orang yang membayarnya.
+         |
+         | Workspace yang sudah punya komitmen (perpanjangan, atau pindah paket
+         | dengan jatah sesi yang sama atau lebih kecil) tidak ikut dihalangi:
+         | slotnya sudah terhitung sebagai miliknya.
+        */
+        $butuh = (int) (config("plans.catalog.{$data['plan']}.max_sessions") ?? 1);
+        $sudahDimiliki = KapasitasPlatform::komitmenWorkspace($workspace);
+        $tambahan = max(0, $butuh - $sudahDimiliki);
+
+        if ($tambahan > 0 && ! $workspace->isExempt() && ! KapasitasPlatform::sanggup($tambahan)) {
+            /*
+             | Ditolak, TAPI dicatat. Bedanya besar.
+             |
+             | Pelanggan yang ditolak tanpa jalan lain tidak kembali besok — ia
+             | mencari gateway lain hari itu juga. Dan dari sisi kami, penolakan
+             | yang tidak meninggalkan jejak membuat kapasitas penuh terlihat
+             | sebagai grafik pendaftaran yang datar; grafik datar terbaca
+             | "tidak ada peminat", bukan "peminatnya ditolak di pintu", dan
+             | keduanya menuntut keputusan yang berlawanan.
+             |
+             | `updateOrCreate`: menekan tombolnya lima kali adalah satu
+             | permintaan, bukan lima, dan urutan antreannya tidak berubah
+             | karena mencoba lagi (`created_at` tidak ikut ditulis ulang).
+            */
+            $sudahAda = WaitlistEntry::where('workspace_id', $workspace->id)
+                ->where('plan_slug', $data['plan'])
+                ->where('period', $data['period'])
+                ->first();
+
+            $antrean = $sudahAda ?? WaitlistEntry::create([
+                'workspace_id' => $workspace->id,
+                'plan_slug' => $data['plan'],
+                'period' => $data['period'],
+                'slots' => $butuh,
+            ]);
+
+            /*
+             | Tim WAJIB tahu, dan tahu sekarang.
+             |
+             | Ini satu-satunya kabar di seluruh sistem yang berarti "ada orang
+             | yang mau membayar dan kita menolaknya". Kalimat penolakan di
+             | layar pelanggan menjanjikan bahwa kami tahu — jadi kabar ini
+             | bukan pelengkap, ia yang membuat janji itu tidak bohong.
+             |
+             | Penandanya memuat jumlah antrean, jadi tiap permintaan BARU
+             | menghasilkan kabar baru sementara orang yang mencoba lagi tidak.
+            */
+            app(PeringatanSistem::class)->kabari(
+                type: 'kapasitas.penuh',
+                title: 'Kapasitas nomor penuh, ada yang masuk daftar tunggu',
+                body: 'Workspace "'.$workspace->name.'" ingin mengambil paket '.$data['plan']
+                    .' dan ditolak karena seluruh '.KapasitasPlatform::batas()
+                    .' slot nomor sudah dijanjikan. Sekarang ada '
+                    .WaitlistEntry::menunggu()->count().' permintaan di daftar tunggu. '
+                    .'Ini pelanggan yang mau membayar dan kita tolak.',
+                url: route('admin.system'),
+                level: 'danger',
+                dedupe: 'kapasitas-penuh:'.WaitlistEntry::menunggu()->count(),
+            );
+
+            return back()->withErrors([
+                'plan' => $sudahAda
+                    ? KapasitasPlatform::kalimatSudahMenunggu($antrean->created_at)
+                    : KapasitasPlatform::kalimat(),
+            ]);
+        }
 
         $referral = null;
 

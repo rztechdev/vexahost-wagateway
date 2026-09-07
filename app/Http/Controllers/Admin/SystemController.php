@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\HeaderKeamanan;
 use App\Models\Message;
+use App\Models\WaitlistEntry;
 use App\Models\WaSession;
 use App\Services\Billing\BalanceService;
 use App\Services\Billing\QrisManual;
 use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\KapasitasPlatform;
 use App\Support\KesehatanAntrean;
 use App\Support\Plan;
 use Illuminate\Contracts\Http\Kernel;
@@ -77,6 +79,21 @@ class SystemController extends Controller
             'kapasitas' => [
                 'hidup' => WaSession::whereIn('status', ['connected', 'connecting', 'qr'])->count(),
                 'batas' => (int) config('gateway.engine.max_sessions'),
+
+                // Komitmen slot kepada langganan BERBAYAR — angka yang dipakai
+                // gerbang checkout, dan berbeda dari jumlah sesi yang menyala.
+                'dijanjikan' => KapasitasPlatform::terpakai(),
+
+                /*
+                 | Berapa permintaan yang TIDAK BISA kami layani.
+                 |
+                 | Tidak ada di tempat lain mana pun, dan tanpanya kapasitas
+                 | penuh terlihat sebagai grafik pendaftaran yang datar — yang
+                 | terbaca "tidak ada peminat" alih-alih "peminatnya ditolak di
+                 | pintu". Keduanya menuntut keputusan yang berlawanan.
+                */
+                'menunggu' => WaitlistEntry::menunggu()->count(),
+                'menunggu_terlama' => WaitlistEntry::menunggu()->value('created_at'),
             ],
 
             'siklus' => [
@@ -152,9 +169,43 @@ class SystemController extends Controller
                 ->withToken(config('gateway.engine.token'))
                 ->get(rtrim(config('gateway.engine.url'), '/').'/health');
 
-            return $jawaban->successful()
-                ? ['terjangkau' => true, 'pesan' => 'Menjawab normal.']
-                : ['terjangkau' => false, 'pesan' => 'Menjawab dengan status '.$jawaban->status().'.'];
+            if (! $jawaban->successful()) {
+                return ['terjangkau' => false, 'pesan' => 'Menjawab dengan status '.$jawaban->status().'.'];
+            }
+
+            $isi = $jawaban->json();
+
+            return [
+                'terjangkau' => true,
+                'pesan' => 'Menjawab normal.',
+                /*
+                 | Jumlah proses Chromium yang benar-benar hidup, dihitung
+                 | engine dari /proc — bukan dari daftar sesi di memorinya.
+                 |
+                 | Keduanya ditampilkan berdampingan karena selisihnyalah yang
+                 | punya arti. Sama = sehat. Chromium lebih banyak = ada browser
+                 | yang tidak dimiliki sesi mana pun, yaitu kebocoran memori
+                 | yang terbaca SEBELUM ia menjadi server yang tidak bisa
+                 | di-SSH. Sesi lebih banyak = ada sesi yang kehilangan
+                 | browsernya dan tidak akan pernah bisa mengirim apa pun.
+                 |
+                 | `null` berarti tidak bisa dihitung, dan harus tetap tampil
+                 | sebagai "tidak diketahui". Menggantinya dengan 0 mengubah
+                 | "belum diperiksa" menjadi "sudah diperiksa dan aman".
+                */
+                'sesi' => $isi['sessions'] ?? null,
+                'chromium' => $isi['chromium_processes'] ?? null,
+                'profil' => $isi['chromium_profiles'] ?? null,
+
+                // Sinyal paling tajam yang kita punya, dan yang paling mudah
+                // terlewat kalau cuma total proses yang ditampilkan. Produksi
+                // 8 September 2026: tiga profil, enam proses — jumlah profilnya
+                // wajar, dan yang merusak justru tiga proses berlebih yang
+                // menumpuk di satu profil.
+                'duplikat' => $isi['chromium_duplicates'] ?? null,
+                'yatim' => $isi['chromium_orphans'] ?? null,
+                'bocor' => $isi['chromium_leaked'] ?? null,
+            ];
         } catch (\Throwable $e) {
             return ['terjangkau' => false, 'pesan' => $e->getMessage()];
         }

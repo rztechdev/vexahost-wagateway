@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\ReferralCode;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Models\WaitlistEntry;
 use App\Models\Workspace;
 use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\EmailNotifier;
@@ -564,6 +565,20 @@ class SubscriptionService
                 'status' => 'active',
                 'service_until' => $subscription->current_period_end,
             ])->save();
+
+            /*
+             | Permintaan yang pernah tertahan kapasitas akhirnya jadi bayaran.
+             |
+             | Barisnya TIDAK dihapus — ia catatan permintaan, dan yang dihapus
+             | setelah dilayani menghapus juga satu-satunya bukti bahwa kapasitas
+             | pernah menghambat penjualan. Selisih `converted_at` dengan
+             | `created_at` adalah lama tunggu sebenarnya, dan itulah angka yang
+             | menjawab apakah kapasitas perlu ditambah sekarang atau bulan depan.
+            */
+            WaitlistEntry::where('workspace_id', $workspace->id)
+                ->where('plan_slug', $invoice->plan_slug)
+                ->whereNull('converted_at')
+                ->update(['converted_at' => now()]);
 
             // Di dalam transaksi: komisi yang disetujui untuk tagihan yang
             // ternyata gagal ditandai lunas adalah utang ke reseller atas uang

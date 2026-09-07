@@ -1,5 +1,6 @@
 import express from 'express';
 import process from 'node:process';
+import { keadaanChromium } from './chromium.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { SessionManager } from './session-manager.js';
@@ -28,10 +29,48 @@ app.use((req, res, next) => {
 });
 
 app.get('/health', (req, res) => {
+    const sessions = manager.listSessionIds().length;
+
+    /*
+     | `chromium_processes` berdampingan dengan `sessions`, dan itu seluruh
+     | gunanya.
+     |
+     | `sessions` dibaca dari Map di memori engine; `chromium_processes` dibaca
+     | dari /proc. Selama keduanya sama, tidak ada Chromium yang bocor. Begitu
+     | yang kedua melampaui yang pertama, ada browser yang tidak dimiliki sesi
+     | mana pun — dan itu satu-satunya cara melihat kebocoran memori SEBELUM ia
+     | menjadi server yang tidak bisa di-SSH.
+     |
+     | `null` berarti tidak bisa dihitung (tidak ada /proc), bukan nol. Nol di
+     | tempat yang seharusnya null persis membalik arti sinyalnya: "sudah
+     | diperiksa, aman" untuk sesuatu yang tidak pernah diperiksa.
+    */
+    const chromium = keadaanChromium(manager.listSessionIds());
+
     res.json({
         status: 'ok',
-        sessions: manager.listSessionIds().length,
+        sessions,
         max_sessions: config.maxSessions,
+
+        // Total proses browser. Angka mentah, dipertahankan supaya tren kasarnya
+        // tetap terbaca pemantau luar.
+        chromium_processes: chromium?.proses ?? null,
+
+        // Berapa folder profil yang sedang dipegang. Inilah yang seharusnya
+        // sama dengan jumlah sesi.
+        chromium_profiles: chromium?.profil ?? null,
+
+        // SINYAL PALING TAJAM. Berapa proses BERLEBIH pada profil yang sama.
+        // Produksi 8 September 2026: 3 profil, 6 proses, 3 duplikat — dan
+        // duplikat itulah yang merusak, bukan jumlah prosesnya. Harus 0.
+        chromium_duplicates: chromium?.duplikat ?? null,
+
+        // Profil yang tidak dimiliki sesi mana pun: sisa yang tidak pernah
+        // ditutup.
+        chromium_orphans: chromium?.yatim ?? null,
+
+        chromium_leaked: chromium?.bocor ?? null,
+
         uptime_seconds: Math.round(process.uptime()),
     });
 });

@@ -50,6 +50,13 @@ class SessionController extends ApiController
     {
         $session = $this->find($request, $id);
 
+        // Permintaan manusia mengembalikan jatah percobaan otomatis ke penuh.
+        // Orang yang menekan tombol ini biasanya baru memperbaiki sesuatu —
+        // memberinya sisa jatah dari rentetan kegagalan sebelumnya berarti
+        // penjadwal menyerah lagi setelah satu percobaan, tanpa alasan yang
+        // bisa dilihat siapa pun.
+        $session->resetPercobaanSambung();
+
         try {
             $session = $this->sessions->connect($session);
         } catch (\Throwable $e) {

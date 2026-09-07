@@ -3,6 +3,7 @@
 use App\Jobs\BersihkanEksporJob;
 use App\Jobs\BillingCycleJob;
 use App\Jobs\EksekusiPenghapusanAkunJob;
+use App\Jobs\KabariDaftarTungguJob;
 use App\Jobs\PantauKesehatanJob;
 use App\Jobs\PruneOldRecordsJob;
 use App\Jobs\RekamStatusJob;
@@ -35,6 +36,19 @@ Schedule::job(new BillingCycleJob)->dailyAt('08:00')->withoutOverlapping();
 | ini berjalan.
 */
 Schedule::job(new PantauKesehatanJob)->hourly()->withoutOverlapping();
+
+/*
+| Mengabari daftar tunggu kapasitas, tiap jam.
+|
+| Halaman penolakan checkout menjanjikan "kami mengabari Anda begitu slotnya
+| tersedia, tanpa perlu menekan apa pun lagi". Job inilah seluruh isi janji itu;
+| tanpa ia, daftar tunggu cuma tabel yang tidak pernah dibaca siapa pun dan
+| kalimatnya kembali jadi sopan-tapi-bohong.
+|
+| Tiap jam dan bukan tiap menit: kapasitas bebas ketika langganan berakhir atau
+| workspace dihentikan, dan keduanya peristiwa harian.
+*/
+Schedule::job(new KabariDaftarTungguJob)->hourly()->withoutOverlapping();
 
 /*
 | Perekam status + denyut ke pemantau luar, tiap menit.

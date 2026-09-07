@@ -54,7 +54,19 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            /*
+            | Bawaannya `daily`, bukan `single`.
+            |
+            | Kanal `single` menulis ke satu berkas yang TIDAK PERNAH dirotasi
+            | maupun dipangkas — ia cuma tumbuh. Itu tidak terlihat selama ada
+            | deploy berkala (storage/logs tidak dimount ke volume, jadi tiap
+            | deploy mengosongkannya), dan justru menggigit pada keadaan yang
+            | jadi target kita: berbulan-bulan berjalan tanpa deploy.
+            |
+            | Env tetap menang atas nilai ini. `LOG_STACK=single` di environment
+            | Coolify akan mengembalikan perilaku lama tanpa satu pun gejala.
+            */
+            'channels' => explode(',', (string) env('LOG_STACK', 'daily')),
             'ignore_exceptions' => false,
         ],
 
