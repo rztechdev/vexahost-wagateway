@@ -27,77 +27,41 @@
         } else {
             document.documentElement.classList.remove('dark');
         }
+        if ('IntersectionObserver' in window && ! window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.documentElement.classList.add('animasi-muncul');
+        }
     </script>
 </head>
-<body class="relative w-full overflow-x-clip bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground overflow-x-clip w-full relative" x-data="{ mobileMenu: false }">
 
-{{--
-    Layout untuk halaman publik selain halaman depan.
-
-    Sengaja TIDAK memakai navigasi lengkap milik welcome.blade.php: yang membuka
-    halaman ini datang dari satu tautan dengan satu pertanyaan, dan sepuluh menu
-    di atasnya cuma menawarkan jalan keluar dari hal yang sedang mereka
-    pertimbangkan. Yang tersisa cukup untuk kembali dan untuk masuk.
---}}
-<header class="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-    <div class="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <a href="{{ route('welcome') }}" class="flex items-center gap-2 font-semibold">
-            <img src="{{ asset('images/icon-32x32.png') }}" alt="" class="h-6 w-6 rounded">
-            <span class="text-sm">{{ config('app.name') }}</span>
-        </a>
-
-        <div class="ml-auto flex items-center gap-2">
-            <a href="{{ route('welcome') }}#harga"
-               class="hidden rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground sm:block">
-                Harga
-            </a>
-            <a href="{{ route('docs.index') }}"
-               class="hidden rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground sm:block">
-                Dokumentasi
-            </a>
-
-            <button type="button"
-                    @click="const d = document.documentElement.classList.toggle('dark'); localStorage.theme = d ? 'dark' : 'light';"
-                    x-data
-                    class="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    aria-label="Ganti tema tampilan">
-                <svg class="hidden h-5 w-5 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                <svg class="block h-5 w-5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-            </button>
-
-            @auth
-                <a href="{{ route('dashboard') }}"
-                   class="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                    Dashboard
-                </a>
-            @else
-                <a href="{{ route('login') }}"
-                   class="rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground">
-                    Masuk
-                </a>
-                <a href="{{ route('register') }}"
-                   class="rounded-lg bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                    Buat akun
-                </a>
-            @endauth
-        </div>
-    </div>
-</header>
+@include('partials.header')
 
 <main>
     @yield('content')
 </main>
 
-<footer class="border-t border-border/60 py-8">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
-        <p>&copy; {{ date('Y') }} {{ config('app.name') }}</p>
-        <div class="flex flex-wrap gap-4">
-            <a href="{{ route('welcome') }}#harga" class="transition hover:text-foreground">Paket &amp; Harga</a>
-            <a href="{{ route('docs.index') }}" class="transition hover:text-foreground">Dokumentasi</a>
-            <a href="{{ route('docs.show', 'bantuan') }}" class="transition hover:text-foreground">Pusat Bantuan</a>
-        </div>
-    </div>
-</footer>
+@include('partials.footer')
+
+<script>
+    (function () {
+        var blok = document.querySelectorAll('.muncul');
+
+        if (! document.documentElement.classList.contains('animasi-muncul')) {
+            blok.forEach(function (el) { el.classList.add('terlihat'); });
+            return;
+        }
+
+        var pengamat = new IntersectionObserver(function (entri) {
+            entri.forEach(function (e) {
+                if (! e.isIntersecting) return;
+                e.target.classList.add('terlihat');
+                pengamat.unobserve(e.target);
+            });
+        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+
+        blok.forEach(function (el) { pengamat.observe(el); });
+    })();
+</script>
 
 @include('partials.pesan-server')
 </body>

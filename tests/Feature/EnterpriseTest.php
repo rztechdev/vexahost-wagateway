@@ -530,4 +530,35 @@ class EnterpriseTest extends TestCase
             ->assertSee('Buat akun')
             ->assertSee('aria-label="Menu Mobile"', false);
     }
+
+    /**
+     * Footer halaman enterprise harus persis dengan footer landing page,
+     * memuat banner ajakan, pilar keamanan, 4 kolom link, copyright legal, dan 7 sosial media.
+     */
+    public function test_halaman_enterprise_menampilkan_footer_lengkap_seperti_halaman_depan(): void
+    {
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertSee('Siap mengotomatiskan pesan WhatsApp skala besar?')
+            ->assertSee('Enkripsi TLS 1.3 & API Token Scoped', false)
+            ->assertSee('Isolasi Volume Sesi Terenkripsi')
+            ->assertSee('Produk API')
+            ->assertSee('Pusat Dokumentasi')
+            ->assertSee('PT FLUSTRA FINANCES ARTHA')
+            ->assertSee('instagram.com/flustra.id')
+            ->assertSee('threads.net/@flustra.id')
+            ->assertSee('linkedin.com/company/flustra');
+    }
+
+    public function test_halaman_enterprise_menampilkan_kalkulator_slider_dan_tanpa_teks_lama(): void
+    {
+        $this->get(route('enterprise'))
+            ->assertOk()
+            ->assertDontSee('Susun sendiri perkiraannya di bawah')
+            ->assertSee('id="retensi"', false)
+            ->assertSee('type="range"', false)
+            ->assertSee('x-model.number="retensi"', false)
+            ->assertSee('id="api"', false)
+            ->assertSee('x-model.number="api"', false);
+    }
 }

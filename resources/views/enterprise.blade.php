@@ -2,25 +2,17 @@
 @section('title', 'Enterprise — Flustra WA Gateway')
 
 @section('content')
-<section class="border-b border-border/60 bg-muted/30 py-16 sm:py-24">
+<section class="border-b border-border/60 bg-muted/30 py-8 sm:py-10">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
-            <span class="inline-flex items-center rounded-full bg-foreground/5 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Enterprise
-            </span>
-            <h1 class="mt-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
                 Batas dan harganya disusun mengikuti kebutuhan Anda
             </h1>
-            <p class="mx-auto mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Susun sendiri perkiraannya di bawah — angkanya berubah seketika. Setelah itu kirim
-                permintaan atau langsung chat tim kami; angka yang Anda lihat di layar ini ikut
-                terkirim, jadi tidak ada kejutan saat kami menjawab.
-            </p>
         </div>
     </div>
 </section>
 
-<section class="py-14 sm:py-20"
+<section class="py-8 sm:py-12"
          x-data="{
              nomor: 3,
              pesan: 150000,
@@ -137,7 +129,7 @@
                     Semua bisa diubah lagi nanti — ini hanya untuk memperkirakan.
                 </p>
 
-                <div class="mt-6 space-y-6 rounded-2xl border border-border bg-card p-6">
+                <div class="mt-5 space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
                     {{-- Nomor --}}
                     <div>
                         <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -146,7 +138,7 @@
                         </div>
                         <input id="nomor" type="range" min="1" max="20" step="1" x-model.number="nomor"
                                class="mt-2 w-full accent-primary">
-                        <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                        <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
                             Tiap nomor berarti satu sesi WhatsApp yang berjalan terus-menerus, dan itulah
                             komponen termahal di sisi kami. Kapasitas platform saat ini
                             <strong>{{ $kapasitas }}</strong> nomor aktif; di atas itu kami menambah
@@ -155,49 +147,49 @@
                     </div>
 
                     {{-- Pesan --}}
-                    <div class="border-t border-border pt-6">
+                    <div class="border-t border-border pt-5">
                         <div class="flex flex-wrap items-baseline justify-between gap-2">
                             <label for="pesan" class="text-sm font-medium">Pesan keluar per bulan</label>
                             <span class="text-sm font-semibold tabular-nums" x-text="rupiahPolos(pesanAman)"></span>
                         </div>
                         <input id="pesan" type="range" min="50000" max="2000000" step="50000" x-model.number="pesan"
                                class="mt-2 w-full accent-primary">
-                        <p class="mt-1.5 text-xs text-muted-foreground">
+                        <p class="mt-1 text-xs text-muted-foreground">
                             Dihitung per blok <span x-text="rupiahPolos(k.message_block_size)"></span> pesan.
                             Blok pertama sudah termasuk.
                         </p>
                     </div>
 
                     {{-- Retensi --}}
-                    <div class="border-t border-border pt-6">
-                        <span class="text-sm font-medium">Retensi riwayat pesan</span>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            @foreach ([12 => '12 bulan', 24 => '24 bulan'] as $nilai => $label)
-                                <button type="button" @click="retensi = {{ $nilai }}"
-                                        class="rounded-lg border px-4 py-2 text-sm transition"
-                                        :class="Number(retensi) === {{ $nilai }} ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'">
-                                    {{ $label }}
-                                </button>
-                            @endforeach
+                    <div class="border-t border-border pt-5">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <label for="retensi" class="text-sm font-medium">Retensi riwayat pesan</label>
+                            <span class="text-sm font-semibold tabular-nums" x-text="`${retensi} bulan`"></span>
+                        </div>
+                        <input id="retensi" type="range" min="12" max="24" step="12" x-model.number="retensi"
+                               class="mt-2 w-full accent-primary">
+                        <div class="mt-1 flex justify-between text-xs text-muted-foreground">
+                            <span>12 bulan (bawaan)</span>
+                            <span>24 bulan</span>
                         </div>
                     </div>
 
                     {{-- API --}}
-                    <div class="border-t border-border pt-6">
-                        <span class="text-sm font-medium">Batas API per menit</span>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            @foreach ([300 => '300 / menit', 600 => '600 / menit'] as $nilai => $label)
-                                <button type="button" @click="api = {{ $nilai }}"
-                                        class="rounded-lg border px-4 py-2 text-sm transition"
-                                        :class="Number(api) === {{ $nilai }} ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'">
-                                    {{ $label }}
-                                </button>
-                            @endforeach
+                    <div class="border-t border-border pt-5">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <label for="api" class="text-sm font-medium">Batas API per menit</label>
+                            <span class="text-sm font-semibold tabular-nums" x-text="`${api} / menit`"></span>
+                        </div>
+                        <input id="api" type="range" min="300" max="600" step="300" x-model.number="api"
+                               class="mt-2 w-full accent-primary">
+                        <div class="mt-1 flex justify-between text-xs text-muted-foreground">
+                            <span>300 / menit (bawaan)</span>
+                            <span>600 / menit</span>
                         </div>
                     </div>
 
                     {{-- Pendampingan --}}
-                    <div class="border-t border-border pt-6">
+                    <div class="border-t border-border pt-5">
                         <label class="flex cursor-pointer items-start gap-3">
                             <input type="checkbox" x-model="pendampingan" class="mt-0.5 rounded border-border">
                             <span>
@@ -223,7 +215,7 @@
 
             {{-- ===================== Perkiraan ===================== --}}
             <div class="lg:col-span-2">
-                <div class="sticky top-24 rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div class="sticky top-24 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
                     <h2 class="text-lg font-semibold">Perkiraan biaya</h2>
 
                     <dl class="mt-4 space-y-3 text-sm">
@@ -294,7 +286,7 @@
         </div>
 
         {{-- ===================== Formulir ===================== --}}
-        <div id="minta-penawaran" class="mt-16 scroll-mt-24 border-t border-border pt-12">
+        <div id="minta-penawaran" class="mt-12 scroll-mt-24 border-t border-border pt-10">
             <div class="mx-auto max-w-2xl">
                 <h2 class="text-lg font-semibold">Kirim permintaan penawaran</h2>
                 <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
