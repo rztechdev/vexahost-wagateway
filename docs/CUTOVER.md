@@ -124,6 +124,24 @@ itu persis pemicu terakhir 7 September.
 setup. Kalau `tini` gagal terpasang, aplikasi **tetap jalan** — `start.sh`
 melewati blok re-exec — dan tidak ada yang rusak.
 
+**Kegagalan yang sudah terjadi sekali, 8 September 2026.** Percobaan cutover
+pertama mati sebelum satu baris pun berjalan:
+
+```
+[FATAL tini (9)] exec ./start.sh failed: Permission denied
+```
+
+`start.sh` bermode **100644** di git — tidak executable — dan selama ini tidak
+pernah jadi masalah karena Nixpacks memanggilnya lewat `bash start.sh`. Blok
+re-exec meng-exec-nya LANGSUNG, jadi bit yang tidak pernah ada itu mendadak
+wajib, dan container masuk restart loop.
+
+Ditutup dua lapis: barisnya sekarang `exec tini -s -- bash "$0"` (tidak
+bergantung pada mode sama sekali), dan mode ketiga skrip diperbaiki jadi 100755
+di git. `tests/Unit/BerkasSkripTest.php` menjaga keduanya — kelas kegagalan ini
+mustahil ditangkap `bash -n` maupun uji unit biasa, dan di Windows `ls -la`
+MENIPU: berkasnya terbaca `-rwxr-xr-x` di disk sementara git menyimpannya 644.
+
 Jangan berharap `tini` mengurangi zombie yang terlihat sekarang. Reaper PID 1
 hanya menuai anak yang **induknya sudah mati**, dan zombie di produksi induknya
 masih hidup (§5, butir 5). `tini` ada untuk yatim sungguhan — subproses Chromium

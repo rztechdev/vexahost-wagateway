@@ -57,10 +57,26 @@ set -u
 # seperti biasa. Kalau tini tidak terpasang, seluruh blok ini dilewati dan
 # perilakunya persis seperti sebelumnya — penyapu Chromium di bawah yang
 # menanggung sisanya.
+#
+# `bash "$0"` dan BUKAN `"$0"` saja. Ini sudah mematikan produksi sekali,
+# 8 September 2026:
+#
+#     [FATAL tini (9)] exec ./start.sh failed: Permission denied
+#
+# Berkas ini bermode 100644 di git — tidak executable — dan selama ini tidak
+# pernah jadi masalah karena Nixpacks memanggilnya lewat `bash start.sh`.
+# Meng-exec-nya langsung menuntut bit yang tidak pernah ada, dan container masuk
+# restart loop sebelum satu baris pun sempat berjalan. Menjalankannya lewat
+# `bash` membuat blok ini tidak bergantung pada mode berkas sama sekali.
+#
+# Mode-nya juga sudah diperbaiki jadi 100755 (`git update-index --chmod=+x`) dan
+# dijaga tests/Unit/BerkasSkripTest.php, tapi dua-duanya sengaja: yang satu
+# membuat kegagalan mustahil, yang lain membuatnya terlihat kalau mode itu
+# hilang lagi.
 if [ "$$" = "1" ] && [ -z "${FLUSTRA_TINI:-}" ] && command -v tini >/dev/null 2>&1; then
     export FLUSTRA_TINI=1
     echo "[start.sh] Menjalankan ulang di bawah tini supaya PID 1 menuai proses yatim."
-    exec tini -s -- "$0" "$@"
+    exec tini -s -- bash "$0" "$@"
 fi
 
 cd "$(dirname "$0")" || exit 1
