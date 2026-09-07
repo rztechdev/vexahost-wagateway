@@ -168,6 +168,13 @@
                     <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200 {{ $isApi ? 'opacity-100' : 'opacity-0 group-hover:opacity-100' }}"></span>
                 </a>
 
+                <a href="{{ route('ai.index') }}" 
+                   class="group relative hidden lg:inline-flex items-center gap-1.5 px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+                    <i class="bi bi-robot text-xs text-primary"></i>
+                    <span>AI Agent</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200 opacity-0 group-hover:opacity-100"></span>
+                </a>
+
                 <div class="hidden md:block h-4 w-px bg-border/80 mx-1"></div>
 
                 {{-- Tombol Ganti Tema (Tanpa Background) --}}
@@ -231,6 +238,23 @@
 
                 {{-- Daftar Menu Dokumen --}}
                 <div class="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin">
+                    {{-- Tombol Route Khusus Halaman AI Agent --}}
+                    <div>
+                        <a href="{{ route('ai.index') }}"
+                           class="group relative flex items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary/10 p-2.5 text-xs font-semibold text-primary transition-all hover:bg-primary/15 hover:border-primary/50 shadow-2xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs">
+                                    <i class="bi bi-robot text-sm"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="truncate text-foreground font-bold group-hover:text-primary transition-colors">Integrasi AI Agent</div>
+                                    <div class="text-[10px] text-muted-foreground truncate">Prompt &amp; Client SDK</div>
+                                </div>
+                            </div>
+                            <span class="rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary shrink-0">Buka</span>
+                        </a>
+                    </div>
+
                     <nav class="space-y-6 text-sm">
                         @php
                             $groupIcons = [

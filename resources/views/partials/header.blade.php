@@ -24,6 +24,7 @@
             'grup' => [
                 'Mulai' => [
                     ['Mulai cepat', route('docs.show', 'mulai-cepat')],
+                    ['Integrasi AI Agent', route('ai.index')],
                     ['Menautkan nomor', route('docs.show', 'menautkan-nomor')],
                     ['Mengirim pesan', route('docs.show', 'mengirim-pesan')],
                     ['Contoh integrasi', route('docs.show', 'contoh-integrasi')],
@@ -123,6 +124,10 @@
                 </a>
                 <a href="{{ route('mitra.landing') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                     <span>Mitra</span>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                </a>
+                <a href="{{ route('ai.index') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                    <span>AI Agent</span>
                     <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
             </div>

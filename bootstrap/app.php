@@ -3,6 +3,7 @@
 use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnsureSubscriptionActive;
 use App\Http\Middleware\EnsureSuperAdmin;
+use App\Http\Middleware\EnsureTwoFactor;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Http\Middleware\HeaderKeamanan;
 use App\Http\Middleware\VerifyEngineSignature;
@@ -39,7 +40,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'workspace' => EnsureWorkspaceSelected::class,
             'subscription' => EnsureSubscriptionActive::class,
             'admin' => EnsureSuperAdmin::class,
+            '2fa' => EnsureTwoFactor::class,
         ]);
+
+        /*
+         | Faktor kedua ditegakkan pada SELURUH halaman web terautentikasi, bukan
+         | dipasang per rute.
+         |
+         | Dipasang di grup `web` supaya rute baru ikut terjaga tanpa ada yang
+         | perlu mengingat menambahkannya. Penjagaan yang harus diingat adalah
+         | penjagaan yang suatu saat terlewat, dan yang terlewat di sini berarti
+         | satu halaman yang bisa dibuka hanya dengan kata sandi yang bocor.
+         |
+         | API sengaja TIDAK ikut: ia diautentikasi dengan API key, bukan sesi
+         | peramban, dan tidak ada manusia di ujungnya yang bisa mengetik kode.
+        */
+        $middleware->web(append: [EnsureTwoFactor::class]);
 
         $middleware->group('internal', [
             VerifyEngineSignature::class,

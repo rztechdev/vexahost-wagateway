@@ -71,6 +71,11 @@ class DocsRepository
                     'title' => 'Webhook',
                     'summary' => 'Menerima pesan masuk dan perubahan status di aplikasi Anda.',
                 ],
+                'memantau-koneksi' => [
+                    'file' => 'MEMANTAU_KONEKSI.md',
+                    'title' => 'Memantau Koneksi',
+                    'summary' => 'Lencana status nomor di aplikasi Anda sendiri, tanpa perlu membuka dashboard kami.',
+                ],
                 'api-key' => [
                     'file' => 'API_KEY.md',
                     'title' => 'API Key & Keamanan',
@@ -79,7 +84,7 @@ class DocsRepository
                 'integrasi-ai-agent' => [
                     'file' => 'INTEGRASI_AI_AGENT.md',
                     'title' => 'Integrasi AI Agent',
-                    'summary' => 'Prompt dan panduan integrasi untuk Claude Code, Cursor, Antigravity, OpenCode, dan Codex.',
+                    'summary' => 'Prompt dan panduan integrasi untuk Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, dan Codex.',
                 ],
             ],
 
@@ -113,6 +118,49 @@ class DocsRepository
                     'file' => 'GLOSARIUM.md',
                     'title' => 'Glosarium',
                     'summary' => 'Istilah yang dipakai di dashboard dan dokumentasi ini.',
+                ],
+            ],
+
+            /*
+             | Dokumen hukum menumpang di sistem dokumentasi yang sama, bukan
+             | punya perenderan sendiri. Alasannya sederhana: bagian hukum dan
+             | pengadaan calon pelanggan meminta tautan yang bisa dibuka siapa
+             | saja tanpa login, dan halaman docs sudah publik, sudah punya
+             | daftar isi, sudah punya navigasi antar-halaman.
+             |
+             | Ditaruh paling bawah dengan sengaja. Ini bagian yang dicari orang
+             | saat sudah memutuskan membeli, bukan saat sedang belajar memakai.
+            */
+            'Hukum' => [
+                'syarat-layanan' => [
+                    'file' => 'SYARAT_LAYANAN.md',
+                    'title' => 'Syarat Layanan',
+                    'summary' => 'Perjanjian antara Anda dan kami — termasuk hal yang wajib dipahami sebelum membeli.',
+                ],
+                'kebijakan-privasi' => [
+                    'file' => 'KEBIJAKAN_PRIVASI.md',
+                    'title' => 'Kebijakan Privasi',
+                    'summary' => 'Data apa yang kami proses, berapa lama disimpan, dan hak Anda menurut UU PDP.',
+                ],
+                'dpa' => [
+                    'file' => 'DPA.md',
+                    'title' => 'Perjanjian Pemrosesan Data',
+                    'summary' => 'Berlaku otomatis bagi setiap pelanggan. Yang biasanya diminta bagian pengadaan.',
+                ],
+                'penggunaan-wajar' => [
+                    'file' => 'PENGGUNAAN_WAJAR.md',
+                    'title' => 'Penggunaan Wajar',
+                    'summary' => 'Apa yang boleh dan tidak boleh dikirim, dan praktik yang membuat nomor diblokir.',
+                ],
+                'sla' => [
+                    'file' => 'SLA.md',
+                    'title' => 'Tingkat Layanan (SLA)',
+                    'summary' => 'Ketersediaan yang kami janjikan, yang tidak dihitung gangguan, dan kompensasinya.',
+                ],
+                'kebijakan-refund' => [
+                    'file' => 'KEBIJAKAN_REFUND.md',
+                    'title' => 'Pengembalian Dana',
+                    'summary' => 'Jaminan 7 hari, dan apa yang harus dilakukan saat uang sudah masuk tapi layanan belum aktif.',
                 ],
             ],
         ];
@@ -163,6 +211,28 @@ class DocsRepository
         ];
     }
 
+    /**
+     * Mengambil isi teks markdown asli dokumen, diproses dengan substitusi Legal.
+     */
+    public static function raw(string $slug): string
+    {
+        $flat = self::flat();
+
+        if (! isset($flat[$slug])) {
+            throw new NotFoundHttpException("Halaman dokumentasi '{$slug}' tidak ada.");
+        }
+
+        $path = base_path(self::DIR."/{$flat[$slug]['file']}");
+
+        if (! is_file($path)) {
+            throw new NotFoundHttpException("Berkas dokumentasi {$flat[$slug]['file']} tidak ditemukan.");
+        }
+
+        $markdown = file_get_contents($path);
+
+        return Legal::isi($markdown);
+    }
+
     /** @return array{html: string, toc: array<int, array{id: string, text: string}>} */
     private static function render(string $file): array
     {
@@ -177,6 +247,18 @@ class DocsRepository
         // Judul halaman sudah ditampilkan terpisah oleh layout, jadi H1 pertama
         // dibuang agar tidak muncul dua kali, termasuk garis pemisah (---) setelahnya.
         $markdown = preg_replace('/\A#\s+[^\r\n]*\r?\n+(?:---\r?\n+)?/u', '', $markdown, 1);
+
+        /*
+         | Identitas badan usaha disisipkan di sini, bukan ditulis di dalam
+         | berkasnya. Enam dokumen hukum yang masing-masing menyalin nama PT
+         | akan menyimpang begitu badan usahanya berganti nama — dan yang
+         | menemukan ketidakcocokannya adalah lawan dalam sengketa, yang
+         | memakainya untuk menyanggah bahwa perjanjiannya pernah mengikat.
+         |
+         | Dijalankan sebelum markdown di-parse supaya penanda yang belum diisi
+         | ikut tercetak tebal dan benar-benar mencolok di halaman.
+        */
+        $markdown = Legal::isi($markdown);
 
         $html = Str::markdown($markdown);
 

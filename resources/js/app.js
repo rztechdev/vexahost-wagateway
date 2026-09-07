@@ -50,6 +50,33 @@ function renderQrisCodes() {
 window.renderQris = renderQrisCodes;
 document.addEventListener('DOMContentLoaded', renderQrisCodes);
 
+/**
+ * QR untuk aplikasi authenticator (URI `otpauth://`).
+ *
+ * Terpisah dari QRIS meski memakai pustaka yang sama, karena pesan gagalnya
+ * harus berbeda: kalau QRIS gagal digambar masih ada transfer bank, tapi kalau
+ * QR ini gagal, satu-satunya jalan yang tersisa adalah mengetik rahasianya
+ * secara manual — dan kalimat itu yang harus muncul, bukan saran membayar.
+ */
+function renderOtpCodes() {
+    document.querySelectorAll('[data-otpauth]').forEach((el) => {
+        QRCode.toCanvas(el, el.dataset.otpauth, { width: 220, margin: 1 }, (error) => {
+            if (! error) {
+                el.style.width = '180px';
+                el.style.height = '180px';
+                return;
+            }
+
+            el.insertAdjacentHTML(
+                'afterend',
+                '<p class="text-sm text-destructive">Kode QR gagal ditampilkan. Masukkan kunci di bawah secara manual ke aplikasi authenticator Anda.</p>'
+            );
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', renderOtpCodes);
+
 /* ---------------------------------------------------------------------------
    Pemberitahuan hasil tindakan.
 

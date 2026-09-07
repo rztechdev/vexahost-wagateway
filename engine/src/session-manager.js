@@ -146,6 +146,21 @@ export class SessionManager {
                 entry.status = 'failed';
                 await laravel.event(sessionId, 'auth_failure', { message: error.message });
                 this.#sessions.delete(sessionId);
+
+                // initialize() menyalakan Chromium lebih dulu, baru memuat
+                // WhatsApp Web. Kalau gagal setelah tahap itu, prosesnya sudah
+                // hidup — dan begitu entry dibuang, tidak ada lagi yang
+                // memegang referensinya. Tanpa destroy() di sini tiap start
+                // yang gagal meninggalkan Chromium yatim ±400 MB yang tidak
+                // pernah kembali sampai server kehabisan memori.
+                try {
+                    await client.destroy();
+                } catch (closeError) {
+                    logger.warn(
+                        { sessionId, err: closeError.message },
+                        'Chromium sisa start yang gagal tidak bisa ditutup'
+                    );
+                }
             });
 
             return entry;

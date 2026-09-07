@@ -31,6 +31,12 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+
+        // Rahasia TOTP dan kode pemulihan setara kunci masuk kedua. Keduanya
+        // wajib di sini supaya tidak pernah ikut terbawa saat model ini
+        // di-serialize ke JSON, log, atau payload job.
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -41,7 +47,35 @@ class User extends Authenticatable
             'is_super_admin' => 'boolean',
             'is_exempt' => 'boolean',
             'password' => 'hashed',
+            'deletion_requested_at' => 'datetime',
+            'deletion_scheduled_for' => 'datetime',
+
+            // `encrypted`, BUKAN `hashed`: rahasia TOTP harus bisa dibaca
+            // kembali apa adanya untuk menghitung kode tiap 30 detik.
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /** 2FA benar-benar menyala, bukan sekadar rahasianya sudah dibuat. */
+    public function duaFaktorAktif(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && filled($this->two_factor_secret);
+    }
+
+    /**
+     * Akun ini WAJIB memakai 2FA.
+     *
+     * Hanya super admin. Akun itu bisa menandai tagihan lunas, mengatur ulang
+     * kata sandi siapa pun, dan membaca seluruh workspace — satu kata sandi
+     * yang bocor cukup untuk semuanya. Pelanggan boleh memilih sendiri; memaksa
+     * seluruh pendaftar baru memasang aplikasi authenticator sebelum bisa
+     * memakai produk akan menghentikan sebagian dari mereka di langkah itu.
+     */
+    public function wajibDuaFaktor(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 
     public function guideProgress(): HasMany

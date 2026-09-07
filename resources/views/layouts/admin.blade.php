@@ -46,6 +46,12 @@
             ['rute' => 'admin.audit', 'label' => 'Catatan Audit', 'ikon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h4'],
             ['rute' => 'admin.exemptions', 'label' => 'Pemberitahuan & Tes', 'cocok' => ['admin.exemptions', 'admin.exemptions.*'], 'ikon' => 'M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8L12 2z'],
             ['rute' => 'admin.system', 'label' => 'Sistem', 'ikon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h2m14 0h2M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4'],
+            // Bersebelahan dengan Sistem karena keduanya soal kesehatan, tapi
+            // tetap menu sendiri: yang satu untuk mendiagnosis ke dalam, yang
+            // satu untuk berbicara ke luar. Tombol "umumkan ke seluruh
+            // pelanggan" tidak boleh berjarak satu salah klik dari pemeriksaan
+            // sehari-hari.
+            ['rute' => 'admin.status', 'label' => 'Status & Insiden', 'cocok' => ['admin.status', 'admin.status.*'], 'ikon' => 'M22 12h-4l-3 9L9 3l-3 9H2'],
         ],
     ];
 

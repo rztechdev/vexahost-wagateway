@@ -26,4 +26,14 @@ class DocsController extends Controller
             'activeSlug' => $slug,
         ]);
     }
+
+    public function raw(string $slug): \Illuminate\Http\Response
+    {
+        $content = DocsRepository::raw($slug);
+
+        return response($content, 200, [
+            'Content-Type' => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$slug}.md\"",
+        ]);
+    }
 }

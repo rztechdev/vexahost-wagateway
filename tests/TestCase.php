@@ -3,12 +3,48 @@
 namespace Tests;
 
 use App\Models\Subscription;
+use App\Models\User;
 use App\Models\Workspace;
+use App\Support\Totp;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Testing\TestResponse;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Masuk sebagai seorang pengguna yang faktor keduanya sudah terlewati.
+     *
+     * `EnsureTwoFactor` berlaku di SELURUH halaman web, jadi tanpa ini setiap
+     * tes yang membuka halaman apa pun akan dijawab pengalihan ke `/2fa` — dan
+     * puluhan tes akan diperbaiki dengan cara yang salah, yaitu dengan
+     * melonggarkan penegakannya di produksi.
+     *
+     * Yang dikerjakan di sini persis dua hal yang di produksi dikerjakan
+     * pengguna sungguhan: menandai tantangan sudah dilewati, dan — untuk akun
+     * yang wajib memakainya — memasang 2FA lebih dulu. Tidak ada penjagaan yang
+     * dimatikan.
+     *
+     * `TwoFactorTest` sengaja TIDAK lewat sini: ia memakai `be()`, yang tidak
+     * ditimpa, supaya yang diujinya benar-benar penegakan apa adanya.
+     */
+    public function actingAs(Authenticatable $user, $guard = null): static
+    {
+        parent::actingAs($user, $guard);
+
+        if ($user instanceof User && $user->wajibDuaFaktor() && ! $user->duaFaktorAktif()) {
+            $user->forceFill([
+                'two_factor_secret' => Totp::rahasiaBaru(),
+                'two_factor_recovery_codes' => [],
+                'two_factor_confirmed_at' => now(),
+            ])->save();
+        }
+
+        $this->withSession(['2fa.lolos' => true]);
+
+        return $this;
+    }
+
     /**
      * Memberi workspace langganan yang berlaku.
      *

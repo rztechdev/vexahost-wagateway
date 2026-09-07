@@ -8,17 +8,21 @@ use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
 use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
+use App\Http\Controllers\Admin\StatusController as AdminStatusController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
+use App\Http\Controllers\AiIntegrationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Dashboard\ApiKeyController;
 use App\Http\Controllers\Dashboard\BalanceController;
 use App\Http\Controllers\Dashboard\BillingController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\DataRightsController;
 use App\Http\Controllers\Dashboard\MessageController;
 use App\Http\Controllers\Dashboard\MitraController;
 use App\Http\Controllers\Dashboard\ProfileController;
@@ -31,11 +35,16 @@ use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EnterpriseLeadController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingGuideController;
+use App\Http\Controllers\StatusController;
 use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('welcome');
 Route::get('mitra', [MitraController::class, 'landing'])->name('mitra.landing');
+Route::get('ai', [AiIntegrationController::class, 'index'])->name('ai.index');
+Route::redirect('integrasi-ai', 'ai');
+Route::get('ai/panduan.md', [AiIntegrationController::class, 'downloadMasterMd'])->name('ai.markdown');
+Route::get('ai/agent/{agent}/unduh', [AiIntegrationController::class, 'downloadAgentFile'])->name('ai.agent.download');
 
 /*
 | Dokumentasi. Terbuka untuk publik: isinya penjelasan cara kerja dan cara
@@ -43,9 +52,24 @@ Route::get('mitra', [MitraController::class, 'landing'])->name('mitra.landing');
 | jadi nilainya tidak pernah dipakai menyusun path berkas.
 */
 Route::get('docs', [DocsController::class, 'index'])->name('docs.index');
+Route::get('docs/{slug}.md', [DocsController::class, 'raw'])
+    ->whereIn('slug', array_keys(DocsRepository::flat()))
+    ->name('docs.raw');
 Route::get('docs/{slug}', [DocsController::class, 'show'])
     ->whereIn('slug', array_keys(DocsRepository::flat()))
     ->name('docs.show');
+
+/*
+| Halaman status. Terbuka tanpa login, dan itu keputusan sadar: yang paling
+| butuh halaman ini justru orang yang sedang tidak bisa masuk. Halaman status
+| di balik login adalah halaman status yang mati persis saat diperlukan.
+|
+| Sengaja TIDAK memakai middleware langganan atau workspace mana pun — keduanya
+| membaca database, dan halaman ini harus tetap terbuka saat database itulah
+| yang sedang bermasalah.
+*/
+Route::get('status', StatusController::class)->name('status');
+Route::get('status.json', [StatusController::class, 'json'])->name('status.json');
 
 /*
 | Autentikasi lokal: gateway memegang form login dan register-nya sendiri,
@@ -90,6 +114,37 @@ Route::post('enterprise/hubungi', [EnterpriseLeadController::class, 'store'])
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+/*
+| Autentikasi dua faktor.
+|
+| Di luar setiap grup lain dengan sengaja. Rute-rute ini harus tetap terbuka
+| justru bagi sesi yang BELUM lolos faktor kedua dan bagi admin yang belum
+| memasangnya sama sekali — keduanya keadaan yang ditolak middleware `2fa`.
+| Memasukkannya ke grup mana pun yang dijaga middleware itu menghasilkan
+| pengalihan ke halaman yang menjaga dirinya sendiri, dan peramban berputar
+| sampai menyerah.
+|
+| `workspace` juga tidak dipakai: pendaftar baru belum punya workspace, dan
+| kode tetap harus bisa dimasukkan sebelum apa pun yang lain.
+*/
+Route::middleware('auth')->group(function (): void {
+    Route::get('2fa', [TwoFactorController::class, 'pasang'])->name('two-factor.setup');
+    Route::post('2fa', [TwoFactorController::class, 'nyalakan'])->name('two-factor.enable');
+    Route::delete('2fa', [TwoFactorController::class, 'matikan'])->name('two-factor.disable');
+
+    Route::get('2fa/kode-pemulihan/csv', [TwoFactorController::class, 'unduhKodePemulihanCsv'])->name('two-factor.recovery-codes.csv');
+    Route::post('2fa/kode-pemulihan/tampilkan', [TwoFactorController::class, 'tampilkanKodePemulihan'])->name('two-factor.recovery-codes.show');
+    Route::post('2fa/kode-pemulihan/buat-ulang', [TwoFactorController::class, 'buatUlangKodePemulihan'])->name('two-factor.recovery-codes.regenerate');
+
+    Route::get('2fa/kode', [TwoFactorController::class, 'tantangan'])->name('two-factor.challenge');
+
+    // Dibatasi lajunya: enam digit adalah satu juta kemungkinan, dan tanpa batas
+    // ini kode bisa ditebak habis oleh skrip dalam hitungan jam.
+    Route::post('2fa/kode', [TwoFactorController::class, 'verifikasi'])
+        ->middleware('throttle:login')
+        ->name('two-factor.verify');
+});
+
 Route::middleware('auth')->group(function (): void {
     // Pembuatan workspace ada di luar middleware `workspace`, karena middleware
     // itulah yang mengarahkan ke sini saat pengguna belum punya workspace.
@@ -109,6 +164,21 @@ Route::middleware('auth')->group(function (): void {
     | pelanggan yang workspace-nya baru saja dihapus tetap berhak membaca
     | riwayat kabarnya.
     */
+    /*
+    | Hak atas data pribadi. Di luar grup `workspace` DAN `subscription` dengan
+    | sengaja, dan masing-masing punya alasannya sendiri:
+    |
+    | - `workspace` memantulkan siapa pun yang belum memilih workspace ke
+    |   onboarding. Pengguna yang belum pernah membuat workspace — atau yang
+    |   baru saja menghapus satu-satunya — tetap berhak menutup akunnya.
+    | - `subscription` menolak semua POST saat langganan tidak berlaku, jadi
+    |   pelanggan yang layanannya sudah mati justru tidak bisa pergi. Merekalah
+    |   yang paling sering ingin, dan hak menurut UU PDP tidak berhenti karena
+    |   tagihan.
+    */
+    Route::post('profil/hapus-akun', [DataRightsController::class, 'mintaHapus'])->name('profile.delete.request');
+    Route::post('profil/hapus-akun/batal', [DataRightsController::class, 'batalHapus'])->name('profile.delete.cancel');
+
     Route::get('notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('notifikasi/{id}', [NotificationController::class, 'open'])->name('notifications.open');
     Route::post('notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -218,6 +288,11 @@ Route::middleware('auth')->group(function (): void {
         Route::get('settings', [WorkspaceController::class, 'settings'])->name('settings');
         Route::put('settings', [WorkspaceController::class, 'update'])->name('settings.update');
         Route::delete('settings', [WorkspaceController::class, 'destroy'])->name('settings.destroy');
+
+        // Ekspor tetap di dalam grup workspace: isinya milik satu workspace, dan
+        // tanpa workspace terpilih tidak ada yang bisa diekspor.
+        Route::post('settings/ekspor', [DataRightsController::class, 'ekspor'])->name('settings.export');
+        Route::get('settings/ekspor/{id}', [DataRightsController::class, 'unduh'])->name('settings.export.download');
         Route::post('settings/members', [WorkspaceController::class, 'addMember'])->name('settings.members.add');
         Route::delete('settings/members/{userId}', [WorkspaceController::class, 'removeMember'])->name('settings.members.remove');
     });
@@ -253,6 +328,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('pesan', AdminMessageController::class)->name('messages');
     Route::get('audit', AdminAuditController::class)->name('audit');
     Route::get('sistem', AdminSystemController::class)->name('system');
+
+    /*
+    | Insiden yang tampil di halaman status publik.
+    |
+    | Terpisah dari /admin/sistem dengan sengaja: yang di sana untuk mendiagnosis
+    | ke dalam, yang di sini untuk berbicara ke luar. Menyatukannya membuat
+    | tombol "umumkan ke seluruh pelanggan" berdampingan dengan tombol
+    | pemeriksaan biasa, dan pengumuman publik tidak boleh berjarak satu salah
+    | klik dari tindakan sehari-hari.
+    */
+    Route::get('status', [AdminStatusController::class, 'index'])->name('status');
+    Route::post('status', [AdminStatusController::class, 'store'])->name('status.store');
+    Route::post('status/{id}/kabar', [AdminStatusController::class, 'update'])->name('status.update');
 
     /*
     | Pemberitahuan dan pengecualian di satu halaman: ketiganya menjawab

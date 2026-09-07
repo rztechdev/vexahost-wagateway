@@ -1,8 +1,11 @@
 <?php
 
+use App\Jobs\BersihkanEksporJob;
 use App\Jobs\BillingCycleJob;
+use App\Jobs\EksekusiPenghapusanAkunJob;
 use App\Jobs\PantauKesehatanJob;
 use App\Jobs\PruneOldRecordsJob;
+use App\Jobs\RekamStatusJob;
 use App\Jobs\SyncSessionStatusJob;
 use Illuminate\Support\Facades\Schedule;
 
@@ -32,3 +35,27 @@ Schedule::job(new BillingCycleJob)->dailyAt('08:00')->withoutOverlapping();
 | ini berjalan.
 */
 Schedule::job(new PantauKesehatanJob)->hourly()->withoutOverlapping();
+
+/*
+| Perekam status + denyut ke pemantau luar, tiap menit.
+|
+| Tiap menit dan bukan tiap jam karena inilah yang mengukur ketersediaan yang
+| dijanjikan SLA. Sampel per jam berarti gangguan 40 menit bisa terlewat
+| seluruhnya, dan angka uptime yang dihitung dari sampel sejarang itu bukan
+| angka yang bisa dipertanggungjawabkan saat pelanggan mengajukan klaim kredit.
+|
+| `withoutOverlapping` penting di sini: pemeriksaan engine punya batas waktu
+| sendiri, dan pemeriksaan yang menumpuk saat engine lambat akan menghitung
+| menit yang sama berkali-kali.
+*/
+Schedule::job(new RekamStatusJob)->everyMinute()->withoutOverlapping();
+
+/*
+| Menghapus akun yang masa tunggunya habis, dan membuang berkas ekspor yang
+| kedaluwarsa.
+|
+| Dini hari supaya penghapusan permanen — yang memutus sesi WhatsApp dan
+| menyentuh banyak baris sekaligus — tidak berbarengan dengan jam tersibuk.
+*/
+Schedule::job(new EksekusiPenghapusanAkunJob)->dailyAt('03:40')->withoutOverlapping();
+Schedule::job(new BersihkanEksporJob)->dailyAt('03:50')->withoutOverlapping();

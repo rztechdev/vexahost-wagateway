@@ -295,5 +295,309 @@
                 </div>
             </form>
         </x-section>
+
+        {{-- ===================== Dua faktor ===================== --}}
+        <x-section title="Autentikasi dua faktor"
+                   sub="Lapisan kedua di luar kata sandi, dari aplikasi authenticator di ponsel Anda">
+
+            {{-- Kode pemulihan hanya ditampilkan LEWAT FLASH, sekali, tepat
+                 setelah 2FA dinyalakan. Kalau ia bisa dibuka lagi kapan saja,
+                 ia berhenti menjadi faktor kedua: sesi peramban yang tertinggal
+                 terbuka cukup untuk membacanya. --}}
+            @if (session('kodePemulihan'))
+                <div x-data="{
+                    kodes: @js(session('kodePemulihan')),
+                    disalin: false,
+                    unduhCsv() {
+                        const csvContent = 'No,Kode Pemulihan\r\n' + this.kodes.map((k, i) => `${i + 1},${k}`).join('\r\n');
+                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'flustra-kode-pemulihan-2fa.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+                    },
+                    unduhTxt() {
+                        const txtContent = 'FLUSTRA WA GATEWAY - KODE PEMULIHAN 2FA\r\n'
+                            + 'Tanggal: ' + new Date().toLocaleDateString('id-ID') + '\r\n'
+                            + 'Simpan berkas ini di tempat aman. Setiap kode hanya berlaku sekali.\r\n\r\n'
+                            + this.kodes.map((k, i) => `${i + 1}. ${k}`).join('\r\n');
+                        const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'flustra-kode-pemulihan-2fa.txt';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+                    },
+                    salinSemua() {
+                        const teks = this.kodes.join('\n');
+                        navigator.clipboard.writeText(teks).then(() => {
+                            this.disalin = true;
+                            setTimeout(() => this.disalin = false, 2500);
+                        });
+                    }
+                }" class="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 sm:p-5 shadow-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-shield-lock-fill text-amber-600 dark:text-amber-400"></i>
+                                <p class="font-semibold text-foreground">Simpan 8 kode pemulihan ini sekarang</p>
+                            </div>
+                            <p class="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Ini <strong>satu-satunya kali</strong> kode ini ditampilkan. Simpan di tempat yang bukan
+                                ponsel yang sama — inilah jalan masuk Anda kalau ponselnya hilang. Tiap kode berlaku sekali.
+                            </p>
+                        </div>
+
+                        {{-- Tombol Aksi: Unduh CSV, Unduh TXT, Salin Semua --}}
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button type="button"
+                                    @click="unduhCsv()"
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-2xs cursor-pointer"
+                                    title="Unduh 8 kode pemulihan dalam format spreadsheet CSV">
+                                <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-600 dark:text-emerald-400"></i>
+                                <span>Unduh CSV</span>
+                            </button>
+
+                            <button type="button"
+                                    @click="unduhTxt()"
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition shadow-2xs cursor-pointer"
+                                    title="Unduh berkas teks .txt">
+                                <i class="bi bi-file-text"></i>
+                                <span>Unduh TXT</span>
+                            </button>
+
+                            <button type="button"
+                                    @click="salinSemua()"
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition shadow-2xs cursor-pointer"
+                                    title="Salin seluruh kode ke clipboard">
+                                <i class="bi" :class="disalin ? 'bi-check2 text-emerald-500' : 'bi-clipboard'"></i>
+                                <span x-text="disalin ? 'Tersalin!' : 'Salin Semua'">Salin Semua</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-2 font-mono text-sm sm:grid-cols-4">
+                        @foreach (session('kodePemulihan') as $kode)
+                            <span class="select-all rounded-xl bg-card border border-border/80 px-2.5 py-2 text-center font-medium shadow-2xs text-foreground">{{ $kode }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @if ($user->duaFaktorAktif())
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-sm text-emerald-700 dark:text-emerald-400">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Aktif
+                    </span>
+                    <span class="text-sm text-muted-foreground">
+                        Menyala sejak {{ $user->two_factor_confirmed_at->translatedFormat('j F Y') }} ·
+                        {{ count($user->two_factor_recovery_codes ?? []) }} kode pemulihan tersisa
+                    </span>
+                </div>
+
+                {{-- Tombol Tindakan Kode Pemulihan --}}
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <a href="{{ route('two-factor.recovery-codes.csv') }}"
+                       download
+                       class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-2xs cursor-pointer"
+                       title="Unduh seluruh sisa kode pemulihan dalam format spreadsheet CSV">
+                        <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Unduh CSV Kode Pemulihan</span>
+                    </a>
+
+                    @unless (session('kodePemulihan'))
+                        <details class="inline-block">
+                            <summary class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shadow-2xs cursor-pointer list-none">
+                                <i class="bi bi-eye"></i>
+                                <span>Tampilkan Ulang di Layar</span>
+                            </summary>
+                            <form method="POST" action="{{ route('two-factor.recovery-codes.show') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-border bg-muted/30">
+                                @csrf
+                                <input type="password" name="password" required placeholder="Kata sandi akun Anda"
+                                       class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-primary focus:ring-primary min-w-[200px]">
+                                <button type="submit" class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition">
+                                    Buka Kode
+                                </button>
+                            </form>
+                        </details>
+                    @endunless
+
+                    <details class="inline-block">
+                        <summary class="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition shadow-2xs cursor-pointer list-none"
+                                 title="Terbitkan 8 kode baru jika kode lama sudah habis atau hilang">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>Buat Ulang 8 Kode Baru</span>
+                        </summary>
+                        <form method="POST" action="{{ route('two-factor.recovery-codes.regenerate') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5"
+                              data-konfirmasi="Seluruh kode pemulihan lama akan hangus dan digantikan dengan 8 kode baru. Lanjutkan?">
+                            @csrf
+                            <input type="password" name="password" required placeholder="Kata sandi akun Anda"
+                                   class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-amber-500 focus:ring-amber-500 min-w-[200px]">
+                            <button type="submit" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition">
+                                Terbitkan 8 Kode Baru
+                            </button>
+                        </form>
+                    </details>
+                </div>
+
+                @if ($user->wajibDuaFaktor())
+                    <p class="mt-4 text-sm text-muted-foreground">
+                        Akun administrator wajib memakainya, jadi 2FA tidak dapat dimatikan dari sini.
+                    </p>
+                @else
+                    <form method="POST" action="{{ route('two-factor.disable') }}" class="mt-5"
+                          data-konfirmasi="Setelah dimatikan, akun Anda hanya dilindungi kata sandi. Lanjutkan?">
+                        @csrf
+                        @method('DELETE')
+                        <label class="mb-1 block text-sm font-medium" for="pw_2fa">
+                            Masukkan kata sandi untuk mematikan
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            <input id="pw_2fa" type="password" name="password" required autocomplete="current-password"
+                                   class="min-w-56 flex-1 rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
+                            <button class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted">
+                                Matikan 2FA
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                        @enderror
+                    </form>
+                @endif
+            @else
+                <p class="text-sm text-muted-foreground">
+                    Belum aktif. Dengan 2FA, kata sandi yang bocor saja tidak cukup untuk masuk ke akun Anda —
+                    penyerang juga harus memegang ponsel Anda. Kodenya dibuat di ponsel itu sendiri, jadi tetap
+                    bekerja tanpa sinyal maupun internet.
+                </p>
+
+                <a href="{{ route('two-factor.setup') }}"
+                   class="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                    Nyalakan 2FA
+                </a>
+            @endif
+        </x-section>
+
+        {{-- ===================== Hapus akun =====================
+
+             Berbingkai dan merah: ini satu-satunya tindakan di seluruh produk
+             yang benar-benar tidak bisa dibatalkan setelah masa tunggunya lewat.
+
+             Dampaknya disebutkan satu per satu SEBELUM tombolnya, bukan sesudah.
+             Yang paling sering tidak disadari: workspace yang masih punya
+             anggota lain TIDAK ikut terhapus — ia berpindah pemilik, karena
+             riwayat percakapan di dalamnya milik orang lain juga.
+             ======================================================= --}}
+        @if (! $user->is_super_admin)
+            <div class="mt-10 rounded-xl border border-destructive/40 bg-destructive/5 p-5">
+                @if ($user->deletion_scheduled_for)
+                    <p class="font-semibold text-destructive">Akun ini dijadwalkan dihapus</p>
+                    <p class="mt-1.5 text-sm text-muted-foreground">
+                        Penghapusan permanen berlangsung pada
+                        <strong>{{ $user->deletion_scheduled_for->translatedFormat('j F Y') }}</strong>
+                        ({{ (int) now()->diffInDays($user->deletion_scheduled_for, false) }} hari lagi).
+                        Sampai saat itu layanan Anda tetap berjalan seperti biasa, dan Anda masih bisa membatalkannya.
+                    </p>
+
+                    <form method="POST" action="{{ route('profile.delete.cancel') }}" class="mt-4">
+                        @csrf
+                        <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                            Batalkan penghapusan
+                        </button>
+                    </form>
+                @else
+                    <p class="font-semibold text-destructive">Hapus akun</p>
+                    <p class="mt-1.5 text-sm text-muted-foreground">
+                        Permintaan ini <strong>tidak langsung dijalankan</strong>. Akun Anda dihapus permanen
+                        {{ config('legal.retention.account_grace_days') }} hari setelah permintaan, dan sampai
+                        tanggal itu Anda bisa membatalkannya sendiri dari halaman ini.
+                    </p>
+
+                    <div class="mt-4 space-y-3 text-sm">
+                        <p class="font-medium">Yang akan terjadi:</p>
+                        <ul class="list-disc space-y-1.5 pl-5 text-muted-foreground">
+                            @if ($dampak['dihapus']->isNotEmpty())
+                                <li>
+                                    <strong class="text-destructive">{{ $dampak['dihapus']->count() }} workspace ikut dihapus permanen</strong>
+                                    ({{ $dampak['dihapus']->pluck('name')->join(', ') }}) — beserta seluruh
+                                    riwayat pesan, nomor WhatsApp, API key, dan template di dalamnya.
+                                </li>
+                            @endif
+
+                            @if ($dampak['dialihkan']->isNotEmpty())
+                                <li>
+                                    {{ $dampak['dialihkan']->count() }} workspace
+                                    ({{ $dampak['dialihkan']->pluck('name')->join(', ') }})
+                                    <strong>tidak dihapus</strong> — kepemilikannya berpindah ke anggota terlama,
+                                    karena riwayat di dalamnya milik mereka juga.
+                                </li>
+                            @endif
+
+                            @if ($dampak['saldo'] > 0)
+                                <li>
+                                    Saldo tersisa <strong>Rp {{ number_format($dampak['saldo'], 0, ',', '.') }}</strong>.
+                                    Hubungi kami lewat <a href="{{ route('tickets.index') }}" class="underline">Bantuan</a>
+                                    untuk meminta pengembaliannya <em>sebelum</em> tanggal penghapusan — sesudah itu tidak ada lagi yang bisa kami kembalikan.
+                                </li>
+                            @endif
+
+                            <li>
+                                Riwayat tagihan <strong>tetap kami simpan</strong> tanpa kaitan ke identitas Anda,
+                                karena dokumen pembukuan wajib disimpan {{ config('legal.retention.billing_years') }} tahun
+                                menurut ketentuan perpajakan. Dijelaskan di
+                                <a href="{{ route('docs.show', 'kebijakan-privasi') }}" class="underline">Kebijakan Privasi</a>.
+                            </li>
+                        </ul>
+
+                        <p class="text-muted-foreground">
+                            Ingin menyimpan riwayat percakapan Anda lebih dulu? Ada di
+                            <a href="{{ route('settings') }}" class="underline">Pengaturan → Ekspor data</a>.
+                        </p>
+                    </div>
+
+                    <form method="POST" action="{{ route('profile.delete.request') }}" class="mt-5"
+                          data-konfirmasi="Setelah masa tunggu lewat, ini tidak bisa dibatalkan oleh siapa pun. Lanjutkan?">
+                        @csrf
+
+                        @if (filled($user->password))
+                            <label class="mb-1 block text-sm font-medium" for="hapus_password">
+                                Masukkan kata sandi Anda untuk memastikan
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <input id="hapus_password" type="password" name="password" required autocomplete="current-password"
+                                       class="min-w-56 flex-1 rounded-lg border-input bg-background text-sm focus:border-destructive focus:ring-destructive">
+                                <button class="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+                                    Jadwalkan penghapusan
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                            @enderror
+                        @else
+                            {{-- Akun Google tidak punya kata sandi untuk dicocokkan. --}}
+                            <label class="mb-1 block text-sm font-medium" for="confirm_email">
+                                Ketik <code class="rounded bg-muted px-1">{{ $user->email }}</code> untuk memastikan
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <input id="confirm_email" name="confirm_email" required autocomplete="off"
+                                       placeholder="{{ $user->email }}"
+                                       class="min-w-56 flex-1 rounded-lg border-input bg-background text-sm focus:border-destructive focus:ring-destructive">
+                                <button class="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+                                    Jadwalkan penghapusan
+                                </button>
+                            </div>
+                            @error('confirm_email')
+                                <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </form>
+                @endif
+            </div>
+        @endif
     </div>
 @endsection

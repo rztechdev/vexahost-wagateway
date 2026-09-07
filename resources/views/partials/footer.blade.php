@@ -117,7 +117,7 @@
                         <li><a href="{{ route('docs.show', 'bantuan') }}" class="text-muted-foreground hover:text-foreground transition-colors">Pusat Bantuan</a></li>
                         <li><a href="mailto:flustrasupport@gmail.com" class="text-muted-foreground hover:text-foreground transition-colors break-all">flustrasupport@gmail.com</a></li>
                         <li><a href="https://wa.me/6282318280376" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">WhatsApp Helpdesk</a></li>
-                        <li><a href="https://about.flustra.id" target="_blank" rel="noopener" class="text-muted-foreground hover:text-foreground transition-colors">Kebijakan Privasi</a></li>
+                        <li><a href="{{ route('status') }}" class="text-muted-foreground hover:text-foreground transition-colors">Status Layanan</a></li>
                     </ul>
                 </div>
             </div>
@@ -127,8 +127,24 @@
     {{-- Baris Bawah: Legal Metadata, Hak Cipta & Social Icons Lengkap (Full-Width Grounded) --}}
     <div class="border-t border-border/70 bg-muted/40 dark:bg-muted/20 py-3 sm:py-3.5">
         <div class="mx-auto flex max-w-[1440px] flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 text-xs text-muted-foreground">
-            <div class="text-center sm:text-left">
+            {{-- Dokumen hukum ditaruh di baris paling bawah bersama hak cipta,
+                 bukan di kolom Perusahaan. Di situlah orang mencarinya, dan
+                 bagian pengadaan calon pelanggan menggulung sampai bawah persis
+                 untuk menemukan keenamnya berjajar. --}}
+            <div class="flex flex-col items-center gap-2 sm:items-start">
                 <span>&copy; {{ date('Y') }} PT FLUSTRA FINANCES ARTHA. Hak cipta dilindungi undang-undang.</span>
+                <nav class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start" aria-label="Dokumen hukum">
+                    @foreach ([
+                        'syarat-layanan' => 'Syarat Layanan',
+                        'kebijakan-privasi' => 'Privasi',
+                        'dpa' => 'DPA',
+                        'penggunaan-wajar' => 'Penggunaan Wajar',
+                        'sla' => 'SLA',
+                        'kebijakan-refund' => 'Refund',
+                    ] as $slug => $label)
+                        <a href="{{ route('docs.show', $slug) }}" class="hover:text-foreground transition-colors">{{ $label }}</a>
+                    @endforeach
+                </nav>
             </div>
 
             {{-- 7 Ikon Media Sosial Resmi Flustra --}}

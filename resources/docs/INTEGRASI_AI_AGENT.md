@@ -111,7 +111,59 @@ Pada IDE atau agen otonom berbasis OpenCode dan OpenAI Codex:
 
 ---
 
-## 6. Praktik Keamanan Kunci API
+## 6. Konfigurasi Hermes Agent (SKILL.md)
+
+Bagi pengguna **Hermes Agent** (Nous Research) yang memakai standar skill berbasis `SKILL.md`:
+
+```yaml
+# Simpan di skills/flustra-wa/SKILL.md
+name: flustra-wa-gateway
+description: Kirim notifikasi WhatsApp dan dokumen via Flustra WA Gateway API.
+```
+
+Prompt instruksi untuk Hermes Agent:
+```text
+Definisikan tool send_whatsapp(to, message):
+- Base URL: https://wa.flustra.id/api/v1
+- Endpoint: POST /messages/text
+- Headers:
+    Content-Type: application/json
+    X-Api-Key: ${FLUSTRA_WA_KEY}
+- Normalisasi nomor penerima: dukung awalan 08 maupun 62.
+- Laporkan status antrean (queued) dan ID pesan kembali ke user.
+```
+
+---
+
+## 7. Konfigurasi OpenClaw (Autonomous AI Employee)
+
+Untuk pengguna **OpenClaw** (personal autonomous agent):
+
+```json
+{
+  "name": "send_whatsapp",
+  "description": "Mengirim pesan WhatsApp menggunakan Flustra WA Gateway",
+  "endpoint": "https://wa.flustra.id/api/v1/messages/text",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-Api-Key": "${env.FLUSTRA_WA_KEY}"
+  },
+  "parameters": {
+    "to": "string (nomor telepon WhatsApp penerima)",
+    "message": "string (isi pesan teks)"
+  }
+}
+```
+
+Prompt untuk OpenClaw:
+```text
+Hubungkan tool send_whatsapp ke alur kerja ReAct Anda. Setiap kali ada notifikasi penting atau alert server, panggil tool ini untuk meneruskan pesan ke WhatsApp admin.
+```
+
+---
+
+## 8. Praktik Keamanan Kunci API
 
 Saat bekerja dengan AI Agent:
 1. **Simpan di Variabel Lingkungan:** Jangan pernah memasukkan nilai asli API key ke dalam prompt AI publik atau berkas kode yang diunggah ke repositori.

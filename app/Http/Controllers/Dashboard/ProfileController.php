@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\PenghapusanAkun;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,10 +17,16 @@ use Illuminate\Validation\Rules\Password;
  */
 class ProfileController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request, PenghapusanAkun $penghapusan): View
     {
         return view('dashboard.profile', [
             'user' => $request->user(),
+
+            // Dihitung di muka, bukan saat tombolnya ditekan. Penghapusan
+            // permanen yang tidak menyebutkan apa saja yang ikut hilang adalah
+            // persetujuan yang tidak diberikan dengan sadar — terutama saat yang
+            // ikut hilang adalah workspace berisi setahun riwayat percakapan.
+            'dampak' => $penghapusan->ringkasDampak($request->user()),
         ]);
     }
 

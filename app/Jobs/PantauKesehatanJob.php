@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\Billing\BalanceService;
-use App\Services\Notifications\Notifier;
+use App\Services\Notifications\PeringatanSistem;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Support\KesehatanAntrean;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,10 +22,17 @@ use Illuminate\Support\Facades\Http;
  * satu pun galat.
  *
  * **Penanda hariannya disengaja.** Job ini berjalan tiap jam; tanpa penanda,
- * engine yang mati semalaman menghasilkan dua belas baris yang sama dan lonceng
- * berhenti dibaca siapa pun. Dengan penanda bertanggal, satu keadaan
- * menghasilkan satu kabar per hari — cukup untuk mengingatkan, tidak cukup
- * untuk membuat orang mengabaikannya.
+ * engine yang mati semalaman menghasilkan dua belas kabar yang sama dan orang
+ * berhenti membacanya. `PeringatanSistem` menambahkan tanggal ke tiap kunci
+ * penanda, jadi satu keadaan menghasilkan satu kabar per hari — cukup untuk
+ * mengingatkan, tidak cukup untuk membuat orang mengabaikannya.
+ *
+ * **Ke mana kabarnya pergi diputuskan `PeringatanSistem`, bukan di sini.**
+ * Yang bertingkat `danger` ikut keluar lewat email dan WhatsApp; `warning`
+ * berhenti di lonceng. Aturan itu sengaja tidak diulang di tiap pemeriksaan:
+ * pemeriksaan baru yang ditambahkan nanti akan lupa mengeskalasi, dan
+ * kegagalan yang paling parah justru yang paling mungkin cuma berakhir di
+ * lonceng yang tidak dibuka siapa pun sampai besok pagi.
  *
  * Kegagalan job ini sendiri tidak boleh menjatuhkan apa pun: ia pengawas, dan
  * pengawas yang jatuh tidak boleh membawa serta yang diawasinya.
@@ -36,17 +43,15 @@ class PantauKesehatanJob implements ShouldQueue
 
     public int $timeout = 120;
 
-    public function handle(Notifier $notifikasi, WhatsAppNotifier $wa, BalanceService $saldo): void
+    public function handle(PeringatanSistem $peringatan, WhatsAppNotifier $wa, BalanceService $saldo): void
     {
-        $hariIni = now()->format('Y-m-d');
-
-        $this->engine($notifikasi, $hariIni);
-        $this->antrean($notifikasi, $hariIni);
-        $this->pengirim($notifikasi, $wa, $hariIni);
-        $this->emailKeluar($notifikasi, $hariIni);
-        $this->saldo($notifikasi, $saldo, $hariIni);
-        $this->kapasitas($notifikasi, $hariIni);
-        $this->debugProduksi($notifikasi, $hariIni);
+        $this->engine($peringatan);
+        $this->antrean($peringatan);
+        $this->pengirim($peringatan, $wa);
+        $this->emailKeluar($peringatan);
+        $this->saldo($peringatan, $saldo);
+        $this->kapasitas($peringatan);
+        $this->debugProduksi($peringatan);
     }
 
     /**
@@ -54,7 +59,7 @@ class PantauKesehatanJob implements ShouldQueue
      * pelanggan sekaligus. Ini kegagalan paling mahal di sistem ini, dan
      * dashboard tetap menampilkan sesi hijau sampai penyelaras berikutnya.
      */
-    private function engine(Notifier $notifikasi, string $hariIni): void
+    private function engine(PeringatanSistem $peringatan): void
     {
         try {
             $jawaban = Http::timeout((int) config('gateway.engine.connect_timeout', 5))
@@ -70,14 +75,14 @@ class PantauKesehatanJob implements ShouldQueue
             $sebab = $e->getMessage();
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.engine_mati',
             title: 'Engine WhatsApp tidak terjangkau',
             body: $sebab.' Selama ini berlangsung, tidak satu pun pesan bisa keluar — '
                 .'dan dashboard pelanggan tetap menampilkan sesi mereka hijau.',
             url: route('admin.system'),
             level: 'danger',
-            dedupe: "sistem.engine_mati:{$hariIni}",
+            dedupe: 'sistem.engine_mati',
         );
     }
 
@@ -85,12 +90,12 @@ class PantauKesehatanJob implements ShouldQueue
      * Yang diukur GERAKANNYA, bukan panjang antreannya — broadcast seribu nomor
      * memang wajar menyisakan pekerjaan berjam-jam.
      */
-    private function antrean(Notifier $notifikasi, string $hariIni): void
+    private function antrean(PeringatanSistem $peringatan): void
     {
         $antrean = KesehatanAntrean::periksa();
 
         if ($antrean['macet']) {
-            $notifikasi->keAdmin(
+            $peringatan->kabari(
                 type: 'sistem.antrean_macet',
                 title: 'Antrean pesan berhenti bergerak',
                 body: $antrean['menunggu'].' pesan menunggu dan tidak satu pun terkirim sejak '
@@ -98,30 +103,30 @@ class PantauKesehatanJob implements ShouldQueue
                     .'. Worker yang mati tidak menghasilkan galat apa pun — pesan cuma diam "Mengantre".',
                 url: route('admin.system'),
                 level: 'danger',
-                dedupe: "sistem.antrean_macet:{$hariIni}",
+                dedupe: 'sistem.antrean_macet',
             );
         }
 
         if (($antrean['gagal'] ?? 0) > 0) {
-            $notifikasi->keAdmin(
+            $peringatan->kabari(
                 type: 'sistem.job_gagal',
                 title: $antrean['gagal'].' job gagal menumpuk',
                 body: 'Job yang gagal tidak dicoba lagi sendiri; pesan di dalamnya tidak akan pernah terkirim.',
                 url: route('admin.system'),
                 level: 'warning',
-                dedupe: "sistem.job_gagal:{$hariIni}",
+                dedupe: 'sistem.job_gagal',
             );
         }
     }
 
     /** Tanpa sesi pengirim, SELURUH pemberitahuan pelanggan diam tanpa gejala. */
-    private function pengirim(Notifier $notifikasi, WhatsAppNotifier $wa, string $hariIni): void
+    private function pengirim(PeringatanSistem $peringatan, WhatsAppNotifier $wa): void
     {
         if ($wa->ready()) {
             return;
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.pengirim_mati',
             title: 'Pemberitahuan WhatsApp tidak berjalan',
             body: 'Tidak ada sesi pengirim yang siap. Pelanggan tidak dikabari saat pembayarannya '
@@ -129,7 +134,7 @@ class PantauKesehatanJob implements ShouldQueue
                 .'secara terlihat.',
             url: route('admin.exemptions'),
             level: 'danger',
-            dedupe: "sistem.pengirim_mati:{$hariIni}",
+            dedupe: 'sistem.pengirim_mati',
         );
     }
 
@@ -137,7 +142,7 @@ class PantauKesehatanJob implements ShouldQueue
      * `MAIL_MAILER=log` diterima Laravel tanpa keluhan apa pun — dari dalam
      * aplikasi, "terkirim" dan "ditulis ke berkas log" tampak persis sama.
      */
-    private function emailKeluar(Notifier $notifikasi, string $hariIni): void
+    private function emailKeluar(PeringatanSistem $peringatan): void
     {
         $mailer = config('mail.default');
         $siap = ! in_array($mailer, ['log', 'array', 'null'], true)
@@ -148,19 +153,19 @@ class PantauKesehatanJob implements ShouldQueue
             return;
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.email_mati',
             title: 'Email keluar belum berjalan',
             body: "MAIL_MAILER sekarang '{$mailer}'. Tidak ada satu pun email yang benar-benar "
                 .'terkirim — pemulihan kata sandi dan pemberitahuan tiket cuma janji.',
             url: route('admin.system'),
             level: 'warning',
-            dedupe: "sistem.email_mati:{$hariIni}",
+            dedupe: 'sistem.email_mati',
         );
     }
 
     /** Saldo yang tidak bisa direkonsiliasi adalah uang pelanggan yang hilang jejaknya. */
-    private function saldo(Notifier $notifikasi, BalanceService $saldo, string $hariIni): void
+    private function saldo(PeringatanSistem $peringatan, BalanceService $saldo): void
     {
         $tidakCocok = $saldo->workspaceTidakCocok();
 
@@ -168,7 +173,7 @@ class PantauKesehatanJob implements ShouldQueue
             return;
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.saldo_tidak_cocok',
             title: $tidakCocok->count().' workspace saldonya tidak cocok dengan buku besar',
             body: $tidakCocok->take(3)->map(fn ($w) => $w->name.' (selisih Rp '
@@ -177,7 +182,7 @@ class PantauKesehatanJob implements ShouldQueue
                 .'pelanggan yang merasa saldonya berkurang sendiri.',
             url: route('admin.system'),
             level: 'danger',
-            dedupe: "sistem.saldo_tidak_cocok:{$hariIni}",
+            dedupe: 'sistem.saldo_tidak_cocok',
         );
     }
 
@@ -187,7 +192,7 @@ class PantauKesehatanJob implements ShouldQueue
      * Begitu penuh, pelanggan berikutnya yang MEMBAYAR tidak bisa menautkan
      * nomornya — dan itu ketahuan dari keluhan, bukan dari mana pun.
      */
-    private function kapasitas(Notifier $notifikasi, string $hariIni): void
+    private function kapasitas(PeringatanSistem $peringatan): void
     {
         $batas = (int) config('gateway.engine.max_sessions');
 
@@ -204,7 +209,7 @@ class PantauKesehatanJob implements ShouldQueue
             return;
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.kapasitas_penuh',
             title: "Kapasitas sesi penuh ({$hidup}/{$batas})",
             body: 'Pelanggan berikutnya yang membayar tidak akan bisa menautkan nomornya. '
@@ -212,25 +217,25 @@ class PantauKesehatanJob implements ShouldQueue
                 .'yang dibunuh OOM killer belum tentu Chromium.',
             url: route('admin.system'),
             level: 'warning',
-            dedupe: "sistem.kapasitas_penuh:{$hariIni}",
+            dedupe: 'sistem.kapasitas_penuh',
         );
     }
 
     /** Halaman galat memamerkan seluruh isi environment kepada pengunjung. */
-    private function debugProduksi(Notifier $notifikasi, string $hariIni): void
+    private function debugProduksi(PeringatanSistem $peringatan): void
     {
         if (! config('app.debug') || ! app()->environment('production')) {
             return;
         }
 
-        $notifikasi->keAdmin(
+        $peringatan->kabari(
             type: 'sistem.debug_menyala',
             title: 'APP_DEBUG menyala di produksi',
             body: 'Setiap halaman galat memamerkan kata sandi database, secret HMAC engine, '
                 .'dan kredensial Google kepada siapa pun yang membukanya.',
             url: route('admin.system'),
             level: 'danger',
-            dedupe: "sistem.debug_menyala:{$hariIni}",
+            dedupe: 'sistem.debug_menyala',
         );
     }
 }

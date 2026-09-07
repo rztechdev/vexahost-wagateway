@@ -97,6 +97,7 @@ class AdminPagesTest extends TestCase
             'pengguna' => ['admin.users'],
             'audit' => ['admin.audit'],
             'sistem' => ['admin.system'],
+            'status' => ['admin.status'],
         ];
     }
 

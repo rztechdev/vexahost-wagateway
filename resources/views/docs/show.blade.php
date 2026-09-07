@@ -20,16 +20,29 @@
 
         {{-- Article Header --}}
         <div class="pb-6 border-b border-border/80">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-                    <i class="bi bi-check2-circle"></i>
-                    <span>{{ $page['group'] }}</span>
-                </span>
-                <span class="text-xs text-muted-foreground">&bull;</span>
-                <span class="text-xs text-muted-foreground flex items-center gap-1">
-                    <i class="bi bi-clock"></i>
-                    <span>~3 menit baca</span>
-                </span>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>{{ $page['group'] }}</span>
+                    </span>
+                    <span class="text-xs text-muted-foreground">&bull;</span>
+                    <span class="text-xs text-muted-foreground flex items-center gap-1">
+                        <i class="bi bi-clock"></i>
+                        <span>~3 menit baca</span>
+                    </span>
+                </div>
+
+                {{-- Tombol Unduh / Akses .md --}}
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('docs.raw', $page['slug']) }}"
+                       download
+                       class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition shadow-2xs"
+                       title="Unduh berkas dalam format Markdown (.md)">
+                        <i class="bi bi-filetype-md text-primary"></i>
+                        <span>Unduh .md</span>
+                    </a>
+                </div>
             </div>
 
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">

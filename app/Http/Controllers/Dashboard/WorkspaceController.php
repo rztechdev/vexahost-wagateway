@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Models\AuditLog;
+use App\Models\DataExport;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\SessionService;
@@ -26,6 +27,10 @@ class WorkspaceController extends Controller
             'members' => $workspace->members()->orderBy('name')->get(),
             'usage' => $workspace->currentUsage(),
             'history' => $workspace->usageCounters()->orderByDesc('period')->limit(12)->get(),
+            'ekspor' => DataExport::where('workspace_id', $workspace->id)
+                ->latest('id')
+                ->limit(5)
+                ->get(),
         ]);
     }
 

@@ -1208,7 +1208,30 @@ Requirements:
 - Endpoint: POST https://wa.flustra.id/api/v1/messages/text
 - Header: X-Api-Key: env('WA_API_KEY')
 - Request Body: { &quot;to&quot;: &quot;081234567890&quot;, &quot;message&quot;: &quot;Notifikasi pesanan siap dikirim&quot; }
-- Tangani status response: 'queued' menandakan pesan telah masuk antrean pengiriman server.`
+- Tangani status response: 'queued' menandakan pesan telah masuk antrean pengiriman server.`,
+                 hermes: `Definisikan skill baru untuk Hermes Agent di folder skills/flustra-wa/SKILL.md:
+name: flustra-wa-gateway
+description: Kirim pesan WhatsApp notifikasi dan dokumen via Flustra WA Gateway API.
+
+Instruksi teknis untuk agent:
+- Base URL: https://wa.flustra.id/api/v1
+- Method: POST /messages/text
+- Headers:
+    Content-Type: application/json
+    X-Api-Key: \${FLUSTRA_WA_KEY}
+- Parameter fungsi send_whatsapp(to, message):
+    to: nomor WhatsApp tujuan (format 08 atau 62)
+    message: teks pesan WhatsApp yang dikirim
+- Agent harus mengecek apakah API key tersedia sebelum memanggil HTTP POST.
+- Kembalikan ID pesan ('id') dan status ('queued') saat pengiriman sukses.`,
+                 openclaw: `Konfigurasikan OpenClaw (Clawdbot) dengan tool pengiriman WhatsApp resmi Flustra WA:
+1. Daftarkan tool 'send_whatsapp' di manifest tool OpenClaw:
+   - Description: Mengirim notifikasi atau balasan WhatsApp ke pengguna.
+   - Endpoint: POST https://wa.flustra.id/api/v1/messages/text
+   - Header: X-Api-Key: \${env.FLUSTRA_WA_KEY}
+   - Body: { &quot;to&quot;: &quot;<recipient_phone>&quot;, &quot;message&quot;: &quot;<message_text>&quot; }
+2. Standarisasi format nomor: normalisasi awalan 08 menjadi 628 secara otomatis.
+3. Bila agent mendeteksi perintah pengiriman pesan atau alert sistem, jalankan tool ini dan laporkan queue ID yang diterima.`
              },
              salin() {
                  let text = this.prompts[this.agentAktif];
@@ -1217,52 +1240,101 @@ Requirements:
                  setTimeout(() => this.disalin = false, 2000);
              }
          }">
-        <div class="max-w-3xl">
-            <h2 class="muncul text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Bangun integrasi WhatsApp lebih cepat dengan AI Agent
-            </h2>
-            <p class="muncul mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground" style="--tunda: 50ms">
-                Arsitektur REST API Flustra WA berbasis JSON murni tanpa dependensi rumit. Cukup berikan prompt spesifikasi kami ke AI Agent favorit Anda, dan biarkan AI menuliskan service integrasinya dalam hitungan detik.
-            </p>
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div class="max-w-3xl">
+                <h2 class="muncul text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                    Bangun integrasi WhatsApp lebih cepat dengan AI Agent
+                </h2>
+                <p class="muncul mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground" style="--tunda: 50ms">
+                    Arsitektur REST API Flustra WA berbasis JSON murni tanpa dependensi rumit. Cukup berikan prompt spesifikasi kami ke AI Agent favorit Anda, dan biarkan AI menuliskan service integrasinya dalam hitungan detik.
+                </p>
+            </div>
+            <div class="muncul shrink-0" style="--tunda: 70ms">
+                <a href="{{ route('ai.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-all active:scale-[0.98]">
+                    <span>Lihat Lengkap Panduan AI</span>
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                </a>
+            </div>
         </div>
 
         {{-- Pilihan AI Tools / Agent Switcher --}}
-        <div class="muncul mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" style="--tunda: 80ms">
+        <div class="muncul mt-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5" style="--tunda: 80ms">
             {{-- Claude Code --}}
             <button @click="agentAktif = 'claude'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'claude' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20 shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="#D97757">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-[#D97757]/15 text-[#D97757] border border-[#D97757]/20 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="#D97757">
                         <path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">Claude Code</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Claude Code</span>
                 <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Anthropic CLI</span>
             </button>
 
             {{-- Cursor --}}
             <button @click="agentAktif = 'cursor'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'cursor' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 border border-zinc-800 dark:border-zinc-200 shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 border border-zinc-800 dark:border-zinc-200 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23"/>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">Cursor</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Cursor</span>
                 <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">.cursorrules</span>
+            </button>
+
+            {{-- Hermes Agent --}}
+            <button @click="agentAktif = 'hermes'"
+                    type="button"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    :class="agentAktif === 'hermes' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-pink-500/15 text-pink-500 border border-pink-500/25 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd">
+                        <path d="M5.938 12.835c.127-.039.285.02.373.143.028.038.036.092.046.14.003.014-.02.033-.04.05-.124-.098-.24-.194-.354-.291-.011-.01-.016-.027-.025-.042zM8.396 9.412c.195-.032.39-.06.588-.05a.54.54 0 01.148.026c.202.071.402.147.601.224.028.01.05.036.075.055l-.013.027a9.203 9.203 0 01-.26-.089c-.115-.038-.213-.077-.315-.098-.25-.05-.25-.046-.292-.014l.574.144c.275.139.55.276.823.417.042.022.09.057.107.098.026.06.063.076.117.072.066-.006.132-.017.213-.027l-.04.086c.051.08.142.02.216.064-.074.13-.247.09-.334.199l.061.074-.12.087c0 .106-.038.168-.306.243l.026.085-.196.042.07.124h-.25l-.007.137c-.081-.01-.161-.018-.244-.027l-.053.123c-.027-.008-.052-.011-.073-.023-.067-.038-.128-.056-.195.006-.019.017-.063.014-.093.008-.026-.006-.05-.029-.07-.042-.11.095-.11.095-.208.003-.057.046-.12.074-.186.011-.063.027-.123-.02-.178-.014-.07.007-.097-.035-.133-.07l-.13.033c-.013-.236-.194-.19-.34-.203.005-.072.05-.092.095-.094a.474.474 0 01.159.022c.164.05.32.12.496.138.203.021.405.029.601-.015.265-.059.52-.149.707-.365.049-.056.083-.127.117-.195.019-.038.02-.084-.02-.116a1.397 1.397 0 00-.382-.217c.024.12-.031.182-.115.221 0 .014-.004.025 0 .03.08.115.084.16-.007.267a1.39 1.39 0 01-.218.211.477.477 0 01-.641-.05 1.36 1.36 0 01-.133-.152c-.078-.107-.076-.108-.033-.236-.165-.08-.128-.226-.104-.364.008-.05.028-.096.049-.163-.04.014-.067.017-.087.032a.897.897 0 00-.316.357c-.007.016-.01.034-.02.047-.012.015-.034.038-.045.035-.02-.006-.037-.027-.05-.045-.008-.012-.007-.032-.012-.057h-.126l.053-.172a14.82 14.82 0 00-.039-.049l.11-.284c-.06.026-.091.044-.124.051-.03.007-.064 0-.095 0 0-.031-.01-.07.004-.092.149-.22.305-.428.593-.476z"/>
+                        <path d="M8.06 10.788c-.003-.038-.004-.075.037-.062.016.006.034.048.028.067-.01.04-.038.032-.064-.005z"/>
+                        <path clip-rule="evenodd" d="M11.981.009c.226-.012.453-.011.679 0 .247.01.495.024.74.062.401.064.798.157 1.19.273.463.138.92.299 1.356.511a7.31 7.31 0 012.948 2.642c.292.469.536.963.739 1.479.219.556.446 1.11.623 1.683.204.654.329 1.326.458 1.997.097.504.182 1.01.29 1.511.156.722.329 1.44.494 2.16.186.812.4 1.615.63 2.415.102.355.193.713.282 1.072.11.436.202.876.254 1.323.031.278.066.557.073.837a7.56 7.56 0 01-.017.88c-.037.413-.1.818-.226 1.212a5.017 5.017 0 01-.915 1.649l-.13.156.018.023c.043-.023.088-.041.127-.068.2-.138.373-.307.531-.49.4-.46.721-.973.975-1.529a3.59 3.59 0 00.325-1.72c-.024-.424-.097-.834-.3-1.213-.013-.027-.015-.06-.03-.121.05.035.082.048.101.072.107.13.22.258.315.398.33.494.46 1.052.486 1.64a3.75 3.75 0 01-.47 1.97c-.36.655-.887 1.14-1.526 1.506-.193.111-.394.21-.595.308-.157.078-.248.211-.318.365a.522.522 0 00-.033.406.359.359 0 01.013.139c-.005.077-.077.155-.14.162-.054.006-.125-.043-.15-.116a1.206 1.206 0 01-.06-.233c-.04-.314-.155-.6-.308-.87a3.906 3.906 0 00-.73-.91 2.129 2.129 0 00-.897-.524 4.093 4.093 0 00-.692-.131c-.075-.008-.15-.04-.22.01.18.06.363.11.538.18.434.173.82.43 1.18.728.308.255.58.543.794.884.098.155.186.315.227.496.027.123.042.25.067.375.013.062-.002.109-.053.144-.047.033-.122.034-.163-.01a.455.455 0 01-.08-.14c-.03-.073-.038-.159-.078-.225a7.314 7.314 0 00-1.423-1.664c-.16-.137-.329-.26-.537-.323-.376-.114-.753-.203-1.15-.154-.213.025-.427.032-.64.053a1.6 1.6 0 00-.736.278 5.14 5.14 0 00-.834.72c-.329.342-.642.699-.955 1.055-.136.155-.264.319-.314.531a5.227 5.227 0 00-.012.051.096.096 0 01-.09.076h-.31c-.046 0-.082-.048-.072-.094.023-.108.045-.216.07-.324.075-.325.19-.635.368-.917.024-.039.04-.088.104-.08l.01.049.027.077c.28-.435.571-.834.996-1.135.283-.204.584-.378.89-.55a.196.196 0 00-.098-.002c-.162.043-.325.084-.485.134-.402.124-.764.33-1.11.566-.147.1-.298.193-.414.333a7.314 7.314 0 00-1.07 1.767.845.845 0 00-.04.12.075.075 0 01-.072.056h-.494c-.04 0-.062-.051-.036-.082.123-.14.246-.282.377-.415.275-.281.58-.532.777-.884.027-.048.063-.09.095-.135.238-.333.54-.607.818-.902.082-.086.175-.16.26-.24.029-.027.053-.057.079-.085l-.018-.025-.135.041c-.034.017-.07.031-.102.05-.248.144-.494.292-.743.433-.408.23-.825.439-1.209.711-.281.2-.591.358-.889.533-.02.012-.044.015-.08.028-.015-.135.143-.201.108-.336-.033.014-.064.02-.085.038-.111.096-.227.19-.328.296-.148.157-.284.325-.425.488-.125.143-.25.286-.373.431A.153.153 0 019.89 24H8.762a.316.316 0 00.016-.042c.028-.09.085-.172.083-.28-.091-.018-.162.001-.212.077a4.45 4.45 0 00-.136.215c-.01.016-.024.03-.042.03h-.093c-.019 0-.029-.022-.017-.037.071-.088.14-.178.209-.268.001-.002-.006-.012-.012-.024-.014.004-.03.006-.045.013-.176.09-.352.181-.527.274a.363.363 0 01-.168.042H5.202c-.026 0-.039-.036-.019-.053.21-.178.402-.374.558-.605.335-.496.538-1.047.667-1.629.004-.02-.003-.043-.006-.091-.037.048-.059.072-.076.1a1.943 1.943 0 01-.334.415c-.28.258-.59.448-.983.464-.297.012-.588 0-.865-.127-.46-.21-.722-.57-.794-1.072-.025-.17-.017-.171-.182-.219A3.513 3.513 0 011.97 20.6a2.286 2.286 0 01-.808-1.13 3.569 3.569 0 01-.16-1.245c.002-.034.016-.067.024-.1.032.023.046.043.05.066.033.153.059.308.096.46.086.355.257.664.516.92.258.256.571.419.91.532.358.118.717.138 1.07-.016a1.89 1.89 0 00.621-.452c.328-.348.533-.76.648-1.223.009-.034.005-.071.007-.11-.015.006-.026.006-.03.011-.031.05-.064.1-.093.152-.284.502-.679.887-1.196 1.135-.351.17-.718.255-1.11.159a1.607 1.607 0 01-.971-.64 2.006 2.006 0 01-.368-.924 2.903 2.903 0 01.02-.886c.05-.439.466-1.17.742-1.271-.02.063-.035.112-.053.16-.043.116-.097.227-.13.345a1.901 1.901 0 00-.05.82c.033.212.09.416.204.6.147.236.346.407.62.465.11.023.225.014.338.018a.576.576 0 00.386-.131c.164-.128.282-.292.366-.481.168-.375.24-.777.309-1.179.05-.296.093-.594.133-.893.039-.281.071-.563.104-.845.026-.232.048-.464.074-.696.024-.228.052-.455.076-.683.024-.227.047-.455.069-.683.013-.14.022-.28.034-.42l.037-.417c.022-.25.041-.5.065-.748.008-.082-.02-.132-.09-.177a2.46 2.46 0 01-.492-.418c-.1-.109-.188-.228-.282-.342-.035-.042-.056-.097-.116-.118a2.084 2.084 0 00.275.597c.06.092.131.176.196.265.063.086.182.115.234.226-.028.003-.046.01-.06.006a4.74 4.74 0 01-.22-.057 2.71 2.71 0 01-1.287-.819c-.435-.487-.656-1.076-.71-1.723a5.206 5.206 0 01.014-1.06c.072-.602.22-1.186.45-1.745.155-.376.338-.741.526-1.102.205-.393.466-.75.765-1.076.512-.559 1.104-1.024 1.726-1.448.717-.49 1.478-.898 2.277-1.233C8.244.828 8.767.632 9.31.494c.655-.166 1.31-.33 1.982-.415.229-.03.458-.058.688-.07z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Hermes</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">SKILL.md</span>
+            </button>
+
+            {{-- OpenClaw --}}
+            <button @click="agentAktif = 'openclaw'"
+                    type="button"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    :class="agentAktif === 'openclaw' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/15 text-red-500 border border-red-500/25 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2.568c-6.33 0-9.495 5.275-9.495 9.495 0 4.22 3.165 8.44 6.33 9.494v2.11h2.11v-2.11s1.055.422 2.11 0v2.11h2.11v-2.11c3.165-1.055 6.33-5.274 6.33-9.494S18.33 2.568 12 2.568z" fill="url(#lp-claw-grad)"/>
+                        <path d="M3.56 9.953C.396 8.898-.66 11.008.396 13.118c1.055 2.11 3.164 1.055 4.22-1.055.632-1.477 0-2.11-1.056-2.11z" fill="url(#lp-claw-grad)"/>
+                        <path d="M20.44 9.953c3.164-1.055 4.22 1.055 3.164 3.165-1.055 2.11-3.164 1.055-4.22-1.055-.632-1.477 0-2.11 1.056-2.11z" fill="url(#lp-claw-grad)"/>
+                        <path d="M5.507 1.875c.476-.285 1.036-.233 1.615.037.577.27 1.223.774 1.937 1.488a.316.316 0 01-.447.447c-.693-.693-1.279-1.138-1.757-1.361-.475-.222-.795-.205-1.022-.069a.317.317 0 01-.326-.542zM16.877 1.913c.58-.27 1.14-.323 1.616-.038a.317.317 0 01-.326.542c-.227-.136-.547-.153-1.022.069-.478.223-1.064.668-1.756 1.361a.316.316 0 11-.448-.447c.714-.714 1.36-1.218 1.936-1.487z" fill="#FF4D4D"/>
+                        <path d="M8.835 9.109a1.266 1.266 0 100-2.532 1.266 1.266 0 000 2.532zM15.165 9.109a1.266 1.266 0 100-2.532 1.266 1.266 0 000 2.532z" fill="#050810"/>
+                        <path d="M9.046 8.16a.527.527 0 100-1.056.527.527 0 000 1.055zM15.376 8.16a.527.527 0 100-1.055.527.527 0 000 1.054z" fill="#00E5CC"/>
+                        <defs>
+                            <linearGradient id="lp-claw-grad" x1="-.659" x2="27.023" y1=".458" y2="22.855" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FF4D4D"/>
+                                <stop offset="1" stop-color="#991B1B"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold text-foreground truncate w-full">OpenClaw</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">AI Employee</span>
             </button>
 
             {{-- Antigravity --}}
             <button @click="agentAktif = 'antigravity'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'antigravity' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <mask height="23" id="agy-brand-mask" maskUnits="userSpaceOnUse" width="24" x="0" y="1">
                             <path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" fill="#fff"/>
                         </mask>
@@ -1278,72 +1350,59 @@ Requirements:
                             <g filter="url(#agy-b9)"><path d="M18.163 9.077c5.81 3.93 12.502 4.19 14.946.577 2.443-3.612-.287-9.727-6.098-13.658-5.81-3.931-12.502-4.19-14.946-.577-2.443 3.612.287 9.727 6.098 13.658z" fill="#FC413D"/></g>
                             <g filter="url(#agy-b10)"><path d="M-.915 2.684c-1.44 3.473-.97 6.967 1.05 7.804 2.02.837 4.824-1.3 6.264-4.772 1.44-3.473.97-6.967-1.05-7.804-2.02-.837-4.824 1.3-6.264 4.772z" fill="#FFEE48"/></g>
                         </g>
-                        <defs>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="18" id="agy-b1" width="20" x="-3" y="-12"><feGaussianBlur stdDeviation="1.1"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="39" id="agy-b2" width="39" x="4" y="-13"><feGaussianBlur stdDeviation="5.4"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="37" id="agy-b3" width="41" x="-22" y="-11"><feGaussianBlur stdDeviation="4.6"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="37" id="agy-b4" width="37" x="-19" y="-10"><feGaussianBlur stdDeviation="4.6"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="34" id="agy-b5" width="34" x="1" y="9"><feGaussianBlur stdDeviation="4.4"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="35" id="agy-b6" width="36" x="-6" y="-22"><feGaussianBlur stdDeviation="4"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="47" id="agy-b7" width="45" x="-12" y="-1"><feGaussianBlur stdDeviation="3.5"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="24" id="agy-b8" width="25" x="10" y="1"><feGaussianBlur stdDeviation="3.2"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="30" id="agy-b9" width="34" x="6" y="-12"><feGaussianBlur stdDeviation="2.7"/></filter>
-                            <filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="26" id="agy-b10" width="22" x="-8" y="-9"><feGaussianBlur stdDeviation="3.3"/></filter>
-                        </defs>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">Antigravity</span>
-                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Agentic Studio</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Antigravity</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Studio</span>
             </button>
 
             {{-- OpenCode --}}
             <button @click="agentAktif = 'opencode'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'opencode' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-zinc-100 dark:bg-zinc-800 dark:text-white border border-zinc-700/60 shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 512 512" fill="none">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-100 dark:bg-zinc-800 dark:text-white border border-zinc-700/60 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 512 512" fill="none">
                         <path d="M320 224V352H192V224H320Z" fill="#71717A"/>
                         <path fill-rule="evenodd" clip-rule="evenodd" d="M384 416H128V96H384V416ZM320 160H192V352H320V160Z" fill="currentColor"/>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">OpenCode</span>
-                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Open-Source AI</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">OpenCode</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Terminal</span>
             </button>
 
             {{-- OpenAI Codex --}}
             <button @click="agentAktif = 'codex'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'codex' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#6366F1]/10 dark:bg-[#6366F1]/20 border border-[#6366F1]/25 shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-[#6366F1]/10 dark:bg-[#6366F1]/20 border border-[#6366F1]/25 shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd" fill-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z" fill="url(#codex-brand-grad)"/>
                         <defs>
-                            <linearGradient id="codex-brand-grad" x1="12" y1="0" x2="12" y2="24" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#B1A7FF"/>
-                                <stop offset="0.5" stop-color="#7A9DFF"/>
-                                <stop offset="1" stop-color="#3941FF"/>
+                            <linearGradient id="codex-brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#6366F1"/>
+                                <stop offset="100%" stop-color="#A855F7"/>
                             </linearGradient>
                         </defs>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">OpenAI Codex</span>
-                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Coding Agent</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Codex</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">OpenAI</span>
             </button>
 
             {{-- Windsurf --}}
             <button @click="agentAktif = 'windsurf'"
                     type="button"
-                    class="group flex flex-col items-start p-3 sm:p-3.5 rounded-2xl border transition-all text-left min-w-0 w-full"
+                    class="group flex flex-col items-start p-2.5 sm:p-3 rounded-2xl border transition-all text-left min-w-0 w-full"
                     :class="agentAktif === 'windsurf' ? 'border-primary bg-card ring-2 ring-primary/20 shadow-sm' : 'border-border/80 bg-card/60 hover:bg-card hover:border-primary/40'">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#09B6A2] text-[#0B100F] shadow-xs mb-2.5 transition-transform group-hover:scale-105">
-                    <svg class="h-5 w-5" viewBox="0 0 1024 1024" fill="currentColor">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-[#09B6A2] text-[#0B100F] shadow-xs mb-2 transition-transform group-hover:scale-105">
+                    <svg class="h-4 w-4" viewBox="0 0 1024 1024" fill="currentColor">
                         <path d="M897.246 286.869H889.819C850.735 286.808 819.017 318.46 819.017 357.539V515.589C819.017 547.15 792.93 572.716 761.882 572.716C743.436 572.716 725.02 563.433 714.093 547.85L552.673 317.304C539.28 298.16 517.486 286.747 493.895 286.747C457.094 286.747 423.976 318.034 423.976 356.657V515.619C423.976 547.181 398.103 572.746 366.842 572.746C348.335 572.746 329.949 563.463 319.021 547.881L138.395 289.882C134.316 284.038 125.154 286.93 125.154 294.052V431.892C125.154 438.862 127.285 445.619 131.272 451.34L309.037 705.2C319.539 720.204 335.033 731.344 352.9 735.392C397.616 745.557 438.77 711.135 438.77 667.278V508.406C438.77 476.845 464.339 451.279 495.904 451.279H495.995C515.02 451.279 532.857 460.562 543.785 476.145L705.235 706.661C718.659 725.835 739.327 737.218 763.983 737.218C801.606 737.218 833.841 705.9 833.841 667.308V508.376C833.841 476.815 859.41 451.249 890.975 451.249H897.276C901.233 451.249 904.43 448.053 904.43 444.097V294.021C904.43 290.065 901.233 286.869 897.276 286.869H897.246Z"/>
                     </svg>
                 </div>
-                <span class="text-xs sm:text-sm font-semibold text-foreground truncate w-full">Windsurf</span>
-                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Cascade Flow</span>
+                <span class="text-xs font-semibold text-foreground truncate w-full">Windsurf</span>
+                <span class="text-[10px] text-muted-foreground mt-0.5 truncate w-full">Cascade</span>
             </button>
         </div>
 
@@ -1355,7 +1414,7 @@ Requirements:
                     <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ffbd2e]"></span>
                     <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#27c93f]"></span>
                     <span class="ml-1 sm:ml-2 font-mono text-xs text-[var(--code-muted)] truncate"
-                          x-text="'prompt-' + agentAktif + (agentAktif === 'cursor' ? '.cursorrules' : (agentAktif === 'claude' ? '-CLAUDE.md' : '.txt'))"></span>
+                          x-text="'prompt-' + agentAktif + (agentAktif === 'cursor' ? '.cursorrules' : (agentAktif === 'claude' ? '-CLAUDE.md' : (agentAktif === 'hermes' ? '-SKILL.md' : (agentAktif === 'openclaw' ? '.json' : '.txt'))))"></span>
                 </div>
 
                 <button type="button"
@@ -1377,10 +1436,16 @@ Requirements:
                 <span class="break-words">Selalu simpan API Key di file <code class="font-mono text-foreground font-medium bg-muted px-1.5 py-0.5 rounded">.env</code> dan jangan pernah hardcode ke dalam berkas repositori.</span>
             </div>
 
-            <a href="{{ route('docs.show', 'integrasi-ai-agent') }}" class="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline shrink-0">
-                <span>Panduan Lengkap AI Agent di Docs</span>
-                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+                <a href="{{ route('ai.index') }}" class="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline">
+                    <span>Halaman Khusus AI (Katalog & SDK)</span>
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <span class="text-border hidden sm:inline">&bull;</span>
+                <a href="{{ route('docs.show', 'integrasi-ai-agent') }}" class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground hover:underline">
+                    <span>Dokumentasi</span>
+                </a>
+            </div>
         </div>
     </div>
 </section>

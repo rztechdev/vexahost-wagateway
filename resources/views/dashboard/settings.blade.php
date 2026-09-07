@@ -159,6 +159,72 @@
         </x-tabel>
     </x-section>
 
+    {{-- ===================== Ekspor data =====================
+
+         Ditaruh TEPAT SEBELUM zona hapus workspace dengan sengaja: yang sedang
+         menimbang menghapus workspace hampir selalu belum menyimpan riwayatnya,
+         dan "unduh dulu datamu" harus terbaca sebelum tombol merahnya, bukan
+         sesudah. Retensi memangkas pesan otomatis dan tidak bisa dibatalkan —
+         halaman ini satu-satunya cara menyelamatkannya.
+         ========================================================= --}}
+    <x-section title="Ekspor data workspace"
+               sub="Salinan lengkap milik Anda, dalam format yang bisa dibuka aplikasi lain">
+        <p class="text-sm text-muted-foreground">
+            Berisi data workspace, anggota, nomor WhatsApp, webhook, template, riwayat tagihan, dan
+            <strong>seluruh pesan</strong> yang masih tersimpan sebagai CSV. Kami mengabari Anda lewat
+            notifikasi begitu berkasnya siap; tautannya berlaku 7 hari lalu berkasnya kami hapus.
+        </p>
+
+        <p class="mt-2 text-sm text-muted-foreground">
+            Nilai API key dan kredensial WhatsApp <strong>tidak</strong> disertakan — berkas ini berpindah
+            lewat email dan chat, dan kunci di dalamnya adalah kunci yang bocor tanpa Anda pernah tahu.
+        </p>
+
+        <form method="POST" action="{{ route('settings.export') }}" class="mt-4"
+              data-konfirmasi="Berkasnya memuat seluruh isi percakapan workspace ini. Susun sekarang?">
+            @csrf
+            <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                Minta ekspor data
+            </button>
+            <span class="ml-2 text-xs text-muted-foreground">Satu permintaan per 24 jam.</span>
+        </form>
+
+        @if ($ekspor->isNotEmpty())
+            <div class="mt-5 divide-y divide-border border-t border-border">
+                @foreach ($ekspor as $berkas)
+                    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 text-sm">
+                        <div>
+                            <p>{{ $berkas->created_at->translatedFormat('j F Y, H:i') }} WIB</p>
+                            <p class="text-xs text-muted-foreground">
+                                @switch($berkas->status)
+                                    @case('menunggu') Menunggu giliran disusun @break
+                                    @case('diproses') Sedang disusun @break
+                                    @case('siap')
+                                        {{ $berkas->ukuranTerbaca() }} ·
+                                        @if ($berkas->bisaDiunduh())
+                                            berlaku sampai {{ $berkas->expires_at->translatedFormat('j F Y') }}
+                                        @else
+                                            tautan sudah kedaluwarsa
+                                        @endif
+                                        @break
+                                    @case('kedaluwarsa') Berkas sudah kami hapus @break
+                                    @default Gagal disusun. Silakan minta lagi, atau hubungi kami lewat Bantuan.
+                                @endswitch
+                            </p>
+                        </div>
+
+                        @if ($berkas->bisaDiunduh())
+                            <a href="{{ route('settings.export.download', $berkas->id) }}"
+                               class="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-muted">
+                                Unduh
+                            </a>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </x-section>
+
     {{-- ===================== Hapus workspace =====================
 
          Tetap berbingkai, dan merah: ini satu-satunya tindakan di halaman ini
