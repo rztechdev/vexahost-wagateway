@@ -29,18 +29,26 @@ class AppSetting extends Model
 
     public static function ambil(string $key, mixed $bawaan = null): mixed
     {
-        $nilai = Cache::rememberForever(
-            "app_setting:{$key}",
-            fn () => static::query()->whereKey($key)->value('value')
-        );
+        try {
+            $nilai = Cache::rememberForever(
+                "app_setting:{$key}",
+                fn () => static::query()->whereKey($key)->value('value')
+            );
 
-        return blank($nilai) ? $bawaan : $nilai;
+            return blank($nilai) ? $bawaan : $nilai;
+        } catch (\Throwable) {
+            return $bawaan;
+        }
     }
 
     public static function simpan(string $key, mixed $value): void
     {
-        static::updateOrCreate(['key' => $key], ['value' => blank($value) ? null : (string) $value]);
+        try {
+            static::updateOrCreate(['key' => $key], ['value' => blank($value) ? null : (string) $value]);
 
-        Cache::forget("app_setting:{$key}");
+            Cache::forget("app_setting:{$key}");
+        } catch (\Throwable) {
+            // Abaikan jika tabel belum siap
+        }
     }
 }

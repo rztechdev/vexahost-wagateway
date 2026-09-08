@@ -11,6 +11,19 @@
          | di baliknya persis kesalahan yang dulu dibuat driver `fonnte` pada
          | halaman pembuatan sesi: pelanggan memilih, lalu menemui jalan buntu.
          */
+        $daftarBank = (isset($bankAccounts) && $bankAccounts->isNotEmpty()) 
+            ? $bankAccounts 
+            : (filled($bank['account_number'] ?? null) ? collect([ (object) [
+                'id' => 0,
+                'bank_name' => $bank['name'] ?? 'Transfer Bank',
+                'account_number' => $bank['account_number'],
+                'account_holder' => $bank['account_holder'] ?? 'Flustra',
+                'type' => 'bank',
+                'instructions' => null,
+            ]]) : collect());
+
+        $punyaBank = $daftarBank->isNotEmpty();
+
         $metode = [];
         if ($qrisPayload) {
             $metode['qris'] = [
@@ -19,14 +32,14 @@
                 'ket' => 'Scan via BCA, Mandiri, GoPay, OVO, Dana, ShopeePay, atau bank apa pun',
             ];
         }
-        if ($bank) {
+        if ($punyaBank) {
             $metode['bank'] = [
-                'label' => 'Transfer bank',
+                'label' => 'Transfer Bank / VA',
                 'badge' => 'Manual',
-                'ket' => 'Transfer antar bank via ATM, Mobile Banking, atau Internet Banking',
+                'ket' => 'Transfer via ATM, Mobile Banking, Internet Banking, atau Virtual Account',
             ];
         }
-        $metodeAwal = $qrisPayload ? 'qris' : ($bank ? 'bank' : '');
+        $metodeAwal = $qrisPayload ? 'qris' : ($punyaBank ? 'bank' : '');
     @endphp
 
     {{-- ===================== Keadaan Akhir (Paid, Overdue, Canceled) =====================
@@ -484,60 +497,96 @@
                             </div>
                         @endif
 
-                        {{-- METODE: Transfer Bank --}}
-                        @if ($bank)
-                            <div x-show="metode === 'bank'" @if($metodeAwal !== 'bank') x-cloak @endif class="space-y-3 border-t border-border/80 pt-3.5">
-                                <div class="overflow-hidden rounded-xl border border-border bg-muted/30 p-3.5">
-                                    <div class="flex items-center justify-between border-b border-border/80 pb-2.5">
-                                        <div>
-                                            <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bank Tujuan:</span>
-                                            <p class="text-sm font-bold text-foreground">{{ $bank['name'] }}</p>
-                                        </div>
-                                        <span class="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                                            Akun Resmi
-                                        </span>
-                                    </div>
-
-                                    <div class="mt-2.5 space-y-2.5">
-                                        {{-- Nomor Rekening --}}
-                                        <div>
-                                            <span class="text-[11px] text-muted-foreground">Nomor Rekening:</span>
-                                            <div class="mt-1 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
-                                                <span class="font-mono text-sm font-bold tracking-wider text-foreground sm:text-base">
-                                                    {{ $bank['account_number'] }}
-                                                </span>
-                                                <button type="button" 
-                                                        @click="salinTeks('{{ $bank['account_number'] }}', 'copiedRekening')"
-                                                        class="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95">
-                                                    <svg x-show="!copiedRekening" class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                                    <svg x-show="copiedRekening" x-cloak class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    <span x-text="copiedRekening ? 'Tersalin!' : 'Salin'" class="text-[11px]">Salin</span>
+                        {{-- METODE: Transfer Bank / VA --}}
+                        @if ($punyaBank)
+                            <div x-show="metode === 'bank'" @if($metodeAwal !== 'bank') x-cloak @endif 
+                                 x-data="{ bankIndex: 0 }" 
+                                 class="space-y-3 border-t border-border/80 pt-3.5">
+                                
+                                {{-- Jika ada lebih dari 1 rekening/VA, tampilkan pemilih rekening --}}
+                                @if ($daftarBank->count() > 1)
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                            Pilih Bank / Rekening Tujuan:
+                                        </label>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach ($daftarBank as $idx => $item)
+                                                <button type="button" @click="bankIndex = {{ $idx }}"
+                                                        class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border select-none flex items-center gap-1.5"
+                                                        :class="bankIndex === {{ $idx }} ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:bg-muted/80'">
+                                                    <span>{{ $item->bank_name }}</span>
+                                                    @if(isset($item->type) && $item->type === 'va')
+                                                        <span class="rounded bg-purple-500/20 px-1 py-0.2 text-[9px] font-bold text-purple-700 dark:text-purple-300">VA</span>
+                                                    @endif
                                                 </button>
-                                            </div>
-                                        </div>
-
-                                        {{-- Atas Nama --}}
-                                        <div class="flex items-center justify-between text-xs">
-                                            <span class="text-muted-foreground">Atas Nama:</span>
-                                            <span class="font-semibold text-foreground">{{ $bank['account_holder'] }}</span>
-                                        </div>
-
-                                        {{-- Jumlah Transfer --}}
-                                        <div class="border-t border-border/80 pt-2 flex items-center justify-between">
-                                            <div>
-                                                <span class="text-[11px] text-muted-foreground">Jumlah Transfer:</span>
-                                                <p class="text-base font-bold tracking-tight text-primary sm:text-lg tabular-nums">
-                                                    Rp {{ number_format($invoice->total, 0, ',', '.') }}
-                                                </p>
-                                            </div>
-                                            <button type="button" 
-                                                    @click="salinTeks('{{ $invoice->total }}', 'copiedTotal')"
-                                                    class="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95">
-                                                <span x-text="copiedTotal ? 'Tersalin!' : 'Salin Jumlah'" class="text-[11px]">Salin Jumlah</span>
-                                            </button>
+                                            @endforeach
                                         </div>
                                     </div>
-                                </div>
+                                @endif
+
+                                @foreach ($daftarBank as $idx => $item)
+                                    <div x-show="bankIndex === {{ $idx }}" @if($idx !== 0) x-cloak @endif class="space-y-3">
+                                        <div class="overflow-hidden rounded-xl border border-border bg-muted/30 p-3.5">
+                                            <div class="flex items-center justify-between border-b border-border/80 pb-2.5">
+                                                <div>
+                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bank / Provider Tujuan:</span>
+                                                    <p class="text-sm font-bold text-foreground">{{ $item->bank_name }}</p>
+                                                </div>
+                                                <span class="rounded px-2 py-0.5 text-[10px] font-semibold {{ (isset($item->type) && $item->type === 'va') ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-primary/10 text-primary' }}">
+                                                    {{ (isset($item->type) && $item->type === 'va') ? 'Virtual Account' : 'Akun Resmi' }}
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-2.5 space-y-2.5">
+                                                {{-- Nomor Rekening / VA --}}
+                                                <div>
+                                                    <span class="text-[11px] text-muted-foreground">
+                                                        {{ (isset($item->type) && $item->type === 'va') ? 'Nomor Virtual Account:' : 'Nomor Rekening:' }}
+                                                    </span>
+                                                    <div class="mt-1 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2">
+                                                        <span class="font-mono text-sm font-bold tracking-wider text-foreground sm:text-base">
+                                                            {{ $item->account_number }}
+                                                        </span>
+                                                        <button type="button" 
+                                                                @click="salinTeks('{{ $item->account_number }}', 'copiedRekening')"
+                                                                class="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95">
+                                                            <svg x-show="!copiedRekening" class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                                            <svg x-show="copiedRekening" x-cloak class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            <span x-text="copiedRekening ? 'Tersalin!' : 'Salin'" class="text-[11px]">Salin</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Atas Nama --}}
+                                                <div class="flex items-center justify-between text-xs">
+                                                    <span class="text-muted-foreground">Atas Nama:</span>
+                                                    <span class="font-semibold text-foreground">{{ $item->account_holder }}</span>
+                                                </div>
+
+                                                @if (filled($item->instructions ?? null))
+                                                    <div class="rounded-lg bg-background/80 p-2 text-[11px] text-muted-foreground border border-border/60">
+                                                        {{ $item->instructions }}
+                                                    </div>
+                                                @endif
+
+                                                {{-- Jumlah Transfer --}}
+                                                <div class="border-t border-border/80 pt-2 flex items-center justify-between">
+                                                    <div>
+                                                        <span class="text-[11px] text-muted-foreground">Jumlah Transfer:</span>
+                                                        <p class="text-base font-bold tracking-tight text-primary sm:text-lg tabular-nums">
+                                                            Rp {{ number_format($invoice->total, 0, ',', '.') }}
+                                                        </p>
+                                                    </div>
+                                                    <button type="button" 
+                                                            @click="salinTeks('{{ $invoice->total }}', 'copiedTotal')"
+                                                            class="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-95">
+                                                        <span x-text="copiedTotal ? 'Tersalin!' : 'Salin Jumlah'" class="text-[11px]">Salin Jumlah</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
 
                                 {{-- Panduan Transfer --}}
                                 <div class="rounded-xl border border-border/80 bg-card p-3 text-xs">

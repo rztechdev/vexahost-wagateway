@@ -35,6 +35,7 @@
         'Operasional' => [
             ['rute' => 'admin.workspaces', 'label' => 'Workspace', 'cocok' => ['admin.workspaces', 'admin.workspaces.*'], 'ikon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-3M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1'],
             ['rute' => 'admin.invoices', 'label' => 'Tagihan', 'cocok' => ['admin.invoices', 'admin.invoices.*'], 'ikon' => 'M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2zM8 8h8M8 12h8M8 16h5'],
+            ['rute' => 'admin.payment-settings', 'label' => 'Metode Bayar & Paket', 'cocok' => ['admin.payment-settings', 'admin.payment-settings.*'], 'ikon' => 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z'],
             ['rute' => 'admin.sessions', 'label' => 'Sesi WhatsApp', 'cocok' => ['admin.sessions', 'admin.sessions.*'], 'ikon' => 'M12 2a10 10 0 1 0 4.9 18.7L22 22l-1.3-5.1A10 10 0 0 0 12 2z'],
             ['rute' => 'admin.messages', 'label' => 'Lalu Lintas Pesan', 'ikon' => 'M4 4h16v12H5.17L4 17.17V4zM8 9h8M8 12h5'],
             ['rute' => 'admin.enterprise', 'label' => 'Enterprise', 'cocok' => ['admin.enterprise', 'admin.enterprise.*'], 'ikon' => 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-3M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1'],

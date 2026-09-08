@@ -284,6 +284,7 @@ class BillingController extends Controller
 
             'merchant' => $this->qris->merchantName(),
             'bank' => $this->qris->bankAccount(),
+            'bankAccounts' => $this->qris->bankAccounts(),
             'bolehBayar' => $request->user()->canManage($workspace),
 
             // Data penagihan dipakai dua kali di halaman ini: mengisi form di

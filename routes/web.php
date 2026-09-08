@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ExemptionController as AdminExemptionController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\MessageController as AdminMessageController;
 use App\Http\Controllers\Admin\OverviewController as AdminOverviewController;
+use App\Http\Controllers\Admin\PaymentSettingController as AdminPaymentSettingController;
 use App\Http\Controllers\Admin\ReferralController as AdminReferralController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\StatusController as AdminStatusController;
@@ -321,6 +322,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('tagihan/{id}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.status');
     Route::post('tagihan/{id}/tolak-bukti', [AdminInvoiceController::class, 'requestNewProof'])->name('invoices.reject-proof');
     Route::get('tagihan/{id}/bukti', [AdminInvoiceController::class, 'proof'])->name('invoices.proof');
+
+    Route::get('pembayaran-paket', [AdminPaymentSettingController::class, 'index'])->name('payment-settings');
+    Route::post('pembayaran-paket/qris', [AdminPaymentSettingController::class, 'saveQris'])->name('payment-settings.qris');
+    Route::post('pembayaran-paket/bank', [AdminPaymentSettingController::class, 'storeBank'])->name('payment-settings.bank.store');
+    Route::post('pembayaran-paket/bank/{id}', [AdminPaymentSettingController::class, 'updateBank'])->name('payment-settings.bank.update');
+    Route::delete('pembayaran-paket/bank/{id}', [AdminPaymentSettingController::class, 'destroyBank'])->name('payment-settings.bank.destroy');
+    Route::post('pembayaran-paket/bank/{id}/toggle', [AdminPaymentSettingController::class, 'toggleBank'])->name('payment-settings.bank.toggle');
+    Route::post('pembayaran-paket/gateways', [AdminPaymentSettingController::class, 'saveGateways'])->name('payment-settings.gateways');
+    Route::post('pembayaran-paket/harga', [AdminPaymentSettingController::class, 'savePrices'])->name('payment-settings.prices');
 
     Route::get('sesi', [AdminSessionController::class, 'index'])->name('sessions');
     Route::post('sesi/{id}/putus', [AdminSessionController::class, 'disconnect'])->name('sessions.disconnect');

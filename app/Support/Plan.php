@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AppSetting;
 use InvalidArgumentException;
 
 /**
@@ -25,12 +26,38 @@ class Plan
     ) {}
 
     /**
+     * Memuat katalog paket dari config dan menimpanya dengan harga dinamis dari database bila ada.
+     */
+    public static function catalog(): array
+    {
+        $catalog = config('plans.catalog') ?? [];
+        $customPrices = AppSetting::ambil('plan_prices');
+
+        if ($customPrices && is_string($customPrices)) {
+            $decoded = json_decode($customPrices, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $planSlug => $prices) {
+                    if (isset($catalog[$planSlug]) && is_array($prices)) {
+                        foreach ($prices as $key => $val) {
+                            if ($val !== null && $val !== '') {
+                                $catalog[$planSlug][$key] = (int) $val;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $catalog;
+    }
+
+    /**
      * Paket berdasarkan slug. Melempar galat kalau slug-nya tidak dikenal —
      * dipakai di jalur tempat slug datang dari kode kita sendiri.
      */
     public static function get(string $slug): self
     {
-        $catalog = config('plans.catalog');
+        $catalog = self::catalog();
 
         if (! isset($catalog[$slug])) {
             throw new InvalidArgumentException("Paket '{$slug}' tidak ada di katalog.");
@@ -46,7 +73,7 @@ class Plan
      */
     public static function find(?string $slug): self
     {
-        $catalog = config('plans.catalog');
+        $catalog = self::catalog();
 
         if ($slug === null || ! isset($catalog[$slug])) {
             $slug = config('plans.default');
@@ -57,7 +84,7 @@ class Plan
 
     public static function exists(?string $slug): bool
     {
-        return $slug !== null && isset(config('plans.catalog')[$slug]);
+        return $slug !== null && isset(self::catalog()[$slug]);
     }
 
     /**
@@ -77,7 +104,7 @@ class Plan
         return array_values(array_filter(
             array_map(
                 fn (string $slug) => self::get($slug),
-                array_keys(config('plans.catalog'))
+                array_keys(self::catalog())
             ),
             // PAYG ikut dikecualikan meski `sellable`. Ia memang bisa dibeli,
             // tapi bentuk harganya berbeda — per pesan, bukan per bulan — dan
@@ -152,8 +179,10 @@ class Plan
      */
     public function price(string $period): int
     {
+        $multiplier = (int) AppSetting::ambil('plans_yearly_multiplier', config('plans.yearly_multiplier', 10));
+
         return $period === 'yearly'
-            ? $this->attributes['price_monthly'] * config('plans.yearly_multiplier')
+            ? $this->attributes['price_monthly'] * $multiplier
             : $this->attributes['price_monthly'];
     }
 

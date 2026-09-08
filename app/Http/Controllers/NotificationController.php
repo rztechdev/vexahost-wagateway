@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Services\Notifications\Notifier;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,9 @@ class NotificationController extends Controller
             $notifikasi->forceFill(['read_at' => now()])->save();
         }
 
-        return redirect($notifikasi->url ?: route('notifications.index', [
+        $target = Notifier::bersihkanUrl($notifikasi->url);
+
+        return redirect($target ?: route('notifications.index', [
             'audience' => $notifikasi->audience,
         ]));
     }

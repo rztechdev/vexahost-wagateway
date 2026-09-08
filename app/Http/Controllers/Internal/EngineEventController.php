@@ -151,7 +151,7 @@ class EngineEventController extends Controller
                 title: "Nomor {$session->name} terputus",
                 body: 'Pesan keluar dari nomor itu berhenti terkirim. Buka halaman Sesi untuk '
                     .'menghubungkannya lagi — kredensialnya masih tersimpan.',
-                url: route('sessions.index'),
+                url: route('sessions.index', absolute: false),
                 level: 'danger',
                 dedupe: $penanda,
             );

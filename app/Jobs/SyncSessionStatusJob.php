@@ -141,7 +141,7 @@ class SyncSessionStatusJob implements ShouldQueue
             type: 'session.reconnect_gave_up',
             title: "Nomor {$session->name} berhenti disambungkan otomatis",
             body: $kalimat,
-            url: route('sessions.index'),
+            url: route('sessions.index', absolute: false),
             level: 'danger',
             dedupe: 'reconnect-gave-up:'.$session->id.':'.$session->connect_failures,
         );

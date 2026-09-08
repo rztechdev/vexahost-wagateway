@@ -50,7 +50,7 @@ class Notifier
                 'level' => $level,
                 'title' => $title,
                 'body' => $body,
-                'url' => $url,
+                'url' => self::bersihkanUrl($url),
                 'dedupe_key' => $dedupe,
             ]);
         } catch (QueryException $e) {
@@ -173,6 +173,50 @@ class Notifier
         return Notification::whereNotNull('read_at')
             ->where('read_at', '<', now()->subDays($hari))
             ->delete();
+    }
+
+    /**
+     * Memastikan URL notifikasi aman untuk browser pengguna.
+     *
+     * URL yang dibuat dari callback engine (host 127.0.0.1) atau job CLI tanpa
+     * APP_URL yang benar (host localhost) tidak boleh dikirim mentah ke browser
+     * pengguna — browser mereka akan membuka localhost/127.0.0.1 di mesin
+     * mereka sendiri (mis. port 80 Apache/XAMPP lokal) dan meledak 404.
+     */
+    public static function bersihkanUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        // Sudah path relatif aman (diawali / tapi bukan // protocol-relative)
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $parts = parse_url($url);
+        $host = $parts['host'] ?? null;
+
+        if (! $host) {
+            return $url;
+        }
+
+        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+        $requestHost = request()?->getHost();
+
+        $isInternalOrLoopback = in_array($host, ['127.0.0.1', 'localhost', '::1'], true)
+            || ($appHost && strcasecmp($host, $appHost) === 0)
+            || ($requestHost && strcasecmp($host, $requestHost) === 0);
+
+        if ($isInternalOrLoopback) {
+            $path = $parts['path'] ?? '/';
+            $query = isset($parts['query']) ? '?'.$parts['query'] : '';
+            $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+            return $path.$query.$fragment;
+        }
+
+        return $url;
     }
 
     private function pelanggaranUnik(QueryException $e): bool

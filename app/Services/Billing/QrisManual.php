@@ -2,8 +2,11 @@
 
 namespace App\Services\Billing;
 
+use App\Models\AppSetting;
+use App\Models\BankAccount;
 use App\Models\Invoice;
 use App\Support\Qris;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -12,29 +15,25 @@ use Illuminate\Support\Facades\Log;
  * Tidak ada notifikasi otomatis dari mana pun. Yang menghubungkan uang masuk
  * dengan tagihan cuma dua: nominal yang dibuat unik lewat kode tiga digit, dan
  * bukti transfer yang diunggah pelanggan. Admin yang memutuskan.
- *
- * Kelas ini sengaja tidak diberi antarmuka bersama meski iPaymu sudah
- * direncanakan. Antarmuka dengan satu implementasi adalah slot kosong yang
- * menjanjikan sesuatu yang belum ada — persis pola `cloud_api` pada sesi, yang
- * akhirnya dihapus karena muncul sebagai pilihan di depan pelanggan padahal
- * tidak pernah berfungsi. Saat iPaymu benar-benar jalan, saat itulah antarmuka
- * dibuat, dengan dua implementasi nyata di tangan. Yang sudah disiapkan dari
- * sekarang hanya bekasnya di data: `invoices.channel` dan `invoices.external_id`.
  */
 class QrisManual
 {
+    public function rawPayload(): ?string
+    {
+        return AppSetting::ambil('qris_payload', config('billing.qris.payload'));
+    }
+
     /**
      * Apakah kode QR bisa ditampilkan.
      *
-     * Payload yang salah ketik atau terpotong saat disalin ke env menghasilkan
-     * kode QR yang tampak wajar tapi ditolak setiap aplikasi bank. Diperiksa di
-     * sini, sekali, supaya kegagalannya muncul sebagai instruksi transfer bank
-     * yang benar — bukan sebagai pelanggan yang berdiri di depan layar sambil
-     * memindai kode yang tidak akan pernah terbaca.
+     * Payload yang salah ketik atau terpotong saat disalin menghasilkan kode QR
+     * yang tampak wajar tapi ditolak setiap aplikasi bank. Diperiksa di sini,
+     * sekali, supaya kegagalannya muncul sebagai instruksi transfer bank yang
+     * benar — bukan sebagai pelanggan yang memindai kode yang tidak akan terbaca.
      */
     public function available(): bool
     {
-        $payload = config('billing.qris.payload');
+        $payload = $this->rawPayload();
 
         if (blank($payload)) {
             return false;
@@ -61,7 +60,7 @@ class QrisManual
         }
 
         try {
-            return Qris::dinamis(config('billing.qris.payload'), $invoice->total);
+            return Qris::dinamis($this->rawPayload(), $invoice->total);
         } catch (\Throwable $e) {
             Log::warning('Gagal menyusun QRIS dinamis.', [
                 'invoice' => $invoice->number,
@@ -74,23 +73,57 @@ class QrisManual
 
     public function merchantName(): string
     {
-        return (string) config('billing.qris.merchant');
+        return (string) AppSetting::ambil('qris_merchant_name', config('billing.qris.merchant', 'Flustra'));
     }
 
     /**
-     * Rekening bank untuk pembayaran di luar QRIS.
+     * Seluruh rekening bank dan Virtual Account yang aktif.
      *
-     * Selalu ditampilkan berdampingan dengan kode QR, bukan disembunyikan
-     * sebagai jalur darurat: batas QRIS per transaksi mengikuti kebijakan tiap
-     * penerbit dompet digital dan bisa berhenti di angka yang lebih rendah dari
-     * paket tahunan kami.
+     * @return Collection<int, BankAccount>
+     */
+    public function bankAccounts(): Collection
+    {
+        $accounts = BankAccount::active()->get();
+
+        if ($accounts->isNotEmpty()) {
+            return $accounts;
+        }
+
+        // Fallback jika belum ada baris di database tapi config/env terisi
+        $legacy = config('billing.bank');
+        if (filled($legacy['account_number'] ?? null)) {
+            $synthetic = new BankAccount([
+                'bank_name' => $legacy['name'] ?? 'Transfer Bank',
+                'account_number' => $legacy['account_number'],
+                'account_holder' => $legacy['account_holder'] ?? 'Flustra',
+                'type' => 'bank',
+                'is_active' => true,
+            ]);
+            $synthetic->id = 0;
+
+            return collect([$synthetic]);
+        }
+
+        return collect();
+    }
+
+    /**
+     * Rekening bank tunggal pertama untuk kompatibilitas ke belakang.
      *
      * @return array{name: ?string, account_number: ?string, account_holder: ?string}|null
      */
     public function bankAccount(): ?array
     {
-        $bank = config('billing.bank');
+        $first = $this->bankAccounts()->first();
 
-        return blank($bank['account_number']) ? null : $bank;
+        if ($first) {
+            return [
+                'name' => $first->bank_name,
+                'account_number' => $first->account_number,
+                'account_holder' => $first->account_holder,
+            ];
+        }
+
+        return null;
     }
 }

@@ -237,6 +237,62 @@ class NotifikasiTest extends TestCase
         $this->assertNotNull($n->fresh()->read_at);
     }
 
+    /**
+     * URL yang tersimpan dari callback engine (host 127.0.0.1) atau sisa database
+     * lama harus dialihkan ke path relatif, bukan mengirim browser pengguna ke
+     * localhost mesin lokal mereka sendiri.
+     */
+    public function test_membuka_notifikasi_dengan_url_loopback_mengalihkan_ke_path_relatif(): void
+    {
+        // Masukkan langsung ke DB seolah-olah data lama produksi sebelum perbaikan
+        $n = Notification::forceCreate([
+            'user_id' => $this->pemilik->id,
+            'workspace_id' => $this->workspace->id,
+            'audience' => 'workspace',
+            'type' => 'session.disconnected',
+            'level' => 'danger',
+            'title' => 'Nomor terputus',
+            'url' => 'http://127.0.0.1/sessions',
+        ]);
+
+        $this->actingAs($this->pemilik)
+            ->get(route('notifications.open', $n->id))
+            ->assertRedirect('/sessions');
+
+        $this->assertNotNull($n->fresh()->read_at);
+    }
+
+    public function test_membuka_notifikasi_dengan_url_localhost_mengalihkan_ke_path_relatif(): void
+    {
+        $n = Notification::forceCreate([
+            'user_id' => $this->pemilik->id,
+            'workspace_id' => $this->workspace->id,
+            'audience' => 'workspace',
+            'type' => 'balance.low',
+            'level' => 'warning',
+            'title' => 'Saldo menipis',
+            'url' => 'http://localhost/balance?status=low#topup',
+        ]);
+
+        $this->actingAs($this->pemilik)
+            ->get(route('notifications.open', $n->id))
+            ->assertRedirect('/balance?status=low#topup');
+    }
+
+    public function test_notifier_membersihkan_url_loopback_sebelum_disimpan(): void
+    {
+        app(Notifier::class)->keWorkspace(
+            workspace: $this->workspace,
+            type: 'session.disconnected',
+            title: 'Nomor terputus',
+            url: 'http://127.0.0.1:8000/sessions',
+        );
+
+        $n = Notification::where('user_id', $this->pemilik->id)->latest('id')->firstOrFail();
+
+        $this->assertSame('/sessions', $n->url);
+    }
+
     public function test_tandai_semua_dibaca_hanya_menyentuh_aliran_yang_dilihat(): void
     {
         $notifier = app(Notifier::class);
