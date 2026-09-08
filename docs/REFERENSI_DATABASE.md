@@ -118,7 +118,7 @@ Satu nomor WhatsApp yang tertaut.
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
-| `id` | **ULID** PK | Ikut dipakai sebagai nama folder & file zip di engine |
+| `id` | **ULID** PK | Ikut dipakai sebagai nama folder & file json cadangan di engine |
 | `workspace_id` | FK cascade | |
 | `name` | string | Label, mis. "CS Utama" |
 | `driver` | enum | selalu `wwebjs` |
@@ -134,7 +134,7 @@ Satu nomor WhatsApp yang tertaut.
 | `meta` | json null | Ruang untuk kebutuhan khusus driver |
 | `deleted_at` | timestamp null | Soft delete |
 
-**Kenapa ULID, bukan auto-increment.** Id sesi menjadi nama folder di engine dan nama file zip cadangan. Nilai itu harus aman dipakai sebagai nama file dan tidak boleh bisa ditebak dari luar.
+**Kenapa ULID, bukan auto-increment.** Id sesi menjadi nama folder di engine dan nama file cadangan. Nilai itu harus aman dipakai sebagai nama file dan tidak boleh bisa ditebak dari luar.
 
 **Kenapa `qr_expires_at` penting.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap — pengamatan menunjukkan 20 sampai 60 detik. Kalau masa berlakunya lebih pendek dari jeda terlama itu, akan ada celah di mana QR dianggap kedaluwarsa padahal penggantinya belum datang, dan modal di dashboard mendadak kosong tepat saat pengguna bersiap men-scan. `QR_TTL_SECONDS` bawaannya 90 detik; jangan diturunkan di bawah 60.
 
@@ -151,12 +151,12 @@ Cadangan kredensial sesi — inti dari ketahanan terhadap deploy ulang.
 | `id` | bigint PK | |
 | `wa_session_id` | FK ULID cascade | |
 | `disk` | string | Nama disk Laravel, bawaan `session-backups` |
-| `path` | string | `{session_id}/session.zip` |
+| `path` | string | `{session_id}/session.json` |
 | `size` | bigint | Byte |
 | `checksum` | string(64) | sha256, dicocokkan saat unggah |
 | `backed_up_at` | timestamp | |
 
-**Satu baris per sesi, ditimpa terus.** Yang dibutuhkan hanya cadangan terbaru. Menyimpan riwayat zip lama memenuhi disk tanpa guna — cadangan sesi yang lama tidak bisa dipakai karena WhatsApp sudah memutar kredensialnya.
+**Satu baris per sesi, ditimpa terus.** Yang dibutuhkan hanya cadangan terbaru. Menyimpan riwayat file lama memenuhi disk tanpa guna — cadangan sesi yang lama tidak bisa dipakai karena WhatsApp sudah memutar kredensialnya.
 
 ## `messages`
 

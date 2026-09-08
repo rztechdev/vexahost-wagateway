@@ -1,48 +1,16 @@
 # Nixpacks untuk container tunggal flustra-wa.
 #
 # Sejak 17 Agustus 2026 satu container menjalankan Laravel DAN engine
-# whatsapp-web.js (lihat start.sh). Karena itu daftar di bawah memuat library
-# sistem untuk Chromium — sesuatu yang dulu sengaja hanya ada di
-# engine/nixpacks.toml.
+# Baileys (websocket murni, lihat start.sh).
 #
-# Ini biaya yang disadari: image jadi lebih besar dan setup phase lebih lama.
-# Yang ditukar dengannya jauh lebih mahal — tiga resource Coolify berarti tiga
-# kali `composer install` + `npm ci` pada SETIAP deploy, sementara daftar apt di
-# bawah hanya dipasang sekali per build image dan di-cache Nixpacks.
+# Karena Baileys menggunakan websocket murni tanpa Chromium/Puppeteer,
+# container tidak lagi memerlukan library GUI/Chromium seperti libnss3,
+# libatk, dsb.
 #
 # `curl` dipakai start.sh untuk menunggu Laravel siap sebelum engine boot.
-#
-# Catatan Coolify: hanya aptPkgs dari berkas ini yang dipakai Nixpacks —
-# perintah install/build/start diatur lewat UI. `'...'` berarti "pertahankan
-# paket bawaan Nixpacks", bukan placeholder yang lupa diisi.
 
 [phases.setup]
   aptPkgs = [
     '...',
     'curl',
-    # PID 1 di container ini adalah start.sh, dan bash hanya menunggu empat pid
-    # yang dikenalnya — subproses Chromium yang di-reparent kepadanya menumpuk
-    # sebagai zombie. `--init` milik Docker tidak tersedia (Coolify 4.3.14 di
-    # server ini tidak punya kolom Custom Docker Options), jadi start.sh
-    # menjalankan ulang dirinya di bawah tini. Kalau paket ini gagal terpasang,
-    # start.sh melewati blok itu dan berjalan seperti sebelumnya.
-    'tini',
-    'libnss3',
-    'libatk1.0-0',
-    'libatk-bridge2.0-0',
-    'libxss1',
-    'libasound2t64',
-    'libgbm1',
-    'libx11-xcb1',
-    'libxcomposite1',
-    'libxcursor1',
-    'libxdamage1',
-    'libxi6',
-    'libxtst6',
-    'libcups2',
-    'libxrandr2',
-    'libgtk-3-0',
-    'libpango-1.0-0',
-    'libpangocairo-1.0-0',
-    'fonts-liberation',
   ]

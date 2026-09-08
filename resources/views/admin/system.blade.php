@@ -183,42 +183,36 @@
                      style="width: {{ $persenKapasitas }}%"></div>
             </div>
             <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Tiap sesi berarti satu Chromium yang memakan 300–500 MB. Batasnya ditegakkan engine lewat
-                <code>WA_MAX_SESSIONS</code>, bukan oleh Laravel — begitu penuh, pelanggan berikutnya yang
-                membayar tidak akan bisa menautkan nomornya.
+                Sesi berjalan di atas engine Baileys via WebSocket murni tanpa browser headless.
+                Batas maksimal dikendalikan engine lewat <code>WA_MAX_SESSIONS</code>, bukan oleh Laravel — begitu penuh,
+                pelanggan berikutnya yang membayar tidak akan bisa menautkan nomornya sampai ada slot kosong.
             </p>
-            @php
-                // Selisih Chromium hidup dengan sesi yang seharusnya berjalan.
-                // Ini satu-satunya angka di halaman ini yang mendeteksi kebocoran
-                // memori SEBELUM ia jadi gangguan; sisanya melaporkan sesuatu
-                // yang sudah terjadi.
-                $bocor = $engine['bocor'] ?? null;
-            @endphp
 
-            <p class="mt-3 text-sm text-muted-foreground">
-                Proses Chromium hidup:
-                @if ($bocor === null)
-                    <strong>tidak diketahui</strong>
-                    <span class="text-xs">(engine tidak menjawab, atau /proc tidak tersedia)</span>
-                @else
-                    <strong class="{{ $bocor === 0 ? '' : 'text-destructive' }}">{{ $engine['chromium'] }}</strong>
-                    pada {{ $engine['profil'] }} profil, untuk {{ $engine['sesi'] }} sesi
-                    @if ($bocor === 0)
-                        — cocok.
-                    @else
-                        @if (($engine['duplikat'] ?? 0) > 0)
-                            — <strong class="text-destructive">{{ $engine['duplikat'] }} proses berlebih
-                            pada profil yang sama</strong>. Dua Chromium pada satu folder kredensial saling
-                            menimpa state WhatsApp Web; pelanggan melihatnya sebagai scan QR yang gagal
-                            dengan &ldquo;Execution context was destroyed&rdquo;, bukan sebagai kehabisan memori.
-                        @endif
-                        @if (($engine['yatim'] ?? 0) > 0)
-                            — <strong class="text-destructive">{{ $engine['yatim'] }} profil tanpa sesi</strong>.
-                            Masing-masing memakan 250–500 MB yang tidak akan kembali sampai container di-restart.
-                        @endif
+            @if ($engine['terjangkau'])
+                <div class="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <p>
+                        Sesi aktif di engine:
+                        <strong class="text-foreground">{{ $engine['sesi'] ?? 0 }} total</strong>
+                        (<span class="text-emerald-600 dark:text-emerald-400 font-medium">{{ $engine['connected'] ?? 0 }} terhubung</span>,
+                        <span>{{ $engine['connecting'] ?? 0 }} menghubungkan</span>,
+                        <span>{{ $engine['qr'] ?? 0 }} menunggu scan QR</span>)
+                    </p>
+                    @if (isset($engine['memory']['rss_mb']))
+                        <p>
+                            Memori Node.js engine:
+                            <strong class="text-foreground">{{ $engine['memory']['rss_mb'] }} MB RSS</strong>
+                            <span class="text-xs">({{ $engine['memory']['heap_used_mb'] ?? '-' }} MB heap terpakai / {{ $engine['memory']['heap_total_mb'] ?? '-' }} MB total)</span>
+                            @if (isset($engine['uptime_seconds']))
+                                &middot; Uptime: <strong class="text-foreground">{{ \Carbon\CarbonInterval::seconds($engine['uptime_seconds'])->cascade()->forHumans(['short' => true]) }}</strong>
+                            @endif
+                        </p>
                     @endif
-                @endif
-            </p>
+                </div>
+            @else
+                <p class="mt-3 text-sm text-destructive">
+                    Engine tidak terjangkau ({{ $engine['pesan'] }}).
+                </p>
+            @endif
 
             <p class="mt-3 text-sm text-muted-foreground">
                 Slot dijanjikan ke langganan berbayar:

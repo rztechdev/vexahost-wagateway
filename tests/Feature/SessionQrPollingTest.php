@@ -136,4 +136,28 @@ class SessionQrPollingTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    public function test_status_mengambil_qr_langsung_dari_engine_jika_qr_payload_database_belum_terisi(): void
+    {
+        $session = $this->workspace->sessions()->create([
+            'name' => 'CS',
+            'driver' => 'wwebjs',
+            'status' => 'connecting',
+            'qr_payload' => null,
+        ]);
+
+        Http::fake(['*/sessions/*/status' => Http::response([
+            'status' => 'qr',
+            'qr' => 'data:image/png;base64,LIVEQR',
+        ])]);
+
+        $this->getJson(route('sessions.status', $session->id))
+            ->assertOk()
+            ->assertJsonPath('status', 'qr')
+            ->assertJsonPath('qr', 'data:image/png;base64,LIVEQR');
+
+        $session->refresh();
+        $this->assertSame('qr', $session->status);
+        $this->assertSame('data:image/png;base64,LIVEQR', $session->qr_payload);
+    }
 }

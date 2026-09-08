@@ -149,7 +149,7 @@ class WorkspaceController extends Controller
             ]);
         }
 
-        // Sesi dihentikan lebih dulu supaya Chromium-nya benar-benar mati di
+        // Sesi dihentikan lebih dulu supaya koneksi socket dan memorinya benar-benar dilepas di
         // engine. Tanpa ini, engine tetap memegang koneksi ke nomor yang
         // workspace-nya sudah tidak ada — memakan memori sampai engine
         // di-restart, dan pesan masuk tetap ditembakkan ke Laravel.

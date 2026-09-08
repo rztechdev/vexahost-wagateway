@@ -56,7 +56,7 @@ class SyncSessionStatusJob implements ShouldQueue
                 /*
                  | Batas percobaan. Tanpa ini, sesi yang penyebab kegagalannya
                  | TIDAK akan membaik sendiri dicoba lagi tiap menit selamanya —
-                 | dan tiap percobaan menyalakan satu Chromium ±400 MB.
+                 | dan tiap percobaan membebani engine dan soket WhatsApp.
                  |
                  | Yang berhenti hanya penyambungan OTOMATIS. Barisnya sengaja
                  | TIDAK ditandai `failed`: status itu mengeluarkannya dari

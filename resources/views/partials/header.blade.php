@@ -9,7 +9,6 @@
                     ['Fitur', $beranda . '#fitur'],
                     ['Cara kerja', $beranda . '#cara-kerja'],
                     ['Harga', $beranda . '#harga'],
-                    ['Testimoni', $beranda . '#testimoni'],
                     ['Mitra', route('mitra.landing')],
                     ['Dokumentasi', route('docs.index')],
                 ],
@@ -116,10 +115,6 @@
                 </a>
                 <a href="{{ $beranda }}#harga" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                     <span>Harga</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
-                </a>
-                <a href="{{ $beranda }}#testimoni" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>Testimoni</span>
                     <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
                 <a href="{{ route('mitra.landing') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">

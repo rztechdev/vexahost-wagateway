@@ -177,8 +177,7 @@
 
                     <template x-if="detik >= 90">
                         <p class="mx-auto mt-3 max-w-xs rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                            Lebih lama dari biasanya. Akun dengan banyak riwayat chat memang bisa memakan beberapa menit.
-                            Kalau lewat lima menit tetap begini, tutup modal ini lalu periksa log engine.
+                            Lebih lama dari biasanya. Jika belum tersambung dalam beberapa menit, tutup jendela ini lalu coba hubungkan kembali, atau hubungi bantuan jika kendala berlanjut.
                         </p>
                     </template>
                 </div>
@@ -227,9 +226,9 @@ function qrModal(autoOpenId) {
 
             // Dibedakan supaya pengguna tahu tahap mana yang sedang berjalan:
             // menunggu QR terbit itu hitungan detik, sedangkan menunggu setelah
-            // QR ter-scan bisa jauh lebih lama karena riwayat chat ditarik dulu.
+            // QR ter-scan adalah fase otentikasi dan koneksi ke WhatsApp.
             if (this.state.status === 'connecting' && this.detik > 5) {
-                return 'QR sudah diterima. Menarik riwayat chat dari WhatsApp…';
+                return 'QR sudah dipindai. Menghubungkan sesi ke WhatsApp…';
             }
 
             return 'Menyiapkan sesi, mohon tunggu…';

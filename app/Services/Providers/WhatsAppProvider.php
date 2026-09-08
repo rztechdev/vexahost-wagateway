@@ -15,13 +15,12 @@ use App\Models\WaSession;
  *
  * Interface-nya dipertahankan sebagai batas yang jelas antara "apa yang
  * dilakukan sebuah sesi" dan "bagaimana caranya" — batas itulah yang membuat
- * SendMessageJob dan SessionService tidak perlu tahu soal Chromium sama sekali.
+ * SendMessageJob dan SessionService tidak perlu tahu detail implementasi engine sama sekali.
  */
 interface WhatsAppProvider
 {
     /**
-     * Menyalakan sesi. Untuk wwebjs ini membuka browser dan memicu QR;
-     * untuk provider berbasis API ini biasanya no-op.
+     * Menyalakan sesi dan memicu registrasi QR atau koneksi ulang.
      */
     public function startSession(WaSession $session): void;
 

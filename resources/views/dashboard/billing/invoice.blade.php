@@ -26,7 +26,7 @@
                 'ket' => 'Transfer antar bank via ATM, Mobile Banking, atau Internet Banking',
             ];
         }
-        $metodeAwal = '';
+        $metodeAwal = $qrisPayload ? 'qris' : ($bank ? 'bank' : '');
     @endphp
 
     {{-- ===================== Keadaan Akhir (Paid, Overdue, Canceled) =====================
@@ -64,7 +64,7 @@
                         </div>
                         <div class="flex items-center justify-between py-1.5 text-xs text-muted-foreground">
                             <span>Workspace</span>
-                            <span class="font-medium text-foreground">{{ $currentWorkspace->name }}</span>
+                            <span class="font-medium text-foreground">{{ ($currentWorkspace ?? $invoice->workspace)->name ?? '-' }}</span>
                         </div>
                         <div class="mt-2 flex items-center justify-between border-t border-border pt-2 font-medium">
                             <span class="text-foreground">Total Pembayaran</span>
@@ -170,6 +170,11 @@
          x-init="
             $nextTick(() => { updateHeight(); });
             window.addEventListener('resize', () => { updateHeight(); });
+            if (metode === 'qris') {
+                $nextTick(() => {
+                    if (window.renderQris) window.renderQris();
+                });
+            }
             $watch('metode', val => {
                 if (val === 'qris') {
                     $nextTick(() => {
@@ -178,6 +183,7 @@
                 }
             });
          "
+         class="space-y-6">
         {{-- Tombol Navigasi Kembali --}}
         <div>
             <a href="{{ route('billing.history') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition shadow-xs">
@@ -338,7 +344,7 @@
 
                             <div class="mt-3.5 border-t border-border/80 pt-3 text-xs text-muted-foreground flex justify-between">
                                 <span>Workspace Penerima:</span>
-                                <span class="font-semibold text-foreground">{{ $currentWorkspace->name }}</span>
+                                <span class="font-semibold text-foreground">{{ ($currentWorkspace ?? $invoice->workspace)->name ?? '-' }}</span>
                             </div>
                         </div>
                     </div>
@@ -436,6 +442,7 @@
                                                :class="metode === '{{ $kunci }}' ? 'border-primary bg-primary/5 ring-1 ring-primary font-bold shadow-xs text-foreground' : 'border-border bg-card hover:bg-muted/50 text-muted-foreground'">
                                             <div class="flex items-center gap-2 min-w-0">
                                                 <input type="radio" name="metode_bayar" value="{{ $kunci }}" x-model="metode"
+                                                       @checked($metodeAwal === $kunci)
                                                        class="h-3.5 w-3.5 text-primary focus:ring-primary border-input">
                                                 <span class="truncate font-semibold">{{ $m['label'] }}</span>
                                             </div>
@@ -447,7 +454,7 @@
                         @endif
 
                         {{-- Petunjuk: Jika belum memilih metode pembayaran --}}
-                        <div x-show="!metode" x-cloak class="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center text-xs text-muted-foreground">
+                        <div x-show="!metode" @if($metodeAwal) x-cloak @endif class="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center text-xs text-muted-foreground">
                             <svg class="mx-auto h-6 w-6 text-muted-foreground/60 mb-1.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <rect width="20" height="14" x="2" y="5" rx="2"/>
                                 <line x1="2" y1="10" x2="22" y2="10"/>
@@ -460,69 +467,26 @@
                         
                         {{-- METODE: QRIS --}}
                         @if ($qrisPayload)
-                            <div x-show="metode === 'qris'" x-cloak class="space-y-3 border-t border-border/80 pt-3.5">
+                            <div x-show="metode === 'qris'" @if($metodeAwal !== 'qris') x-cloak @endif class="space-y-3 border-t border-border/80 pt-3.5">
                                 
-                                {{-- Panel QR Code --}}
-                                <div class="flex flex-col items-center rounded-xl border border-border bg-muted/30 p-3.5 text-center sm:p-4">
-                                    {{-- Kotak QR Code (Pasti Persegi 1:1, tidak terdistorsi) --}}
-                                    <div class="inline-flex flex-col items-center rounded-xl bg-white p-3 shadow-xs ring-1 ring-black/5" style="width: 184px;">
+                                {{-- Panel QR Code (HANYA QRIS SAJA) --}}
+                                <div class="flex flex-col items-center justify-center rounded-xl border border-border bg-muted/30 p-4 text-center">
+                                    <div class="inline-flex items-center justify-center rounded-xl bg-white p-3 shadow-xs ring-1 ring-black/5">
                                         <canvas data-qris="{{ $qrisPayload }}" width="260" height="260"
                                                 class="mx-auto block aspect-square"
-                                                style="width: 160px !important; height: 160px !important; max-width: 100%; aspect-ratio: 1 / 1;"></canvas>
-                                        <div class="mt-1.5 text-center text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                                            QRIS Standar Nasional
-                                        </div>
+                                                style="width: 180px !important; height: 180px !important; max-width: 100%; aspect-ratio: 1 / 1;"></canvas>
                                     </div>
 
-                                    {{-- Info Merchant & Nominal --}}
-                                    <div class="mt-2.5 inline-flex items-center gap-1 rounded-full bg-background px-2.5 py-0.5 text-[11px] font-medium text-foreground border border-border shadow-xs">
-                                        <svg class="h-3 w-3 text-primary shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                        <span class="truncate">{{ $merchant }}</span>
-                                    </div>
-
-                                    <div class="mt-2">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <p class="text-lg font-bold tracking-tight text-foreground sm:text-xl tabular-nums">
-                                                Rp {{ number_format($invoice->total, 0, ',', '.') }}
-                                            </p>
-                                            <button type="button" 
-                                                    @click="salinTeks('{{ $invoice->total }}', 'copiedTotal')"
-                                                    class="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                                    title="Salin nominal">
-                                                <svg x-show="!copiedTotal" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                                <span x-show="copiedTotal" x-cloak class="text-[10px] font-semibold text-primary">Tersalin!</span>
-                                            </button>
-                                        </div>
-                                        <p class="mt-0.5 text-[11px] text-muted-foreground">
-                                            Nominal otomatis tertera saat dipindai.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {{-- Langkah Scan QRIS --}}
-                                <div class="rounded-xl border border-border/80 bg-card p-3 text-xs">
-                                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Cara Scan QRIS:</h3>
-                                    <ol class="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
-                                        <li class="flex items-start gap-1.5">
-                                            <span class="font-bold text-primary">1.</span>
-                                            <span>Buka aplikasi m-Banking atau e-Wallet (BCA, GoPay, OVO, Dana, dll).</span>
-                                        </li>
-                                        <li class="flex items-start gap-1.5">
-                                            <span class="font-bold text-primary">2.</span>
-                                            <span>Pilih menu <strong>Scan / QRIS</strong>, lalu pindai kode QR di atas.</span>
-                                        </li>
-                                        <li class="flex items-start gap-1.5">
-                                            <span class="font-bold text-primary">3.</span>
-                                            <span>Periksa nama merchant <strong>{{ $merchant }}</strong> dan konfirmasi bayar.</span>
-                                        </li>
-                                    </ol>
+                                    <p id="qris-fallback-msg" class="hidden mt-2 text-xs text-destructive font-medium">
+                                        Kode QR gagal dimuat. Silakan muat ulang halaman atau pilih transfer bank di atas.
+                                    </p>
                                 </div>
                             </div>
                         @endif
 
                         {{-- METODE: Transfer Bank --}}
                         @if ($bank)
-                            <div x-show="metode === 'bank'" x-cloak class="space-y-3 border-t border-border/80 pt-3.5">
+                            <div x-show="metode === 'bank'" @if($metodeAwal !== 'bank') x-cloak @endif class="space-y-3 border-t border-border/80 pt-3.5">
                                 <div class="overflow-hidden rounded-xl border border-border bg-muted/30 p-3.5">
                                     <div class="flex items-center justify-between border-b border-border/80 pb-2.5">
                                         <div>
@@ -594,7 +558,7 @@
 
                         {{-- Peringatan Kode Unik (Hanya jika metode sudah dipilih) --}}
                         @if ($invoice->unique_code > 0 && $metode !== [])
-                            <div x-show="metode" x-cloak class="flex gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-100 shadow-xs">
+                            <div x-show="metode" @if(!$metodeAwal) x-cloak @endif class="flex gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-100 shadow-xs">
                                 <svg class="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                                     <line x1="12" y1="9" x2="12" y2="13"/>
@@ -686,3 +650,61 @@
     </div>
     @endif
 @endsection
+
+@if ($qrisPayload)
+    @push('scripts')
+        <script src="{{ asset('js/qrcode.min.js') }}"></script>
+        <script>
+            (function() {
+                var maxAttempts = 50; // 5 detik
+
+                function renderQris(attempt) {
+                    attempt = typeof attempt === 'number' ? attempt : 0;
+                    var canvases = document.querySelectorAll('canvas[data-qris]');
+                    if (!canvases.length) return;
+                    var fallbackMsg = document.getElementById('qris-fallback-msg');
+
+                    if (typeof window.QRCode === 'undefined' || !window.QRCode.toCanvas) {
+                        if (attempt >= maxAttempts) {
+                            console.error('Pustaka QRCode tidak dapat dimuat.');
+                            if (fallbackMsg) fallbackMsg.classList.remove('hidden');
+                            return;
+                        }
+                        setTimeout(function() { renderQris(attempt + 1); }, 100);
+                        return;
+                    }
+
+                    canvases.forEach(function(el) {
+                        var payload = el.getAttribute('data-qris');
+                        if (!payload) return;
+                        window.QRCode.toCanvas(el, payload, {
+                            width: 260,
+                            margin: 1,
+                            color: {
+                                dark: '#000000',
+                                light: '#ffffff'
+                            }
+                        }, function(error) {
+                            if (error) {
+                                console.error('Gagal merender QRIS:', error);
+                                if (fallbackMsg) fallbackMsg.classList.remove('hidden');
+                            } else {
+                                el.style.width = '160px';
+                                el.style.height = '160px';
+                                if (fallbackMsg) fallbackMsg.classList.add('hidden');
+                            }
+                        });
+                    });
+                }
+
+                window.renderQris = renderQris;
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', renderQris);
+                } else {
+                    renderQris();
+                }
+            })();
+        </script>
+    @endpush
+@endif

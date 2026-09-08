@@ -196,8 +196,8 @@ return [
     | menyebutkannya apa adanya.
     |
     | Kenapa nomor yang paling mahal: biaya nyata kami per nomor adalah satu
-    | Chromium yang memakan 300–500 MB, dan RAM itu diperebutkan dengan PHP,
-    | worker, MySQL, dan tujuh aplikasi Flustra lain di server yang sama. Pesan
+    | sesi engine tersendiri, dan RAM serta slot itu diperebutkan dengan PHP,
+    | worker, MySQL, dan aplikasi lain di server yang sama. Pesan
     | jauh lebih murah — yang dibayar cuma waktu proses.
     |
     | `base` sengaja di atas harga Elite (449.000). Enterprise yang lebih murah

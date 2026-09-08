@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
  *
  * Satu-satunya halaman di sistem ini yang sengaja TIDAK berangkat dari
  * workspace. Alasannya bukan kenyamanan: sesi adalah sumber daya bersama —
- * tiap sesi satu Chromium, dan seluruhnya berebut RAM container yang sama.
+ * seluruhnya berebut slot dan sumber daya container yang sama.
  * Saat kapasitas habis, yang dibutuhkan adalah melihat semuanya sekaligus dan
  * memadamkan sesi yang menganggur, bukan menebak lewat dashboard pelanggan
  * satu per satu.

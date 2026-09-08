@@ -11,12 +11,11 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Penyimpanan backup sesi untuk RemoteAuth milik whatsapp-web.js.
+ * Penyimpanan backup sesi untuk autentikasi Baileys.
  *
- * Ini inti penyelesaian masalah "harus scan QR ulang tiap redeploy": engine
- * menyimpan kredensial sesi di persistent volume, dan secara berkala mengirim
- * zip-nya ke sini. Kalau volume ikut hilang (server diganti, volume terhapus),
- * engine menarik zip terakhir dari sini saat boot dan langsung tersambung lagi.
+ * Menggantikan format zip RemoteAuth milik whatsapp-web.js. Kredensial Baileys
+ * berupa berkas JSON (creds.json dan berkas kunci) yang dibundel menjadi satu
+ * payload JSON terstruktur, ditandatangani checksum SHA-256, dan disimpan di sini.
  */
 class SessionBackupController extends Controller
 {
@@ -30,26 +29,19 @@ class SessionBackupController extends Controller
             return response()->json(['success' => false, 'error' => ['message' => 'Sesi tidak ditemukan.']], 404);
         }
 
-        $path = "{$session->id}/session.zip";
+        $path = "{$session->id}/session.json";
         $tmp = tempnam(sys_get_temp_dir(), 'wa-backup-');
 
-        /*
-         | Berkas sementara dibuang di `finally`, bukan setelah tiap langkah.
-         |
-         | Sebelumnya ia hanya dibuang pada dua jalur keluar yang diingat
-         | penulisnya. Jalur ketiga — `Storage::put()` yang melempar karena disk
-         | penuh atau izin salah — melewatkan penghapusannya, dan zip berukuran
-         | puluhan MB tertinggal di /tmp. Endpoint ini dipanggil tiap lima menit
-         | PER SESI, jadi kegagalan yang berulang mengubah /tmp menjadi tempat
-         | penampungan yang tidak pernah ada yang membersihkan.
-        */
         try {
-            // Ditulis streaming ke berkas sementara supaya zip berukuran besar
-            // tidak pernah dimuat utuh ke memori PHP.
-            $in = fopen('php://input', 'rb');
+            $stream = $request->getContent(true);
             $out = fopen($tmp, 'wb');
-            stream_copy_to_stream($in, $out);
-            fclose($in);
+            if (is_resource($stream)) {
+                stream_copy_to_stream($stream, $out);
+            } else {
+                $in = fopen('php://input', 'rb');
+                stream_copy_to_stream($in, $out);
+                fclose($in);
+            }
             fclose($out);
 
             $checksum = hash_file('sha256', $tmp);
@@ -62,11 +54,17 @@ class SessionBackupController extends Controller
                 ], 422);
             }
 
-            Storage::disk(self::DISK)->put($path, fopen($tmp, 'rb'));
-            $size = filesize($tmp);
+            $content = file_get_contents($tmp);
+            if (! json_validate($content)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => ['message' => 'Isi backup bukan JSON yang valid.'],
+                ], 422);
+            }
 
-            // Satu baris per sesi: yang dibutuhkan hanya backup terbaru, dan
-            // menyimpan riwayat zip lama justru memenuhi disk tanpa guna.
+            Storage::disk(self::DISK)->put($path, $content);
+            $size = strlen($content);
+
             SessionBackup::updateOrCreate(
                 ['wa_session_id' => $session->id],
                 [
@@ -92,7 +90,8 @@ class SessionBackupController extends Controller
             return response()->json(['success' => false, 'error' => ['message' => 'Backup tidak ada.']], 404);
         }
 
-        return Storage::disk($backup->disk)->download($backup->path, 'session.zip', [
+        return Storage::disk($backup->disk)->download($backup->path, 'session.json', [
+            'Content-Type' => 'application/json',
             'X-Backup-Sha256' => $backup->checksum,
         ]);
     }

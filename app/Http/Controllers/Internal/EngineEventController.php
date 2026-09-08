@@ -176,7 +176,7 @@ class EngineEventController extends Controller
          | pernah tersambung), dan tombol Hubungkan.
          |
          | Produksi 8 September 2026 menunjukkan persis lubang itu: dua sesi
-         | berstatus `failed` punya Chromium hidup, dan salah satunya beranak
+         | berstatus `failed` punya proses engine hidup, dan salah satunya beranak
          | tiap menit. `failed` tidak pernah masuk daftar kandidat penjadwal,
          | jadi penghitungnya tidak pernah naik, jadi tidak ada yang berhenti.
         */
@@ -217,12 +217,17 @@ class EngineEventController extends Controller
             return;
         }
 
+        $chatId = $payload['chat_id'] ?? null;
+        if (is_string($chatId) && str_ends_with($chatId, '@s.whatsapp.net')) {
+            $chatId = substr($chatId, 0, -strlen('@s.whatsapp.net')).'@c.us';
+        }
+
         $message = Message::create([
             'workspace_id' => $session->workspace_id,
             'wa_session_id' => $session->id,
             'direction' => 'inbound',
             'wa_message_id' => $payload['wa_message_id'] ?? null,
-            'chat_id' => $payload['chat_id'] ?? null,
+            'chat_id' => $chatId,
             'from_number' => PhoneNumber::normalize($payload['from'] ?? null),
             'to_number' => $session->phone_number,
             'type' => $payload['type'] ?? 'text',

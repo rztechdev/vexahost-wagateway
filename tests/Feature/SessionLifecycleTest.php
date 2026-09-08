@@ -70,4 +70,41 @@ class SessionLifecycleTest extends TestCase
 
         $this->assertInstanceOf(WaSession::class, $baru);
     }
+
+    public function test_connect_kirim_has_backup_false_jika_tidak_ada_backup(): void
+    {
+        $sessions = app(SessionService::class);
+        $session = $sessions->create($this->workspace, 'sesi-tanpa-backup');
+
+        \Illuminate\Support\Facades\Http::fake([
+            '*/sessions/*/start' => \Illuminate\Support\Facades\Http::response(['status' => 'starting']),
+        ]);
+
+        $sessions->connect($session);
+
+        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+            return $request['has_backup'] === false && ! isset($request['backup_data']);
+        });
+    }
+
+    public function test_logout_memanggil_engine_dan_menghapus_backup(): void
+    {
+        $sessions = app(SessionService::class);
+        $session = $sessions->create($this->workspace, 'sesi-logout');
+        $session->update(['status' => 'connected', 'phone_number' => '6281234567890']);
+
+        \Illuminate\Support\Facades\Http::fake([
+            '*/sessions/*/logout' => \Illuminate\Support\Facades\Http::response(['status' => 'logged_out']),
+        ]);
+
+        $sessions->logout($session);
+
+        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) use ($session) {
+            return str_contains($request->url(), "/sessions/{$session->id}/logout");
+        });
+
+        $session->refresh();
+        $this->assertSame('disconnected', $session->status);
+        $this->assertNull($session->phone_number);
+    }
 }

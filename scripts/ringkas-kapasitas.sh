@@ -111,9 +111,8 @@ END {
         if (perHari > 150) {
             printf "VONIS: MASIH BOCOR. Lantai naik %.0f MB/hari.\n", perHari
             printf "       Pada laju ini batas container 3584 MB tercapai dalam %.0f hari.\n", (3584 - lantai[urut[jml-1]]) / perHari
-            print  "       Periksa chromium_duplicates dan chromium_orphans di /health."
-            print  "       duplicates > 0 = beberapa proses berebut satu profil;"
-            print  "       orphans > 0    = Chromium yang tidak dimiliki sesi mana pun."
+            print  "       Periksa status koneksi dan memory di endpoint /health."
+            print  "       Periksa apakah ada churn reconnect websocket yang berulang."
         } else if (perHari > 50) {
             printf "VONIS: BELUM PASTI. Lantai naik %.0f MB/hari — di atas derau harian\n", perHari
             print  "       tapi belum jelas kebocoran. Tunggu tiga hari lagi sebelum"
@@ -132,7 +131,7 @@ END {
         printf "  %d -> %d selama ~%d jam = %.1f/jam\n", zombieAwal, zombieAkhir, jam, (zombieAkhir - zombieAwal) / jam
     else
         printf "  %d -> %d (turun: container dibuat ulang di tengah rentang)\n", zombieAwal, zombieAkhir
-    print  "  Induknya php artisan serve, bukan Chromium. Bukan ancaman:"
+    print  "  Induknya php artisan serve, bukan engine. Bukan ancaman:"
     print  "  kernel.pid_max di server ini 4.194.304. Utang teknis yang dicatat,"
     print  "  bukan diperbaiki di deploy ini - lihat docs/CUTOVER.md 5."
     print  "  Yang perlu diawasi LAJUnya: melonjak = sesi sering mati-hidup."

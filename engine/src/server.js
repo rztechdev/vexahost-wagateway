@@ -1,6 +1,5 @@
 import express from 'express';
 import process from 'node:process';
-import { keadaanChromium } from './chromium.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { SessionManager } from './session-manager.js';
@@ -29,55 +28,29 @@ app.use((req, res, next) => {
 });
 
 app.get('/health', (req, res) => {
-    const sessions = manager.listSessionIds().length;
-
-    /*
-     | `chromium_processes` berdampingan dengan `sessions`, dan itu seluruh
-     | gunanya.
-     |
-     | `sessions` dibaca dari Map di memori engine; `chromium_processes` dibaca
-     | dari /proc. Selama keduanya sama, tidak ada Chromium yang bocor. Begitu
-     | yang kedua melampaui yang pertama, ada browser yang tidak dimiliki sesi
-     | mana pun — dan itu satu-satunya cara melihat kebocoran memori SEBELUM ia
-     | menjadi server yang tidak bisa di-SSH.
-     |
-     | `null` berarti tidak bisa dihitung (tidak ada /proc), bukan nol. Nol di
-     | tempat yang seharusnya null persis membalik arti sinyalnya: "sudah
-     | diperiksa, aman" untuk sesuatu yang tidak pernah diperiksa.
-    */
-    const chromium = keadaanChromium(manager.listSessionIds());
+    const stats = manager.stats();
+    const mem = process.memoryUsage();
 
     res.json({
         status: 'ok',
-        sessions,
+        engine: 'baileys',
+        sessions: stats.total,
+        connected_sessions: stats.connected,
+        connecting_sessions: stats.connecting,
+        qr_sessions: stats.qr,
         max_sessions: config.maxSessions,
-
-        // Total proses browser. Angka mentah, dipertahankan supaya tren kasarnya
-        // tetap terbaca pemantau luar.
-        chromium_processes: chromium?.proses ?? null,
-
-        // Berapa folder profil yang sedang dipegang. Inilah yang seharusnya
-        // sama dengan jumlah sesi.
-        chromium_profiles: chromium?.profil ?? null,
-
-        // SINYAL PALING TAJAM. Berapa proses BERLEBIH pada profil yang sama.
-        // Produksi 8 September 2026: 3 profil, 6 proses, 3 duplikat — dan
-        // duplikat itulah yang merusak, bukan jumlah prosesnya. Harus 0.
-        chromium_duplicates: chromium?.duplikat ?? null,
-
-        // Profil yang tidak dimiliki sesi mana pun: sisa yang tidak pernah
-        // ditutup.
-        chromium_orphans: chromium?.yatim ?? null,
-
-        chromium_leaked: chromium?.bocor ?? null,
-
+        memory: {
+            rss_mb: Math.round(mem.rss / (1024 * 1024)),
+            heap_used_mb: Math.round(mem.heapUsed / (1024 * 1024)),
+            heap_total_mb: Math.round(mem.heapTotal / (1024 * 1024)),
+        },
         uptime_seconds: Math.round(process.uptime()),
     });
 });
 
 app.post('/sessions/:id/start', async (req, res) => {
     try {
-        await manager.start(req.params.id);
+        await manager.start(req.params.id, req.body ?? {});
 
         res.json({ status: 'starting' });
     } catch (error) {
@@ -137,7 +110,7 @@ app.post('/sessions/:id/messages', async (req, res) => {
 });
 
 const server = app.listen(config.port, config.host, async () => {
-    logger.info({ port: config.port, dataPath: config.dataPath }, 'Engine WhatsApp berjalan');
+    logger.info({ port: config.port, dataPath: config.dataPath }, 'Engine WhatsApp berjalan (Baileys)');
 
     await manager.bootstrap();
 });
@@ -145,15 +118,7 @@ const server = app.listen(config.port, config.host, async () => {
 /**
  * Coolify mengirim SIGTERM saat redeploy.
  *
- * Kredensial disimpan dulu ke store, baru client-nya ditutup. Urutannya
- * penting: `client.destroy()` tidak menyimpan apa pun pada RemoteAuth, ia cuma
- * menghentikan timer backup — jadi menutup lebih dulu berarti membuang semua
- * perubahan sejak backup berkala terakhir.
- *
- * Penyimpanan dibatasi waktu. Docker hanya memberi jeda beberapa detik sebelum
- * SIGKILL, dan menggantung sampai dipaksa mati justru melewatkan penutupan
- * client yang rapi — lebih baik kehilangan satu siklus backup daripada
- * kehilangan keduanya.
+ * Kredensial disimpan dulu ke store, baru koneksi socket ditutup.
  */
 async function shutdown(signal) {
     logger.info({ signal }, 'Mematikan engine');

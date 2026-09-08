@@ -53,6 +53,7 @@ async function request(method, path, { body, digest, raw, headers = {} } = {}) {
         },
         body: method === 'GET' ? undefined : payload,
         duplex: raw ? 'half' : undefined,
+        signal: AbortSignal.timeout(8000),
     });
 
     return res;
@@ -119,7 +120,7 @@ export const laravel = {
         const res = await request('POST', `/internal/engine/session-backup/${sessionId}`, {
             raw: buffer,
             digest,
-            headers: { 'Content-Type': 'application/zip' },
+            headers: { 'Content-Type': 'application/json' },
         });
 
         if (!res.ok) {

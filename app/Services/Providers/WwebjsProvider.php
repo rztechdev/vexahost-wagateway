@@ -18,8 +18,26 @@ class WwebjsProvider implements WhatsAppProvider
 {
     public function startSession(WaSession $session): void
     {
-        $this->request()->post("/sessions/{$session->id}/start", [
-        ])->throw();
+        $hasBackup = false;
+        $backupData = null;
+
+        if ($session->backups()->exists()) {
+            $backup = $session->latestBackup();
+            if ($backup && Storage::disk($backup->disk)->exists($backup->path)) {
+                $backupData = Storage::disk($backup->disk)->get($backup->path);
+                $hasBackup = true;
+            }
+        }
+
+        $payload = [
+            'has_backup' => $hasBackup,
+        ];
+
+        if ($backupData !== null) {
+            $payload['backup_data'] = $backupData;
+        }
+
+        $this->request()->post("/sessions/{$session->id}/start", $payload)->throw();
     }
 
     public function stopSession(WaSession $session): void
@@ -55,6 +73,7 @@ class WwebjsProvider implements WhatsAppProvider
             // Persentase penarikan riwayat chat setelah QR ter-scan. Hanya ada
             // di memori engine selama proses itu berlangsung.
             'loading_percent' => $data['loading_percent'] ?? null,
+            'qr' => $data['qr'] ?? null,
         ];
     }
 

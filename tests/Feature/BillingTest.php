@@ -508,6 +508,100 @@ class BillingTest extends TestCase
             ->assertSee('54'.str_pad((string) strlen((string) $invoice->total), 2, '0', STR_PAD_LEFT).$invoice->total, false);
     }
 
+    public function test_halaman_invoice_memuat_skrip_dan_elemen_render_qris_saat_payload_aktif(): void
+    {
+        config(['billing.qris.payload' => $this->payloadQrisContoh()]);
+
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $response = $this->actingAs($this->owner)
+            ->get(route('billing.invoice', $invoice->id))
+            ->assertOk()
+            ->assertSee('data-qris', false)
+            ->assertDontSee('QRIS Standar Nasional')
+            ->assertSee('js/qrcode.min.js')
+            ->assertSee('window.renderQris')
+            ->assertSee('QRCode.toCanvas')
+            ->assertSee('class="space-y-6">', false);
+
+        // QRIS tidak boleh disembunyikan x-cloak saat metode awalnya QRIS
+        $this->assertStringNotContainsString('x-show="metode === \'qris\'" x-cloak', $response->getContent());
+        $this->assertStringContainsString('x-show="metode === \'qris\'"', $response->getContent());
+    }
+
+    public function test_halaman_invoice_menampilkan_rekening_bank_saat_dikonfigurasi(): void
+    {
+        config([
+            'billing.qris.payload' => $this->payloadQrisContoh(),
+            'billing.bank.name' => 'BCA',
+            'billing.bank.account_number' => '8880123456',
+            'billing.bank.account_holder' => 'PT FLUSTRA FINANCES ARTHA',
+        ]);
+
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $this->actingAs($this->owner)
+            ->get(route('billing.invoice', $invoice->id))
+            ->assertOk()
+            ->assertSee('Transfer bank')
+            ->assertSee('BCA')
+            ->assertSee('8880123456')
+            ->assertSee('PT FLUSTRA FINANCES ARTHA');
+    }
+
+    public function test_alur_pembayaran_qris_unggah_bukti_sampai_verifikasi_admin(): void
+    {
+        Storage::fake('media');
+        config(['billing.qris.payload' => $this->payloadQrisContoh()]);
+
+        // 1. Tagihan terbit
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+        $this->assertSame('pending', $invoice->status);
+        $this->assertNull($invoice->proof_path);
+
+        // 2. Pelanggan buka halaman invoice (QRIS muncul)
+        $this->actingAs($this->owner)
+            ->get(route('billing.invoice', $invoice->id))
+            ->assertOk()
+            ->assertSee('data-qris', false);
+
+        // 3. Pelanggan unggah bukti transfer
+        $file = UploadedFile::fake()->image('bukti_transfer.png', 400, 400);
+        $this->actingAs($this->owner)
+            ->post(route('billing.proof.upload', $invoice->id), ['bukti' => $file])
+            ->assertRedirect(route('billing.verifying', $invoice->id));
+
+        $invoice->refresh();
+        $this->assertNotNull($invoice->proof_path);
+        Storage::disk('media')->assertExists($invoice->proof_path);
+
+        // 4. Super admin memeriksa di panel admin
+        $admin = User::create([
+            'name' => 'Admin Flustra',
+            'email' => 'admin@flustra.id',
+            'password' => Hash::make('password123'),
+            'is_super_admin' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.invoices'))
+            ->assertOk()
+            ->assertSee($invoice->number)
+            ->assertSee('bukti masuk')
+            ->assertSee(route('admin.invoices.paid', $invoice->id));
+
+        // 5. Admin menandai lunas
+        $this->actingAs($admin)
+            ->post(route('admin.invoices.paid', $invoice->id), ['catatan' => 'Mutasi QRIS cocok'])
+            ->assertRedirect();
+
+        $invoice->refresh();
+        $this->assertSame('paid', $invoice->status);
+        $this->assertNotNull($invoice->paid_at);
+        $this->assertSame($admin->id, $invoice->paid_by_user_id);
+        $this->assertTrue($this->workspace->fresh()->isActive());
+    }
+
     public function test_payload_qris_rusak_tidak_ditawarkan_sebagai_metode(): void
     {
         // Kode QR rusak yang tetap tergambar adalah kegagalan yang baru terlihat

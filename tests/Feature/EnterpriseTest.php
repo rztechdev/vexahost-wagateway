@@ -520,7 +520,6 @@ class EnterpriseTest extends TestCase
             ->assertSee('Cara Kerja')
             ->assertSee('Fitur')
             ->assertSee('Harga')
-            ->assertSee('Testimoni')
             ->assertSee('Mitra')
             ->assertSee('Docs')
             ->assertSee('Produk')

@@ -29,6 +29,22 @@ function angka(name, bawaan) {
 }
 
 /**
+ * Versi WhatsApp Web untuk handshake Baileys. Nilai dapat berupa string dipisahkan titik atau koma,
+ * misalnya '2.3000.1043857760' atau '2,3000,1043857760'.
+ */
+export function parseWaWebVersion(raw, bawaan = [2, 3000, 1043857760]) {
+    if (!raw) return bawaan;
+    if (Array.isArray(raw) && raw.length === 3 && raw.every((n) => Number.isFinite(Number(n)))) {
+        return raw.map(Number);
+    }
+    const parts = String(raw).split(/[.,]/).map((p) => parseInt(p.trim(), 10));
+    if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+        return parts;
+    }
+    return bawaan;
+}
+
+/**
  * Sejak engine dan Laravel berbagi satu container (lihat ../../start.sh),
  * seluruh variabel env-nya berada di satu ruang nama yang sama. Tiga nama
  * bertabrakan dan harus dibedakan:
@@ -60,9 +76,9 @@ export const config = {
     laravelUrl: required('LARAVEL_URL').replace(/\/+$/, ''),
 
     // Persistent volume Coolify. Inilah yang membuat sesi selamat dari redeploy.
-    dataPath: process.env.WA_DATA_PATH ?? '/data/.wwebjs_auth',
+    dataPath: process.env.WA_DATA_PATH ?? '/data/sessions',
 
-    // Interval backup RemoteAuth. Minimum yang diizinkan library adalah 60 detik.
+    // Interval backup kredensial sesi ke Laravel.
     backupIntervalMs: Math.max(60_000, angka('WA_BACKUP_INTERVAL_MS', 300_000)),
 
     // Jeda acak antar pesan keluar dalam satu sesi (anti-ban).
@@ -70,91 +86,25 @@ export const config = {
     maxDelayMs: angka('WA_MAX_DELAY_MS', 8000),
 
     /**
-     * Batas sesi aktif per container. Tiap sesi = satu Chromium (±300-500 MB).
+     * Batas sesi aktif per container.
      *
-     * Bawaannya 3, bukan 10 seperti sebelumnya. Angka 10 lahir waktu engine
-     * punya containernya sendiri dan asumsi RAM-nya 4 GB khusus untuk itu;
-     * sekarang RAM yang sama dipakai bersama PHP, worker, penjadwal, MySQL, dan
-     * tujuh aplikasi Flustra lain di VPS yang sama. Sepuluh sesi berarti sampai
-     * 5 GB hanya untuk Chromium, dan yang dibunuh OOM killer belum tentu
-     * Chromium-nya — bisa saja MySQL.
-     *
-     * Patokan menaikkannya: sisakan minimal 1,5 GB untuk sisa sistem, lalu
-     * bagi sisanya dengan 500 MB.
+     * Bawaannya 3, sesuai kapasitas teruji. Dengan migrasi Baileys, setiap sesi
+     * hanya memakan websocket dan state memori tanpa Chromium.
      */
     maxSessions: angka('WA_MAX_SESSIONS', 3),
 
     /**
      * Batas waktu satu sesi boleh berada di tahap inisialisasi.
-     *
-     * `client.initialize()` sengaja tidak di-await, dan itu benar — memulihkan
-     * sesi memakan puluhan detik dan pemanggilnya cuma perlu tahu prosesnya
-     * dimulai. Yang tidak ada sebelumnya: apa pun yang membatalkannya kalau ia
-     * TIDAK PERNAH selesai dan TIDAK PERNAH gagal. Chromium menyala, WhatsApp
-     * Web tidak pernah selesai memuat, dan entry-nya diam berstatus
-     * `connecting` selamanya.
-     *
-     * Akibatnya berlapis dan tidak satu pun terlihat sebagai galat: Chromium
-     * hidup terus, ia menahan satu dari WA_MAX_SESSIONS slot untuk SELURUH
-     * pelanggan, `SyncSessionStatusJob` tidak menolong (ia hanya menyambungkan
-     * ulang yang `disconnected`), dan `start()` mengembalikan entry yang sama
-     * sehingga tombol Hubungkan tidak pernah bisa memperbaikinya. Hanya
-     * redeploy yang bisa.
-     *
-     * Pengukurnya dilepas begitu ada bukti pertama bahwa WhatsApp Web hidup
-     * (`qr` atau `loading_screen`), BUKAN saat `ready`. Menunggu `ready` berarti
-     * memutus sesi yang sedang menarik riwayat chat besar — pekerjaan sah yang
-     * memang bisa makan menit-menit.
+     * Melepas pengukur saat QR diterbitkan atau sesi berhasil tersambung.
      */
     initTimeoutMs: angka('WA_INIT_TIMEOUT_MS', 180_000),
 
-    logLevel: process.env.ENGINE_LOG_LEVEL || process.env.LOG_LEVEL || 'info',
-
     /**
-     * Argumen Chromium.
-     *
-     * Tujuh yang pertama sudah ada sejak awal dan wajib untuk berjalan di dalam
-     * container. Sisanya penghemat: mematikan bagian Chromium yang tidak pernah
-     * dipakai WhatsApp Web sama sekali (ekstensi, sinkronisasi akun, penerjemah,
-     * pembaruan komponen, audio, telemetri). Masing-masing kecil; bersama-sama
-     * menahan puluhan MB dan beberapa proses latar per sesi — dan proseslah
-     * yang mahal ketika satu container menampung beberapa Chromium sekaligus.
-     *
-     * Yang SENGAJA tidak dipakai: `--single-process` dan `--renderer-process-limit`.
-     * Keduanya memang menghemat banyak, tapi keduanya juga sudah dikenal
-     * membuat whatsapp-web.js gagal dengan cara yang sulit dilacak — dan sesi
-     * yang mati diam-diam jauh lebih mahal daripada RAM yang dihemat.
+     * Versi protokol WhatsApp Web untuk handshake Baileys.
+     * Dapat dioverride lewat environment variable WA_WEB_VERSION (format '2.3000.1043857760').
      */
-    puppeteerArgs: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu',
+    waWebVersion: parseWaWebVersion(process.env.WA_WEB_VERSION),
 
-        '--disable-extensions',
-        '--disable-component-extensions-with-background-pages',
-        '--disable-default-apps',
-        '--disable-background-networking',
-        '--disable-client-side-phishing-detection',
-        '--disable-component-update',
-        '--disable-sync',
-        '--disable-translate',
-        '--no-default-browser-check',
-        '--metrics-recording-only',
-        '--mute-audio',
-        '--hide-scrollbars',
-
-        // Batas heap V8 di dalam Chromium. Dibiarkan kosong secara bawaan:
-        // memotong heap terlalu rendah membuat tab WhatsApp mati sendiri pada
-        // akun dengan riwayat chat besar, dan gejalanya (sesi tiba-tiba
-        // `disconnected`) tidak menyebut memori sama sekali. Isi
-        // WA_CHROME_HEAP_MB hanya kalau memang terbukti perlu; 512 titik awal
-        // yang masuk akal.
-        ...(process.env.WA_CHROME_HEAP_MB
-            ? [`--js-flags=--max-old-space-size=${Number(process.env.WA_CHROME_HEAP_MB)}`]
-            : []),
-    ],
+    logLevel: process.env.ENGINE_LOG_LEVEL || process.env.LOG_LEVEL || 'info',
 };
+

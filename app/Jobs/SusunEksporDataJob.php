@@ -22,8 +22,7 @@ use ZipArchive;
  * Pesan ditulis sebagai CSV yang di-stream baris demi baris, bukan dikumpulkan
  * ke array lalu di-encode. Workspace dengan retensi 365 hari bisa punya ratusan
  * ribu baris, dan memuat seluruhnya ke memori adalah cara paling pasti membuat
- * pekerja antrean dibunuh OOM killer di server yang RAM-nya sudah diperebutkan
- * Chromium.
+ * pekerja antrean dibunuh OOM killer di server yang sumber dayanya terbatas.
  */
 class SusunEksporDataJob implements ShouldQueue
 {

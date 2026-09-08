@@ -182,3 +182,59 @@
         ],
     ]" />
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/qrcode.min.js') }}"></script>
+    <script>
+        (function() {
+            var maxAttempts = 15; // 1.5 detik
+
+            function renderQris(attempt) {
+                attempt = typeof attempt === 'number' ? attempt : 0;
+                var canvases = document.querySelectorAll('canvas[data-qris]');
+                if (!canvases.length) return;
+                var fallbackMsg = document.getElementById('qris-fallback-msg');
+
+                if (typeof window.QRCode === 'undefined' || !window.QRCode.toCanvas) {
+                    if (attempt >= maxAttempts) {
+                        console.error('Pustaka QRCode tidak dapat dimuat.');
+                        if (fallbackMsg) fallbackMsg.classList.remove('hidden');
+                        return;
+                    }
+                    setTimeout(function() { renderQris(attempt + 1); }, 100);
+                    return;
+                }
+
+                canvases.forEach(function(el) {
+                    var payload = el.getAttribute('data-qris');
+                    if (!payload) return;
+                    window.QRCode.toCanvas(el, payload, {
+                        width: 260,
+                        margin: 1,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }, function(error) {
+                        if (error) {
+                            console.error('Gagal merender QRIS:', error);
+                            if (fallbackMsg) fallbackMsg.classList.remove('hidden');
+                        } else {
+                            el.style.width = '160px';
+                            el.style.height = '160px';
+                            if (fallbackMsg) fallbackMsg.classList.add('hidden');
+                        }
+                    });
+                });
+            }
+
+            window.renderQris = renderQris;
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', renderQris);
+            } else {
+                renderQris();
+            }
+        })();
+    </script>
+@endpush

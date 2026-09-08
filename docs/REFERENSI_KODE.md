@@ -263,7 +263,7 @@ Hanya dipanggil engine. Bukan bagian API publik.
 
 `EngineEventController` membalas `action: stop_session` untuk sesi yang sudah dihapus — engine memakainya untuk mematikan sesi yatim, alih-alih mengulang callback selamanya.
 
-`SessionBackupController::store()` menulis lewat file sementara secara streaming, lalu mencocokkan sha256 sebelum menyimpan permanen. Zip berukuran puluhan MB tidak pernah dimuat utuh ke memori PHP.
+`SessionBackupController::store()` menulis lewat file sementara secara streaming, memvalidasi JSON dan mencocokkan sha256 sebelum menyimpan permanen. Payload session.json multi-file auth diverifikasi secara streaming dan aman dari lonjakan memori PHP.
 
 ### `Dashboard\*`
 

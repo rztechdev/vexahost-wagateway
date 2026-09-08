@@ -1,32 +1,36 @@
-import { mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import makeWASocket, {
+    Browsers,
+    DisconnectReason,
+    getContentType,
+    jidNormalizedUser,
+    useMultiFileAuthState,
+    WAMessageStatus,
+} from '@whiskeysockets/baileys';
+import pino from 'pino';
 import qrcode from 'qrcode';
-import pkg from 'whatsapp-web.js';
 import { config } from './config.js';
 import { laravel } from './laravel.js';
 import { logger } from './logger.js';
-import { sapuFolderYatim } from './penyapu.js';
-import { bebaskanProfil, jalurProfil } from './profil.js';
-import { tutupChromium } from './chromium.js';
 import { SendQueue } from './queue.js';
 import { LaravelStore } from './stores/laravel-store.js';
-
-const { Client, RemoteAuth, MessageMedia } = pkg;
 
 export class SessionManager {
     #sessions = new Map();
     #starting = new Set();
     #queue = new SendQueue();
-    #store = new LaravelStore();
+    #store;
 
     /**
      * Hasil pengiriman per message_id, untuk menangkal kiriman ganda.
      *
      * Laravel mengulang job-nya kalau permintaan HTTP-nya habis waktu — padahal
      * habis waktu bukan berarti pesannya tidak terkirim. Antrean anti-ban di
-     * engine menahan tiap pesan 3-8 detik sebelum benar-benar dikirim, jadi
-     * pesan ketiga dalam satu giliran bisa menunggu lebih lama daripada batas
-     * waktu HTTP Laravel. Yang terjadi kemarin: satu pesan sampai ke penerima
-     * tiga sampai empat kali.
+     * engine menahan tiap pesan beberapa detik sebelum benar-benar dikirim, jadi
+     * pesan berikutnya dalam satu giliran bisa menunggu lebih lama daripada batas
+     * waktu HTTP Laravel.
      *
      * Kunci map ini message_id milik Laravel, jadi percobaan ulang menerima
      * hasil kiriman pertama alih-alih mengirim ulang. Nilainya Promise, bukan
@@ -36,48 +40,13 @@ export class SessionManager {
     #kiriman = new Map();
 
     /**
-     * Pabrik client, bisa diganti saat pengujian.
-     *
-     * Tanpa seam ini tidak ada satu pun perilaku SessionManager yang bisa
-     * diuji: `new Client()` menyalakan Chromium sungguhan, jadi menguji batas
-     * waktu inisialisasi berarti menunggu browser nyata gagal memuat WhatsApp
-     * Web. Bawaannya tetap client sungguhan; produksi tidak berubah.
+     * Pabrik socket, bisa diganti saat pengujian unit.
      */
-    #buatClient;
+    #buatSocket;
 
-    /**
-     * Akar /proc. Bisa diarahkan ke pohon tiruan saat pengujian supaya
-     * penjagaan tabrakan profil benar-benar dilewati `start()`, bukan cuma
-     * diuji sebagai fungsi lepas. Produksi tidak pernah menyetelnya.
-     */
-    #procRoot;
-
-    /**
-     * Pengirim sinyal. Ikut bisa diganti bersama `procRoot` supaya perilaku
-     * "profil tidak bisa dibebaskan" bisa diuji tanpa proses yang benar-benar
-     * menolak mati — proses seperti itu tidak bisa dibuat-buat, dan memakai pid
-     * proses uji sendiri sebagai umpan justru membunuh penguji.
-     */
-    #killProses;
-
-    constructor({ buatClient, procRoot = '/proc', killProses } = {}) {
-        this.#procRoot = procRoot;
-        this.#killProses = killProses;
-        this.#buatClient =
-            buatClient ??
-            ((sessionId) =>
-                new Client({
-                    authStrategy: new RemoteAuth({
-                        clientId: sessionId,
-                        dataPath: config.dataPath,
-                        store: this.#store,
-                        backupSyncIntervalMs: config.backupIntervalMs,
-                    }),
-                    puppeteer: {
-                        headless: true,
-                        args: config.puppeteerArgs,
-                    },
-                }));
+    constructor({ buatSocket, store } = {}) {
+        this.#store = store ?? new LaravelStore();
+        this.#buatSocket = buatSocket ?? ((sessionId, options) => makeWASocket(options));
     }
 
     /**
@@ -102,31 +71,9 @@ export class SessionManager {
 
         logger.info({ count: sessions.length }, 'Memulihkan sesi tersimpan');
 
-        /*
-         | Membuang folder kredensial milik sesi yang sudah tidak ada.
-         |
-         | Dijalankan SEBELUM sesi dinyalakan, dan itu yang membuatnya aman:
-         | folder milik sesi yang benar-benar dipakai disentuh ulang tiap kali
-         | sesinya jalan, jadi umurnya tidak pernah mendekati tujuh hari. Sesi
-         | yang akan dipulihkan di bawah ikut dikecualikan secara eksplisit,
-         | supaya tidak bergantung pada mtime sama sekali.
-         |
-         | Kegagalannya tidak boleh menahan pemulihan: ruang disk yang tidak
-         | jadi dibebaskan jauh lebih murah daripada nomor yang tidak jadi
-         | tersambung.
-        */
-        try {
-            await sapuFolderYatim({
-                dataPath: config.dataPath,
-                kecuali: sessions.map(({ session_id: id }) => id),
-            });
-        } catch (error) {
-            logger.warn({ err: error.message }, 'Penyapuan folder kredensial yatim dilewati');
-        }
-
         for (const { session_id: sessionId, name } of sessions) {
             try {
-                await this.start(sessionId);
+                await this.start(sessionId, { fromBootstrap: true });
                 logger.info({ sessionId, name }, 'Sesi dipulihkan');
             } catch (error) {
                 // Satu sesi rusak tidak boleh menahan pemulihan sesi lainnya.
@@ -137,18 +84,6 @@ export class SessionManager {
 
     /**
      * Menanyakan daftar sesi ke Laravel, dengan percobaan ulang.
-     *
-     * Kegagalan di sini tidak punya jaring pengaman lain: `bootstrap()` cuma
-     * dipanggil sekali seumur hidup proses, dan sesi yang tidak ikut dipulihkan
-     * baru akan disentuh lagi kalau `SyncSessionStatusJob` kebetulan
-     * menemukannya berstatus `disconnected` — sesi yang tercatat `failed`
-     * tidak pernah tersentuh sama sekali.
-     *
-     * Sejak engine berbagi container dengan Laravel, keduanya lahir berbarengan
-     * dan percobaan pertama memang wajar gagal. `start.sh` sudah menunggu web
-     * menjawab /up sebelum menjalankan engine; percobaan ulang di sini
-     * menangani sisanya — web yang menjawab /up tapi belum siap melayani rute
-     * `/internal/*`, atau database yang belum menerima koneksi.
      */
     async #ambilDaftarSesi() {
         const percobaan = 5;
@@ -169,23 +104,11 @@ export class SessionManager {
         }
     }
 
-    async start(sessionId) {
+    async start(sessionId, { has_backup, backup_data, fromBootstrap } = {}) {
         if (this.#sessions.has(sessionId)) {
             return this.#sessions.get(sessionId);
         }
 
-        /*
-         | Dua permintaan start yang datang bersamaan akan membuat dua Chromium
-         | untuk satu sesi yang sama, dan keduanya berebut folder kredensial.
-         |
-         | Penjagaan ini dulu hampir tidak berguna: tidak ada satu pun `await`
-         | antara pemeriksaan di atas dan `#sessions.set()` di bawah, jadi tidak
-         | ada celah untuk disisipi. Sejak pembebasan profil ditambahkan — dan
-         | pembebasan itu MENUNGGU proses lama benar-benar mati — celahnya nyata
-         | dan bisa selebar beberapa detik. Justru di celah itulah permintaan
-         | kedua akan menyalakan Chromium di atas profil yang sedang dibersihkan
-         | untuk yang pertama.
-        */
         if (this.#starting.has(sessionId)) {
             throw new Error('Sesi sedang dalam proses dijalankan.');
         }
@@ -199,97 +122,292 @@ export class SessionManager {
         this.#starting.add(sessionId);
 
         try {
-            /*
-             | SATU PROFIL, SATU CHROMIUM. Ditegakkan terhadap sistem operasi,
-             | bukan terhadap `#sessions`.
-             |
-             | Map itu justru KOSONG di kasus yang bermasalah: `initialize()`
-             | yang gagal menghapus entry-nya, lalu `destroy()` mengembalikan
-             | sukses tanpa menutup apa pun. Sesudah itu tidak ada satu pun
-             | struktur data di dalam Node yang tahu prosesnya masih hidup —
-             | jadi pemeriksaan `#sessions.has()` di atas melewatkannya, dan
-             | Chromium baru lahir di atas profil yang masih dipegang yang lama.
-             |
-             | Produksi 8 September 2026: empat Chromium pada satu profil,
-             | seluruhnya anak dari satu proses Node. Gejalanya bukan kehabisan
-             | memori melainkan `Execution context was destroyed` di layar
-             | pelanggan yang sedang men-scan.
-             |
-             | `await` di sini menahan `start()` beberapa detik saat memang ada
-             | yang harus dibunuh, dan itu benar: memulai lebih cepat di atas
-             | profil yang belum bebas persis kerusakan yang sedang dicegah.
-            */
-            const profil = jalurProfil(config.dataPath, sessionId);
-            const bebas = await bebaskanProfil(profil, {
-                proc: this.#procRoot,
-                ...(this.#killProses ? { kill: this.#killProses } : {}),
-            });
+            const sessionDir = path.join(config.dataPath, sessionId);
+            await mkdir(sessionDir, { recursive: true });
 
-            if (bebas.bandel.length > 0) {
-                throw new Error(
-                    `Profil sesi masih dipegang proses ${bebas.bandel.join(', ')} yang tidak bisa dimatikan.`
-                );
+            // Jika folder kredensial lokal belum memiliki creds.json, pulihkan dari backup bila ada.
+            const credsPath = path.join(sessionDir, 'creds.json');
+            if (!existsSync(credsPath)) {
+                if (backup_data) {
+                    try {
+                        const payload = typeof backup_data === 'string' ? JSON.parse(backup_data) : backup_data;
+                        for (const [filename, content] of Object.entries(payload.files ?? {})) {
+                            await writeFile(path.join(sessionDir, filename), content, 'utf-8');
+                        }
+                        logger.info({ sessionId }, 'Kredensial sesi dipulihkan dari payload start');
+                    } catch (err) {
+                        logger.warn({ sessionId, err: err.message }, 'Gagal memulihkan backup_data dari payload start');
+                    }
+                } else if (fromBootstrap === true) {
+                    // Hanya saat engine booting (bukan saat melayani request HTTP dari Laravel)
+                    // boleh memanggil store.sessionExists / extract ke Laravel.
+                    try {
+                        const hasRemote = await this.#store.sessionExists({ session: sessionId });
+                        if (hasRemote) {
+                            await this.#store.extract({ session: sessionId });
+                            logger.info({ sessionId }, 'Kredensial sesi dipulihkan dari Laravel');
+                        }
+                    } catch (err) {
+                        logger.warn({ sessionId, err: err.message }, 'Gagal memeriksa atau memulihkan backup remote');
+                    }
+                }
             }
 
-            const client = this.#buatClient(sessionId);
-
-            this.#bindEvents(sessionId, client);
-
             const entry = {
-                client,
+                sock: null,
                 status: 'connecting',
                 phoneNumber: null,
                 pushName: null,
                 loadingPercent: null,
                 pengukurInit: null,
+                backupTimer: null,
+                reconnectAttempts: 0,
+                reconnectTimer: null,
+                sessionDir,
+                stopped: false,
+                qrImage: null,
             };
-            this.#sessions.set(sessionId, entry);
 
+            this.#sessions.set(sessionId, entry);
             this.#pasangPengukurInit(sessionId, entry);
 
-            // initialize() sengaja tidak di-await: memulihkan sesi bisa memakan
-            // puluhan detik, dan pemanggil hanya perlu tahu prosesnya dimulai.
-            // Keadaan sebenarnya dikabarkan lewat event.
-            client.initialize().catch(async (error) => {
-                logger.error({ sessionId, err: error.message }, 'Inisialisasi client gagal');
-
-                entry.status = 'failed';
-                this.#lepasPengukurInit(entry);
-                await laravel.event(sessionId, 'auth_failure', { message: error.message });
-                this.#sessions.delete(sessionId);
-
-                // initialize() menyalakan Chromium lebih dulu, baru memuat
-                // WhatsApp Web. Kalau gagal setelah tahap itu, prosesnya sudah
-                // hidup — dan begitu entry dibuang, tidak ada lagi yang
-                // memegang referensinya. Tanpa penutupan di sini tiap start
-                // yang gagal meninggalkan Chromium yatim ±400 MB yang tidak
-                // pernah kembali sampai server kehabisan memori.
-                //
-                // Lewat tutupChromium(), bukan client.destroy() langsung:
-                // destroy() melewati browser.close() kalau websocket CDP-nya
-                // sudah putus, dan justru start yang gagal karena kehabisan
-                // memori adalah keadaan yang paling mungkin memutus websocket
-                // itu lebih dulu.
-                await tutupChromium(client, sessionId);
-            });
+            await this.#sambungSocket(sessionId, entry);
 
             return entry;
+        } catch (error) {
+            const entry = this.#sessions.get(sessionId);
+            if (entry) {
+                entry.status = 'failed';
+                this.#lepasPengukurInit(entry);
+                this.#sessions.delete(sessionId);
+            }
+            throw error;
         } finally {
             this.#starting.delete(sessionId);
         }
     }
 
-    /**
-     * Menyalakan pengukur batas waktu inisialisasi untuk satu sesi.
-     *
-     * Yang dijaga adalah sesi yang menggantung TANPA gagal — keadaan yang tidak
-     * menghasilkan galat, tidak menghasilkan event, dan tidak bisa dilihat dari
-     * mana pun kecuali dari fakta bahwa slotnya tidak pernah kembali.
-     */
+    async #sambungSocket(sessionId, entry) {
+        if (entry.stopped || !this.#sessions.has(sessionId)) return;
+
+        const { state, saveCreds } = await useMultiFileAuthState(entry.sessionDir);
+
+        const socketOptions = {
+            auth: state,
+            version: config.waWebVersion,
+            printQRInTerminal: false,
+            logger: pino({ level: 'silent' }),
+            browser: Browsers.ubuntu('Chrome'),
+            syncFullHistory: false,
+            markOnlineOnConnect: false,
+            generateHighQualityLinkPreview: false,
+        };
+
+        const sock = this.#buatSocket(sessionId, socketOptions);
+        entry.sock = sock;
+
+        this.#bindEvents(sessionId, entry, sock, saveCreds);
+    }
+
+    #bindEvents(sessionId, entry, sock, saveCreds) {
+        if (typeof sock.ev?.on !== 'function') return;
+
+        sock.ev.on('creds.update', async () => {
+            if (typeof saveCreds === 'function') {
+                try {
+                    await saveCreds();
+                } catch (err) {
+                    logger.error({ sessionId, err: err.message }, 'Gagal menyimpan pembaruan creds ke disk');
+                }
+            }
+        });
+
+        sock.ev.on('connection.update', async (update) => {
+            if (entry.stopped || this.#sessions.get(sessionId) !== entry) return;
+
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr) {
+                entry.status = 'qr';
+                this.#lepasPengukurInit(entry);
+
+                try {
+                    const image = await qrcode.toDataURL(qr, { width: 320, margin: 1 });
+                    entry.qrImage = image;
+                    laravel.event(sessionId, 'qr', { qr_image: image }).catch((err) => {
+                        logger.warn({ sessionId, err: err.message }, 'Gagal memancarkan event QR ke Laravel');
+                    });
+                } catch (err) {
+                    logger.error({ sessionId, err: err.message }, 'Gagal mengonversi QR ke data URL');
+                }
+            }
+
+            if (connection === 'open') {
+                const rawId = sock.user?.id || '';
+                const phoneNumber = rawId.split(':')[0].replace(/\D+/g, '') || null;
+                const pushName = sock.user?.name || null;
+
+                entry.status = 'connected';
+                entry.phoneNumber = phoneNumber;
+                entry.pushName = pushName;
+                entry.loadingPercent = null;
+                entry.reconnectAttempts = 0;
+                entry.qrImage = null;
+
+                this.#lepasPengukurInit(entry);
+                this.#pasangBackupInterval(sessionId, entry);
+
+                logger.info({ sessionId, phoneNumber, pushName }, 'Sesi siap');
+
+                await laravel.event(sessionId, 'ready', {
+                    phone_number: phoneNumber,
+                    push_name: pushName,
+                });
+
+                // Simpan backup awal ke Laravel saat berhasil terkoneksi
+                this.persist(sessionId).catch((err) => {
+                    logger.warn({ sessionId, err: err.message }, 'Gagal menyimpan backup awal ke Laravel');
+                });
+            }
+
+            if (connection === 'close') {
+                entry.qrImage = null;
+                this.#lepasBackupInterval(entry);
+
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+                const shouldRestart = statusCode === DisconnectReason.restartRequired;
+
+                logger.warn({ sessionId, statusCode }, 'Koneksi websocket terputus');
+
+                if (isLoggedOut) {
+                    entry.status = 'disconnected';
+                    this.#lepasPengukurInit(entry);
+                    logger.warn({ sessionId }, 'Sesi dikeluarkan oleh WhatsApp (logged out)');
+                    await laravel.event(sessionId, 'disconnected', { reason: 'logged_out' });
+                    await this.stop(sessionId);
+                    return;
+                }
+
+                if (shouldRestart) {
+                    logger.info({ sessionId }, 'Restart diperlukan oleh WhatsApp (515), menyambung ulang segera');
+                    this.#jadwalkanReconnect(sessionId, entry, 0);
+                    return;
+                }
+
+                // Disconnect lainnya (transient: timedOut, connectionLost, connectionClosed, dsb.)
+                if (entry.reconnectAttempts < 5) {
+                    entry.reconnectAttempts++;
+                    // Saat sesi masih dalam tahap connecting awal (belum pernah QR atau connected),
+                    // lakukan reconnect cepat (250ms) tanpa jeda panjang, supaya pengguna tidak
+                    // melihat penundaan atau galat saat scan pertama.
+                    const jeda = entry.status === 'connecting'
+                        ? 250
+                        : Math.min(2000 * Math.pow(1.5, entry.reconnectAttempts - 1), 15000);
+                    logger.info(
+                        { sessionId, attempt: entry.reconnectAttempts, jedaMs: Math.round(jeda) },
+                        'Mencoba menyambung kembali websocket',
+                    );
+                    this.#jadwalkanReconnect(sessionId, entry, Math.round(jeda));
+                } else {
+                    entry.status = 'disconnected';
+                    this.#lepasPengukurInit(entry);
+                    logger.warn({ sessionId, attempts: entry.reconnectAttempts }, 'Batas percobaan reconnect habis, sesi dihentikan');
+                    await laravel.event(sessionId, 'disconnected', {
+                        reason: String(statusCode || 'connection_lost'),
+                    });
+                    await this.stop(sessionId);
+                }
+            }
+        });
+
+        sock.ev.on('messages.upsert', async ({ messages }) => {
+            if (!Array.isArray(messages)) return;
+
+            for (const msg of messages) {
+                if (!msg?.message || msg.key?.fromMe) continue;
+
+                const remoteJid = msg.key?.remoteJid;
+                if (!remoteJid || remoteJid === 'status@broadcast' || remoteJid.endsWith('@broadcast')) {
+                    continue;
+                }
+
+                // Unwrap pesan berulang / ephemeral / view once
+                let message = msg.message;
+                if (message?.ephemeralMessage?.message) message = message.ephemeralMessage.message;
+                if (message?.viewOnceMessage?.message) message = message.viewOnceMessage.message;
+                if (message?.viewOnceMessageV2?.message) message = message.viewOnceMessageV2.message;
+                if (message?.viewOnceMessageV2Extension?.message) message = message.viewOnceMessageV2Extension.message;
+                if (message?.documentWithCaptionMessage?.message) message = message.documentWithCaptionMessage.message;
+
+                const contentType = getContentType(message);
+                if (!contentType) continue;
+
+                const normalizedFrom = jidNormalizedUser(msg.key.participant || remoteJid);
+
+                await laravel.event(sessionId, 'message', {
+                    wa_message_id: msg.key.id ?? null,
+                    chat_id: toContractChatId(remoteJid),
+                    from: toContractChatId(normalizedFrom),
+                    type: mapType(contentType),
+                    body: extractBody(contentType, message[contentType]),
+                });
+            }
+        });
+
+        sock.ev.on('messages.update', async (updates) => {
+            if (!Array.isArray(updates)) return;
+
+            for (const update of updates) {
+                if (!update.key?.id || update.update?.status == null) continue;
+
+                const ack = mapAck(update.update.status);
+                if (ack !== null) {
+                    await laravel.event(sessionId, 'message_ack', {
+                        wa_message_id: update.key.id,
+                        ack,
+                    });
+                }
+            }
+        });
+    }
+
+    #jadwalkanReconnect(sessionId, entry, delayMs) {
+        if (entry.reconnectTimer) {
+            clearTimeout(entry.reconnectTimer);
+            entry.reconnectTimer = null;
+        }
+
+        if (delayMs === 0) {
+            this.#lakukanReconnect(sessionId, entry);
+            return;
+        }
+
+        entry.reconnectTimer = setTimeout(() => {
+            this.#lakukanReconnect(sessionId, entry);
+        }, delayMs);
+        entry.reconnectTimer.unref?.();
+    }
+
+    async #lakukanReconnect(sessionId, entry) {
+        if (entry.stopped || this.#sessions.get(sessionId) !== entry) return;
+
+        try {
+            if (entry.sock) {
+                try {
+                    entry.sock.end?.();
+                } catch {}
+                entry.sock = null;
+            }
+
+            await this.#sambungSocket(sessionId, entry);
+        } catch (error) {
+            logger.error({ sessionId, err: error.message }, 'Gagal saat mencoba menyambung ulang socket');
+        }
+    }
+
     #pasangPengukurInit(sessionId, entry) {
         entry.pengukurInit = setTimeout(async () => {
-            // Sesi bisa sudah diganti oleh start() berikutnya; yang dihentikan
-            // harus sesi yang sama dengan yang dulu memasang pengukurnya.
             if (this.#sessions.get(sessionId) !== entry) return;
 
             logger.error(
@@ -306,15 +424,9 @@ export class SessionManager {
             await this.stop(sessionId);
         }, config.initTimeoutMs);
 
-        // Pengukur ini tidak boleh menahan proses tetap hidup saat engine
-        // hendak berhenti — SIGTERM sudah punya urutannya sendiri di server.js.
         entry.pengukurInit.unref?.();
     }
 
-    /**
-     * Melepas pengukur. Dipanggil pada setiap bukti bahwa WhatsApp Web hidup,
-     * dan pada setiap jalur yang mengakhiri sesi.
-     */
     #lepasPengukurInit(entry) {
         if (!entry?.pengukurInit) return;
 
@@ -322,29 +434,41 @@ export class SessionManager {
         entry.pengukurInit = null;
     }
 
+    #pasangBackupInterval(sessionId, entry) {
+        this.#lepasBackupInterval(entry);
+
+        if (!config.backupIntervalMs || config.backupIntervalMs <= 0) return;
+
+        entry.backupTimer = setInterval(async () => {
+            if (entry.stopped || entry.status !== 'connected') return;
+
+            try {
+                await this.persist(sessionId);
+            } catch (error) {
+                logger.warn({ sessionId, err: error.message }, 'Gagal sinkronisasi backup berkala ke Laravel');
+            }
+        }, config.backupIntervalMs);
+
+        entry.backupTimer.unref?.();
+    }
+
+    #lepasBackupInterval(entry) {
+        if (!entry?.backupTimer) return;
+
+        clearInterval(entry.backupTimer);
+        entry.backupTimer = null;
+    }
+
     /**
-     * Memaksa RemoteAuth mengirim kredensial terbaru ke store sekarang juga.
-     *
-     * Dipanggil sebelum mematikan engine. `client.destroy()` tidak menyimpan
-     * apa pun pada RemoteAuth — ia cuma menghentikan timer backup berkala —
-     * jadi tanpa ini, semua perubahan sejak backup terakhir (sampai
-     * WA_BACKUP_INTERVAL_MS) hilang saat redeploy.
-     *
-     * Hanya untuk sesi yang benar-benar tersambung: menyimpan kredensial sesi
-     * yang sedang menampilkan QR atau baru saja terputus berarti menimpa backup
-     * yang masih baik dengan folder yang belum tentu bisa dipulihkan.
+     * Menyimpan kredensial sesi ke store Laravel.
      */
     async persist(sessionId) {
         const entry = this.#sessions.get(sessionId);
 
         if (!entry || entry.status !== 'connected') return;
 
-        const strategy = entry.client.authStrategy;
-
-        if (typeof strategy?.storeRemoteSession !== 'function') return;
-
-        await strategy.storeRemoteSession();
-        logger.info({ sessionId }, 'Kredensial sesi disimpan sebelum engine berhenti');
+        await this.#store.save({ session: sessionId });
+        logger.info({ sessionId }, 'Kredensial sesi disimpan ke Laravel');
     }
 
     async stop(sessionId) {
@@ -352,49 +476,80 @@ export class SessionManager {
 
         if (!entry) return;
 
+        entry.stopped = true;
         this.#lepasPengukurInit(entry);
+        this.#lepasBackupInterval(entry);
+
+        if (entry.reconnectTimer) {
+            clearTimeout(entry.reconnectTimer);
+            entry.reconnectTimer = null;
+        }
+
         this.#sessions.delete(sessionId);
         this.#queue.forget(sessionId);
 
-        // Satu-satunya penutup Chromium di seluruh engine. Ia harus menutup
-        // pada SETIAP jalur — destroy() yang melempar, destroy() yang
-        // menggantung, dan destroy() yang kembali sukses tanpa menutup apa pun.
-        // Ketiganya ditangani tutupChromium(); alasan lengkapnya di chromium.js.
-        await tutupChromium(entry.client, sessionId);
+        if (entry.sock) {
+            try {
+                entry.sock.end?.();
+            } catch (error) {
+                logger.warn({ sessionId, err: error.message }, 'Galat saat menutup socket');
+            }
+            entry.sock = null;
+        }
     }
 
     /**
      * Memutus tautan perangkat di sisi WhatsApp lalu membuang kredensialnya.
-     * Berbeda dari stop(): setelah ini nomor harus scan QR lagi.
+     * Operasi ini bersifat lokal dan merespons segera:
+     * - sock.logout() dijalankan di latar belakang (fire-and-forget)
+     * - Sesi lokal segera dihentikan dan dibersihkan
+     * - Laravel tidak pernah menunggu WhatsApp
      */
     async logout(sessionId) {
         const entry = this.#sessions.get(sessionId);
+        const sock = entry?.sock;
 
+        // Lepas referensi socket dari entry agar stop() dan operasi lain tidak tumpang tindih
         if (entry) {
-            // Dibatasi waktu karena `Client.logout()` diawali
-            // `pupPage.evaluate()` pada halaman yang mungkin sudah tidak
-            // menjawab. Tanpa batas, logout yang menggantung tidak pernah
-            // sampai ke stop() di bawah — dan stop() itulah yang memastikan
-            // Chromium-nya mati.
-            try {
-                await Promise.race([
-                    entry.client.logout(),
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('logout() melewati batas waktu')), 15_000),
-                    ),
-                ]);
-            } catch (error) {
-                logger.warn({ sessionId, err: error.message }, 'Logout WhatsApp gagal');
-            }
+            entry.sock = null;
+            entry.qrImage = null;
+        }
+
+        // Jalankan sock.logout() di latar belakang (fire-and-forget).
+        // Jangan pernah menahan siklus respon HTTP ke Laravel.
+        if (sock) {
+            Promise.race([
+                Promise.resolve().then(() => sock.logout?.()),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('sock.logout() timeout')), 4_000),
+                ),
+            ])
+                .catch((error) => {
+                    logger.warn({ sessionId, err: error.message }, 'Logout WhatsApp di latar belakang gagal atau timeout');
+                })
+                .finally(() => {
+                    try {
+                        sock.end?.(new Error('Session logged out'));
+                    } catch {}
+                });
         }
 
         await this.stop(sessionId);
 
+        // Hapus folder sesi lokal jika ada
         try {
-            await this.#store.delete({ session: `RemoteAuth-${sessionId}` });
-        } catch (error) {
-            logger.warn({ sessionId, err: error.message }, 'Gagal menghapus backup sesi');
-        }
+            const sessionDir = entry?.sessionDir ?? path.join(config.dataPath, sessionId);
+            await rm(sessionDir, { recursive: true, force: true });
+        } catch {}
+
+        // Store remote: Laravel sudah membersihkan backup miliknya di SessionService::logout.
+        // Jika perlu memanggil delete() ke store, jalankan setelah logout selesai (di macrotask berikutnya)
+        // supaya tidak pernah menahan siklus respon HTTP ke Laravel.
+        setImmediate(() => {
+            this.#store?.delete?.({ session: sessionId })?.catch?.((error) => {
+                logger.warn({ sessionId, err: error.message }, 'Gagal menghapus backup sesi di latar belakang');
+            });
+        });
     }
 
     status(sessionId) {
@@ -409,6 +564,7 @@ export class SessionManager {
             phone_number: entry.phoneNumber,
             push_name: entry.pushName,
             loading_percent: entry.loadingPercent,
+            qr: entry.qrImage ?? null,
         };
     }
 
@@ -416,9 +572,27 @@ export class SessionManager {
         return [...this.#sessions.keys()];
     }
 
+    stats() {
+        let connected = 0;
+        let connecting = 0;
+        let qr = 0;
+
+        for (const entry of this.#sessions.values()) {
+            if (entry.status === 'connected') connected++;
+            else if (entry.status === 'connecting') connecting++;
+            else if (entry.status === 'qr') qr++;
+        }
+
+        return {
+            total: this.#sessions.size,
+            connected,
+            connecting,
+            qr,
+        };
+    }
+
     /**
-     * Mengantre satu pesan keluar. Menunggu giliran di antrean sesi, lalu
-     * menunggu jeda anti-ban, baru benar-benar dikirim.
+     * Mengantre satu pesan keluar.
      */
     async send(sessionId, { to, type, body, media, messageId }) {
         const sebelumnya = messageId ? this.#kiriman.get(messageId) : undefined;
@@ -437,32 +611,42 @@ export class SessionManager {
             throw error;
         }
 
-        if (entry.status !== 'connected') {
+        if (entry.status !== 'connected' || !entry.sock) {
             const error = new Error(`Sesi berstatus ${entry.status}, belum siap mengirim.`);
             error.permanent = false;
             throw error;
         }
 
         const promise = this.#queue.enqueue(sessionId, async () => {
-            const chatId = await this.#resolveChatId(entry.client, to);
+            const chatId = await this.#resolveChatId(entry.sock, to);
 
-            let sent;
+            let content;
 
             if (media) {
-                const attachment = new MessageMedia(media.mimetype, media.data, media.filename);
-                sent = await entry.client.sendMessage(chatId, attachment, { caption: body ?? undefined });
+                const buffer = Buffer.from(media.data, 'base64');
+                const mime = media.mimetype || '';
+
+                if (type === 'image' || mime.startsWith('image/')) {
+                    content = { image: buffer, caption: body ?? undefined, mimetype: mime };
+                } else if (type === 'video' || mime.startsWith('video/')) {
+                    content = { video: buffer, caption: body ?? undefined, mimetype: mime };
+                } else if (type === 'audio' || mime.startsWith('audio/')) {
+                    content = { audio: buffer, mimetype: mime, ptt: type === 'audio' && mime.includes('ogg') };
+                } else {
+                    content = {
+                        document: buffer,
+                        mimetype: mime,
+                        fileName: media.filename || 'document',
+                        caption: body ?? undefined,
+                    };
+                }
             } else {
-                sent = await entry.client.sendMessage(chatId, body);
+                content = { text: body ?? '' };
             }
 
-            // `sent` kadang undefined walau pesannya benar-benar sampai —
-            // whatsapp-web.js tidak selalu berhasil menyusun objek Message
-            // balasannya. Sebelumnya baris ini melempar TypeError, Laravel
-            // menganggapnya gagal, dan mengulang job-nya: penerima menerima
-            // pesan yang sama tiga sampai empat kali. ID pesan cuma pelengkap
-            // untuk melacak status, jadi tidak boleh menentukan berhasil atau
-            // tidaknya pengiriman.
-            return { wa_message_id: sent?.id?._serialized ?? null, chat_id: chatId };
+            const sent = await entry.sock.sendMessage(chatId, content);
+
+            return { wa_message_id: sent?.key?.id ?? null, chat_id: toContractChatId(chatId) };
         });
 
         if (messageId) {
@@ -472,17 +656,11 @@ export class SessionManager {
         return promise;
     }
 
-    /**
-     * Hasil disimpan hanya kalau kirimannya berhasil. Kegagalan sengaja dilupakan:
-     * percobaan ulang Laravel memang seharusnya mencoba lagi.
-     */
     #catatKiriman(messageId, promise) {
         this.#kiriman.set(messageId, { promise, waktu: Date.now() });
 
         promise.catch(() => this.#kiriman.delete(messageId));
 
-        // Dibersihkan berkala supaya map tidak tumbuh selamanya. Umurnya cukup
-        // melampaui seluruh jadwal percobaan ulang Laravel (10 + 60 + 300 detik).
         const batas = Date.now() - 15 * 60 * 1000;
 
         for (const [kunci, nilai] of this.#kiriman) {
@@ -492,148 +670,79 @@ export class SessionManager {
         }
     }
 
-    /**
-     * Memastikan nomor tujuan benar-benar terdaftar di WhatsApp sebelum kirim.
-     * Tanpa pengecekan ini, pesan ke nomor tidak terdaftar akan gagal dengan
-     * error generik dan job akan mengulanginya berkali-kali tanpa guna.
-     */
-    async #resolveChatId(client, to) {
-        if (to.endsWith('@g.us') || to.endsWith('@c.us')) {
+    async #resolveChatId(sock, to) {
+        if (to.endsWith('@g.us') || to.endsWith('@s.whatsapp.net')) {
             return to;
         }
 
-        const digits = to.replace(/\D+/g, '');
-        const numberId = await client.getNumberId(digits);
-
-        if (!numberId) {
-            const error = new Error(`Nomor ${digits} tidak terdaftar di WhatsApp.`);
-            error.permanent = true;
-            throw error;
+        if (to.endsWith('@c.us')) {
+            return to.replace(/@c\.us$/, '@s.whatsapp.net');
         }
 
-        return numberId._serialized;
-    }
+        const digits = to.replace(/\D+/g, '');
 
-    #bindEvents(sessionId, client) {
-        client.on('qr', async (qr) => {
-            const entry = this.#sessions.get(sessionId);
-            if (entry) entry.status = 'qr';
+        if (typeof sock.onWhatsApp === 'function') {
+            const results = await sock.onWhatsApp(digits);
+            const match = Array.isArray(results) ? results.find((r) => r.exists) : null;
 
-            // Bukti pertama bahwa Chromium hidup dan WhatsApp Web memuat. Mulai
-            // dari sini yang ditunggu adalah manusia yang men-scan, dan menunggu
-            // manusia tidak boleh punya batas waktu.
-            this.#lepasPengukurInit(entry);
-
-            // Dirender jadi PNG di sini supaya Laravel dan dashboard tidak perlu
-            // library QR sama sekali — cukup menaruhnya di <img src>.
-            const image = await qrcode.toDataURL(qr, { width: 320, margin: 1 });
-
-            await laravel.event(sessionId, 'qr', { qr_image: image });
-        });
-
-        client.on('authenticated', async () => {
-            const entry = this.#sessions.get(sessionId);
-            if (entry) entry.status = 'connecting';
-
-            this.#lepasPengukurInit(entry);
-
-            await laravel.event(sessionId, 'authenticated');
-        });
-
-        /**
-         * Antara QR ter-scan dan sesi siap, WhatsApp Web menarik riwayat chat
-         * lebih dulu. Untuk akun yang ramai, jeda itu bisa berupa menit-menit
-         * tanpa satu pun event lain — dan dashboard hanya bisa menampilkan
-         * "menyiapkan sesi" tanpa tahu apakah ada kemajuan atau memang macet.
-         * Persentasenya cukup disimpan di memori: ia hanya berguna selama ada
-         * orang menatap modalnya, dan status() yang menyajikannya.
-         */
-        client.on('loading_screen', (percent) => {
-            const entry = this.#sessions.get(sessionId);
-            if (entry) entry.loadingPercent = Number(percent);
-
-            // Menarik riwayat chat besar memang bisa makan menit-menit, dan itu
-            // pekerjaan yang sah. Yang dijaga pengukur adalah sesi yang tidak
-            // menunjukkan kemajuan apa pun — bukan sesi yang lambat.
-            this.#lepasPengukurInit(entry);
-        });
-
-        client.on('auth_failure', async (message) => {
-            const entry = this.#sessions.get(sessionId);
-            if (entry) entry.status = 'failed';
-
-            this.#lepasPengukurInit(entry);
-
-            await laravel.event(sessionId, 'auth_failure', { message });
-        });
-
-        client.on('ready', async () => {
-            const entry = this.#sessions.get(sessionId);
-
-            const phoneNumber = client.info?.wid?.user ?? null;
-            const pushName = client.info?.pushname ?? null;
-
-            if (entry) {
-                entry.status = 'connected';
-                entry.phoneNumber = phoneNumber;
-                entry.pushName = pushName;
-                entry.loadingPercent = null;
+            if (!match || !match.jid) {
+                const error = new Error(`Nomor ${digits} tidak terdaftar di WhatsApp.`);
+                error.permanent = true;
+                throw error;
             }
 
-            this.#lepasPengukurInit(entry);
+            return match.jid;
+        }
 
-            logger.info({ sessionId }, 'Sesi siap');
-
-            await laravel.event(sessionId, 'ready', {
-                phone_number: phoneNumber,
-                push_name: pushName,
-            });
-        });
-
-        client.on('remote_session_saved', () => {
-            logger.debug({ sessionId }, 'RemoteAuth menyimpan backup');
-        });
-
-        client.on('disconnected', async (reason) => {
-            const entry = this.#sessions.get(sessionId);
-            if (entry) entry.status = 'disconnected';
-
-            logger.warn({ sessionId, reason }, 'Sesi terputus');
-
-            await laravel.event(sessionId, 'disconnected', { reason: String(reason) });
-
-            // Client yang sudah disconnected tidak bisa dipakai lagi; harus
-            // dibuang supaya start() berikutnya membuat instance yang bersih.
-            await this.stop(sessionId);
-        });
-
-        client.on('message', async (message) => {
-            // Status/story bukan percakapan dan jumlahnya bisa sangat banyak.
-            if (message.isStatus) return;
-
-            await laravel.event(sessionId, 'message', {
-                wa_message_id: message.id?._serialized ?? null,
-                chat_id: message.from,
-                from: message.author ?? message.from,
-                type: mapType(message.type),
-                body: message.body ?? null,
-            });
-        });
-
-        client.on('message_ack', async (message, ack) => {
-            await laravel.event(sessionId, 'message_ack', {
-                wa_message_id: message.id?._serialized ?? null,
-                ack,
-            });
-        });
+        return `${digits}@s.whatsapp.net`;
     }
 }
 
-function mapType(type) {
-    const known = ['image', 'document', 'video', 'audio', 'location'];
+export function toContractChatId(jid) {
+    if (!jid || typeof jid !== 'string') return jid;
 
-    if (type === 'chat') return 'text';
-    if (type === 'ptt') return 'audio';
+    if (jid.endsWith('@s.whatsapp.net')) {
+        return jid.replace(/@s\.whatsapp\.net$/, '@c.us');
+    }
 
-    return known.includes(type) ? type : 'other';
+    return jid;
+}
+
+export function mapType(contentType) {
+    if (contentType === 'conversation' || contentType === 'extendedTextMessage') return 'text';
+    if (contentType === 'imageMessage') return 'image';
+    if (contentType === 'documentMessage') return 'document';
+    if (contentType === 'videoMessage') return 'video';
+    if (contentType === 'audioMessage') return 'audio';
+    if (contentType === 'locationMessage' || contentType === 'liveLocationMessage') return 'location';
+
+    return 'other';
+}
+
+export function extractBody(contentType, content) {
+    if (!content) return null;
+    if (typeof content === 'string') return content;
+    if (contentType === 'conversation') return content;
+    if (contentType === 'extendedTextMessage') return content.text ?? null;
+    if (contentType === 'imageMessage' || contentType === 'videoMessage' || contentType === 'documentMessage') {
+        return content.caption ?? null;
+    }
+    if (contentType === 'locationMessage') {
+        return (
+            content.name ||
+            content.address ||
+            (content.degreesLatitude != null ? `${content.degreesLatitude},${content.degreesLongitude}` : null)
+        );
+    }
+
+    return null;
+}
+
+export function mapAck(status) {
+    if (status === WAMessageStatus.SERVER_ACK || status === 'SERVER_ACK' || status === 2) return 1;
+    if (status === WAMessageStatus.DELIVERY_ACK || status === 'DELIVERY_ACK' || status === 3) return 2;
+    if (status === WAMessageStatus.READ || status === 'READ' || status === 4) return 3;
+    if (status === WAMessageStatus.PLAYED || status === 'PLAYED' || status === 5) return 3;
+
+    return null;
 }

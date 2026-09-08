@@ -173,10 +173,18 @@ class SessionController extends Controller
         // menampilkan "Menyiapkan sesi" tanpa akhir padahal nomornya sudah
         // tertaut. Sesi yang sudah `connected` atau `failed` tidak perlu
         // ditanyakan lagi — jawabannya tidak akan berubah tanpa ada aksi baru.
+        $state = null;
         if (! in_array($session->status, ['connected', 'failed'], true)) {
             try {
                 $state = $this->sessions->liveStatus($session);
                 $loadingPercent = $state['loading_percent'] ?? null;
+                if (! empty($state['qr']) && ! $session->qr_payload) {
+                    $session->update([
+                        'status' => 'qr',
+                        'qr_payload' => $state['qr'],
+                        'qr_expires_at' => now()->addSeconds(config('gateway.qr_ttl_seconds')),
+                    ]);
+                }
                 $session->refresh();
             } catch (\Throwable $e) {
                 // Engine tidak terjangkau bukan alasan menggagalkan polling —
@@ -189,9 +197,14 @@ class SessionController extends Controller
             }
         }
 
+        $qr = $session->hasFreshQr() ? $session->qr_payload : null;
+        if (! $qr && ! empty($state['qr']) && $session->status === 'qr') {
+            $qr = $state['qr'];
+        }
+
         return response()->json([
             'status' => $session->status,
-            'qr' => $session->hasFreshQr() ? $session->qr_payload : null,
+            'qr' => $qr,
             'phone_number' => $session->phone_number,
             'push_name' => $session->push_name,
             'loading_percent' => $loadingPercent,

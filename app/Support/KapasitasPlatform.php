@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * ditegakkan sejak lama. Ini batas yang selama ini tidak ditegakkan di mana pun
  * kecuali di engine, pada detik terakhir, setelah uang pelanggan masuk.
  *
- * ANGKANYA. `WA_MAX_SESSIONS` = 3. Tiap sesi satu Chromium. Paket menjual
+ * ANGKANYA. `WA_MAX_SESSIONS` = 3 (konfigurasi batas slot engine). Paket menjual
  * `max_sessions` 1 untuk Essentials, 1 untuk Prime, dan 2 untuk Elite
  * (config/plans.php). Jadi tiga pelanggan Essentials sudah menghabiskan seluruh
  * platform, dan satu pelanggan Elite menghabiskan dua pertiganya.
@@ -122,7 +122,7 @@ class KapasitasPlatform
      *
      * Ini ukuran yang berbeda dari `terpakai()`, dan bedanya penting. Komitmen
      * menjawab "berapa slot yang sudah kita janjikan" dan dipakai sebelum
-     * menerima uang. Ini menjawab "berapa nomor yang akan minta Chromium" dan
+     * menerima uang. Ini menjawab "berapa nomor yang akan minta slot engine" dan
      * dipakai sebelum membuat sesi.
      *
      * Memakai komitmen di kedua tempat sudah salah sekali, dan salahnya halus:
@@ -140,7 +140,7 @@ class KapasitasPlatform
      *
      * Dipakai saat membuat sesi, bukan saat menerima pembayaran. Sesi
      * berstatus `pending` tidak dihitung: ia belum pernah dijalankan dan
-     * belum memegang Chromium apa pun.
+     * belum memegang proses engine apa pun.
      */
     public static function slotHabis(): bool
     {

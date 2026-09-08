@@ -65,7 +65,7 @@ class BootstrapController extends Controller
              |
              | `supervisi_engine` di start.sh menjalankan ulang engine 3 detik
              | setelah ia mati. Engine yang tidak stabil karena itu memanggil
-             | bootstrap berkali-kali, dan tiap panggilan menyalakan Chromium
+             | bootstrap berkali-kali, dan tiap panggilan menyalakan sesi engine
              | untuk setiap sesi di daftar ini.
              |
              | Penghitungnya nol lagi begitu sesi benar-benar `connected`, dan
@@ -82,7 +82,7 @@ class BootstrapController extends Controller
          |
          | `supervisi_engine` di start.sh menjalankan ulang engine tiga detik
          | setelah ia mati. Engine yang tidak stabil karena itu memanggil
-         | endpoint ini berkali-kali, dan tiap panggilan menyalakan Chromium
+         | endpoint ini berkali-kali, dan tiap panggilan menyalakan sesi engine
          | untuk SETIAP sesi di daftar ini. Tanpa dihitung, jalur ini adalah
          | badai percobaan yang tidak punya rem sama sekali.
          |

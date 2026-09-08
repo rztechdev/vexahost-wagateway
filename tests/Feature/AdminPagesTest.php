@@ -180,4 +180,36 @@ class AdminPagesTest extends TestCase
             ->assertOk()
             ->assertSee('Engine WhatsApp');
     }
+
+    public function test_halaman_sistem_menampilkan_metrik_baileys_dan_tanpa_alarm_palsu(): void
+    {
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory);
+        \Illuminate\Support\Facades\Http::fake([
+            '*' => \Illuminate\Support\Facades\Http::response([
+                'status' => 'ok',
+                'engine' => 'baileys',
+                'sessions' => 2,
+                'connected_sessions' => 1,
+                'connecting_sessions' => 1,
+                'qr_sessions' => 0,
+                'max_sessions' => 10,
+                'memory' => [
+                    'rss_mb' => 78,
+                    'heap_used_mb' => 34,
+                    'heap_total_mb' => 45,
+                ],
+                'uptime_seconds' => 3600,
+            ]),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.system'))
+            ->assertOk()
+            ->assertSee('Sesi aktif di engine')
+            ->assertSee('78 MB RSS')
+            ->assertSee('1 terhubung')
+            ->assertSee('1 menghubungkan')
+            ->assertDontSee('Chromium')
+            ->assertDontSee('Proses Chromium hidup');
+    }
 }

@@ -139,8 +139,8 @@ class WorkspaceController extends Controller
      *
      * Memulihkan hanya mengembalikan status dan mengaktifkan workspace; sesi
      * yang sudah terputus tidak dinyalakan otomatis dari sini. Menyalakan
-     * beberapa Chromium sekaligus dari satu klik adalah cara tercepat membuat
-     * container kehabisan memori — pemiliknya yang menekan Hubungkan.
+     * beberapa sesi engine sekaligus dari satu klik berisiko lonjakan beban —
+     * pemiliknya yang menekan Hubungkan.
      */
     public function toggleSuspend(Request $request, int $id): RedirectResponse
     {

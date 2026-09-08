@@ -35,7 +35,7 @@
 |
 | Langganan melekat pada WORKSPACE, bukan pada akun. Satu orang yang memegang
 | tiga cabang berlangganan tiga kali — dan itu memang yang seharusnya, karena
-| biaya nyata kami (satu Chromium per nomor) juga tumbuh per workspace.
+| biaya nyata kami (slot sesi nomor WhatsApp) juga tumbuh per workspace.
 |
 */
 
@@ -78,7 +78,7 @@ return [
     | teks halaman harga.
     |
     | Angkanya kira-kira separuh harga normal, dan itu ditanggung sadar: biaya
-    | nyata kami per workspace adalah satu Chromium yang sudah berjalan di
+    | nyata kami per workspace adalah sesi engine yang sudah berjalan di
     | server yang sudah dibayar bulanan, jadi pelanggan tambahan di bulan
     | pertama nyaris tidak menambah ongkos. Yang benar-benar ditanggung adalah
     | risiko orang berhenti setelah bulan pertama — dan itulah sebabnya promo

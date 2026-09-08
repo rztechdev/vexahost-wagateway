@@ -694,8 +694,8 @@ class SubscriptionService
     }
 
     /**
-     * Masa tenggang habis: sesi dilepas dari engine supaya Chromium-nya berhenti
-     * memakan RAM yang dibutuhkan pelanggan yang membayar.
+     * Masa tenggang habis: sesi dilepas dari engine supaya soketnya berhenti
+     * memakan sumber daya yang dibutuhkan pelanggan yang membayar.
      *
      * Memakai `disconnect()`, bukan `logout()`. Bedanya menentukan: logout
      * membuang kredensial di kedua sisi, sehingga pelanggan yang kembali

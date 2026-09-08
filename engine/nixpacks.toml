@@ -1,31 +1,7 @@
-# Nixpacks untuk engine whatsapp-web.js.
-#
-# whatsapp-web.js menjalankan Chromium lewat Puppeteer, dan Chromium butuh
-# sekumpulan shared library yang tidak ada di image dasar. Daftar ini disalin
-# dari flustra-erp/nixpacks.toml yang sudah terbukti jalan di VPS yang sama.
-#
-# Catatan Coolify: hanya aptPkgs dari file ini yang dipakai Nixpacks —
-# perintah install/build/start diatur lewat UI.
+# Nixpacks untuk engine Baileys (websocket murni).
+# Tidak memerlukan Chromium atau library GUI.
 
 [phases.setup]
   aptPkgs = [
     '...',
-    'libnss3',
-    'libatk1.0-0',
-    'libatk-bridge2.0-0',
-    'libxss1',
-    'libasound2t64',
-    'libgbm1',
-    'libx11-xcb1',
-    'libxcomposite1',
-    'libxcursor1',
-    'libxdamage1',
-    'libxi6',
-    'libxtst6',
-    'libcups2',
-    'libxrandr2',
-    'libgtk-3-0',
-    'libpango-1.0-0',
-    'libpangocairo-1.0-0',
-    'fonts-liberation',
   ]

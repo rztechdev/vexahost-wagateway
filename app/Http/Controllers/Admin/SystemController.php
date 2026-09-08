@@ -178,36 +178,28 @@ class SystemController extends Controller
             return [
                 'terjangkau' => true,
                 'pesan' => 'Menjawab normal.',
-                /*
-                 | Jumlah proses Chromium yang benar-benar hidup, dihitung
-                 | engine dari /proc — bukan dari daftar sesi di memorinya.
-                 |
-                 | Keduanya ditampilkan berdampingan karena selisihnyalah yang
-                 | punya arti. Sama = sehat. Chromium lebih banyak = ada browser
-                 | yang tidak dimiliki sesi mana pun, yaitu kebocoran memori
-                 | yang terbaca SEBELUM ia menjadi server yang tidak bisa
-                 | di-SSH. Sesi lebih banyak = ada sesi yang kehilangan
-                 | browsernya dan tidak akan pernah bisa mengirim apa pun.
-                 |
-                 | `null` berarti tidak bisa dihitung, dan harus tetap tampil
-                 | sebagai "tidak diketahui". Menggantinya dengan 0 mengubah
-                 | "belum diperiksa" menjadi "sudah diperiksa dan aman".
-                */
-                'sesi' => $isi['sessions'] ?? null,
-                'chromium' => $isi['chromium_processes'] ?? null,
-                'profil' => $isi['chromium_profiles'] ?? null,
-
-                // Sinyal paling tajam yang kita punya, dan yang paling mudah
-                // terlewat kalau cuma total proses yang ditampilkan. Produksi
-                // 8 September 2026: tiga profil, enam proses — jumlah profilnya
-                // wajar, dan yang merusak justru tiga proses berlebih yang
-                // menumpuk di satu profil.
-                'duplikat' => $isi['chromium_duplicates'] ?? null,
-                'yatim' => $isi['chromium_orphans'] ?? null,
-                'bocor' => $isi['chromium_leaked'] ?? null,
+                'engine' => $isi['engine'] ?? 'baileys',
+                'sesi' => $isi['sessions'] ?? 0,
+                'connected' => $isi['connected_sessions'] ?? 0,
+                'connecting' => $isi['connecting_sessions'] ?? 0,
+                'qr' => $isi['qr_sessions'] ?? 0,
+                'max_sessions' => $isi['max_sessions'] ?? null,
+                'memory' => $isi['memory'] ?? null,
+                'uptime_seconds' => $isi['uptime_seconds'] ?? null,
             ];
         } catch (\Throwable $e) {
-            return ['terjangkau' => false, 'pesan' => $e->getMessage()];
+            return [
+                'terjangkau' => false,
+                'pesan' => $e->getMessage(),
+                'engine' => null,
+                'sesi' => null,
+                'connected' => null,
+                'connecting' => null,
+                'qr' => null,
+                'max_sessions' => null,
+                'memory' => null,
+                'uptime_seconds' => null,
+            ];
         }
     }
 }

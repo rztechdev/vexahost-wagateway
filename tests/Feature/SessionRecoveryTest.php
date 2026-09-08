@@ -88,7 +88,7 @@ class SessionRecoveryTest extends TestCase
 
         // Sesi yang belum pernah tersambung tidak punya kredensial untuk
         // dipulihkan — menjalankannya hanya memunculkan QR yang tidak ada
-        // yang men-scan, dan memakan satu slot Chromium di engine.
+        // yang men-scan, dan memakan satu slot di engine.
         $this->assertNotContains($belum->id, $ids);
     }
 

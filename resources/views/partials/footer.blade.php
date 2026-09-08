@@ -74,7 +74,6 @@
                         <li><a href="{{ $beranda }}#fitur" class="text-muted-foreground hover:text-foreground transition-colors">Fitur Gateway</a></li>
                         <li><a href="{{ $beranda }}#cara-kerja" class="text-muted-foreground hover:text-foreground transition-colors">Cara Kerja</a></li>
                         <li><a href="{{ $beranda }}#harga" class="text-muted-foreground hover:text-foreground transition-colors">Paket & Harga</a></li>
-                        <li><a href="{{ $beranda }}#testimoni" class="text-muted-foreground hover:text-foreground transition-colors">Ulasan Pengguna</a></li>
                         <li><a href="{{ route('mitra.landing') }}" class="text-muted-foreground hover:text-foreground transition-colors">Program Mitra (Reseller)</a></li>
                         <li><a href="{{ route('docs.show', 'referensi-api') }}" class="text-muted-foreground hover:text-foreground transition-colors">Kirim Pesan Teks</a></li>
                         <li><a href="{{ route('docs.show', 'webhook') }}" class="text-muted-foreground hover:text-foreground transition-colors">Webhook Dispatcher</a></li>

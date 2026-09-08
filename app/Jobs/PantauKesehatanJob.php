@@ -214,7 +214,7 @@ class PantauKesehatanJob implements ShouldQueue
             title: "Kapasitas sesi penuh ({$hidup}/{$batas})",
             body: 'Pelanggan berikutnya yang membayar tidak akan bisa menautkan nomornya. '
                 .'Naikkan WA_MAX_SESSIONS hanya kalau RAM server memang cukup — '
-                .'yang dibunuh OOM killer belum tentu Chromium.',
+                .'yang dibunuh OOM killer bisa jadi database atau proses engine.',
             url: route('admin.system'),
             level: 'warning',
             dedupe: 'sistem.kapasitas_penuh',

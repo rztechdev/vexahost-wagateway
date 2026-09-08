@@ -26,7 +26,7 @@ let penghitung = 0;
 async function muat(env) {
     const asli = { ...process.env };
 
-    for (const kunci of ['PORT', 'HOST', 'LOG_LEVEL', 'ENGINE_PORT', 'ENGINE_HOST', 'ENGINE_LOG_LEVEL', 'WA_MAX_SESSIONS', 'WA_CHROME_HEAP_MB']) {
+    for (const kunci of ['PORT', 'HOST', 'LOG_LEVEL', 'ENGINE_PORT', 'ENGINE_HOST', 'ENGINE_LOG_LEVEL', 'WA_MAX_SESSIONS']) {
         delete process.env[kunci];
     }
 
@@ -76,14 +76,3 @@ test('variabel kosong diperlakukan sebagai tidak diisi, bukan sebagai nol', asyn
     assert.equal(config.maxSessions, 3);
 });
 
-test('WA_CHROME_HEAP_MB kosong tidak menambah --js-flags', async () => {
-    const config = await muat({ WA_CHROME_HEAP_MB: '' });
-
-    assert.ok(!config.puppeteerArgs.some((arg) => arg.startsWith('--js-flags')));
-});
-
-test('WA_CHROME_HEAP_MB terisi memasang batas heap Chromium', async () => {
-    const config = await muat({ WA_CHROME_HEAP_MB: '512' });
-
-    assert.ok(config.puppeteerArgs.includes('--js-flags=--max-old-space-size=512'));
-});

@@ -16,10 +16,9 @@ use Illuminate\Support\Facades\DB;
  * Ringkasan platform dan kesehatannya.
  *
  * Satu angka di halaman ini lebih penting dari sisanya: sesi yang sedang hidup
- * dibanding `WA_MAX_SESSIONS`. Tiap sesi berarti satu Chromium yang memakan
- * 300-500 MB, dan batasnya ditegakkan engine, bukan Laravel. Begitu keduanya
- * bertemu, pelanggan berikutnya yang membayar tidak akan bisa menautkan
- * nomornya — dan tanpa angka ini di layar, hal itu baru ketahuan dari keluhan.
+ * dibanding `WA_MAX_SESSIONS`. Batasnya ditegakkan engine, bukan Laravel.
+ * Begitu keduanya bertemu, pelanggan berikutnya yang membayar tidak akan bisa
+ * menautkan nomornya — dan tanpa angka ini di layar, hal itu baru ketahuan dari keluhan.
  */
 class OverviewController extends Controller
 {

@@ -191,10 +191,10 @@
             </div>
 
             <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {{-- Card Starter --}}
+                {{-- Card Essentials --}}
                 <div class="rounded-2xl border border-border bg-card p-6 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paket Starter</span>
+                        <span class="rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paket Essentials</span>
                         <span class="text-xs text-muted-foreground">Bulanan</span>
                     </div>
                     <p class="mt-4 text-2xl font-bold text-foreground">Rp 149.000</p>
@@ -212,47 +212,47 @@
                     </ul>
                 </div>
 
-                {{-- Card Pro --}}
+                {{-- Card Prime --}}
                 <div class="relative rounded-2xl border-2 border-primary bg-card p-6 shadow-md">
                     <div class="absolute -top-3 right-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
                         Paling Populer
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">Paket Pro</span>
+                        <span class="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">Paket Prime</span>
                         <span class="text-xs text-muted-foreground">Bulanan</span>
                     </div>
-                    <p class="mt-4 text-2xl font-bold text-foreground">Rp 299.000</p>
+                    <p class="mt-4 text-2xl font-bold text-foreground">Rp 249.000</p>
                     <p class="text-xs text-muted-foreground">Harga normal per bulan</p>
                     <div class="my-5 border-t border-border/80"></div>
                     <ul class="space-y-2 text-xs sm:text-sm">
                         <li class="flex justify-between">
                             <span class="text-muted-foreground">Klien membayar (diskon 10%):</span>
-                            <span class="font-semibold text-foreground">Rp 269.100</span>
+                            <span class="font-semibold text-foreground">Rp 224.100</span>
                         </li>
                         <li class="flex justify-between">
                             <span class="text-muted-foreground">Komisi Anda (20%):</span>
-                            <span class="font-bold text-primary">Rp 53.820 / klien</span>
+                            <span class="font-bold text-primary">Rp 44.820 / klien</span>
                         </li>
                     </ul>
                 </div>
 
-                {{-- Card Pro Tahunan --}}
+                {{-- Card Prime Tahunan --}}
                 <div class="rounded-2xl border border-border bg-card p-6 shadow-xs">
                     <div class="flex items-center justify-between">
-                        <span class="rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paket Pro Tahunan</span>
+                        <span class="rounded-lg bg-muted px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Paket Prime Tahunan</span>
                         <span class="text-xs text-primary font-medium">Hemat 2 Bulan</span>
                     </div>
-                    <p class="mt-4 text-2xl font-bold text-foreground">Rp 2.990.000</p>
+                    <p class="mt-4 text-2xl font-bold text-foreground">Rp 2.490.000</p>
                     <p class="text-xs text-muted-foreground">Harga normal per tahun</p>
                     <div class="my-5 border-t border-border/80"></div>
                     <ul class="space-y-2 text-xs sm:text-sm">
                         <li class="flex justify-between">
                             <span class="text-muted-foreground">Klien membayar (diskon 10%):</span>
-                            <span class="font-semibold text-foreground">Rp 2.691.000</span>
+                            <span class="font-semibold text-foreground">Rp 2.241.000</span>
                         </li>
                         <li class="flex justify-between">
                             <span class="text-muted-foreground">Komisi Anda (20%):</span>
-                            <span class="font-bold text-primary">Rp 538.200 / klien</span>
+                            <span class="font-bold text-primary">Rp 448.200 / klien</span>
                         </li>
                     </ul>
                 </div>
@@ -260,7 +260,7 @@
 
             <div class="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
                 <p class="text-sm sm:text-base font-semibold text-foreground">
-                    💡 Contoh: Merekomendasikan 5 klien mengambil paket Pro tahunan = <span class="text-primary font-bold">Rp 2.691.000</span> komisi bersih langsung masuk ke dompet Anda!
+                    💡 Contoh: Merekomendasikan 5 klien mengambil paket Prime tahunan = <span class="text-primary font-bold">Rp 2.241.000</span> komisi bersih langsung masuk ke dompet Anda!
                 </p>
             </div>
         </div>
