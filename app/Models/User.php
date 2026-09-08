@@ -67,15 +67,14 @@ class User extends Authenticatable
     /**
      * Akun ini WAJIB memakai 2FA.
      *
-     * Hanya super admin. Akun itu bisa menandai tagihan lunas, mengatur ulang
-     * kata sandi siapa pun, dan membaca seluruh workspace — satu kata sandi
-     * yang bocor cukup untuk semuanya. Pelanggan boleh memilih sendiri; memaksa
-     * seluruh pendaftar baru memasang aplikasi authenticator sebelum bisa
-     * memakai produk akan menghentikan sebagian dari mereka di langkah itu.
+     * Dikendalikan oleh konfigurasi `auth.two_factor_mandatory_for_admin`.
+     * Bawaannya false (opsional untuk seluruh peran termasuk super admin).
+     * Jika diatur true, super admin diwajibkan memasangnya sebelum mengakses
+     * dashboard maupun panel admin.
      */
     public function wajibDuaFaktor(): bool
     {
-        return (bool) $this->is_super_admin;
+        return (bool) config('auth.two_factor_mandatory_for_admin', false) && (bool) $this->is_super_admin;
     }
 
     public function guideProgress(): HasMany

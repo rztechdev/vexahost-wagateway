@@ -95,19 +95,68 @@ class TwoFactorTest extends TestCase
     // ------------------------------------------------------------ penegakan
 
     /**
-     * Super admin yang belum memasang 2FA dipaksa memasangnya.
-     *
-     * Tanpa pemaksaan ini, "2FA wajib untuk admin" hanya berlaku bagi admin
-     * yang kebetulan memasangnya sendiri — dan yang paling mungkin tidak
-     * memasangnya adalah admin yang paling lama tidak menyentuh pengaturan
-     * keamanan.
+     * Secara bawaan, 2FA opsional untuk seluruh peran termasuk super admin:
+     * Super admin baru bisa masuk dashboard dan panel admin tanpa dialihkan ke two-factor.setup.
      */
-    public function test_admin_tanpa_dua_faktor_dipaksa_memasangnya(): void
+    public function test_super_admin_baru_bisa_masuk_dashboard_dan_panel_admin_tanpa_dua_faktor(): void
     {
+        $admin = $this->pengguna(admin: true);
+        $ws = Workspace::create([
+            'name' => 'Workspace Admin',
+            'slug' => 'workspace-admin',
+            'owner_id' => $admin->id,
+            'owner_email' => $admin->email,
+            'max_sessions' => 1,
+            'monthly_message_quota' => 100,
+        ]);
+        $ws->members()->attach($admin->id, ['role' => 'owner']);
+
+        $this->be($admin)->withSession(['current_workspace_id' => $ws->id]);
+
+        $this->get(route('admin.overview'))->assertOk();
+        $this->get(route('dashboard'))->assertOk();
+    }
+
+    /**
+     * Jaring pengaman: dengan konfigurasi dinyalakan, super admin kembali
+     * dipaksa memasang 2FA sebelum bisa mengakses dashboard dan panel admin.
+     */
+    public function test_admin_tanpa_dua_faktor_dipaksa_memasangnya_bila_konfigurasi_aktif(): void
+    {
+        config(['auth.two_factor_mandatory_for_admin' => true]);
+
         $this->be($this->pengguna(admin: true));
 
         $this->get(route('admin.overview'))->assertRedirect(route('two-factor.setup'));
         $this->get(route('dashboard'))->assertRedirect(route('two-factor.setup'));
+    }
+
+    /**
+     * Super admin yang 2FA-nya aktif tetap ditantang kode saat login
+     * (cabang duaFaktorAktif di EnsureTwoFactor tetap berlaku).
+     */
+    public function test_super_admin_dengan_dua_faktor_aktif_tetap_ditantang_kode_saat_login(): void
+    {
+        $admin = $this->pengguna(admin: true);
+        $rahasia = Totp::rahasiaBaru();
+
+        $admin->forceFill([
+            'two_factor_secret' => $rahasia,
+            'two_factor_recovery_codes' => [],
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->be($admin);
+
+        // Belum melewati tantangan: dialihkan ke two-factor.challenge
+        $this->get(route('admin.overview'))->assertRedirect(route('two-factor.challenge'));
+        $this->get(route('dashboard'))->assertRedirect(route('two-factor.challenge'));
+
+        // Menjawab tantangan dengan kode yang benar
+        $this->post(route('two-factor.verify'), ['kode' => Totp::kode($rahasia)])
+            ->assertRedirect();
+
+        $this->assertTrue(session('2fa.lolos'));
     }
 
     /** Pelanggan biasa tidak dipaksa apa pun. */
@@ -117,6 +166,40 @@ class TwoFactorTest extends TestCase
 
         $this->get(route('two-factor.setup'))->assertOk();
         $this->get(route('profile.show'))->assertRedirect(route('onboarding.create'));
+    }
+
+    /**
+     * Pendaftar biasa lewat alur register sungguhan tidak pernah dipaksa 2FA:
+     * - Mendarat di tujuan register (sessions.index), bukan di two-factor.setup
+     * - Tidak ada pengalihan 2FA di permintaan berikutnya ke dashboard
+     * - is_super_admin bernilai false
+     */
+    public function test_pendaftar_biasa_lewat_alur_register_tidak_dipaksa_dua_faktor(): void
+    {
+        $response = $this->post(route('register'), [
+            'name' => 'Pendaftar Biasa',
+            'email' => 'pendaftar.biasa@contoh.id',
+            'workspace' => 'Toko Biasa',
+            'password' => 'rahasia12345',
+            'password_confirmation' => 'rahasia12345',
+            'terms' => '1',
+        ]);
+
+        $user = User::where('email', 'pendaftar.biasa@contoh.id')->firstOrFail();
+
+        // 1. Pengguna mendarat di halaman tujuan register, BUKAN di two-factor.setup
+        $response->assertRedirect(route('sessions.index'));
+        $this->assertNotSame(route('two-factor.setup'), $response->headers->get('Location'));
+
+        // 2. is_super_admin bernilai false
+        $this->assertFalse($user->is_super_admin);
+        $this->assertFalse($user->wajibDuaFaktor());
+        $this->assertFalse($user->duaFaktorAktif());
+
+        // 3. Tidak ada pengalihan 2FA di permintaan berikutnya ke dashboard
+        $dashboardResponse = $this->get(route('dashboard'));
+        $dashboardResponse->assertOk();
+        $this->assertFalse($dashboardResponse->isRedirect());
     }
 
     /**
@@ -380,8 +463,53 @@ class TwoFactorTest extends TestCase
         $this->assertFalse($user->refresh()->duaFaktorAktif());
     }
 
-    public function test_admin_tidak_bisa_mematikan_dua_faktor(): void
+    /**
+     * Super admin bisa mematikan 2FA-nya sendiri dari halaman profil bila 2FA opsional (bawaan).
+     */
+    public function test_super_admin_bisa_mematikan_dua_faktor_dari_profil(): void
     {
+        $admin = $this->pengguna(admin: true);
+        $ws = Workspace::create([
+            'name' => 'Workspace Admin',
+            'slug' => 'workspace-admin',
+            'owner_id' => $admin->id,
+            'owner_email' => $admin->email,
+            'max_sessions' => 1,
+            'monthly_message_quota' => 100,
+        ]);
+        $ws->members()->attach($admin->id, ['role' => 'owner']);
+        $this->berlangganan($ws);
+
+        $admin->forceFill([
+            'two_factor_secret' => Totp::rahasiaBaru(),
+            'two_factor_recovery_codes' => [],
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->be($admin)->withSession([
+            'current_workspace_id' => $ws->id,
+            '2fa.lolos' => true,
+        ]);
+
+        // Form matikan 2FA tampil di halaman profil
+        $this->get(route('profile.show'))
+            ->assertOk()
+            ->assertSee('Matikan 2FA');
+
+        // Mematikan dengan kata sandi yang valid
+        $this->delete(route('two-factor.disable'), ['password' => 'rahasia12345'])
+            ->assertRedirect();
+
+        $this->assertFalse($admin->refresh()->duaFaktorAktif());
+    }
+
+    /**
+     * Bila konfigurasi wajib 2FA diaktifkan, super admin dilarang mematikan 2FA.
+     */
+    public function test_admin_tidak_bisa_mematikan_dua_faktor_bila_konfigurasi_aktif(): void
+    {
+        config(['auth.two_factor_mandatory_for_admin' => true]);
+
         $admin = $this->pengguna(admin: true);
 
         $admin->forceFill([

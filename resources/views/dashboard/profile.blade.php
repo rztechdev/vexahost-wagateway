@@ -297,8 +297,19 @@
         </x-section>
 
         {{-- ===================== Dua faktor ===================== --}}
-        <x-section title="Autentikasi dua faktor"
-                   sub="Lapisan kedua di luar kata sandi, dari aplikasi authenticator di ponsel Anda">
+        <x-section judul="Autentikasi dua faktor"
+                   sub="Lapisan keamanan tambahan di luar kata sandi menggunakan aplikasi authenticator di ponsel Anda.">
+            <x-slot:aksi>
+                @if ($user->duaFaktorAktif())
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Aktif
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                        <span class="h-2 w-2 rounded-full bg-muted-foreground/50"></span> Belum Aktif
+                    </span>
+                @endif
+            </x-slot:aksi>
 
             {{-- Kode pemulihan hanya ditampilkan LEWAT FLASH, sekali, tepat
                  setelah 2FA dinyalakan. Kalau ia bisa dibuka lagi kapan saja,
@@ -390,96 +401,136 @@
             @endif
 
             @if ($user->duaFaktorAktif())
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-sm text-emerald-700 dark:text-emerald-400">
-                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Aktif
-                    </span>
-                    <span class="text-sm text-muted-foreground">
-                        Menyala sejak {{ $user->two_factor_confirmed_at->translatedFormat('j F Y') }} ·
-                        {{ count($user->two_factor_recovery_codes ?? []) }} kode pemulihan tersisa
-                    </span>
-                </div>
+                <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs max-w-3xl space-y-5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Aktif
+                        </span>
+                        <span class="text-sm text-muted-foreground">
+                            Menyala sejak {{ $user->two_factor_confirmed_at->translatedFormat('j F Y') }} ·
+                            {{ count($user->two_factor_recovery_codes ?? []) }} kode pemulihan tersisa
+                        </span>
+                    </div>
 
-                {{-- Tombol Tindakan Kode Pemulihan --}}
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <a href="{{ route('two-factor.recovery-codes.csv') }}"
-                       download
-                       class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-2xs cursor-pointer"
-                       title="Unduh seluruh sisa kode pemulihan dalam format spreadsheet CSV">
-                        <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-600 dark:text-emerald-400"></i>
-                        <span>Unduh CSV Kode Pemulihan</span>
-                    </a>
+                    {{-- Tombol Tindakan Kode Pemulihan --}}
+                    <div class="flex flex-wrap items-center gap-2">
+                        <a href="{{ route('two-factor.recovery-codes.csv') }}"
+                           download
+                           class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition shadow-2xs cursor-pointer"
+                           title="Unduh seluruh sisa kode pemulihan dalam format spreadsheet CSV">
+                            <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-600 dark:text-emerald-400"></i>
+                            <span>Unduh CSV Kode Pemulihan</span>
+                        </a>
 
-                    @unless (session('kodePemulihan'))
+                        @unless (session('kodePemulihan'))
+                            <details class="inline-block">
+                                <summary class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shadow-2xs cursor-pointer list-none">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Tampilkan Ulang di Layar</span>
+                                </summary>
+                                <form method="POST" action="{{ route('two-factor.recovery-codes.show') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-border bg-muted/30">
+                                    @csrf
+                                    <input type="password" name="password" required placeholder="Kata sandi akun Anda"
+                                           class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-primary focus:ring-primary min-w-[200px]">
+                                    <button type="submit" class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition">
+                                        Buka Kode
+                                    </button>
+                                </form>
+                            </details>
+                        @endunless
+
                         <details class="inline-block">
-                            <summary class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shadow-2xs cursor-pointer list-none">
-                                <i class="bi bi-eye"></i>
-                                <span>Tampilkan Ulang di Layar</span>
+                            <summary class="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition shadow-2xs cursor-pointer list-none"
+                                     title="Terbitkan 8 kode baru jika kode lama sudah habis atau hilang">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>Buat Ulang 8 Kode Baru</span>
                             </summary>
-                            <form method="POST" action="{{ route('two-factor.recovery-codes.show') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-border bg-muted/30">
+                            <form method="POST" action="{{ route('two-factor.recovery-codes.regenerate') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5"
+                                  data-konfirmasi="Seluruh kode pemulihan lama akan hangus dan digantikan dengan 8 kode baru. Lanjutkan?">
                                 @csrf
                                 <input type="password" name="password" required placeholder="Kata sandi akun Anda"
-                                       class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-primary focus:ring-primary min-w-[200px]">
-                                <button type="submit" class="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition">
-                                    Buka Kode
+                                       class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-amber-500 focus:ring-amber-500 min-w-[200px]">
+                                <button type="submit" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition">
+                                    Terbitkan 8 Kode Baru
                                 </button>
                             </form>
                         </details>
-                    @endunless
+                    </div>
 
-                    <details class="inline-block">
-                        <summary class="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition shadow-2xs cursor-pointer list-none"
-                                 title="Terbitkan 8 kode baru jika kode lama sudah habis atau hilang">
-                            <i class="bi bi-arrow-repeat"></i>
-                            <span>Buat Ulang 8 Kode Baru</span>
-                        </summary>
-                        <form method="POST" action="{{ route('two-factor.recovery-codes.regenerate') }}" class="mt-3 flex flex-wrap items-center gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/5"
-                              data-konfirmasi="Seluruh kode pemulihan lama akan hangus dan digantikan dengan 8 kode baru. Lanjutkan?">
-                            @csrf
-                            <input type="password" name="password" required placeholder="Kata sandi akun Anda"
-                                   class="rounded-lg border-input bg-background text-xs px-3 py-1.5 focus:border-amber-500 focus:ring-amber-500 min-w-[200px]">
-                            <button type="submit" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition">
-                                Terbitkan 8 Kode Baru
-                            </button>
-                        </form>
-                    </details>
-                </div>
-
-                @if ($user->wajibDuaFaktor())
-                    <p class="mt-4 text-sm text-muted-foreground">
-                        Akun administrator wajib memakainya, jadi 2FA tidak dapat dimatikan dari sini.
-                    </p>
-                @else
-                    <form method="POST" action="{{ route('two-factor.disable') }}" class="mt-5"
-                          data-konfirmasi="Setelah dimatikan, akun Anda hanya dilindungi kata sandi. Lanjutkan?">
-                        @csrf
-                        @method('DELETE')
-                        <label class="mb-1 block text-sm font-medium" for="pw_2fa">
-                            Masukkan kata sandi untuk mematikan
-                        </label>
-                        <div class="flex flex-wrap gap-2">
-                            <input id="pw_2fa" type="password" name="password" required autocomplete="current-password"
-                                   class="min-w-56 flex-1 rounded-lg border-input bg-background text-sm focus:border-primary focus:ring-primary">
-                            <button class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted">
-                                Matikan 2FA
-                            </button>
+                    @if ($user->wajibDuaFaktor())
+                        <p class="pt-2 text-xs sm:text-sm text-muted-foreground border-t border-border/60">
+                            Akun administrator wajib memakainya, jadi 2FA tidak dapat dimatikan dari sini.
+                        </p>
+                    @else
+                        <div class="pt-3 border-t border-border/60">
+                            <form method="POST" action="{{ route('two-factor.disable') }}"
+                                  data-konfirmasi="Setelah dimatikan, akun Anda hanya dilindungi kata sandi. Lanjutkan?">
+                                @csrf
+                                @method('DELETE')
+                                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-foreground" for="pw_2fa">
+                                    Matikan 2FA (Masukkan Kata Sandi)
+                                </label>
+                                <div class="flex flex-wrap gap-2 max-w-md">
+                                    <input id="pw_2fa" type="password" name="password" required autocomplete="current-password"
+                                           placeholder="Kata sandi akun Anda"
+                                           class="min-w-56 flex-1 rounded-xl border-input bg-background text-sm focus:border-primary focus:ring-primary px-3.5 py-2">
+                                    <button class="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold transition hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30">
+                                        Matikan 2FA
+                                    </button>
+                                </div>
+                                @error('password')
+                                    <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
+                                @enderror
+                            </form>
                         </div>
-                        @error('password')
-                            <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
-                        @enderror
-                    </form>
-                @endif
+                    @endif
+                </div>
             @else
-                <p class="text-sm text-muted-foreground">
-                    Belum aktif. Dengan 2FA, kata sandi yang bocor saja tidak cukup untuk masuk ke akun Anda —
-                    penyerang juga harus memegang ponsel Anda. Kodenya dibuat di ponsel itu sendiri, jadi tetap
-                    bekerja tanpa sinyal maupun internet.
-                </p>
+                <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs max-w-3xl space-y-5">
+                    <div class="flex flex-col sm:flex-row items-start gap-4">
+                        <div class="h-10 w-10 shrink-0 rounded-xl bg-primary/10 grid place-items-center text-primary">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div class="space-y-1">
+                            <h3 class="text-sm font-semibold text-foreground">Lindungi akun dengan verifikasi dua langkah</h3>
+                            <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Dengan 2FA, kata sandi yang bocor saja tidak cukup untuk masuk ke akun Anda — penyerang juga harus memegang ponsel Anda. Setiap kali masuk, Anda akan diminta memasukkan 6 digit kode dari aplikasi authenticator.
+                            </p>
+                        </div>
+                    </div>
 
-                <a href="{{ route('two-factor.setup') }}"
-                   class="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                    Nyalakan 2FA
-                </a>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div class="rounded-xl border border-border/60 bg-muted/30 p-3.5 space-y-1">
+                            <p class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                <i class="bi bi-phone text-primary"></i> Kompatibel Luas
+                            </p>
+                            <p class="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                                Mendukung Google Authenticator, Microsoft Authenticator, 1Password, Authy, dan aplikasi TOTP lainnya.
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-border/60 bg-muted/30 p-3.5 space-y-1">
+                            <p class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                <i class="bi bi-wifi-off text-primary"></i> Berjalan Tanpa Internet
+                            </p>
+                            <p class="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                                Kode dibuat langsung di ponsel Anda secara matematis, sehingga tetap bekerja tanpa sinyal seluler atau internet.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <a href="{{ route('two-factor.setup') }}"
+                           class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-xs transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <i class="bi bi-shield-plus"></i>
+                            <span>Nyalakan 2FA</span>
+                        </a>
+                        <span class="text-xs text-muted-foreground">
+                            Hanya butuh 1 menit: scan kode QR lalu masukkan 6 digit kode pertama.
+                        </span>
+                    </div>
+                </div>
             @endif
         </x-section>
 

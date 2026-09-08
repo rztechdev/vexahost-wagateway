@@ -275,6 +275,12 @@ kata sandinya.
 ADMIN_EMAIL=flustrafinances@gmail.com
 ADMIN_NAME="Flustra Finance"
 ADMIN_PASSWORD=            # WAJIB diisi di staging dan produksi
+
+# Autentikasi dua faktor (2FA) untuk super admin.
+# Bawaannya false (2FA opsional untuk semua akun). Jika diatur true, super admin
+# yang belum memasang 2FA akan dipaksa memasangnya sebelum dapat mengakses
+# dashboard maupun panel admin.
+AUTH_2FA_MANDATORY_FOR_ADMIN=false
 ```
 
 `ADMIN_PASSWORD` yang dikosongkan jatuh ke nilai bawaan `12345678`. Nilai itu

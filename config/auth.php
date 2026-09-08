@@ -114,4 +114,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Autentikasi Dua Faktor (2FA) Wajib Super Admin
+    |--------------------------------------------------------------------------
+    |
+    | Menentukan apakah super admin diwajibkan memasang autentikasi dua faktor (TOTP).
+    | Bawaannya false: 2FA opsional untuk semua peran termasuk super admin.
+    | Jika diatur true, super admin yang belum memasang 2FA akan dipaksa ke layar
+    | pemasangan 2FA sebelum bisa mengakses dashboard maupun panel admin.
+    |
+    */
+
+    'two_factor_mandatory_for_admin' => (bool) env('AUTH_2FA_MANDATORY_FOR_ADMIN', false),
+
 ];
+
