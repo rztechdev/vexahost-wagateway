@@ -9,6 +9,7 @@ use App\Models\Workspace;
 use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\Notifier;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Support\EngineError;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -100,10 +101,10 @@ class MessageDispatcher
         foreach (array_unique($recipients) as $to) {
             try {
                 $messages[] = $this->queue($session, $to, $attributes + ['batch_id' => $batchId]);
-            } catch (RuntimeException $e) {
+            } catch (\Throwable $e) {
                 // Satu nomor rusak tidak boleh menggagalkan seluruh broadcast;
                 // pemanggil tetap diberi tahu nomor mana yang ditolak.
-                $rejected[] = ['to' => $to, 'reason' => $e->getMessage()];
+                $rejected[] = ['to' => $to, 'reason' => EngineError::pesan($e)];
             }
         }
 

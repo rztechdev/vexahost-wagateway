@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Message;
 use App\Models\WaSession;
 use App\Services\MessageDispatcher;
+use App\Support\EngineError;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -34,8 +35,8 @@ class MessageController extends ApiController
                 'body' => $data['message'],
                 'api_key_id' => $this->apiKey($request)->id,
             ]);
-        } catch (\RuntimeException $e) {
-            return $this->fail($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->fail(EngineError::pesan($e), 422);
         }
 
         return $this->ok($this->present($message), 202);
@@ -69,10 +70,10 @@ class MessageController extends ApiController
                 'media_filename' => $file->getClientOriginalName(),
                 'api_key_id' => $this->apiKey($request)->id,
             ]);
-        } catch (\RuntimeException $e) {
+        } catch (\Throwable $e) {
             Storage::disk('media')->delete($path);
 
-            return $this->fail($e->getMessage(), 422);
+            return $this->fail(EngineError::pesan($e), 422);
         }
 
         return $this->ok($this->present($message), 202);
@@ -137,8 +138,8 @@ class MessageController extends ApiController
                 'body' => $template->render($data['variables'] ?? []),
                 'api_key_id' => $this->apiKey($request)->id,
             ]);
-        } catch (\RuntimeException $e) {
-            return $this->fail($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->fail(EngineError::pesan($e), 422);
         }
 
         return $this->ok($this->present($message), 202);

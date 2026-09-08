@@ -8,6 +8,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -24,8 +25,29 @@ class WwebjsProvider implements WhatsAppProvider
         if ($session->backups()->exists()) {
             $backup = $session->latestBackup();
             if ($backup && Storage::disk($backup->disk)->exists($backup->path)) {
-                $backupData = Storage::disk($backup->disk)->get($backup->path);
-                $hasBackup = true;
+                $path = (string) $backup->path;
+                if (! str_ends_with($path, 'session.json')) {
+                    Log::warning('Backup sesi diabaikan: format lama (.zip/non-JSON) tidak kompatibel dengan Baileys', [
+                        'session_id' => $session->id,
+                        'path' => $path,
+                    ]);
+                } else {
+                    $raw = Storage::disk($backup->disk)->get($path);
+                    if (! mb_check_encoding($raw, 'UTF-8')) {
+                        Log::warning('Backup sesi diabaikan: berkas bukan UTF-8 yang sah', [
+                            'session_id' => $session->id,
+                            'path' => $path,
+                        ]);
+                    } elseif (! json_validate($raw)) {
+                        Log::warning('Backup sesi diabaikan: isi berkas bukan JSON yang valid', [
+                            'session_id' => $session->id,
+                            'path' => $path,
+                        ]);
+                    } else {
+                        $backupData = $raw;
+                        $hasBackup = true;
+                    }
+                }
             }
         }
 

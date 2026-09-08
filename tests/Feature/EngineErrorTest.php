@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendMessageJob;
+use App\Models\ApiKey;
+use App\Models\Message;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Support\EngineError;
@@ -9,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -219,5 +223,154 @@ class EngineErrorTest extends TestCase
 
         // Nomornya tidak ikut dilepas — Hentikan bukan Putus tautan.
         $this->assertSame('6281111111111', $session->fresh()->phone_number);
+    }
+
+    public function test_galat_json_encode_menghasilkan_kalimat_sopan_dengan_kode_rujukan(): void
+    {
+        $rawError = 'json_encode error: Malformed UTF-8 characters, possibly incorrectly encoded';
+        $exception = new RuntimeException($rawError);
+
+        $pesan = EngineError::pesan($exception);
+
+        // Teks teknis programmer tidak boleh lolos
+        $this->assertStringNotContainsString('json_encode', $pesan);
+        $this->assertStringNotContainsString('Malformed UTF-8', $pesan);
+
+        // Menjelaskan apa yang terjadi pada nomor
+        $this->assertStringContainsString('Nomor yang sudah tertaut tidak terpengaruh', $pesan);
+        // Menjelaskan apa yang bisa dilakukan pengguna
+        $this->assertStringContainsString('Coba lagi beberapa saat lagi', $pesan);
+        // Menjelaskan kapan menghubungi bantuan
+        $this->assertStringContainsString('Kalau berulang, hubungi bantuan', $pesan);
+
+        // Kode rujukan ringkas ada di dalam pesan
+        $kode = EngineError::kodeRujukan($exception);
+        $this->assertMatchesRegularExpression('/^REF-[A-Z0-9]{6}$/', $kode);
+        $this->assertStringContainsString("(kode: {$kode})", $pesan);
+
+        // Pemanggilan berulang pada instance exception yang sama menghasilkan kode yang konsisten
+        $this->assertSame($pesan, EngineError::pesan($exception));
+    }
+
+    public function test_galat_teknis_tak_terduga_dicatat_ke_log_dengan_kode_rujukan(): void
+    {
+        Log::spy();
+
+        $exception = new RuntimeException('Fatal error in vendor/guzzlehttp/src/Client.php:123');
+        $pesan = EngineError::pesan($exception);
+        $kode = EngineError::kodeRujukan($exception);
+
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->withArgs(function (string $message, array $context) use ($kode) {
+                return str_contains($message, $kode)
+                    && ($context['rujukan'] ?? null) === $kode
+                    && str_contains($context['message'] ?? '', 'Fatal error');
+            });
+
+        $this->assertStringNotContainsString('Fatal error', $pesan);
+        $this->assertStringNotContainsString('vendor/guzzlehttp', $pesan);
+        $this->assertStringContainsString($kode, $pesan);
+    }
+
+    public function test_tombol_hubungkan_tidak_membocorkan_json_encode_error_ke_pengguna_maupun_database(): void
+    {
+        $session = $this->workspace->sessions()->create([
+            'name' => 'CS',
+            'status' => 'pending',
+        ]);
+
+        Http::fake(fn () => throw new RuntimeException(
+            'json_encode error: Malformed UTF-8 characters, possibly incorrectly encoded'
+        ));
+
+        $response = $this->actingAs($this->owner)
+            ->post(route('sessions.connect', $session->id));
+
+        $galat = $response->baseResponse->getSession()->get('errors')->first('session');
+
+        // Di session flash / modal: bersih dari galat mentah
+        $this->assertStringNotContainsString('json_encode', $galat);
+        $this->assertStringNotContainsString('Malformed UTF-8', $galat);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', $galat);
+
+        // Di database last_error: juga bersih dan memuat kode rujukan yang sama
+        $lastError = (string) $session->fresh()->last_error;
+        $this->assertStringNotContainsString('json_encode', $lastError);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', $lastError);
+        $this->assertSame($galat, $lastError);
+    }
+
+    public function test_jalur_api_connect_tidak_membocorkan_galat_teknis(): void
+    {
+        [, $key] = ApiKey::issue($this->workspace, 'kunci api');
+
+        $session = $this->workspace->sessions()->create([
+            'name' => 'CS API',
+            'status' => 'pending',
+        ]);
+
+        Http::fake(fn () => throw new RuntimeException(
+            'Call to undefined method GuzzleHttp\\Client::send()'
+        ));
+
+        $response = $this->withHeader('X-Api-Key', $key)
+            ->postJson("/api/v1/sessions/{$session->id}/connect");
+
+        $response->assertStatus(502);
+        $errorMessage = $response->json('error.message');
+
+        $this->assertStringNotContainsString('Call to undefined method', $errorMessage);
+        $this->assertStringNotContainsString('GuzzleHttp', $errorMessage);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', $errorMessage);
+    }
+
+    public function test_jalur_kirim_pesan_tidak_membocorkan_galat_teknis_ke_database_maupun_ui(): void
+    {
+        [, $key] = ApiKey::issue($this->workspace, 'kunci api');
+
+        $session = $this->workspace->sessions()->create([
+            'name' => 'CS Pesan',
+            'status' => 'connected',
+            'phone_number' => '6281111111111',
+        ]);
+
+        Http::fake(fn () => throw new RuntimeException(
+            'json_encode error: Malformed UTF-8 characters, possibly incorrectly encoded'
+        ));
+
+        $response = $this->withHeader('X-Api-Key', $key)
+            ->postJson('/api/v1/messages/text', [
+                'session_id' => $session->id,
+                'to' => '081234567890',
+                'message' => 'Uji pesan',
+            ]);
+
+        // Pada QUEUE_CONNECTION=sync, eksekusi job langsung berjalan saat antre.
+        // Baik pada respons API maupun baris pesan di database, galat teknis tidak boleh bocor.
+        $errorMessage = $response->json('error.message');
+        $this->assertStringNotContainsString('json_encode', (string) $errorMessage);
+        $this->assertStringNotContainsString('Malformed UTF-8', (string) $errorMessage);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', (string) $errorMessage);
+
+        $message = Message::first();
+        $this->assertNotNull($message);
+        $this->assertStringNotContainsString('json_encode', (string) $message->error);
+        $this->assertStringNotContainsString('Malformed UTF-8', (string) $message->error);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', (string) $message->error);
+    }
+
+    public function test_jalur_store_sesi_tidak_membocorkan_galat_tak_terduga(): void
+    {
+        $mock = $this->mock(\App\Services\SessionService::class);
+        $mock->shouldReceive('create')->andThrow(new RuntimeException('SQLSTATE[HY000]: General error in file.php:99'));
+
+        $response = $this->actingAs($this->owner)
+            ->post(route('sessions.store'), ['name' => 'Sesi Uji']);
+
+        $galat = $response->baseResponse->getSession()->get('errors')->first('name');
+        $this->assertStringNotContainsString('SQLSTATE', (string) $galat);
+        $this->assertStringNotContainsString('file.php', (string) $galat);
+        $this->assertMatchesRegularExpression('/kode: REF-[A-Z0-9]{6}/', (string) $galat);
     }
 }

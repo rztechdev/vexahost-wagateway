@@ -34,8 +34,8 @@ class SessionController extends ApiController
 
         try {
             $session = $this->sessions->create($workspace, $data['name']);
-        } catch (\RuntimeException $e) {
-            return $this->fail($e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->fail(EngineError::pesan($e), 422);
         }
 
         return $this->ok($this->present($session), 201);

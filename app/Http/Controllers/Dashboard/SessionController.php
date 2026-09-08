@@ -35,8 +35,8 @@ class SessionController extends Controller
 
         try {
             $session = $this->sessions->create($workspace, $data['name']);
-        } catch (\RuntimeException $e) {
-            return back()->withErrors(['name' => $e->getMessage()])->withInput();
+        } catch (\Throwable $e) {
+            return back()->withErrors(['name' => EngineError::pesan($e)])->withInput();
         }
 
         AuditLog::record('session.created', $session, ['name' => $session->name]);

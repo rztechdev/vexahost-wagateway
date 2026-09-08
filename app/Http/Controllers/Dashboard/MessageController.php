@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureWorkspaceSelected;
 use App\Services\MessageDispatcher;
+use App\Support\EngineError;
 use App\Support\TemplateBawaan;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -78,8 +79,8 @@ class MessageController extends Controller
                     'type' => 'text',
                     'body' => $data['message'],
                 ]);
-            } catch (\RuntimeException $e) {
-                return back()->withErrors(['to' => $e->getMessage()])->withInput();
+            } catch (\Throwable $e) {
+                return back()->withErrors(['to' => EngineError::pesan($e)])->withInput();
             }
 
             return redirect()->route('messages.index')

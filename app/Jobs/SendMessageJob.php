@@ -8,6 +8,7 @@ use App\Services\MessageDispatcher;
 use App\Services\Providers\ProviderException;
 use App\Services\Providers\ProviderManager;
 use App\Services\WebhookDispatcher;
+use App\Support\EngineError;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -102,13 +103,15 @@ class SendMessageJob implements ShouldQueue
         try {
             $result = $providers->for($session)->send($session, $message);
         } catch (ProviderException $e) {
+            $pesanError = EngineError::pesan($e);
+
             if (! $e->retryable || $this->attempts() >= $this->tries) {
-                $this->fail($message, $e->getMessage(), $dispatcher, $webhooks);
+                $this->fail($message, $pesanError, $dispatcher, $webhooks);
 
                 return;
             }
 
-            $message->update(['status' => 'queued', 'error' => $e->getMessage()]);
+            $message->update(['status' => 'queued', 'error' => $pesanError]);
 
             $this->release($this->backoff()[min($this->attempts() - 1, 2)]);
 
@@ -120,13 +123,15 @@ class SendMessageJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
+            $pesanError = EngineError::pesan($e);
+
             if ($this->attempts() >= $this->tries) {
-                $this->fail($message, $e->getMessage(), $dispatcher, $webhooks);
+                $this->fail($message, $pesanError, $dispatcher, $webhooks);
 
                 return;
             }
 
-            $message->update(['status' => 'queued', 'error' => $e->getMessage()]);
+            $message->update(['status' => 'queued', 'error' => $pesanError]);
 
             throw $e;
         }

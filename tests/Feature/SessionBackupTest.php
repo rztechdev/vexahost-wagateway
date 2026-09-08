@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\SessionBackup;
 use App\Models\WaSession;
 use App\Models\Workspace;
+use App\Services\Providers\WwebjsProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -236,5 +238,170 @@ class SessionBackupTest extends TestCase
         $response->assertOk();
         Storage::disk('session-backups')->assertMissing("{$this->session->id}/session.json");
         $this->assertNull(SessionBackup::where('wa_session_id', $this->session->id)->first());
+    }
+
+    public function test_wwebjs_provider_mengabaikan_backup_lama_berformat_zip_dan_mulai_bersih(): void
+    {
+        // Simulasi berkas biner zip era Chromium
+        $zipBinary = "PK\x03\x04".random_bytes(64);
+        Storage::disk('session-backups')->put("{$this->session->id}/session.zip", $zipBinary);
+
+        SessionBackup::create([
+            'wa_session_id' => $this->session->id,
+            'disk' => 'session-backups',
+            'path' => "{$this->session->id}/session.zip",
+            'size' => strlen($zipBinary),
+            'checksum' => hash('sha256', $zipBinary),
+            'backed_up_at' => now(),
+        ]);
+
+        Http::fake([
+            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) {
+                $data = $request->data();
+                $this->assertFalse($data['has_backup']);
+                $this->assertArrayNotHasKey('backup_data', $data);
+
+                return Http::response(['status' => 'connecting'], 200);
+            },
+        ]);
+
+        app(WwebjsProvider::class)->startSession($this->session);
+
+        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
+            $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
+        );
+    }
+
+    public function test_wwebjs_provider_mengabaikan_backup_yang_bukan_json_atau_bukan_utf8(): void
+    {
+        // Berkas path session.json tetapi isinya bukan JSON valid
+        $invalidJson = 'bukan-json-valid-{' . random_bytes(10);
+        Storage::disk('session-backups')->put("{$this->session->id}/session.json", $invalidJson);
+
+        SessionBackup::create([
+            'wa_session_id' => $this->session->id,
+            'disk' => 'session-backups',
+            'path' => "{$this->session->id}/session.json",
+            'size' => strlen($invalidJson),
+            'checksum' => hash('sha256', $invalidJson),
+            'backed_up_at' => now(),
+        ]);
+
+        Http::fake([
+            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) {
+                $data = $request->data();
+                $this->assertFalse($data['has_backup']);
+                $this->assertArrayNotHasKey('backup_data', $data);
+
+                return Http::response(['status' => 'connecting'], 200);
+            },
+        ]);
+
+        app(WwebjsProvider::class)->startSession($this->session);
+
+        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
+            $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
+        );
+    }
+
+    public function test_wwebjs_provider_menyertakan_backup_yang_formatnya_valid(): void
+    {
+        $validJson = json_encode(['version' => 1, 'files' => ['creds.json' => '{}']]);
+        Storage::disk('session-backups')->put("{$this->session->id}/session.json", $validJson);
+
+        SessionBackup::create([
+            'wa_session_id' => $this->session->id,
+            'disk' => 'session-backups',
+            'path' => "{$this->session->id}/session.json",
+            'size' => strlen($validJson),
+            'checksum' => hash('sha256', $validJson),
+            'backed_up_at' => now(),
+        ]);
+
+        Http::fake([
+            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) use ($validJson) {
+                $data = $request->data();
+                $this->assertTrue($data['has_backup']);
+                $this->assertSame($validJson, $data['backup_data']);
+
+                return Http::response(['status' => 'connecting'], 200);
+            },
+        ]);
+
+        app(WwebjsProvider::class)->startSession($this->session);
+
+        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
+            $req->data()['has_backup'] === true && $req->data()['backup_data'] === $validJson
+        );
+    }
+
+    public function test_perintah_bersihkan_backup_lama_mode_kering_tidak_menghapus_apa_pun(): void
+    {
+        // Backup lama .zip
+        Storage::disk('session-backups')->put("{$this->session->id}/session.zip", 'dummy-zip');
+        $oldBackup = SessionBackup::create([
+            'wa_session_id' => $this->session->id,
+            'disk' => 'session-backups',
+            'path' => "{$this->session->id}/session.zip",
+            'size' => 9,
+            'checksum' => hash('sha256', 'dummy-zip'),
+            'backed_up_at' => now()->subDays(10),
+        ]);
+
+        // Backup baru .json
+        $newSession = $this->workspace->sessions()->create(['name' => 'CS2', 'status' => 'connected']);
+        Storage::disk('session-backups')->put("{$newSession->id}/session.json", '{}');
+        $validBackup = SessionBackup::create([
+            'wa_session_id' => $newSession->id,
+            'disk' => 'session-backups',
+            'path' => "{$newSession->id}/session.json",
+            'size' => 2,
+            'checksum' => hash('sha256', '{}'),
+            'backed_up_at' => now(),
+        ]);
+
+        $this->artisan('flustra:bersihkan-backup-lama', ['--dry-run' => true])
+            ->expectsOutputToContain('Mode kering')
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('session_backups', ['id' => $oldBackup->id]);
+        $this->assertDatabaseHas('session_backups', ['id' => $validBackup->id]);
+        Storage::disk('session-backups')->assertExists("{$this->session->id}/session.zip");
+        Storage::disk('session-backups')->assertExists("{$newSession->id}/session.json");
+    }
+
+    public function test_perintah_bersihkan_backup_lama_menghapus_zip_dan_mempertahankan_json(): void
+    {
+        // Backup lama .zip
+        Storage::disk('session-backups')->put("{$this->session->id}/session.zip", 'dummy-zip');
+        $oldBackup = SessionBackup::create([
+            'wa_session_id' => $this->session->id,
+            'disk' => 'session-backups',
+            'path' => "{$this->session->id}/session.zip",
+            'size' => 9,
+            'checksum' => hash('sha256', 'dummy-zip'),
+            'backed_up_at' => now()->subDays(10),
+        ]);
+
+        // Backup baru .json
+        $newSession = $this->workspace->sessions()->create(['name' => 'CS2', 'status' => 'connected']);
+        Storage::disk('session-backups')->put("{$newSession->id}/session.json", '{}');
+        $validBackup = SessionBackup::create([
+            'wa_session_id' => $newSession->id,
+            'disk' => 'session-backups',
+            'path' => "{$newSession->id}/session.json",
+            'size' => 2,
+            'checksum' => hash('sha256', '{}'),
+            'backed_up_at' => now(),
+        ]);
+
+        $this->artisan('flustra:bersihkan-backup-lama')
+            ->expectsOutputToContain('berhasil dihapus')
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('session_backups', ['id' => $oldBackup->id]);
+        $this->assertDatabaseHas('session_backups', ['id' => $validBackup->id]);
+        Storage::disk('session-backups')->assertMissing("{$this->session->id}/session.zip");
+        Storage::disk('session-backups')->assertExists("{$newSession->id}/session.json");
     }
 }
