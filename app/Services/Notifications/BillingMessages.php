@@ -221,4 +221,20 @@ Pengiriman bisa dilanjutkan sekarang.';
             .($invoice->unique_code > 0 ? 'Kode unik: '.str_pad((string) $invoice->unique_code, 3, '0', STR_PAD_LEFT)."\n" : '')
             ."\nPeriksa di panel admin → Tagihan.";
     }
+
+    /**
+     * Ke tim kami sendiri: pelanggan mengonfirmasi pembayaran (alur tanpa upload bukti).
+     */
+    public static function adminPaymentWaiting(Invoice $invoice): string
+    {
+        return "*🔔 Pembayaran baru menunggu verifikasi*\n\n"
+            ."Pelanggan telah mengonfirmasi pembayaran untuk tagihan:\n"
+            ."*{$invoice->number}* · ".self::rupiah($invoice->total)."\n"
+            ."Workspace: {$invoice->workspace?->name}\n"
+            ."Paket: {$invoice->plan()->name()} · {$invoice->periodLabel()}\n"
+            .($invoice->unique_code > 0 ? 'Kode unik: '.str_pad((string) $invoice->unique_code, 3, '0', STR_PAD_LEFT)."\n" : '')
+            .'Metode: '.strtoupper(str_replace('_', ' ', $invoice->channel))."\n\n"
+            ."Segera periksa mutasi DANA / rekening bank dan tandai lunas di panel admin:\n"
+            .route('admin.invoices');
+    }
 }

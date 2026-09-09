@@ -27,6 +27,7 @@ class Invoice extends Model
         'due_at',
         'paid_at',
         'proof_path',
+        'payment_confirmed_at',
         'paid_by_user_id',
         'note',
     ];
@@ -40,6 +41,7 @@ class Invoice extends Model
             'total' => 'integer',
             'due_at' => 'datetime',
             'paid_at' => 'datetime',
+            'payment_confirmed_at' => 'datetime',
         ];
     }
 
@@ -96,6 +98,14 @@ class Invoice extends Model
     public function isPaid(): bool
     {
         return $this->status === 'paid';
+    }
+
+    /**
+     * Pelanggan sudah konfirmasi pembayaran atau mengunggah bukti, menunggu ditinjau admin.
+     */
+    public function isAwaitingVerification(): bool
+    {
+        return $this->isPending() && (filled($this->payment_confirmed_at) || filled($this->proof_path));
     }
 
     /**

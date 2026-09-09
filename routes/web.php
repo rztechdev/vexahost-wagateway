@@ -251,6 +251,7 @@ Route::middleware('auth')->group(function (): void {
         Route::post('billing/referal/tinjau', [BillingController::class, 'reviewReferral'])->name('billing.referral.review');
         Route::get('billing/invoices/{id}', [BillingController::class, 'invoice'])->name('billing.invoice');
         Route::post('billing/invoices/{id}/penagihan', [BillingController::class, 'saveBillingDetails'])->name('billing.details');
+        Route::post('billing/invoices/{id}/konfirmasi', [BillingController::class, 'confirmPayment'])->name('billing.invoice.confirm');
         Route::post('billing/invoices/{id}/bukti', [BillingController::class, 'uploadProof'])->name('billing.proof.upload');
         Route::get('billing/invoices/{id}/bukti', [BillingController::class, 'proof'])->name('billing.proof');
         Route::get('billing/invoices/{id}/menunggu-verifikasi', [BillingController::class, 'verifying'])->name('billing.verifying');

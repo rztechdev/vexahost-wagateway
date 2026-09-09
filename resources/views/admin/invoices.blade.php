@@ -36,8 +36,9 @@
                 @forelse ($invoices as $invoice)
                     @php
                         $li = \App\Support\StatusBadge::invoice($invoice->status);
-                        $perluDiperiksa = $invoice->proof_path && ! $invoice->isPaid();
-                        $tertutup = $invoice->proof_path && in_array($invoice->status, ['canceled', 'expired'], true);
+                        $dikonfirmasi = $invoice->payment_confirmed_at && ! $invoice->isPaid();
+                        $perluDiperiksa = ($invoice->proof_path || $invoice->payment_confirmed_at) && ! $invoice->isPaid();
+                        $tertutup = ($invoice->proof_path || $invoice->payment_confirmed_at) && in_array($invoice->status, ['canceled', 'expired'], true);
                     @endphp
 
                     <tr @class(['transition hover:bg-muted/40', 'bg-primary/5' => $perluDiperiksa])>
@@ -66,7 +67,9 @@
                         <td class="px-5 py-3">
                             <div class="flex flex-wrap gap-1.5">
                                 <x-badge :warna="$li['warna']" titik>{{ $li['label'] }}</x-badge>
-                                @if ($perluDiperiksa)
+                                @if ($dikonfirmasi)
+                                    <x-badge warna="solid">dikonfirmasi ({{ $invoice->payment_confirmed_at->diffForHumans() }})</x-badge>
+                                @elseif ($invoice->proof_path && ! $invoice->isPaid())
                                     <x-badge warna="solid">bukti masuk</x-badge>
                                 @endif
                             </div>
@@ -107,7 +110,7 @@
             </h3>
 
             @foreach ($antre as $invoice)
-                <x-card @class(['border-primary/50' => $invoice->proof_path])>
+                <x-card @class(['border-primary/50' => $invoice->proof_path || $invoice->payment_confirmed_at])>
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="min-w-0">
                             <p class="font-medium">
@@ -119,14 +122,22 @@
                                 @if ($invoice->unique_code > 0)
                                     · kode unik {{ str_pad($invoice->unique_code, 3, '0', STR_PAD_LEFT) }}
                                 @endif
+                                @if ($invoice->channel)
+                                    · via {{ strtoupper(str_replace('_', ' ', $invoice->channel)) }}
+                                @endif
                             </p>
                         </div>
 
-                        @if ($invoice->proof_path)
+                        @if ($invoice->payment_confirmed_at)
+                            <div class="text-right">
+                                <x-badge warna="solid">Pelanggan Mengonfirmasi</x-badge>
+                                <p class="text-[11px] text-muted-foreground mt-0.5">{{ $invoice->payment_confirmed_at->translatedFormat('j M, H:i') }} ({{ $invoice->payment_confirmed_at->diffForHumans() }})</p>
+                            </div>
+                        @elseif ($invoice->proof_path)
                             <a href="{{ route('admin.invoices.proof', $invoice->id) }}" target="_blank"
                                class="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-muted">Lihat bukti</a>
                         @else
-                            <x-badge warna="netral">belum ada bukti</x-badge>
+                            <x-badge warna="netral">menunggu bayar</x-badge>
                         @endif
                     </div>
 

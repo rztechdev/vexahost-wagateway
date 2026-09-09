@@ -295,6 +295,8 @@
 
         <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
+            @include('partials.alert-tagihan-pending')
+
             {{-- Spanduk langganan.
 
                  Ini satu-satunya pemberitahuan yang pasti sampai: aplikasi tidak

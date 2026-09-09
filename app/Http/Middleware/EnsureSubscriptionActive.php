@@ -33,13 +33,22 @@ class EnsureSubscriptionActive
         // yang memang tidak ditagih.
         if ($workspace->isExempt()) {
             view()->share('currentSubscription', null);
+            view()->share('pendingInvoice', null);
 
             return $next($request);
         }
 
         $subscription = $this->subscriptions->ensureFor($workspace);
+        $pendingInvoice = $workspace->invoices()
+            ->where('status', 'pending')
+            ->where(function ($q) {
+                $q->whereNull('due_at')->orWhere('due_at', '>', now());
+            })
+            ->latest()
+            ->first();
 
         view()->share('currentSubscription', $subscription);
+        view()->share('pendingInvoice', $pendingInvoice);
 
         if ($subscription->isUsable()) {
             return $next($request);

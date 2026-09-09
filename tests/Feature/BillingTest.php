@@ -438,6 +438,33 @@ class BillingTest extends TestCase
         $this->assertSame('canceled', $invoice->fresh()->status);
     }
 
+    public function test_konfirmasi_pembayaran_langsung_mengarahkan_ke_halaman_verifikasi(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        $this->actingAs($this->owner)
+            ->post(route('billing.invoice.confirm', $invoice->id), [
+                'metode_bayar' => 'qris',
+            ])
+            ->assertRedirect(route('billing.verifying', $invoice->id));
+
+        $fresh = $invoice->fresh();
+        $this->assertNotNull($fresh->payment_confirmed_at);
+        $this->assertSame('qris_manual', $fresh->channel);
+
+        // Halaman verifikasi bisa dibuka dan memuat informasi verifikasi & nomor WhatsApp admin
+        $this->actingAs($this->owner)
+            ->get(route('billing.verifying', $invoice->id))
+            ->assertOk()
+            ->assertSee('Memverifikasi Pembayaran')
+            ->assertSee('+62 823-1828-0376');
+
+        // Tagihan yang sudah dikonfirmasi tidak bisa dibatalkan sendiri
+        $this->actingAs($this->owner)
+            ->post(route('billing.invoice.cancel', $invoice->id))
+            ->assertSessionHasErrors('tagihan');
+    }
+
     public function test_status_tagihan_bisa_ditanyakan_halaman_verifikasi(): void
     {
         $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
@@ -734,5 +761,29 @@ class BillingTest extends TestCase
             ->assertSessionHasErrors('plan');
 
         $this->assertSame(0, Invoice::count());
+    }
+
+    public function test_dashboard_menampilkan_alert_tagihan_pending_dengan_tombol_wa(): void
+    {
+        $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
+
+        // Sebelum dikonfirmasi bayar: muncul alert transaksi pending
+        $this->actingAs($this->owner)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Transaksi Pending')
+            ->assertSee($invoice->number)
+            ->assertSee('Hubungi Admin WA')
+            ->assertSee('6282318280376');
+
+        // Setelah dikonfirmasi bayar: muncul alert sedang diverifikasi
+        $invoice->forceFill(['payment_confirmed_at' => now()])->save();
+
+        $this->actingAs($this->owner)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Verifikasi Pending')
+            ->assertSee('Transaksi Anda masih pending dalam proses verifikasi')
+            ->assertSee('Cek Status');
     }
 }

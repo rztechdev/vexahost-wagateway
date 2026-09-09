@@ -431,12 +431,61 @@ class BillingController extends Controller
     }
 
     /**
-     * Halaman "bukti sudah kami terima, sedang diperiksa".
+     * Konfirmasi pembayaran langsung oleh pelanggan (alur tanpa upload bukti transfer).
      *
-     * Punya alamat sendiri supaya bisa ditautkan dan dibuka lagi kapan saja —
-     * pelanggan yang menutup tab lalu bertanya-tanya apakah buktinya benar
-     * terkirim punya satu tempat pasti untuk memeriksanya, tanpa harus menebak
-     * dari status di halaman lain.
+     * Memberikan pengalaman seperti payment gateway profesional: pelanggan menekan
+     * tombol setelah transfer/scan QRIS, tagihan masuk antrean verifikasi dengan
+     * countdown timer 10 menit, dan admin langsung dikabari untuk cek mutasi DANA/Bank.
+     */
+    public function confirmPayment(Request $request, int $id): RedirectResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        abort_unless($request->user()->canManage($workspace), 403, 'Hanya owner atau admin yang bisa mengurus langganan.');
+
+        $invoice = $workspace->invoices()->findOrFail($id);
+
+        if (! $invoice->isPending()) {
+            return back()->with('swal', [
+                'icon' => 'info',
+                'title' => 'Tagihan tidak menunggu pembayaran',
+                'text' => 'Tagihan ini sudah diproses atau tidak lagi berstatus pending.',
+            ]);
+        }
+
+        $channel = $request->input('metode_bayar');
+        $payload = [
+            'payment_confirmed_at' => now(),
+        ];
+        if (filled($channel) && in_array($channel, ['qris', 'bank', 'va', 'qris_manual', 'bank_transfer'], true)) {
+            $payload['channel'] = $channel === 'qris' ? 'qris_manual' : ($channel === 'bank' ? 'bank_transfer' : $channel);
+        }
+
+        $invoice->forceFill($payload)->save();
+
+        AuditLog::record('invoice.payment_confirmed', $invoice, [
+            'number' => $invoice->number,
+            'channel' => $invoice->channel,
+        ], $workspace->id);
+
+        // Beri tahu admin seketika via WhatsApp dan Email agar membuka DANA/Bank
+        $this->notifier->toAdmin(
+            BillingMessages::adminPaymentWaiting($invoice),
+            "admin-confirm:{$invoice->id}",
+        );
+
+        $this->email->kabarTim(
+            'Konfirmasi pembayaran baru — '.$invoice->number,
+            BillingMessages::adminPaymentWaiting($invoice),
+            "admin-confirm:{$invoice->id}",
+            route('admin.invoices'),
+        );
+
+        return redirect()->route('billing.verifying', $invoice->id);
+    }
+
+    /**
+     * Halaman menunggu verifikasi pembayaran otomatis (dengan timer 10 menit).
      */
     public function verifying(Request $request, int $id): View|RedirectResponse
     {
@@ -444,16 +493,27 @@ class BillingController extends Controller
 
         $invoice = $workspace->invoices()->findOrFail($id);
 
-        // Tagihan yang sudah dijawab tidak lagi "menunggu diperiksa"; halaman
-        // checkout yang tahu cara menampilkan keadaan akhirnya.
-        if ($invoice->isPaid() || blank($invoice->proof_path)) {
+        // Tagihan yang sudah lunas tidak lagi menunggu verifikasi
+        if ($invoice->isPaid()) {
             return redirect()->route('billing.invoice', $invoice->id);
         }
+
+        // Kalau belum pernah menekan tombol konfirmasi bayar dan belum ada bukti
+        if (blank($invoice->payment_confirmed_at) && blank($invoice->proof_path)) {
+            return redirect()->route('billing.invoice', $invoice->id);
+        }
+
+        // Hitung sisa detik dari batas 10 menit (600 detik) sejak payment_confirmed_at
+        $waktuKonfirmasi = $invoice->payment_confirmed_at ?? $invoice->updated_at;
+        $detikBerlalu = $waktuKonfirmasi ? abs((int) now()->diffInSeconds($waktuKonfirmasi, false)) : 0;
+        $sisaDetik = max(0, 600 - $detikBerlalu);
 
         return view('dashboard.billing.verifying', [
             'invoice' => $invoice,
             'plan' => $invoice->plan(),
             'subscription' => $this->subscriptions->ensureFor($workspace),
+            'sisaDetik' => $sisaDetik,
+            'adminWa' => '6282318280376',
         ]);
     }
 
@@ -495,17 +555,12 @@ class BillingController extends Controller
         }
 
         /*
-         | Tagihan yang buktinya sudah dikirim tidak boleh dibatalkan pelanggan.
-         |
-         | Ini pernah terjadi dan menelan satu pembayaran: bukti terunggah, tidak
-         | ada tanda yang cukup jelas bahwa ia diterima, pelanggan mengira gagal
-         | lalu membatalkan tagihannya 24 detik kemudian — dan tagihan yang sudah
-         | dibatalkan lenyap dari layar admin. Uangnya masuk, layanannya mati,
-         | dan tidak ada satu pun tempat yang menunjukkannya.
+         | Tagihan yang sedang diverifikasi tidak boleh dibatalkan sendiri oleh pelanggan
+         | agar tidak terjadi kasus dana sudah masuk namun tagihannya lenyap dari antrean.
          */
-        if (filled($invoice->proof_path)) {
+        if (filled($invoice->proof_path) || filled($invoice->payment_confirmed_at)) {
             return back()->withErrors([
-                'tagihan' => 'Bukti pembayaran untuk tagihan ini sudah kami terima, jadi tagihannya tidak bisa dibatalkan sendiri. Hubungi kami kalau ini keliru.',
+                'tagihan' => 'Pembayaran untuk tagihan ini sedang dalam proses verifikasi, jadi tagihannya tidak bisa dibatalkan sendiri. Hubungi admin melalui WhatsApp jika ada kekeliruan.',
             ]);
         }
 

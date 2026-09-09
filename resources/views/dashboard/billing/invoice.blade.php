@@ -621,68 +621,80 @@
                             </div>
                         @endif
 
-                        {{-- ===================== BAGIAN: KIRIM BUKTI PEMBAYARAN (Di Dalam Kartu yang Sama) ===================== --}}
+                        {{-- ===================== BAGIAN: VERIFIKASI PEMBAYARAN (Alur Instan ala Payment Gateway) ===================== --}}
                         @if ($bolehBayar)
-                            <div class="border-t border-border/80 pt-4 space-y-3">
+                            <div class="border-t border-border/80 pt-4 space-y-3.5">
                                 <div class="flex items-center gap-2">
                                     <span class="grid h-5 w-5 place-items-center rounded-md bg-primary text-[11px] font-bold text-primary-foreground">
                                         ✓
                                     </span>
-                                    <h2 class="text-sm font-bold text-foreground sm:text-base">Kirim Bukti Pembayaran</h2>
+                                    <h2 class="text-sm font-bold text-foreground sm:text-base">Konfirmasi Pembayaran</h2>
                                 </div>
-                                <p class="text-xs text-muted-foreground">
-                                    Setelah pembayaran selesai, lampirkan bukti transfer untuk segera diverifikasi dan langganan diaktifkan.
+                                <p class="text-xs leading-relaxed text-muted-foreground">
+                                    Selesaikan transfer atau scan QRIS di atas sesuai nominal tagihan, lalu tekan tombol di bawah untuk verifikasi transaksi Anda.
                                 </p>
 
-                                {{-- Jika bukti sudah pernah diunggah --}}
-                                @if ($invoice->proof_path)
-                                    <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 p-2.5 text-xs text-primary">
-                                        <div class="flex items-center gap-1.5">
-                                            <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                                            <span class="font-medium">Bukti transfer tersimpan &amp; sedang diverifikasi.</span>
+                                {{-- Jika tagihan sudah pernah dikonfirmasi pelanggan dan sedang diperiksa --}}
+                                @if ($invoice->isAwaitingVerification())
+                                    <div class="rounded-xl border border-primary/30 bg-primary/10 p-3 space-y-2">
+                                        <div class="flex items-center gap-2 text-xs font-semibold text-primary">
+                                            <span class="relative flex h-2 w-2">
+                                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60"></span>
+                                                <span class="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                                            </span>
+                                            <span>Pembayaran Anda sedang dalam proses verifikasi</span>
                                         </div>
-                                        <a href="{{ route('billing.proof', $invoice->id) }}" target="_blank" 
-                                           class="font-semibold underline hover:opacity-80">
-                                            Lihat berkas
+                                        <p class="text-[11px] text-muted-foreground">
+                                            Sistem sedang memeriksa mutasi pembayaran Anda secara otomatis.
+                                        </p>
+                                        <a href="{{ route('billing.verifying', $invoice->id) }}" 
+                                           class="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-xs transition hover:opacity-90">
+                                            <span>Buka Layar Status Verifikasi</span>
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
                                         </a>
                                     </div>
+                                @else
+                                    {{-- Form Konfirmasi "Saya Sudah Bayar" --}}
+                                    <form method="POST" action="{{ route('billing.invoice.confirm', $invoice->id) }}" class="space-y-2.5">
+                                        @csrf
+                                        <input type="hidden" name="metode_bayar" :value="metode">
+
+                                        <button type="submit" 
+                                                class="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-md transition-all hover:opacity-95 hover:shadow-lg active:scale-[0.98]">
+                                            <svg class="h-4 w-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path d="M20 6 9 17l-5-5"/>
+                                            </svg>
+                                            <span>Saya Sudah Bayar</span>
+                                        </button>
+
+                                        <div class="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground text-center">
+                                            <svg class="h-3.5 w-3.5 text-primary/80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                            </svg>
+                                            <span>Verifikasi pembayaran diproses otomatis dan aman</span>
+                                        </div>
+                                    </form>
                                 @endif
 
-                                <form method="POST" action="{{ route('billing.proof.upload', $invoice->id) }}" enctype="multipart/form-data" data-validasi class="space-y-3">
-                                    @csrf
-                                    <div>
-                                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
-                                            Pilih Berkas Bukti Transfer
-                                        </label>
-                                        <input type="file" name="bukti" accept="image/*,.pdf" required
-                                               class="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary transition hover:file:bg-primary/20 file:cursor-pointer">
-                                        <p class="mt-1 text-[11px] text-muted-foreground">
-                                            Format: JPG, PNG, WEBP, atau PDF (maks. 5 MB).
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <button type="submit" 
-                                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-[0.98]">
-                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                            <span>{{ $invoice->proof_path ? 'Ganti Berkas Bukti' : 'Kirim Bukti Pembayaran' }}</span>
-                                        </button>
-                                    </div>
-                                </form>
-
-                                {{-- Batalkan Tagihan & Bantuan --}}
+                                {{-- Batalkan Tagihan & Bantuan WhatsApp --}}
                                 @if ($invoice->isPending() && $bolehBayar)
                                     <div class="border-t border-border/80 pt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                                        <form method="POST" action="{{ route('billing.invoice.cancel', $invoice->id) }}"
-                                              data-konfirmasi="Apakah Anda yakin ingin membatalkan tagihan ini?">
-                                            @csrf
-                                            <button type="submit" class="hover:text-destructive hover:underline">
-                                                Batalkan tagihan ini
-                                            </button>
-                                        </form>
+                                        @if (! $invoice->isAwaitingVerification())
+                                            <form method="POST" action="{{ route('billing.invoice.cancel', $invoice->id) }}"
+                                                  data-konfirmasi="Apakah Anda yakin ingin membatalkan tagihan ini?">
+                                                @csrf
+                                                <button type="submit" class="hover:text-destructive hover:underline">
+                                                    Batalkan tagihan ini
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-[10px] text-muted-foreground">Tagihan dalam proses verifikasi</span>
+                                        @endif
 
-                                        <a href="https://about.flustra.id/#contact" target="_blank" class="hover:text-foreground hover:underline">
-                                            Ada Kendala? Hubungi Dukungan
+                                        <a href="https://wa.me/6282318280376?text={{ rawurlencode('Halo Admin Flustra, saya ingin menanyakan perihal tagihan ' . $invoice->number . ' sebesar Rp ' . number_format($invoice->total, 0, ',', '.') . '. Mohon bantuannya.') }}"
+                                           target="_blank" class="font-medium text-primary hover:underline inline-flex items-center gap-1">
+                                            <span>Butuh Bantuan? Hubungi Admin</span>
                                         </a>
                                     </div>
                                 @endif

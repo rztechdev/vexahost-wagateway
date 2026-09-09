@@ -42,22 +42,52 @@
          pada satu waktu, dan tidak ada yang muncul saat keadaannya normal.
          ============================================================= --}}
     @if ($tagihanTerbuka)
-        <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
-            <div class="min-w-0">
-                <p class="font-medium">Tagihan {{ $tagihanTerbuka->number }} menunggu pembayaran</p>
-                <p class="mt-0.5 text-sm text-muted-foreground">
-                    {{ $tagihanTerbuka->plan()->name() }} · {{ $tagihanTerbuka->periodLabel() }} ·
-                    Rp {{ number_format($tagihanTerbuka->total, 0, ',', '.') }}
-                    @if ($tagihanTerbuka->due_at)
-                        · bayar sebelum {{ $tagihanTerbuka->due_at->translatedFormat('j F Y, H:i') }}
-                    @endif
-                </p>
+        @if ($tagihanTerbuka->isAwaitingVerification())
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="relative flex h-2 w-2">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                        </span>
+                        <p class="font-medium text-foreground">Tagihan {{ $tagihanTerbuka->number }} sedang dalam proses verifikasi</p>
+                    </div>
+                    <p class="mt-0.5 text-sm text-muted-foreground">
+                        {{ $tagihanTerbuka->plan()->name() }} · {{ $tagihanTerbuka->periodLabel() }} ·
+                        Rp {{ number_format($tagihanTerbuka->total, 0, ',', '.') }}
+                        · Menunggu konfirmasi admin
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="https://wa.me/6282318280376?text={{ rawurlencode('Halo Admin Flustra, tagihan ' . $tagihanTerbuka->number . ' sebesar Rp ' . number_format($tagihanTerbuka->total, 0, ',', '.') . ' sedang menunggu verifikasi. Mohon dibantu cek mutasi.') }}"
+                       target="_blank"
+                       class="shrink-0 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition hover:bg-emerald-500/20">
+                        Chat Admin WhatsApp
+                    </a>
+                    <a href="{{ route('billing.verifying', $tagihanTerbuka->id) }}"
+                       class="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                        Lihat status verifikasi
+                    </a>
+                </div>
             </div>
-            <a href="{{ route('billing.invoice', $tagihanTerbuka->id) }}"
-               class="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                Lihat cara bayar
-            </a>
-        </div>
+        @else
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
+                <div class="min-w-0">
+                    <p class="font-medium">Tagihan {{ $tagihanTerbuka->number }} menunggu pembayaran</p>
+                    <p class="mt-0.5 text-sm text-muted-foreground">
+                        {{ $tagihanTerbuka->plan()->name() }} · {{ $tagihanTerbuka->periodLabel() }} ·
+                        Rp {{ number_format($tagihanTerbuka->total, 0, ',', '.') }}
+                        @if ($tagihanTerbuka->due_at)
+                            · bayar sebelum {{ $tagihanTerbuka->due_at->translatedFormat('j F Y, H:i') }}
+                        @endif
+                    </p>
+                </div>
+                <a href="{{ route('billing.invoice', $tagihanTerbuka->id) }}"
+                   class="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                    Lihat cara bayar
+                </a>
+            </div>
+        @endif
     @elseif ($subscription->isUnpaid())
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3.5">
             <div class="min-w-0">

@@ -52,6 +52,7 @@ class InvoiceController extends Controller
                 ->with(['workspace', 'paidBy'])
                 ->when($status === 'perlu-diperiksa', fn ($q) => $q->where(function ($q) {
                     $q->where(fn ($q) => $q->whereNotNull('proof_path')->where('status', '!=', 'paid'))
+                        ->orWhere(fn ($q) => $q->whereNotNull('payment_confirmed_at')->where('status', '!=', 'paid'))
                         ->orWhere('status', 'pending');
                 }))
                 ->when(! in_array($status, ['perlu-diperiksa', 'semua'], true), fn ($q) => $q->where('status', $status))
@@ -60,9 +61,8 @@ class InvoiceController extends Controller
                         ->orWhere('total', 'like', "%{$cari}%")
                         ->orWhereHas('workspace', fn ($w) => $w->where('name', 'like', "%{$cari}%"));
                 }))
-                // Yang sudah ada buktinya naik ke atas: di situlah ada orang
-                // yang sudah membayar dan layanannya masih mati.
-                ->orderByRaw('proof_path is null')
+                // Yang sudah dikonfirmasi pelanggan atau ada buktinya diprioritaskan di atas
+                ->orderByRaw("case when status = 'pending' and (payment_confirmed_at is not null or proof_path is not null) then 0 else 1 end")
                 ->latest()
                 ->paginate(30)
                 ->withQueryString(),
