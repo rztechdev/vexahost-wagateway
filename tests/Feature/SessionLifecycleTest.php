@@ -7,7 +7,9 @@ use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\SessionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -76,13 +78,13 @@ class SessionLifecycleTest extends TestCase
         $sessions = app(SessionService::class);
         $session = $sessions->create($this->workspace, 'sesi-tanpa-backup');
 
-        \Illuminate\Support\Facades\Http::fake([
-            '*/sessions/*/start' => \Illuminate\Support\Facades\Http::response(['status' => 'starting']),
+        Http::fake([
+            '*/sessions/*/start' => Http::response(['status' => 'starting']),
         ]);
 
         $sessions->connect($session);
 
-        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+        Http::assertSent(function (Request $request) {
             return $request['has_backup'] === false && ! isset($request['backup_data']);
         });
     }
@@ -93,13 +95,13 @@ class SessionLifecycleTest extends TestCase
         $session = $sessions->create($this->workspace, 'sesi-logout');
         $session->update(['status' => 'connected', 'phone_number' => '6281234567890']);
 
-        \Illuminate\Support\Facades\Http::fake([
-            '*/sessions/*/logout' => \Illuminate\Support\Facades\Http::response(['status' => 'logged_out']),
+        Http::fake([
+            '*/sessions/*/logout' => Http::response(['status' => 'logged_out']),
         ]);
 
         $sessions->logout($session);
 
-        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) use ($session) {
+        Http::assertSent(function (Request $request) use ($session) {
             return str_contains($request->url(), "/sessions/{$session->id}/logout");
         });
 

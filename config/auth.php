@@ -129,4 +129,3 @@ return [
     'two_factor_mandatory_for_admin' => (bool) env('AUTH_2FA_MANDATORY_FOR_ADMIN', false),
 
 ];
-

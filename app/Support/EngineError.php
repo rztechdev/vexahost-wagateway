@@ -42,7 +42,7 @@ class EngineError
     public static function kodeRujukan(Throwable $e): string
     {
         if (self::$rujukanMap === null) {
-            self::$rujukanMap = new WeakMap();
+            self::$rujukanMap = new WeakMap;
         }
 
         if (! isset(self::$rujukanMap[$e])) {

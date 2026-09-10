@@ -20,7 +20,9 @@ class PaymentSettingsTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $pelanggan;
+
     private Workspace $workspace;
 
     protected function setUp(): void
@@ -271,6 +273,12 @@ class PaymentSettingsTest extends TestCase
     public function test_save_payment_gateway_credentials(): void
     {
         $payload = [
+            // Mayar
+            'mayar_active' => '1',
+            'mayar_api_key' => 'mayar_jwt_token_test_123',
+            'mayar_webhook_token' => 'wh_mayar_secret_xyz',
+            'mayar_api_url' => 'https://api.mayar.id/hl/v2',
+
             // Midtrans
             'midtrans_active' => '1',
             'midtrans_environment' => 'production',
@@ -309,6 +317,11 @@ class PaymentSettingsTest extends TestCase
         $response->assertSessionHas('swal.tipe', 'success');
 
         // Check helper readings
+        $mayar = PaymentGatewaySetting::mayar();
+        $this->assertTrue($mayar['is_active']);
+        $this->assertEquals('mayar_jwt_token_test_123', $mayar['api_key']);
+        $this->assertEquals('wh_mayar_secret_xyz', $mayar['webhook_token']);
+
         $midtrans = PaymentGatewaySetting::midtrans();
         $this->assertTrue($midtrans['is_active']);
         $this->assertEquals('production', $midtrans['environment']);

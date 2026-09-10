@@ -30,6 +30,10 @@ class Invoice extends Model
         'payment_confirmed_at',
         'paid_by_user_id',
         'note',
+        'payment_gateway',
+        'payment_reference',
+        'payment_url',
+        'payment_payload',
     ];
 
     protected function casts(): array
@@ -42,6 +46,7 @@ class Invoice extends Model
             'due_at' => 'datetime',
             'paid_at' => 'datetime',
             'payment_confirmed_at' => 'datetime',
+            'payment_payload' => 'array',
         ];
     }
 

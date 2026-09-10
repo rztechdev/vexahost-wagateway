@@ -8,6 +8,7 @@ use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -183,9 +184,9 @@ class AdminPagesTest extends TestCase
 
     public function test_halaman_sistem_menampilkan_metrik_baileys_dan_tanpa_alarm_palsu(): void
     {
-        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory);
-        \Illuminate\Support\Facades\Http::fake([
-            '*' => \Illuminate\Support\Facades\Http::response([
+        Http::swap(new Factory);
+        Http::fake([
+            '*' => Http::response([
                 'status' => 'ok',
                 'engine' => 'baileys',
                 'sessions' => 2,

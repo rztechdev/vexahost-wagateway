@@ -28,6 +28,7 @@ class PaymentSettingController extends Controller
         $bankAccounts = BankAccount::orderBy('sort_order')->orderBy('id')->get();
 
         $gateways = [
+            'mayar' => PaymentGatewaySetting::mayar(),
             'midtrans' => PaymentGatewaySetting::midtrans(),
             'xendit' => PaymentGatewaySetting::xendit(),
             'ipaymu' => PaymentGatewaySetting::ipaymu(),
@@ -200,6 +201,12 @@ class PaymentSettingController extends Controller
     public function saveGateways(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            // Mayar
+            'mayar_active' => ['nullable', 'boolean'],
+            'mayar_api_key' => ['nullable', 'string'],
+            'mayar_api_url' => ['nullable', 'string', 'max:255'],
+            'mayar_webhook_token' => ['nullable', 'string', 'max:255'],
+
             // Midtrans
             'midtrans_active' => ['nullable', 'boolean'],
             'midtrans_environment' => ['nullable', 'in:sandbox,production'],
@@ -230,6 +237,14 @@ class PaymentSettingController extends Controller
             'doku_secret_key' => ['nullable', 'string', 'max:255'],
             'doku_base_url' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Simpan Mayar
+        AppSetting::simpan('gateway_mayar', json_encode([
+            'is_active' => (bool) ($data['mayar_active'] ?? false),
+            'api_key' => trim($data['mayar_api_key'] ?? ''),
+            'api_url' => trim($data['mayar_api_url'] ?? 'https://api.mayar.id/hl/v2'),
+            'webhook_token' => trim($data['mayar_webhook_token'] ?? ''),
+        ]));
 
         // Simpan Midtrans
         AppSetting::simpan('gateway_midtrans', json_encode([
@@ -270,6 +285,7 @@ class PaymentSettingController extends Controller
         ]));
 
         AuditLog::record('settings.gateways.saved', null, [
+            'mayar' => (bool) ($data['mayar_active'] ?? false),
             'midtrans' => (bool) ($data['midtrans_active'] ?? false),
             'xendit' => (bool) ($data['xendit_active'] ?? false),
             'ipaymu' => (bool) ($data['ipaymu_active'] ?? false),
@@ -279,7 +295,7 @@ class PaymentSettingController extends Controller
         return back()->with('swal', [
             'tipe' => 'success',
             'judul' => 'Konfigurasi payment gateway disimpan',
-            'pesan' => 'Kredensial dan pengaturan Midtrans, Xendit, iPaymu, dan DOKU berhasil disimpan.',
+            'pesan' => 'Kredensial dan pengaturan Mayar, Midtrans, Xendit, iPaymu, dan DOKU berhasil disimpan.',
         ]);
     }
 

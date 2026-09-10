@@ -6,6 +6,25 @@ use App\Models\AppSetting;
 
 class PaymentGatewaySetting
 {
+    public static function mayar(): array
+    {
+        $raw = AppSetting::ambil('gateway_mayar');
+        $default = [
+            'is_active' => true,
+            'api_key' => (string) config('services.mayar.api_key', ''),
+            'api_url' => (string) config('services.mayar.api_url', 'https://api.mayar.id/hl/v2'),
+            'webhook_token' => (string) config('services.mayar.webhook_token', ''),
+        ];
+
+        if (! $raw) {
+            return $default;
+        }
+
+        $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+
+        return is_array($decoded) ? array_merge($default, $decoded) : $default;
+    }
+
     public static function midtrans(): array
     {
         $raw = AppSetting::ambil('gateway_midtrans');

@@ -13,6 +13,7 @@ use App\Services\Notifications\BillingMessages;
 use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\PeringatanSistem;
 use App\Services\Notifications\WhatsAppNotifier;
+use App\Services\Payment\MayarService;
 use App\Support\KapasitasPlatform;
 use App\Support\PhoneNumber;
 use App\Support\Plan;
@@ -31,6 +32,7 @@ class BillingController extends Controller
         private readonly WhatsAppNotifier $notifier,
         private readonly ReferralService $referrals,
         private readonly EmailNotifier $email,
+        private readonly MayarService $mayar,
     ) {}
 
     /**
@@ -295,7 +297,59 @@ class BillingController extends Controller
                 'telepon' => $workspace->billing_phone,
                 'lengkap' => filled($workspace->billing_name) && filled($workspace->billing_email),
             ],
+
+            'mayarAvailable' => $this->mayar->isConfigured(),
+            'mayarPaymentUrl' => $invoice->payment_url,
         ]);
+    }
+
+    /**
+     * Memulai sesi pembayaran via gateway Mayar.id.
+     */
+    public function payWithMayar(Request $request, int $id): JsonResponse
+    {
+        $workspace = EnsureWorkspaceSelected::from($request);
+
+        abort_unless($request->user()->canManage($workspace), 403, 'Hanya owner atau admin yang bisa mengurus pembayaran.');
+
+        $invoice = $workspace->invoices()->findOrFail($id);
+
+        if ($invoice->isPaid()) {
+            return response()->json([
+                'status' => 'already_paid',
+                'message' => 'Tagihan sudah lunas.',
+                'redirect' => route('billing.invoice', $id),
+            ]);
+        }
+
+        if ($invoice->isOverdue()) {
+            return response()->json([
+                'status' => 'expired',
+                'message' => 'Batas waktu pembayaran sudah lewat.',
+            ], 422);
+        }
+
+        if (! $this->mayar->isConfigured()) {
+            return response()->json([
+                'status' => 'not_configured',
+                'message' => 'Gateway pembayaran Mayar belum diaktifkan.',
+            ], 503);
+        }
+
+        try {
+            $session = $this->mayar->createInvoice($invoice, $workspace);
+
+            return response()->json([
+                'status' => 'ok',
+                'payment_url' => $session['link'],
+                'mayar_id' => $session['id'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

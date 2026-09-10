@@ -7,6 +7,7 @@ use App\Models\WaSession;
 use App\Models\Workspace;
 use App\Services\Providers\WwebjsProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -256,7 +257,7 @@ class SessionBackupTest extends TestCase
         ]);
 
         Http::fake([
-            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) {
+            '*/sessions/*/start' => function (Request $request) {
                 $data = $request->data();
                 $this->assertFalse($data['has_backup']);
                 $this->assertArrayNotHasKey('backup_data', $data);
@@ -267,15 +268,14 @@ class SessionBackupTest extends TestCase
 
         app(WwebjsProvider::class)->startSession($this->session);
 
-        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
-            $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
+        Http::assertSent(fn (Request $req) => $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
         );
     }
 
     public function test_wwebjs_provider_mengabaikan_backup_yang_bukan_json_atau_bukan_utf8(): void
     {
         // Berkas path session.json tetapi isinya bukan JSON valid
-        $invalidJson = 'bukan-json-valid-{' . random_bytes(10);
+        $invalidJson = 'bukan-json-valid-{'.random_bytes(10);
         Storage::disk('session-backups')->put("{$this->session->id}/session.json", $invalidJson);
 
         SessionBackup::create([
@@ -288,7 +288,7 @@ class SessionBackupTest extends TestCase
         ]);
 
         Http::fake([
-            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) {
+            '*/sessions/*/start' => function (Request $request) {
                 $data = $request->data();
                 $this->assertFalse($data['has_backup']);
                 $this->assertArrayNotHasKey('backup_data', $data);
@@ -299,8 +299,7 @@ class SessionBackupTest extends TestCase
 
         app(WwebjsProvider::class)->startSession($this->session);
 
-        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
-            $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
+        Http::assertSent(fn (Request $req) => $req->data()['has_backup'] === false && ! isset($req->data()['backup_data'])
         );
     }
 
@@ -319,7 +318,7 @@ class SessionBackupTest extends TestCase
         ]);
 
         Http::fake([
-            '*/sessions/*/start' => function (\Illuminate\Http\Client\Request $request) use ($validJson) {
+            '*/sessions/*/start' => function (Request $request) use ($validJson) {
                 $data = $request->data();
                 $this->assertTrue($data['has_backup']);
                 $this->assertSame($validJson, $data['backup_data']);
@@ -330,8 +329,7 @@ class SessionBackupTest extends TestCase
 
         app(WwebjsProvider::class)->startSession($this->session);
 
-        Http::assertSent(fn (\Illuminate\Http\Client\Request $req) =>
-            $req->data()['has_backup'] === true && $req->data()['backup_data'] === $validJson
+        Http::assertSent(fn (Request $req) => $req->data()['has_backup'] === true && $req->data()['backup_data'] === $validJson
         );
     }
 

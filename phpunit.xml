@@ -35,5 +35,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="MAYAR_API_KEY" value=""/>
+        <env name="MAYAR_WEBHOOK_TOKEN" value=""/>
     </php>
 </phpunit>

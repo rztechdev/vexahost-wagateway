@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Webhooks\MayarWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,3 +60,10 @@ Route::prefix('v1')->middleware('apikey')->group(function (): void {
         });
     });
 });
+
+/*
+| Webhook dari Payment Gateway pihak ketiga (Mayar.id).
+| Terbuka ke publik tanpa auth API key workspace, menggunakan validasi token/payload internal.
+*/
+Route::post('webhooks/mayar', [MayarWebhookController::class, 'handle'])
+    ->name('api.webhooks.mayar');

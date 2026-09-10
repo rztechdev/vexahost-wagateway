@@ -80,10 +80,10 @@ class AiIntegrationController extends Controller
         $md .= "## 4. Instruksi & Prompt untuk AI Coding Assistant\n\n";
 
         foreach ($agents as $agent) {
-            $md .= "### " . $agent['name'] . " (" . $agent['tool'] . ")\n";
-            $md .= "- **Target Berkas:** `" . $agent['file'] . "`\n";
-            $md .= "- **Deskripsi:** " . $agent['desc'] . "\n\n";
-            $md .= "```text\n" . $agent['prompt'] . "\n```\n\n";
+            $md .= '### '.$agent['name'].' ('.$agent['tool'].")\n";
+            $md .= '- **Target Berkas:** `'.$agent['file']."`\n";
+            $md .= '- **Deskripsi:** '.$agent['desc']."\n\n";
+            $md .= "```text\n".$agent['prompt']."\n```\n\n";
         }
 
         $md .= "---\n\n";

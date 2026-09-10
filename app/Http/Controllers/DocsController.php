@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\DocsRepository;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Response;
 
 /**
  * Dokumentasi sebagai halaman web. Terbuka untuk publik — isinya penjelasan
@@ -27,7 +28,7 @@ class DocsController extends Controller
         ]);
     }
 
-    public function raw(string $slug): \Illuminate\Http\Response
+    public function raw(string $slug): Response
     {
         $content = DocsRepository::raw($slug);
 

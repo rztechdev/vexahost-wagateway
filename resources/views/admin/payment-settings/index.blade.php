@@ -127,7 +127,7 @@
                     </svg>
                     <p class="font-medium text-foreground">Belum ada rekening bank yang tersimpan di database</p>
                     <p class="mt-0.5">
-                        Sistem saat ini menggunakan konfigurasi fallback dari .env. Tambahkan rekening di sini untuk mulai mengelola via dashboard.
+                        Klik tombol &quot;Tambah Rekening / VA&quot; di atas untuk menambahkan rekening bank atau Virtual Account tujuan transfer.
                     </p>
                 </div>
             @else
@@ -215,6 +215,73 @@
 
         <form method="POST" action="{{ route('admin.payment-settings.gateways') }}" class="space-y-6">
             @csrf
+
+            {{-- 0. MAYAR.ID (GATEWAY UTAMA / AKTIF) --}}
+            <div class="rounded-2xl border border-primary/40 bg-card p-5 shadow-xs sm:p-6 space-y-4 ring-1 ring-primary/20">
+                <div class="flex items-center justify-between border-b border-border/80 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-sm">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-foreground">Mayar.id (Gateway Utama)</h2>
+                                <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ filled($gateways['mayar']['api_key']) ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground' }}">
+                                    {{ filled($gateways['mayar']['api_key']) ? 'Tersedia' : 'Belum Terhubung' }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-muted-foreground">Mendukung QRIS, Virtual Account Multi-Bank (BCA, Mandiri, BRI, BNI, Permata, dll), E-Wallet &amp; Verifikasi Otomatis 24/7</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex cursor-pointer items-center" title="Aktifkan / Nonaktifkan Gateway Mayar">
+                        <input type="checkbox" name="mayar_active" value="1" @checked($gateways['mayar']['is_active']) class="peer sr-only">
+                        <div class="peer h-6 w-11 rounded-full bg-input peer-checked:bg-primary after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+                    </label>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                            API Key Mayar (JWT Token)
+                        </label>
+                        <input type="password" name="mayar_api_key" value="{{ $gateways['mayar']['api_key'] }}" placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6..." class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs font-mono text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Dapatkan di <strong>Dashboard Mayar &gt; Integrasi &gt; API Keys</strong>. Nilai di sini akan menimpa nilai dari berkas <code>.env</code>.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                            Webhook Token / Secret (Opsional)
+                        </label>
+                        <input type="text" name="mayar_webhook_token" value="{{ $gateways['mayar']['webhook_token'] }}" placeholder="Masukkan secret webhook jika ada" class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm font-mono text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Token atau secret pemverifikasi tanda tangan callback webhook dari Mayar.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                            API URL / Base URL
+                        </label>
+                        <input type="text" name="mayar_api_url" value="{{ $gateways['mayar']['api_url'] }}" placeholder="https://api.mayar.id/hl/v2" class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Default: <code>https://api.mayar.id/hl/v2</code>.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Webhook Callback Info --}}
+                <div class="rounded-xl border border-border/80 bg-muted/30 p-3 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="truncate">
+                        <span class="font-medium text-muted-foreground">URL Webhook Notifikasi:</span>
+                        <code class="ml-1.5 font-mono text-primary font-semibold select-all">{{ url('/api/webhooks/mayar') }}</code>
+                    </div>
+                    <span class="text-[11px] text-muted-foreground shrink-0">Event: <code>payment.received</code></span>
+                </div>
+            </div>
 
             {{-- 1. MIDTRANS --}}
             <div class="rounded-2xl border border-border bg-card p-5 shadow-xs sm:p-6 space-y-4">

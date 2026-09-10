@@ -28,4 +28,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    'mayar' => [
+        'api_key' => env('MAYAR_API_KEY'),
+        'api_url' => env('MAYAR_API_URL', 'https://api.mayar.id/hl/v2'),
+        'webhook_token' => env('MAYAR_WEBHOOK_TOKEN'),
+        'mode' => env('MAYAR_MODE', 'production'),
+    ],
+
 ];

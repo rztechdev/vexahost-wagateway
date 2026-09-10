@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\SendMessageJob;
 use App\Models\ApiKey;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\SessionService;
 use App\Support\EngineError;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -362,7 +362,7 @@ class EngineErrorTest extends TestCase
 
     public function test_jalur_store_sesi_tidak_membocorkan_galat_tak_terduga(): void
     {
-        $mock = $this->mock(\App\Services\SessionService::class);
+        $mock = $this->mock(SessionService::class);
         $mock->shouldReceive('create')->andThrow(new RuntimeException('SQLSTATE[HY000]: General error in file.php:99'));
 
         $response = $this->actingAs($this->owner)
