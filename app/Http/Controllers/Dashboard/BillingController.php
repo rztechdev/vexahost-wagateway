@@ -388,7 +388,7 @@ class BillingController extends Controller
      * dikembalikan ke halaman yang sama supaya ia bisa langsung lanjut membayar
      * tanpa kehilangan tempatnya.
      */
-    public function saveBillingDetails(Request $request, int $id): RedirectResponse
+    public function saveBillingDetails(Request $request, int $id): RedirectResponse|JsonResponse
     {
         $workspace = EnsureWorkspaceSelected::from($request);
 
@@ -425,6 +425,13 @@ class BillingController extends Controller
         ]);
 
         if ($data['billing_type'] === 'badan' && empty(trim((string) ($data['billing_company'] ?? '')))) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Nama perusahaan / badan usaha wajib diisi.',
+                    'errors' => ['billing_company' => ['Nama perusahaan / badan usaha wajib diisi.']],
+                ], 422);
+            }
             return back()->withErrors(['billing_company' => 'Nama perusahaan / badan usaha wajib diisi.'])->withInput();
         }
 
@@ -434,6 +441,13 @@ class BillingController extends Controller
         $nomor = PhoneNumber::normalize($data['billing_phone']);
 
         if ($nomor === null) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Nomor WhatsApp tidak valid. Masukkan format nomor yang benar (contoh: 08123456789).',
+                    'errors' => ['billing_phone' => ['Nomor WhatsApp tidak valid. Masukkan format nomor yang benar.']],
+                ], 422);
+            }
             return back()->withErrors(['billing_phone' => 'Nomor WhatsApp tidak valid. Masukkan format nomor yang benar.'])->withInput();
         }
 
@@ -452,6 +466,13 @@ class BillingController extends Controller
             'billing_address' => $data['billing_address'],
             'billing_postal_code' => $data['billing_postal_code'] ?? null,
         ])->save();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Data penagihan dan rekening pelanggan berhasil disimpan.',
+            ]);
+        }
 
         return back()->with('swal', [
             'icon' => 'success',

@@ -290,4 +290,61 @@ class CustomerBillingDetailsTest extends TestCase
         $this->assertStringContainsString('x-data="checkoutInvoice(window.checkoutInvoiceData)"', $content);
         $this->assertStringContainsString('x-data="formDataPelanggan(window.formDataPelangganData)"', $content);
     }
+
+    public function test_customer_can_save_billing_details_via_ajax_json_response(): void
+    {
+        $invoice = $this->terbitkanTagihan();
+
+        $response = $this->actingAs($this->owner)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->postJson(route('billing.details', $invoice->id), [
+                'billing_type' => 'individu',
+                'billing_name' => 'Budi Santoso',
+                'billing_email' => 'budi@perusahaan.id',
+                'billing_phone' => '081234567890',
+                'billing_bank_name' => 'Bank Central Asia (BCA)',
+                'billing_bank_account' => '1234567890',
+                'billing_bank_holder' => 'Budi Santoso',
+                'billing_province' => 'Banten',
+                'billing_city' => 'Kota Tangerang Selatan',
+                'billing_district' => 'Pondok Aren',
+                'billing_address' => 'Puri Bintaro Hijau',
+                'billing_postal_code' => '15224',
+            ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'ok',
+            ]);
+
+        $this->assertTrue($this->workspace->fresh()->isBillingComplete());
+    }
+
+    public function test_ajax_returns_validation_error_json_when_phone_invalid(): void
+    {
+        $invoice = $this->terbitkanTagihan();
+
+        $response = $this->actingAs($this->owner)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->postJson(route('billing.details', $invoice->id), [
+                'billing_type' => 'individu',
+                'billing_name' => 'Budi Santoso',
+                'billing_email' => 'budi@perusahaan.id',
+                'billing_phone' => '123', // Nomor tidak valid
+                'billing_bank_name' => 'Bank Central Asia (BCA)',
+                'billing_bank_account' => '1234567890',
+                'billing_bank_holder' => 'Budi Santoso',
+                'billing_province' => 'Banten',
+                'billing_city' => 'Kota Tangerang Selatan',
+                'billing_district' => 'Pondok Aren',
+                'billing_address' => 'Puri Bintaro Hijau',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'errors' => ['billing_phone'],
+            ]);
+    }
 }

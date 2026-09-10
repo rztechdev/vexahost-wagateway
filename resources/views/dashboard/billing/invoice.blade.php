@@ -179,6 +179,7 @@
             mayarPaymentUrl: @json($mayarPaymentUrl ?? ''),
             billingLengkap: @json((bool)$penagihan['lengkap']),
             mayarEndpoint: @json(route('billing.invoice.mayar', $invoice->id)),
+            saveBillingEndpoint: @json(route('billing.details', $invoice->id)),
             csrfToken: @json(csrf_token())
         };
 
@@ -286,20 +287,20 @@
 
                     return missingLabels;
                 },
-                bayarMayar() {
-                    if (!this.billingLengkap) {
-                        const missing = this.tandaiFormKosong();
-                        let infoKolom = '';
-                        if (missing && missing.length > 0) {
-                            infoKolom = '<p class="mt-2 text-[11px] text-muted-foreground">Kolom yang belum diisi: <strong class="text-foreground">' +
-                                missing.slice(0, 3).join(', ') +
-                                (missing.length > 3 ? ' (' + (missing.length - 3) + ' lainnya)' : '') +
-                                '</strong></p>';
-                        }
+                simpanDataPelangganDanLanjutkan(onSuccess) {
+                    const form = document.querySelector('#form-data-pelanggan form');
+                    if (!form) {
+                        if (onSuccess) onSuccess();
+                        return;
+                    }
 
+                    const missing = this.tandaiFormKosong();
+                    if (missing && missing.length > 0) {
                         const htmlContent = '<div class="text-xs text-muted-foreground leading-relaxed">' +
-                            '<p>Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.</p>' +
-                            infoKolom +
+                            '<p>Mohon lengkapi data penagihan di sebelah kiri sebelum melanjutkan pembayaran.</p>' +
+                            '<p class="mt-2 text-[11px] text-muted-foreground">Kolom yang belum diisi: <strong class="text-foreground">' +
+                            missing.slice(0, 3).join(', ') + (missing.length > 3 ? ' (' + (missing.length - 3) + ' lainnya)' : '') +
+                            '</strong></p>' +
                             '<p class="mt-2 font-medium text-destructive">Kolom yang wajib diisi telah diberi tanda batas merah.</p>' +
                             '</div>';
 
@@ -319,6 +320,85 @@
                                 confirmButtonText: 'Lengkapi Data'
                             });
                         }
+                        return;
+                    }
+
+                    this.mayarLoading = true;
+                    const formData = new FormData(form);
+
+                    fetch(config.saveBillingEndpoint || form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': config.csrfToken,
+                        }
+                    })
+                    .then(r => r.json().then(data => ({ status: r.status, ok: r.ok, body: data })))
+                    .then(res => {
+                        if (res.ok && res.body.status === 'ok') {
+                            this.billingLengkap = true;
+                            if (onSuccess) {
+                                onSuccess();
+                            } else {
+                                this.mayarLoading = false;
+                                if (window.beriTahu) {
+                                    window.beriTahu({
+                                        icon: 'success',
+                                        title: 'Data Tersimpan',
+                                        text: 'Data pelanggan berhasil disimpan. Anda sekarang dapat melanjutkan pembayaran.',
+                                        confirmButtonText: 'Lanjutkan'
+                                    });
+                                }
+                            }
+                        } else {
+                            this.mayarLoading = false;
+                            const pesanError = (res.body && res.body.message) ? res.body.message : 'Gagal menyimpan data pelanggan. Periksa kembali form Anda.';
+
+                            if (res.body && res.body.errors) {
+                                Object.keys(res.body.errors).forEach(fieldName => {
+                                    const inp = form.querySelector('[name="' + fieldName + '"]');
+                                    if (inp) {
+                                        inp.classList.add('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+                                        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                });
+                            }
+
+                            if (window.beriTahu) {
+                                window.beriTahu({
+                                    icon: 'error',
+                                    title: 'Periksa Isian Form',
+                                    text: pesanError,
+                                    confirmButtonText: 'Perbaiki'
+                                });
+                            } else if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Periksa Isian Form',
+                                    text: pesanError,
+                                    confirmButtonColor: '#2563eb'
+                                });
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        this.mayarLoading = false;
+                        if (window.beriTahu) {
+                            window.beriTahu({
+                                icon: 'error',
+                                title: 'Kendala Jaringan',
+                                text: 'Gagal menghubungi server untuk menyimpan data penagihan.'
+                            });
+                        }
+                    });
+                },
+                bayarMayar() {
+                    if (!this.billingLengkap) {
+                        this.simpanDataPelangganDanLanjutkan(() => {
+                            this.bayarMayar();
+                        });
                         return;
                     }
 
@@ -560,21 +640,24 @@
                                         {{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Data resmi penagihan perusahaan untuk kwitansi, pengembalian dana, dan verifikasi akun.' : 'Data resmi penagihan pelanggan untuk kwitansi, pengembalian dana, dan verifikasi akun.' }}
                                     </p>
                                 </div>
-                                @if ($penagihan['lengkap'])
+                                <template x-if="billingLengkap">
                                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-[11px] font-semibold">
                                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
                                         Lengkap
                                     </span>
-                                @else
+                                </template>
+                                <template x-if="!billingLengkap">
                                     <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 text-[11px] font-semibold">
                                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                         Wajib Diisi
                                     </span>
-                                @endif
+                                </template>
                             </div>
 
                             @if ($bolehBayar)
-                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi novalidate class="mt-4 space-y-4">
+                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" 
+                                      @submit.prevent="simpanDataPelangganDanLanjutkan()"
+                                      data-validasi novalidate class="mt-4 space-y-4">
                                     @csrf
 
                                     {{-- 1. PILIHAN TIPE PELANGGAN: INDIVIDU / BADAN USAHA --}}
@@ -784,11 +867,9 @@
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                             <span x-text="tipePelanggan === 'badan' ? 'Simpan Data Perusahaan' : 'Simpan Data Pelanggan'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Simpan Data Perusahaan' : 'Simpan Data Pelanggan' }}</span>
                                         </button>
-                                        @if (! $penagihan['lengkap'])
-                                            <span class="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                                                * Wajib disimpan untuk membuka pembayaran
-                                            </span>
-                                        @endif
+                                        <span x-show="!billingLengkap" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                            * Wajib disimpan untuk membuka pembayaran
+                                        </span>
                                     </div>
                                 </form>
                             @else
@@ -1222,7 +1303,7 @@
                                         </p>
 
                                         <form method="POST" action="{{ route('billing.invoice.confirm', $invoice->id) }}" class="space-y-2.5"
-                                              @submit.prevent="if (!billingLengkap) { bayarMayar(); } else { $el.submit(); }">
+                                              @submit.prevent="if (!billingLengkap) { simpanDataPelangganDanLanjutkan(() => { $el.submit(); }); } else { $el.submit(); }">
                                             @csrf
                                             <input type="hidden" name="metode_bayar" :value="metode">
 
