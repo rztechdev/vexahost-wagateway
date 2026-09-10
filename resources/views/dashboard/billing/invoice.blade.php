@@ -537,6 +537,19 @@
                                         </div>
                                     </div>
 
+                                    {{-- Catatan Keamanan / Penjelasan Nama Mitra Gateway --}}
+                                    <div class="rounded-xl border border-blue-500/25 bg-blue-500/5 p-3 text-[11px] text-foreground leading-relaxed">
+                                        <div class="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 mb-1">
+                                            <svg class="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                            </svg>
+                                            <span>Catatan Pembayaran</span>
+                                        </div>
+                                        <p class="text-muted-foreground text-[11px] leading-relaxed">
+                                            Demi keamanan transaksi Anda, sistem pembayaran kami diproses secara resmi oleh mitra payment gateway berlisensi Bank Indonesia (<strong>Mayar / Xendit</strong>). Nama tujuan transfer/QRIS yang muncul di aplikasi m-banking atau e-wallet adalah <strong>PT Mayar / Xendit</strong>, dan dana dipastikan 100% masuk ke rekening resmi <strong>FLUSTRA</strong>.
+                                        </p>
+                                    </div>
+
                                     <div class="flex items-center justify-between rounded-lg border border-border/60 bg-background/80 px-3.5 py-2.5 text-xs">
                                         <span class="text-muted-foreground">Total yang akan dibayar:</span>
                                         <span class="font-bold text-primary text-sm">Rp {{ number_format($invoice->total, 0, ',', '.') }}</span>
