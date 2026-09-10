@@ -108,6 +108,22 @@ window.beriTahu = function beriTahu(opsi) {
 };
 
 /*
+ * Menggantikan alert() bawaan peramban agar selalu memakai SweetAlert2
+ * dengan tema aplikasi di seluruh sistem tanpa kecuali.
+ */
+window.alert = function alert(pesan) {
+    return Swal.fire({
+        icon: 'info',
+        title: 'Pemberitahuan',
+        text: String(pesan ?? ''),
+        confirmButtonText: 'Mengerti',
+        confirmButtonColor: warnaTombol(),
+        background: getComputedStyle(document.body).backgroundColor,
+        color: getComputedStyle(document.body).color,
+    });
+};
+
+/*
  * Konfirmasi yang menggantikan `confirm()` bawaan peramban.
  *
  * Dipasang lewat `data-konfirmasi="pesan"` pada <form>. Pengiriman ditahan
@@ -145,39 +161,82 @@ function pasangKonfirmasi() {
 
 /*
  * Menahan pengiriman form saat ada isian wajib yang masih kosong, lalu
- * menyebutkan yang mana.
+ * menampilkan SweetAlert2 dan menandai kolom dengan batas merah.
  *
- * Peramban sudah menolak form seperti ini sendiri, tapi pesannya muncul sebagai
- * gelembung kecil yang hilang dalam hitungan detik dan sering tidak terlihat
- * pada form panjang — terutama saat isian yang kosong ada di luar layar.
+ * Menggunakan novalidate untuk mematikan gelembung tooltip bawaan peramban
+ * yang kaku, sehingga seluruh sistem konsisten memakai SweetAlert2.
  */
 function pasangValidasi() {
     document.querySelectorAll('form[data-validasi]').forEach((form) => {
         if (form.dataset.validasiSiap) return;
         form.dataset.validasiSiap = '1';
 
+        // Matikan bubble popup bawaan peramban agar selalu memakai SweetAlert2
+        form.setAttribute('novalidate', 'true');
+
         form.addEventListener('submit', (e) => {
-            const kosong = [...form.querySelectorAll('[required]')].filter((el) =>
-                el.type === 'file' ? el.files.length === 0 : ! String(el.value).trim()
-            );
+            // Bersihkan penanda merah lama
+            form.querySelectorAll('.border-destructive').forEach((el) => {
+                el.classList.remove('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+            });
+
+            // Periksa kolom required yang sedang terlihat di layar
+            const kosong = [...form.querySelectorAll('[required]')].filter((el) => {
+                if (el.offsetParent === null && el.type !== 'hidden') return false;
+                return el.type === 'file' ? el.files.length === 0 : ! String(el.value).trim();
+            });
+
+            // Validasi khusus jenis badan usaha untuk nama perusahaan jika ada
+            const tipePelangganEl = form.querySelector('[name="billing_type"]');
+            if (tipePelangganEl && tipePelangganEl.value === 'badan') {
+                const companyEl = form.querySelector('[name="billing_company"]');
+                if (companyEl && !String(companyEl.value).trim()) {
+                    if (!kosong.includes(companyEl)) kosong.unshift(companyEl);
+                }
+            }
 
             if (kosong.length === 0) return;
 
             e.preventDefault();
             e.stopImmediatePropagation();
 
+            // Beri highlight merah pada seluruh input yang kosong
+            kosong.forEach((el) => {
+                el.classList.add('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+                const bersihkan = () => {
+                    if (el.value && el.value.trim()) {
+                        el.classList.remove('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+                        el.removeEventListener('input', bersihkan);
+                        el.removeEventListener('change', bersihkan);
+                    }
+                };
+                el.addEventListener('input', bersihkan);
+                el.addEventListener('change', bersihkan);
+            });
+
             const nama = kosong.map((el) => {
                 const label = form.querySelector(`label[for="${el.id}"]`);
-                return label ? label.textContent.trim().replace(/\s+/g, ' ') : (el.name || 'isian');
+                let teks = label ? label.textContent.trim().replace(/\s+/g, ' ') : (el.name || 'isian');
+                return teks.replace(/\*$/, '').trim();
             });
 
             window.beriTahu({
                 icon: 'warning',
-                title: 'Ada yang belum diisi',
-                html: 'Lengkapi dulu:<br><strong>' + nama.join('</strong><br><strong>') + '</strong>',
+                title: 'Data Belum Lengkap',
+                html: '<div class="text-left text-xs space-y-2">' +
+                      '<p>Mohon lengkapi data wajib berikut sebelum melanjutkan:</p>' +
+                      '<ul class="list-disc pl-4 space-y-1 font-semibold text-foreground">' +
+                      nama.map((n) => `<li>${n}</li>`).join('') +
+                      '</ul>' +
+                      '<p class="text-destructive font-medium pt-1">Kolom yang belum diisi telah ditandai dengan garis batas merah.</p>' +
+                      '</div>',
+                confirmButtonText: 'Lengkapi Data'
             });
 
-            kosong[0].focus();
+            kosong[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                try { kosong[0].focus(); } catch (err) {}
+            }, 350);
         });
     });
 }

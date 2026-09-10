@@ -504,12 +504,10 @@ class TwoFactorTest extends TestCase
     }
 
     /**
-     * Bila konfigurasi wajib 2FA diaktifkan, super admin dilarang mematikan 2FA.
+     * Super admin dan pengguna biasa dapat mematikan 2FA dari profil setting dengan kata sandi.
      */
-    public function test_admin_tidak_bisa_mematikan_dua_faktor_bila_konfigurasi_aktif(): void
+    public function test_admin_bisa_mematikan_dua_faktor_dari_profil_dengan_kata_sandi(): void
     {
-        config(['auth.two_factor_mandatory_for_admin' => true]);
-
         $admin = $this->pengguna(admin: true);
 
         $admin->forceFill([
@@ -521,9 +519,9 @@ class TwoFactorTest extends TestCase
         $this->be($admin)->withSession(['2fa.lolos' => true]);
 
         $this->delete(route('two-factor.disable'), ['password' => 'rahasia12345'])
-            ->assertForbidden();
+            ->assertRedirect();
 
-        $this->assertTrue($admin->refresh()->duaFaktorAktif());
+        $this->assertFalse($admin->refresh()->duaFaktorAktif());
     }
 
     /**

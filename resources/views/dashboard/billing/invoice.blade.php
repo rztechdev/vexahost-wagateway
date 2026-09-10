@@ -303,7 +303,14 @@
                             '<p class="mt-2 font-medium text-destructive">Kolom yang wajib diisi telah diberi tanda batas merah.</p>' +
                             '</div>';
 
-                        if (window.Swal) {
+                        if (window.beriTahu) {
+                            window.beriTahu({
+                                icon: 'warning',
+                                title: 'Data Pelanggan Belum Lengkap',
+                                html: htmlContent,
+                                confirmButtonText: 'Lengkapi Data'
+                            });
+                        } else if (window.Swal) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Data Pelanggan Belum Lengkap',
@@ -311,14 +318,6 @@
                                 confirmButtonColor: '#2563eb',
                                 confirmButtonText: 'Lengkapi Data'
                             });
-                        } else if (window.beriTahu) {
-                            window.beriTahu({
-                                icon: 'warning',
-                                title: 'Data Pelanggan Belum Lengkap',
-                                text: 'Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.'
-                            });
-                        } else {
-                            alert('Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.');
                         }
                         return;
                     }
@@ -359,17 +358,47 @@
                                     confirmButtonColor: '#2563eb',
                                     confirmButtonText: 'Lengkapi Data'
                                 });
-                            } else {
-                                alert(res.message || 'Lengkapi data pelanggan terlebih dahulu.');
+                            } else if (window.beriTahu) {
+                                window.beriTahu({
+                                    icon: 'warning',
+                                    title: 'Data Pelanggan Belum Lengkap',
+                                    text: res.message || 'Lengkapi data pelanggan terlebih dahulu.'
+                                });
                             }
                         } else {
                             this.mayarLoading = false;
-                            alert(res.message || 'Gagal memuat sesi pembayaran Mayar.');
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal Memuat Pembayaran',
+                                    text: res.message || 'Gagal memuat sesi pembayaran Mayar.',
+                                    confirmButtonColor: '#2563eb'
+                                });
+                            } else if (window.beriTahu) {
+                                window.beriTahu({
+                                    icon: 'error',
+                                    title: 'Gagal Memuat Pembayaran',
+                                    text: res.message || 'Gagal memuat sesi pembayaran Mayar.'
+                                });
+                            }
                         }
                     })
                     .catch(err => {
                         this.mayarLoading = false;
-                        alert('Terjadi kendala jaringan saat menghubungi server pembayaran.');
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Kendala Jaringan',
+                                text: 'Terjadi kendala jaringan saat menghubungi server pembayaran.',
+                                confirmButtonColor: '#2563eb'
+                            });
+                        } else if (window.beriTahu) {
+                            window.beriTahu({
+                                icon: 'error',
+                                title: 'Kendala Jaringan',
+                                text: 'Terjadi kendala jaringan saat menghubungi server pembayaran.'
+                            });
+                        }
                     });
                 }
             };
@@ -545,7 +574,7 @@
                             </div>
 
                             @if ($bolehBayar)
-                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi class="mt-4 space-y-4">
+                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi novalidate class="mt-4 space-y-4">
                                     @csrf
 
                                     {{-- 1. PILIHAN TIPE PELANGGAN: INDIVIDU / BADAN USAHA --}}

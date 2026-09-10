@@ -202,19 +202,11 @@ class TwoFactorController extends Controller
     {
         $user = $request->user();
 
-        abort_if(
-            $user->wajibDuaFaktor(),
-            403,
-            'Akun administrator wajib memakai autentikasi dua faktor.',
-        );
-
-        // Kata sandi diminta lagi. Tanpa ini, sesi peramban yang tertinggal
-        // terbuka bisa mematikan faktor kedua dalam satu klik — dan seluruh
-        // gunanya faktor kedua adalah bertahan justru saat faktor pertama sudah
-        // dikuasai orang lain.
+        // Kata sandi diminta lagi untuk keamanan. Tanpa ini, sesi peramban yang
+        // tertinggal terbuka bisa mematikan faktor kedua dalam satu klik.
         $request->validate(
             ['password' => ['required', 'current_password']],
-            ['password.current_password' => 'Kata sandi tidak cocok. 2FA tetap menyala.'],
+            ['password.current_password' => 'Kata sandi tidak cocok. 2FA tetap aktif.'],
         );
 
         $user->forceFill([
@@ -229,8 +221,8 @@ class TwoFactorController extends Controller
 
         return back()->with('swal', [
             'tipe' => 'success',
-            'judul' => '2FA dimatikan',
-            'pesan' => 'Akun Anda sekarang hanya dilindungi kata sandi.',
+            'judul' => '2FA Berhasil Dilepas',
+            'pesan' => 'Autentikasi dua faktor telah dinonaktifkan. Akun Anda sekarang dilindungi dengan kata sandi.',
         ]);
     }
 

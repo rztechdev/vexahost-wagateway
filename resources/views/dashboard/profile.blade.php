@@ -457,33 +457,34 @@
                         </details>
                     </div>
 
-                    @if ($user->wajibDuaFaktor())
-                        <p class="pt-2 text-xs sm:text-sm text-muted-foreground border-t border-border/60">
-                            Akun administrator wajib memakainya, jadi 2FA tidak dapat dimatikan dari sini.
-                        </p>
-                    @else
-                        <div class="pt-3 border-t border-border/60">
-                            <form method="POST" action="{{ route('two-factor.disable') }}"
-                                  data-konfirmasi="Setelah dimatikan, akun Anda hanya dilindungi kata sandi. Lanjutkan?">
-                                @csrf
-                                @method('DELETE')
-                                <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-foreground" for="pw_2fa">
-                                    Matikan 2FA (Masukkan Kata Sandi)
+                    <div class="pt-3 border-t border-border/60">
+                        <form method="POST" action="{{ route('two-factor.disable') }}"
+                              data-konfirmasi="Setelah 2FA dilepas, akun Anda hanya dilindungi oleh kata sandi. Apakah Anda yakin ingin melepas autentikasi 2FA?"
+                              data-konfirmasi-judul="Lepas Autentikasi 2FA"
+                              data-konfirmasi-ya="Ya, Lepas 2FA">
+                            @csrf
+                            @method('DELETE')
+                            <div class="space-y-1 mb-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-foreground" for="pw_2fa">
+                                    Lepas / Matikan 2FA (Masukkan Kata Sandi)
                                 </label>
-                                <div class="flex flex-wrap gap-2 max-w-md">
-                                    <input id="pw_2fa" type="password" name="password" required autocomplete="current-password"
-                                           placeholder="Kata sandi akun Anda"
-                                           class="min-w-56 flex-1 rounded-xl border-input bg-background text-sm focus:border-primary focus:ring-primary px-3.5 py-2">
-                                    <button class="rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold transition hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30">
-                                        Matikan 2FA
-                                    </button>
-                                </div>
-                                @error('password')
-                                    <p class="mt-1 text-xs text-destructive">{{ $message }}</p>
-                                @enderror
-                            </form>
-                        </div>
-                    @endif
+                                <p class="text-xs text-muted-foreground">
+                                    Masukkan kata sandi akun Anda untuk melepaskan proteksi 2FA. Berlaku untuk akun pengguna maupun administrator.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 max-w-md">
+                                <input id="pw_2fa" type="password" name="password" required autocomplete="current-password"
+                                       placeholder="Kata sandi akun Anda..."
+                                       class="min-w-56 flex-1 rounded-xl border-input bg-background text-sm focus:border-primary focus:ring-primary px-3.5 py-2">
+                                <button type="submit" class="rounded-xl border border-destructive/40 bg-card px-4 py-2 text-xs font-semibold text-destructive transition hover:bg-destructive hover:text-white shadow-2xs">
+                                    Lepas / Matikan 2FA
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="mt-1.5 text-xs text-destructive font-medium">{{ $message }}</p>
+                            @enderror
+                        </form>
+                    </div>
                 </div>
             @else
                 <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs max-w-3xl space-y-5">

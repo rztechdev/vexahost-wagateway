@@ -77,7 +77,7 @@
 
                                         {{-- Tombol Tolak --}}
                                         <form method="POST" action="{{ route('admin.referrals.reject', $p->id) }}"
-                                              onsubmit="const alasan = prompt('Alasan penolakan permohonan:'); if (!alasan) return false; this.rejection_reason.value = alasan; return true;">
+                                              onsubmit="event.preventDefault(); const f = this; Swal.fire({ title: 'Tolak Permohonan Reseller', text: 'Masukkan alasan penolakan permohonan untuk {{ addslashes($p->owner?->name ?? 'mitra ini') }}:', input: 'textarea', inputPlaceholder: 'Tuliskan alasan penolakan di sini...', showCancelButton: true, confirmButtonText: 'Tolak Permohonan', cancelButtonText: 'Batal', confirmButtonColor: '#dc2626', inputValidator: (val) => { if (!val || !val.trim()) { return 'Alasan penolakan wajib diisi!'; } } }).then((result) => { if (result.isConfirmed && result.value) { f.rejection_reason.value = result.value.trim(); f.submit(); } });">
                                             @csrf
                                             <input type="hidden" name="rejection_reason" value="">
                                             <button type="submit" class="rounded-lg border border-destructive/40 text-destructive px-3 py-1.5 text-xs font-medium transition hover:bg-destructive/10">

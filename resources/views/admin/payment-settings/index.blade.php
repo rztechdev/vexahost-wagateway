@@ -179,7 +179,10 @@
                                                     class="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                             </button>
-                                            <form method="POST" action="{{ route('admin.payment-settings.bank.destroy', $b->id) }}" onsubmit="return confirm('Hapus rekening ini dari daftar?');">
+                                            <form method="POST" action="{{ route('admin.payment-settings.bank.destroy', $b->id) }}"
+                                                  data-konfirmasi="Hapus rekening {{ $b->bank_name }} ({{ $b->account_number }}) dari daftar pembayaran?"
+                                                  data-konfirmasi-judul="Hapus Rekening Bank"
+                                                  data-konfirmasi-ya="Ya, Hapus Rekening">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="rounded-lg p-1.5 text-rose-500 transition hover:bg-rose-500/10">
