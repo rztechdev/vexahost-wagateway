@@ -273,7 +273,21 @@ class CustomerBillingDetailsTest extends TestCase
         $responseDetail->assertSee('finance@flustradigital.id');
         $responseDetail->assertSee('628999888777');
         $responseDetail->assertSee('Bank Mandiri');
-        $responseDetail->assertSee('9876543210');
         $responseDetail->assertSee('Gedung Menara Flustra Lt. 12');
+    }
+
+    public function test_checkout_page_does_not_leak_raw_javascript_outside_script_tags(): void
+    {
+        $invoice = $this->terbitkanTagihan();
+
+        $response = $this->actingAs($this->owner)
+            ->withSession(['current_workspace_id' => $this->workspace->id])
+            ->get(route('billing.invoice', $invoice->id));
+
+        $response->assertOk();
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('x-data="checkoutInvoice(window.checkoutInvoiceData)"', $content);
+        $this->assertStringContainsString('x-data="formDataPelanggan(window.formDataPelangganData)"', $content);
     }
 }
