@@ -9,6 +9,7 @@ import './tur-pengenalan';
 
 Alpine.plugin(collapse);
 window.Alpine = Alpine;
+window.Swal = Swal;
 
 Alpine.start();
 

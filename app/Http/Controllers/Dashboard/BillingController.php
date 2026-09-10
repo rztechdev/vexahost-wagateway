@@ -270,6 +270,12 @@ class BillingController extends Controller
 
         $invoice = $workspace->invoices()->findOrFail($id);
 
+        $selectedProvince = old('billing_province', $workspace->billing_province);
+        $selectedCity = old('billing_city', $workspace->billing_city);
+
+        $daftarKota = $selectedProvince ? \App\Support\WilayahIndonesia::kota($selectedProvince) : [];
+        $daftarKecamatan = ($selectedProvince && $selectedCity) ? \App\Support\WilayahIndonesia::kecamatan($selectedProvince, $selectedCity) : [];
+
         return view('dashboard.billing.invoice', [
             'invoice' => $invoice,
             'plan' => $invoice->plan(),
@@ -289,15 +295,28 @@ class BillingController extends Controller
             'bankAccounts' => $this->qris->bankAccounts(),
             'bolehBayar' => $request->user()->canManage($workspace),
 
-            // Data penagihan dipakai dua kali di halaman ini: mengisi form di
-            // kolom kiri, dan mencetak "ditagihkan kepada" di ringkasan kanan.
+            // Data penagihan dipakai di form kolom kiri dan mencetak data di ringkasan.
             'penagihan' => [
+                'type' => $workspace->billing_type ?: 'individu',
+                'company' => $workspace->billing_company,
                 'nama' => $workspace->billing_name ?: $workspace->name,
                 'email' => $workspace->billing_email ?: ($workspace->owner_email ?: $request->user()->email),
                 'telepon' => $workspace->billing_phone,
-                'lengkap' => filled($workspace->billing_name) && filled($workspace->billing_email),
+                'bank_name' => $workspace->billing_bank_name,
+                'bank_account' => $workspace->billing_bank_account,
+                'bank_holder' => $workspace->billing_bank_holder,
+                'province' => $workspace->billing_province,
+                'city' => $workspace->billing_city,
+                'district' => $workspace->billing_district,
+                'address' => $workspace->billing_address,
+                'postal_code' => $workspace->billing_postal_code,
+                'lengkap' => $workspace->isBillingComplete(),
             ],
 
+            'daftarBank' => \App\Support\DaftarBank::all(),
+            'daftarProvinsi' => \App\Support\WilayahIndonesia::provinsi(),
+            'daftarKota' => $daftarKota,
+            'daftarKecamatan' => $daftarKecamatan,
             'mayarAvailable' => $this->mayar->isConfigured(),
             'mayarPaymentUrl' => $invoice->payment_url,
         ]);
@@ -313,6 +332,13 @@ class BillingController extends Controller
         abort_unless($request->user()->canManage($workspace), 403, 'Hanya owner atau admin yang bisa mengurus pembayaran.');
 
         $invoice = $workspace->invoices()->findOrFail($id);
+
+        if (! $workspace->isBillingComplete()) {
+            return response()->json([
+                'status' => 'incomplete_billing',
+                'message' => 'Lengkapi Data Pelanggan dan rekening terlebih dahulu sebelum melanjutkan pembayaran.',
+            ], 422);
+        }
 
         if ($invoice->isPaid()) {
             return response()->json([
@@ -331,9 +357,9 @@ class BillingController extends Controller
 
         if (! $this->mayar->isConfigured()) {
             return response()->json([
-                'status' => 'not_configured',
-                'message' => 'Gateway pembayaran Mayar belum diaktifkan.',
-            ], 503);
+                'status' => 'gateway_disabled',
+                'message' => 'Metode pembayaran online sedang tidak aktif.',
+            ], 422);
         }
 
         try {
@@ -345,9 +371,11 @@ class BillingController extends Controller
                 'mayar_id' => $session['id'],
             ]);
         } catch (\Throwable $e) {
+            report($e);
+
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage(),
+                'message' => 'Gagal membuat sesi pembayaran: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -369,36 +397,66 @@ class BillingController extends Controller
         $workspace->invoices()->findOrFail($id);
 
         $data = $request->validate([
+            'billing_type' => ['required', 'in:individu,badan'],
             'billing_name' => ['required', 'string', 'max:120'],
+            'billing_company' => ['nullable', 'string', 'max:150'],
             'billing_email' => ['required', 'email', 'max:180'],
-            'billing_phone' => ['nullable', 'string', 'max:20'],
-        ], [], [
-            'billing_name' => 'nama penagihan',
-            'billing_email' => 'email penagihan',
-            'billing_phone' => 'nomor WhatsApp',
+            'billing_phone' => ['required', 'string', 'max:20'],
+            'billing_bank_name' => ['required', 'string', 'max:80'],
+            'billing_bank_account' => ['required', 'string', 'max:50'],
+            'billing_bank_holder' => ['required', 'string', 'max:120'],
+            'billing_province' => ['required', 'string', 'max:100'],
+            'billing_city' => ['required', 'string', 'max:100'],
+            'billing_district' => ['required', 'string', 'max:100'],
+            'billing_address' => ['required', 'string', 'max:500'],
+            'billing_postal_code' => ['nullable', 'string', 'max:10'],
+        ], [
+            'billing_type.required' => 'Pilih jenis pelanggan (Individu atau Badan).',
+            'billing_name.required' => 'Nama lengkap penanggung jawab wajib diisi.',
+            'billing_email.required' => 'Email penagihan wajib diisi.',
+            'billing_phone.required' => 'Nomor WhatsApp wajib diisi.',
+            'billing_bank_name.required' => 'Nama bank wajib dipilih.',
+            'billing_bank_account.required' => 'Nomor rekening wajib diisi.',
+            'billing_bank_holder.required' => 'Nama pemilik rekening wajib diisi.',
+            'billing_province.required' => 'Provinsi wajib dipilih.',
+            'billing_city.required' => 'Kota atau kabupaten wajib dipilih.',
+            'billing_district.required' => 'Kecamatan wajib dipilih.',
+            'billing_address.required' => 'Alamat jalan wajib diisi.',
         ]);
+
+        if ($data['billing_type'] === 'badan' && empty(trim((string) ($data['billing_company'] ?? '')))) {
+            return back()->withErrors(['billing_company' => 'Nama perusahaan / badan usaha wajib diisi.'])->withInput();
+        }
 
         // Nomor dinormalkan seperti nomor tujuan pesan mana pun; pengingat yang
         // dikirim ke `08...` gagal diam-diam, dan gagalnya baru ketahuan sebagai
         // pelanggan yang tidak pernah tahu langganannya habis.
-        $nomor = filled($data['billing_phone'] ?? null)
-            ? PhoneNumber::normalize($data['billing_phone'])
-            : null;
+        $nomor = PhoneNumber::normalize($data['billing_phone']);
 
-        if (filled($data['billing_phone'] ?? null) && $nomor === null) {
-            return back()->withErrors(['billing_phone' => 'Nomor WhatsApp tidak valid.'])->withInput();
+        if ($nomor === null) {
+            return back()->withErrors(['billing_phone' => 'Nomor WhatsApp tidak valid. Masukkan format nomor yang benar.'])->withInput();
         }
 
         $workspace->forceFill([
+            'billing_type' => $data['billing_type'],
             'billing_name' => $data['billing_name'],
+            'billing_company' => $data['billing_company'] ?? null,
             'billing_email' => $data['billing_email'],
             'billing_phone' => $nomor,
+            'billing_bank_name' => $data['billing_bank_name'],
+            'billing_bank_account' => preg_replace('/[^0-9]/', '', (string) $data['billing_bank_account']),
+            'billing_bank_holder' => $data['billing_bank_holder'],
+            'billing_province' => $data['billing_province'],
+            'billing_city' => $data['billing_city'],
+            'billing_district' => $data['billing_district'] ?? null,
+            'billing_address' => $data['billing_address'],
+            'billing_postal_code' => $data['billing_postal_code'] ?? null,
         ])->save();
 
         return back()->with('swal', [
             'icon' => 'success',
-            'title' => 'Data penagihan disimpan',
-            'text' => 'Nama dan email ini akan tercetak di tagihan Anda.',
+            'title' => 'Data pelanggan disimpan',
+            'text' => 'Data penagihan dan rekening Anda berhasil diperbarui. Anda sekarang dapat melanjutkan pembayaran.',
         ]);
     }
 

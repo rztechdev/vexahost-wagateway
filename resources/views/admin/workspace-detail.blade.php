@@ -132,6 +132,81 @@
                 </form>
             </x-section>
 
+            {{-- ===================== Data Pelanggan & Penagihan ===================== --}}
+            <x-section judul="Data Pelanggan &amp; Penagihan" sub="Data resmi untuk kwitansi, rekening dan verifikasi." rapat>
+                <div class="space-y-3 text-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-b border-border pb-3">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Jenis Pelanggan</span>
+                            <div class="mt-1 flex items-center gap-2">
+                                <x-badge :warna="$workspace->billing_type === 'badan' ? 'biru' : 'netral'">
+                                    {{ $workspace->billing_type === 'badan' ? 'Badan Usaha' : 'Individu' }}
+                                </x-badge>
+                                @if ($workspace->isBillingComplete())
+                                    <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">✓ Lengkap</span>
+                                @else
+                                    <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">⚠ Belum Lengkap</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if ($workspace->billing_company)
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nama Perusahaan</span>
+                                <p class="mt-1 font-semibold text-foreground">{{ $workspace->billing_company }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border-b border-border pb-3">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{{ $workspace->billing_type === 'badan' ? 'Nama PIC' : 'Nama Lengkap' }}</span>
+                            <p class="mt-1 font-medium text-foreground">{{ $workspace->billing_name ?: '—' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email Penagihan</span>
+                            <p class="mt-1 font-medium text-foreground">{{ $workspace->billing_email ?: '—' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nomor WhatsApp</span>
+                            <p class="mt-1 font-medium text-foreground">
+                                @if ($workspace->billing_phone)
+                                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $workspace->billing_phone) }}" target="_blank"
+                                       class="text-primary hover:underline inline-flex items-center gap-1 font-mono">
+                                        {{ $workspace->billing_phone }}
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    </a>
+                                @else
+                                    —
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rekening Bank Pelanggan</span>
+                            <p class="mt-1 font-semibold text-foreground">
+                                {{ $workspace->billing_bank_name ?: '—' }}
+                                @if ($workspace->billing_bank_account)
+                                    · <span class="font-mono">{{ $workspace->billing_bank_account }}</span>
+                                @endif
+                            </p>
+                            @if ($workspace->billing_bank_holder)
+                                <p class="text-xs text-muted-foreground mt-0.5">a.n. {{ $workspace->billing_bank_holder }}</p>
+                            @endif
+                        </div>
+
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alamat Penagihan</span>
+                            <p class="mt-1 text-xs leading-relaxed text-foreground">
+                                {{ implode(', ', array_filter([$workspace->billing_address, $workspace->billing_district, $workspace->billing_city, $workspace->billing_province, $workspace->billing_postal_code])) ?: '—' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </x-section>
+
             {{-- ===================== Sesi ===================== --}}
             <x-section judul="Sesi WhatsApp">
                 <table class="w-full min-w-[36rem] text-sm">

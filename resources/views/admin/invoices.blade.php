@@ -49,7 +49,53 @@
 
                         <td class="px-5 py-3">
                             @if ($invoice->workspace)
-                                <a href="{{ route('admin.workspaces.show', $invoice->workspace_id) }}" class="hover:underline">{{ $invoice->workspace->name }}</a>
+                                <a href="{{ route('admin.workspaces.show', $invoice->workspace_id) }}" class="font-medium hover:underline">{{ $invoice->workspace->name }}</a>
+                                @php $ws = $invoice->workspace; @endphp
+                                <div class="mt-0.5">
+                                    <details class="group text-xs">
+                                        <summary class="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                                            <span>{{ $ws->billing_name ?: ($ws->owner_email ?? 'Data Pelanggan') }}</span>
+                                            @if ($ws->billing_phone)
+                                                <span>· {{ $ws->billing_phone }}</span>
+                                            @endif
+                                            <span class="text-primary font-bold group-open:hidden">▾</span>
+                                            <span class="text-primary font-bold hidden group-open:inline">▴</span>
+                                        </summary>
+                                        <div class="mt-2 rounded-xl border border-border bg-card p-3 text-xs space-y-1.5 shadow-sm min-w-64 max-w-sm">
+                                            <div class="flex items-center justify-between border-b border-border/80 pb-1">
+                                                <span class="text-[10px] uppercase tracking-wide font-bold text-muted-foreground">Tipe</span>
+                                                <span class="font-semibold text-primary capitalize">{{ $ws->billing_type ? ($ws->billing_type === 'badan' ? 'Badan Usaha' : 'Individu') : 'Individu' }}</span>
+                                            </div>
+                                            @if ($ws->billing_company)
+                                                <div>
+                                                    <span class="text-[10px] text-muted-foreground">Perusahaan:</span>
+                                                    <p class="font-semibold">{{ $ws->billing_company }}</p>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <span class="text-[10px] text-muted-foreground">{{ $ws->billing_type === 'badan' ? 'Nama PIC:' : 'Nama Lengkap:' }}</span>
+                                                <p class="font-medium">{{ $ws->billing_name ?: '-' }}</p>
+                                            </div>
+                                            <div>
+                                                <span class="text-[10px] text-muted-foreground">Kontak:</span>
+                                                <p class="font-medium">{{ $ws->billing_email ?: '-' }} · {{ $ws->billing_phone ?: '-' }}</p>
+                                            </div>
+                                            <div>
+                                                <span class="text-[10px] text-muted-foreground">Rekening Bank:</span>
+                                                <p class="font-medium">{{ $ws->billing_bank_name ?: '-' }} ({{ $ws->billing_bank_account ?: '-' }})</p>
+                                                @if ($ws->billing_bank_holder)
+                                                    <p class="text-[10px] text-muted-foreground">a.n. {{ $ws->billing_bank_holder }}</p>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <span class="text-[10px] text-muted-foreground">Alamat Penagihan:</span>
+                                                <p class="text-[11px] leading-relaxed">
+                                                    {{ implode(', ', array_filter([$ws->billing_address, $ws->billing_district, $ws->billing_city, $ws->billing_province, $ws->billing_postal_code])) ?: '-' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
                             @else
                                 <span class="text-muted-foreground">—</span>
                             @endif
@@ -140,6 +186,53 @@
                             <x-badge warna="netral">menunggu bayar</x-badge>
                         @endif
                     </div>
+
+                    {{-- Data Pelanggan & Rekening Lengkap untuk Admin --}}
+                    @php $ws = $invoice->workspace; @endphp
+                    @if ($ws && ($ws->billing_name || $ws->billing_bank_name || $ws->billing_phone))
+                        <div class="mt-3 rounded-xl border border-border/80 bg-muted/20 p-3 text-xs space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase">
+                                        {{ $ws->billing_type === 'badan' ? 'Badan Usaha' : 'Individu' }}
+                                    </span>
+                                    <span class="font-bold text-foreground">{{ $ws->billing_company ?: $ws->billing_name }}</span>
+                                    @if ($ws->billing_company && $ws->billing_name)
+                                        <span class="text-muted-foreground">(PIC: {{ $ws->billing_name }})</span>
+                                    @endif
+                                </div>
+                                @if ($ws->billing_phone)
+                                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $ws->billing_phone) }}" target="_blank"
+                                       class="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-semibold text-primary hover:bg-muted transition">
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                        <span>Chat WA ({{ $ws->billing_phone }})</span>
+                                    </a>
+                                @endif
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                <div>
+                                    <span class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Email:</span>
+                                    <p class="font-medium text-foreground truncate">{{ $ws->billing_email ?: '-' }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Rekening Pelanggan:</span>
+                                    <p class="font-medium text-foreground">
+                                        {{ $ws->billing_bank_name ?: '-' }} · <span class="font-mono font-bold">{{ $ws->billing_bank_account ?: '-' }}</span>
+                                    </p>
+                                    @if ($ws->billing_bank_holder)
+                                        <p class="text-[11px] text-muted-foreground">a.n. {{ $ws->billing_bank_holder }}</p>
+                                    @endif
+                                </div>
+                                <div>
+                                    <span class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Alamat Penagihan:</span>
+                                    <p class="text-[11px] leading-relaxed text-foreground">
+                                        {{ implode(', ', array_filter([$ws->billing_address, $ws->billing_district, $ws->billing_city, $ws->billing_province, $ws->billing_postal_code])) ?: '—' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4">
                         <form method="POST" action="{{ route('admin.invoices.paid', $invoice->id) }}"

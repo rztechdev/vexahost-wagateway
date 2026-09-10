@@ -673,9 +673,17 @@ class BillingTest extends TestCase
 
         $this->actingAs($this->owner)
             ->post(route('billing.details', $invoice->id), [
+                'billing_type' => 'individu',
                 'billing_name' => 'PT Sinar Jaya',
                 'billing_email' => 'keuangan@sinarjaya.id',
                 'billing_phone' => '081234567890',
+                'billing_bank_name' => 'Bank Mandiri',
+                'billing_bank_account' => '1234567890',
+                'billing_bank_holder' => 'PT Sinar Jaya',
+                'billing_province' => 'DKI Jakarta',
+                'billing_city' => 'Jakarta Selatan',
+                'billing_district' => 'Kebayoran Baru',
+                'billing_address' => 'Jl. Gatot Subroto No. 12',
             ])
             ->assertRedirect();
 

@@ -23,6 +23,16 @@ class Workspace extends Model
         'billing_phone',
         'billing_name',
         'billing_email',
+        'billing_type',
+        'billing_company',
+        'billing_bank_name',
+        'billing_bank_account',
+        'billing_bank_holder',
+        'billing_province',
+        'billing_city',
+        'billing_district',
+        'billing_address',
+        'billing_postal_code',
         'status',
         'service_until',
         'plan_slug',
@@ -33,6 +43,33 @@ class Workspace extends Model
         'api_rate_limit_per_minute',
         'is_internal',
     ];
+
+    /**
+     * Memeriksa apakah data penagihan pelanggan sudah terisi lengkap.
+     */
+    public function isBillingComplete(): bool
+    {
+        $basic = filled($this->billing_name)
+            && filled($this->billing_email)
+            && filled($this->billing_phone)
+            && filled($this->billing_bank_name)
+            && filled($this->billing_bank_account)
+            && filled($this->billing_bank_holder)
+            && filled($this->billing_province)
+            && filled($this->billing_city)
+            && filled($this->billing_district)
+            && filled($this->billing_address);
+
+        if (! $basic) {
+            return false;
+        }
+
+        if ($this->billing_type === 'badan') {
+            return filled($this->billing_company);
+        }
+
+        return true;
+    }
 
     protected function casts(): array
     {

@@ -11,7 +11,7 @@
          | di baliknya persis kesalahan yang dulu dibuat driver `fonnte` pada
          | halaman pembuatan sesi: pelanggan memilih, lalu menemui jalan buntu.
          */
-        $daftarBank = (isset($bankAccounts) && $bankAccounts->isNotEmpty()) 
+        $daftarRekeningTujuan = (isset($bankAccounts) && $bankAccounts->isNotEmpty()) 
             ? $bankAccounts 
             : (filled($bank['account_number'] ?? null) ? collect([ (object) [
                 'id' => 0,
@@ -22,7 +22,7 @@
                 'instructions' => null,
             ]]) : collect());
 
-        $punyaBank = $daftarBank->isNotEmpty();
+        $punyaBank = $daftarRekeningTujuan->isNotEmpty();
 
         $metode = [];
         if ($mayarAvailable ?? false) {
@@ -47,6 +47,11 @@
             ];
         }
         $metodeAwal = ($mayarAvailable ?? false) ? 'mayar' : ($qrisPayload ? 'qris' : ($punyaBank ? 'bank' : ''));
+
+        $pilihanBank = (!empty($daftarBank) && is_array($daftarBank)) ? $daftarBank : \App\Support\DaftarBank::all();
+        $daftarProvinsi = (!empty($daftarProvinsi) && is_array($daftarProvinsi)) ? $daftarProvinsi : \App\Support\WilayahIndonesia::provinsi();
+        $daftarKota = $daftarKota ?? [];
+        $daftarKecamatan = $daftarKecamatan ?? [];
     @endphp
 
     {{-- ===================== Keadaan Akhir (Paid, Overdue, Canceled) =====================
@@ -168,75 +173,271 @@
          - KANAN ATAS: Ringkasan Biaya, Pilih Metode & Munculnya Pembayaran (QRIS/Bank)
          - KANAN BAWAH (Di bawah Payment): Kirim Bukti Pembayaran
          ========================================================================== --}}
-    <div x-data="{ 
-            metode: '{{ $metodeAwal }}',
-            leftHeight: 0,
-            salinTeks(teks, idTarget) {
-                navigator.clipboard.writeText(teks).then(() => {
-                    this[idTarget] = true;
-                    setTimeout(() => { this[idTarget] = false; }, 2000);
-                });
-            },
-            copiedRekening: false,
-            copiedTotal: false,
-            updateHeight() {
-                if (window.innerWidth >= 1024 && this.$refs.leftCol) {
-                    this.leftHeight = this.$refs.leftCol.offsetHeight;
-                } else {
-                    this.leftHeight = 0;
-                }
-            },
-            mayarLoading: false,
-            mayarUrl: '{{ $mayarPaymentUrl ?? '' }}',
-            bayarMayar() {
-                if (this.mayarUrl) {
-                    window.location.href = this.mayarUrl;
-                    return;
-                }
-                this.mayarLoading = true;
-                fetch('{{ route('billing.invoice.mayar', $invoice->id) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
+    <script>
+        window.checkoutInvoiceData = {
+            metodeAwal: @json($metodeAwal),
+            mayarPaymentUrl: @json($mayarPaymentUrl ?? ''),
+            billingLengkap: @json((bool)$penagihan['lengkap']),
+            mayarEndpoint: @json(route('billing.invoice.mayar', $invoice->id)),
+            csrfToken: @json(csrf_token())
+        };
+
+        window.formDataPelangganData = {
+            tipePelanggan: @json(old('billing_type', $penagihan['type'] ?? 'individu')),
+            provinsi: @json(old('billing_province', $penagihan['province'] ?? '')),
+            kota: @json(old('billing_city', $penagihan['city'] ?? '')),
+            kecamatan: @json(old('billing_district', $penagihan['district'] ?? '')),
+            daftarKota: @json($daftarKota ?? []),
+            daftarKecamatan: @json($daftarKecamatan ?? [])
+        };
+
+        function checkoutInvoice(cfg) {
+            const config = cfg || window.checkoutInvoiceData || {};
+            return {
+                metode: config.metodeAwal || 'mayar',
+                copiedRekening: false,
+                copiedTotal: false,
+                mayarLoading: false,
+                mayarUrl: config.mayarPaymentUrl || '',
+                billingLengkap: Boolean(config.billingLengkap),
+                init() {
+                    if (this.metode === 'qris') {
+                        this.$nextTick(() => {
+                            if (window.renderQris) window.renderQris();
+                        });
                     }
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.status === 'ok' && res.payment_url) {
-                        this.mayarUrl = res.payment_url;
-                        window.location.href = res.payment_url;
-                    } else if (res.status === 'already_paid') {
-                        window.location.reload();
+                    this.$watch('metode', (val) => {
+                        if (val === 'qris') {
+                            this.$nextTick(() => {
+                                if (window.renderQris) window.renderQris();
+                            });
+                        }
+                    });
+                },
+                salinTeks(teks, idTarget) {
+                    navigator.clipboard.writeText(teks).then(() => {
+                        this[idTarget] = true;
+                        setTimeout(() => { this[idTarget] = false; }, 2000);
+                    });
+                },
+                tandaiFormKosong() {
+                    const form = document.querySelector('#form-data-pelanggan form');
+                    if (!form) return [];
+
+                    form.querySelectorAll('.border-destructive').forEach((el) => {
+                        el.classList.remove('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+                    });
+
+                    const tipeInput = form.querySelector('[name="billing_type"]');
+                    const tipe = tipeInput ? tipeInput.value : 'individu';
+                    const isBadan = tipe === 'badan';
+
+                    const fields = [
+                        { name: 'billing_name', label: isBadan ? 'Nama PIC' : 'Nama Lengkap' },
+                        { name: 'billing_email', label: 'Email Penagihan' },
+                        { name: 'billing_phone', label: 'Nomor WhatsApp' },
+                        { name: 'billing_bank_name', label: 'Pilih Bank' },
+                        { name: 'billing_bank_account', label: 'Nomor Rekening' },
+                        { name: 'billing_bank_holder', label: isBadan ? 'Nama Pemilik Rekening Perusahaan' : 'Nama Pemilik Rekening' },
+                        { name: 'billing_province', label: 'Provinsi' },
+                        { name: 'billing_city', label: 'Kota atau Kabupaten' },
+                        { name: 'billing_district', label: 'Kecamatan' },
+                        { name: 'billing_address', label: isBadan ? 'Alamat Kantor atau Gedung' : 'Alamat Tempat Tinggal' }
+                    ];
+
+                    if (isBadan) {
+                        fields.unshift({ name: 'billing_company', label: 'Nama Perusahaan' });
+                    }
+
+                    let firstEmpty = null;
+                    let missingLabels = [];
+
+                    fields.forEach((item) => {
+                        const input = form.querySelector('[name="' + item.name + '"]');
+                        if (input && (!input.value || !input.value.trim())) {
+                            input.classList.add('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+
+                            const clearMarker = () => {
+                                if (input.value && input.value.trim()) {
+                                    input.classList.remove('border-destructive', 'ring-2', 'ring-destructive/30', 'bg-destructive/5');
+                                    input.removeEventListener('input', clearMarker);
+                                    input.removeEventListener('change', clearMarker);
+                                }
+                            };
+                            input.addEventListener('input', clearMarker);
+                            input.addEventListener('change', clearMarker);
+
+                            if (!firstEmpty) {
+                                firstEmpty = input;
+                            }
+                            missingLabels.push(item.label);
+                        }
+                    });
+
+                    if (firstEmpty) {
+                        firstEmpty.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => {
+                            try { firstEmpty.focus(); } catch (e) {}
+                        }, 400);
                     } else {
-                        this.mayarLoading = false;
-                        alert(res.message || 'Gagal memuat sesi pembayaran Mayar.');
+                        const el = document.getElementById('form-data-pelanggan');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                })
-                .catch(err => {
-                    this.mayarLoading = false;
-                    alert('Terjadi kendala jaringan saat menghubungi server pembayaran.');
-                });
-            },
-         }" 
-         x-init="
-            $nextTick(() => { updateHeight(); });
-            window.addEventListener('resize', () => { updateHeight(); });
-            if (metode === 'qris') {
-                $nextTick(() => {
-                    if (window.renderQris) window.renderQris();
-                });
-            }
-            $watch('metode', val => {
-                if (val === 'qris') {
-                    $nextTick(() => {
-                        if (window.renderQris) window.renderQris();
+
+                    return missingLabels;
+                },
+                bayarMayar() {
+                    if (!this.billingLengkap) {
+                        const missing = this.tandaiFormKosong();
+                        let infoKolom = '';
+                        if (missing && missing.length > 0) {
+                            infoKolom = '<p class="mt-2 text-[11px] text-muted-foreground">Kolom yang belum diisi: <strong class="text-foreground">' +
+                                missing.slice(0, 3).join(', ') +
+                                (missing.length > 3 ? ' (' + (missing.length - 3) + ' lainnya)' : '') +
+                                '</strong></p>';
+                        }
+
+                        const htmlContent = '<div class="text-xs text-muted-foreground leading-relaxed">' +
+                            '<p>Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.</p>' +
+                            infoKolom +
+                            '<p class="mt-2 font-medium text-destructive">Kolom yang wajib diisi telah diberi tanda batas merah.</p>' +
+                            '</div>';
+
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Data Pelanggan Belum Lengkap',
+                                html: htmlContent,
+                                confirmButtonColor: '#2563eb',
+                                confirmButtonText: 'Lengkapi Data'
+                            });
+                        } else if (window.beriTahu) {
+                            window.beriTahu({
+                                icon: 'warning',
+                                title: 'Data Pelanggan Belum Lengkap',
+                                text: 'Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.'
+                            });
+                        } else {
+                            alert('Mohon lengkapi dan simpan data penagihan di sebelah kiri sebelum melanjutkan pembayaran.');
+                        }
+                        return;
+                    }
+
+                    if (this.mayarUrl) {
+                        window.location.href = this.mayarUrl;
+                        return;
+                    }
+
+                    this.mayarLoading = true;
+                    fetch(config.mayarEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': config.csrfToken,
+                            'Accept': 'application/json',
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.status === 'ok' && res.payment_url) {
+                            this.mayarUrl = res.payment_url;
+                            window.location.href = res.payment_url;
+                        } else if (res.status === 'already_paid') {
+                            window.location.reload();
+                        } else if (res.status === 'incomplete_billing') {
+                            this.mayarLoading = false;
+                            this.billingLengkap = false;
+                            this.tandaiFormKosong();
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Data Pelanggan Belum Lengkap',
+                                    html: '<div class="text-xs text-muted-foreground leading-relaxed">' +
+                                          '<p>' + (res.message || 'Lengkapi data pelanggan terlebih dahulu.') + '</p>' +
+                                          '<p class="mt-2 font-medium text-destructive">Kolom yang wajib diisi telah diberi tanda batas merah.</p>' +
+                                          '</div>',
+                                    confirmButtonColor: '#2563eb',
+                                    confirmButtonText: 'Lengkapi Data'
+                                });
+                            } else {
+                                alert(res.message || 'Lengkapi data pelanggan terlebih dahulu.');
+                            }
+                        } else {
+                            this.mayarLoading = false;
+                            alert(res.message || 'Gagal memuat sesi pembayaran Mayar.');
+                        }
+                    })
+                    .catch(err => {
+                        this.mayarLoading = false;
+                        alert('Terjadi kendala jaringan saat menghubungi server pembayaran.');
                     });
                 }
-            });
-         "
-         class="space-y-6">
+            };
+        }
+
+        function formDataPelanggan(cfg) {
+            const config = cfg || window.formDataPelangganData || {};
+            return {
+                tipePelanggan: config.tipePelanggan || 'individu',
+                provinsi: config.provinsi || '',
+                kota: config.kota || '',
+                kecamatan: config.kecamatan || '',
+                daftarKota: Array.isArray(config.daftarKota) ? config.daftarKota : [],
+                daftarKecamatan: Array.isArray(config.daftarKecamatan) ? config.daftarKecamatan : [],
+                wilayahData: null,
+                async init() {
+                    try {
+                        const res = await fetch('/data/wilayah.json');
+                        if (res.ok) {
+                            this.wilayahData = await res.json();
+                            if (this.provinsi && (!this.daftarKota || this.daftarKota.length === 0)) {
+                                this.updateKotaList();
+                            }
+                            if (this.kota && (!this.daftarKecamatan || this.daftarKecamatan.length === 0)) {
+                                this.updateKecamatanList();
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Gagal memuat data wilayah:', e);
+                    }
+                },
+                updateKotaList() {
+                    if (this.wilayahData && this.provinsi && this.wilayahData[this.provinsi]) {
+                        this.daftarKota = Object.keys(this.wilayahData[this.provinsi]);
+                    } else {
+                        this.daftarKota = [];
+                    }
+                },
+                updateKecamatanList() {
+                    if (this.wilayahData && this.provinsi && this.kota && this.wilayahData[this.provinsi] && this.wilayahData[this.provinsi][this.kota]) {
+                        this.daftarKecamatan = this.wilayahData[this.provinsi][this.kota];
+                    } else {
+                        this.daftarKecamatan = [];
+                    }
+                },
+                onProvinsiChange() {
+                    this.kota = '';
+                    this.kecamatan = '';
+                    this.daftarKecamatan = [];
+                    this.updateKotaList();
+                },
+                onKotaChange() {
+                    this.kecamatan = '';
+                    this.updateKecamatanList();
+                }
+            };
+        }
+
+        window.checkoutInvoice = checkoutInvoice;
+        window.formDataPelanggan = formDataPelanggan;
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('checkoutInvoice', checkoutInvoice);
+            Alpine.data('formDataPelanggan', formDataPelanggan);
+        });
+    </script>
+
+    <div x-data="checkoutInvoice(window.checkoutInvoiceData)" class="space-y-6">
         {{-- Tombol Navigasi Kembali --}}
         <div>
             <a href="{{ route('billing.history') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition shadow-xs">
@@ -273,7 +474,7 @@
         <div class="grid items-start gap-6 lg:grid-cols-[1.55fr_1fr]">
 
             {{-- ===================== SISI KIRI ===================== --}}
-            <div x-ref="leftCol" class="space-y-6">
+            <div class="space-y-6">
 
                 {{-- KIRI 1: Paket & Termasuk di Paket Ini --}}
                 <section class="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-xs transition sm:p-6">
@@ -316,80 +517,285 @@
                         </ul>
                     </div>
                 </section>
-
                 {{-- KIRI 2: Data Pelanggan / Data Penagihan --}}
-                <section class="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-xs transition sm:p-6">
+                <section id="form-data-pelanggan" class="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-xs transition sm:p-6"
+                         x-data="formDataPelanggan(window.formDataPelangganData)">
                     <div class="flex items-start gap-4">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3.5">
                                 <div>
-                                    <h2 class="text-base font-bold text-foreground">Data Pelanggan</h2>
-                                    <p class="mt-0.5 text-xs text-muted-foreground">
-                                        Informasi penagihan resmi untuk tagihan workspace ini.
+                                    <h2 class="text-base font-bold text-foreground">
+                                        <span x-text="tipePelanggan === 'badan' ? 'Data Penagihan Badan Usaha' : 'Data Pelanggan Individu'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Data Penagihan Badan Usaha' : 'Data Pelanggan Individu' }}</span>
+                                    </h2>
+                                    <p class="mt-0.5 text-xs text-muted-foreground" x-text="tipePelanggan === 'badan' ? 'Data resmi penagihan perusahaan untuk kwitansi, pengembalian dana, dan verifikasi akun.' : 'Data resmi penagihan pelanggan untuk kwitansi, pengembalian dana, dan verifikasi akun.'">
+                                        {{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Data resmi penagihan perusahaan untuk kwitansi, pengembalian dana, dan verifikasi akun.' : 'Data resmi penagihan pelanggan untuk kwitansi, pengembalian dana, dan verifikasi akun.' }}
                                     </p>
                                 </div>
                                 @if ($penagihan['lengkap'])
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-[11px] font-semibold">
                                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
                                         Lengkap
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 text-[11px] font-semibold">
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        Wajib Diisi
                                     </span>
                                 @endif
                             </div>
 
                             @if ($bolehBayar)
-                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi class="mt-4 space-y-3.5">
+                                <form method="POST" action="{{ route('billing.details', $invoice->id) }}" data-validasi class="mt-4 space-y-4">
                                     @csrf
+
+                                    {{-- 1. PILIHAN TIPE PELANGGAN: INDIVIDU / BADAN USAHA --}}
                                     <div>
-                                        <label for="billing_name" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
-                                            Nama Lengkap / Perusahaan
+                                        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                             Jenis Pelanggan <span class="text-destructive">*</span>
                                         </label>
-                                        <input id="billing_name" name="billing_name" type="text" required maxlength="120"
-                                               value="{{ old('billing_name', $penagihan['nama']) }}"
-                                               placeholder="Contoh: PT Flustra Solusi"
-                                               class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        <input type="hidden" name="billing_type" :value="tipePelanggan">
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <button type="button" 
+                                                    @click="tipePelanggan = 'individu'"
+                                                    class="inline-flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-xs font-bold transition select-none"
+                                                    :class="tipePelanggan === 'individu' ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:bg-muted/50'">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                                <span>Individu</span>
+                                            </button>
+                                            <button type="button" 
+                                                    @click="tipePelanggan = 'badan'"
+                                                    class="inline-flex items-center justify-center gap-2 rounded-xl border py-2.5 px-3 text-xs font-bold transition select-none"
+                                                    :class="tipePelanggan === 'badan' ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:bg-muted/50'">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+                                                <span>Badan Usaha</span>
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label for="billing_email" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
-                                            Email Penagihan
+                                    {{-- Kolom Perusahaan jika Badan Usaha --}}
+                                    <div x-show="tipePelanggan === 'badan'" x-cloak class="space-y-1">
+                                        <label for="billing_company" class="block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                            Nama Perusahaan <span class="text-destructive">*</span>
                                         </label>
-                                        <input id="billing_email" name="billing_email" type="email" required maxlength="180"
-                                               value="{{ old('billing_email', $penagihan['email']) }}"
-                                               placeholder="finance@perusahaan.com"
-                                               class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        <input id="billing_company" name="billing_company" type="text" maxlength="150"
+                                               value="{{ old('billing_company', $penagihan['company'] ?? '') }}"
+                                               placeholder="Nama perusahaan..."
+                                               class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
                                     </div>
 
-                                    <div>
-                                        <label for="billing_phone" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
-                                            Nomor WhatsApp Pengingat <span class="font-normal lowercase text-muted-foreground">(opsional)</span>
-                                        </label>
-                                        <input id="billing_phone" name="billing_phone" type="tel" maxlength="20" inputmode="tel"
-                                               placeholder="081234567890"
-                                               value="{{ old('billing_phone', $penagihan['telepon']) }}"
-                                               class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                        <p class="mt-1 text-xs text-muted-foreground">
-                                            Pengingat tagihan akan dikirim ke nomor ini sebelum masa aktif berakhir.
-                                        </p>
+                                    {{-- 2. KONTAK PENANGGUNG JAWAB --}}
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label for="billing_name" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                <span x-text="tipePelanggan === 'badan' ? 'Nama PIC' : 'Nama Lengkap'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Nama PIC' : 'Nama Lengkap' }}</span> <span class="text-destructive">*</span>
+                                            </label>
+                                            <input id="billing_name" name="billing_name" type="text" required maxlength="120"
+                                                   value="{{ old('billing_name', $penagihan['nama']) }}"
+                                                   :placeholder="tipePelanggan === 'badan' ? 'Nama PIC...' : 'Nama lengkap...'"
+                                                   placeholder="{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Nama PIC...' : 'Nama lengkap...' }}"
+                                                   class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        </div>
+
+                                        <div>
+                                            <label for="billing_email" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                Email Penagihan <span class="text-destructive">*</span>
+                                            </label>
+                                            <input id="billing_email" name="billing_email" type="email" required maxlength="180"
+                                                   value="{{ old('billing_email', $penagihan['email']) }}"
+                                                   placeholder="Email penagihan..."
+                                                   class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        </div>
+
+                                        <div class="sm:col-span-2">
+                                            <label for="billing_phone" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                Nomor WhatsApp Aktif <span class="text-destructive">*</span>
+                                            </label>
+                                            <input id="billing_phone" name="billing_phone" type="tel" required maxlength="20" inputmode="tel"
+                                                   placeholder="08123456789..."
+                                                   value="{{ old('billing_phone', $penagihan['telepon']) }}"
+                                                   class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            <p class="mt-1 text-[11px] text-muted-foreground">
+                                                Notifikasi pembayaran lunas &amp; pengingat akan dikirim ke nomor ini.
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div class="pt-1">
+                                    {{-- 3. DATA REKENING BANK PELANGGAN (WAJIB) --}}
+                                    <div class="rounded-xl border border-border/70 bg-muted/20 p-3.5 space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground">
+                                                <span x-text="tipePelanggan === 'badan' ? 'Informasi Rekening Bank Perusahaan' : 'Informasi Rekening Bank Pribadi'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Informasi Rekening Bank Perusahaan' : 'Informasi Rekening Bank Pribadi' }}</span>
+                                            </h3>
+                                        </div>
+
+                                        <div>
+                                            <label for="billing_bank_name" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                Pilih Bank <span class="text-destructive">*</span>
+                                            </label>
+                                            <select id="billing_bank_name" name="billing_bank_name" required
+                                                    class="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                                <option value="">Pilih bank...</option>
+                                                @foreach ($pilihanBank as $b)
+                                                    <option value="{{ $b }}" @selected(old('billing_bank_name', $penagihan['bank_name'] ?? '') === $b)>{{ $b }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <div>
+                                                <label for="billing_bank_account" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    Nomor Rekening <span class="text-destructive">*</span>
+                                                </label>
+                                                <input id="billing_bank_account" name="billing_bank_account" type="text" required maxlength="50" inputmode="numeric"
+                                                       value="{{ old('billing_bank_account', $penagihan['bank_account'] ?? '') }}"
+                                                       placeholder="Nomor rekening..."
+                                                       class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm font-mono transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            </div>
+
+                                            <div>
+                                                <label for="billing_bank_holder" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    <span x-text="tipePelanggan === 'badan' ? 'Nama Pemilik Rekening Perusahaan' : 'Nama Pemilik Rekening Pribadi'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Nama Pemilik Rekening Perusahaan' : 'Nama Pemilik Rekening Pribadi' }}</span> <span class="text-destructive">*</span>
+                                                </label>
+                                                <input id="billing_bank_holder" name="billing_bank_holder" type="text" required maxlength="120"
+                                                       value="{{ old('billing_bank_holder', $penagihan['bank_holder'] ?? '') }}"
+                                                       :placeholder="tipePelanggan === 'badan' ? 'Nama rekening perusahaan...' : 'Nama pemilik rekening...'"
+                                                       placeholder="{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Nama rekening perusahaan...' : 'Nama pemilik rekening...' }}"
+                                                       class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- 4. ALAMAT DOMISILI / PERUSAHAAN DENGAN DROPDOWN BERJENJANG --}}
+                                    <div class="rounded-xl border border-border/70 bg-muted/20 p-3.5 space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="h-4 w-4 text-primary shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground">
+                                                <span x-text="tipePelanggan === 'badan' ? 'Alamat Kantor Perusahaan' : 'Alamat Domisili Tempat Tinggal'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Alamat Kantor Perusahaan' : 'Alamat Domisili Tempat Tinggal' }}</span>
+                                            </h3>
+                                        </div>
+
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            {{-- Provinsi --}}
+                                            <div>
+                                                <label for="billing_province" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    Provinsi <span class="text-destructive">*</span>
+                                                </label>
+                                                <select id="billing_province" name="billing_province" required
+                                                        x-model="provinsi"
+                                                        @change="onProvinsiChange()"
+                                                        class="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                                    <option value="">Pilih provinsi...</option>
+                                                    @foreach ($daftarProvinsi as $prov)
+                                                        <option value="{{ $prov }}" @selected(old('billing_province', $penagihan['province'] ?? '') === $prov)>{{ $prov }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+
+                                            {{-- Kota / Kabupaten (Cascading Dropdown) --}}
+                                            <div>
+                                                <label for="billing_city" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    Kota atau Kabupaten <span class="text-destructive">*</span>
+                                                </label>
+                                                <select id="billing_city" name="billing_city" required
+                                                        x-model="kota"
+                                                        @change="onKotaChange()"
+                                                        :disabled="!provinsi"
+                                                        class="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 disabled:cursor-not-allowed">
+                                                    <option value="" x-text="!provinsi ? 'Pilih provinsi...' : 'Pilih kota...'">Pilih kota...</option>
+                                                    <template x-for="k in daftarKota" :key="k">
+                                                        <option :value="k" x-text="k" :selected="k === kota"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+
+                                            {{-- Kecamatan (Cascading Dropdown) --}}
+                                            <div>
+                                                <label for="billing_district" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    Kecamatan <span class="text-destructive">*</span>
+                                                </label>
+                                                <select id="billing_district" name="billing_district" required
+                                                        x-model="kecamatan"
+                                                        :disabled="!kota"
+                                                        class="w-full rounded-xl border border-input bg-background px-3 py-2 text-xs sm:text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 disabled:cursor-not-allowed">
+                                                    <option value="" x-text="!kota ? 'Pilih kota...' : 'Pilih kecamatan...'">Pilih kecamatan...</option>
+                                                    <template x-for="kec in daftarKecamatan" :key="kec">
+                                                        <option :value="kec" x-text="kec" :selected="kec === kecamatan"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+
+                                            {{-- Kode Pos --}}
+                                            <div>
+                                                <label for="billing_postal_code" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    Kode Pos <span class="font-normal lowercase text-muted-foreground">(opsional)</span>
+                                                </label>
+                                                <input id="billing_postal_code" name="billing_postal_code" type="text" maxlength="10" inputmode="numeric"
+                                                       value="{{ old('billing_postal_code', $penagihan['postal_code'] ?? '') }}"
+                                                       placeholder="Kode pos..."
+                                                       class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            </div>
+
+                                            {{-- Alamat Lengkap --}}
+                                            <div class="sm:col-span-2">
+                                                <label for="billing_address" class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">
+                                                    <span x-text="tipePelanggan === 'badan' ? 'Alamat Lengkap Kantor atau Gedung' : 'Alamat Lengkap Tempat Tinggal'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Alamat Lengkap Kantor atau Gedung' : 'Alamat Lengkap Tempat Tinggal' }}</span> <span class="text-destructive">*</span>
+                                                </label>
+                                                <textarea id="billing_address" name="billing_address" rows="2" required maxlength="500"
+                                                          :placeholder="tipePelanggan === 'badan' ? 'Jalan, nomor kantor atau gedung...' : 'Jalan, nomor rumah, RT RW...'"
+                                                          placeholder="{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Jalan, nomor kantor atau gedung...' : 'Jalan, nomor rumah, RT RW...' }}"
+                                                          class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs sm:text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">{{ old('billing_address', $penagihan['address'] ?? '') }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-1 flex items-center justify-between">
                                         <button type="submit" 
-                                                class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted active:scale-[0.98]">
-                                            <svg class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                                            <span>Simpan Data Pelanggan</span>
+                                                class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-xs transition hover:opacity-90 active:scale-[0.98]">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                            <span x-text="tipePelanggan === 'badan' ? 'Simpan Data Perusahaan' : 'Simpan Data Pelanggan'">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Simpan Data Perusahaan' : 'Simpan Data Pelanggan' }}</span>
                                         </button>
+                                        @if (! $penagihan['lengkap'])
+                                            <span class="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                                * Wajib disimpan untuk membuka pembayaran
+                                            </span>
+                                        @endif
                                     </div>
                                 </form>
                             @else
-                                <div class="mt-4 rounded-xl border border-border/80 bg-muted/30 p-3.5 text-sm">
-                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="mt-4 rounded-xl border border-border/80 bg-muted/30 p-4 text-xs space-y-2">
+                                    <div class="grid grid-cols-2 gap-2">
                                         <div>
-                                            <span class="text-muted-foreground">Nama:</span>
+                                            <span class="text-muted-foreground">Jenis Pelanggan:</span>
+                                            <p class="font-semibold text-foreground capitalize">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Badan Usaha' : 'Individu' }}</p>
+                                        </div>
+                                        @if (!empty($penagihan['company']))
+                                            <div>
+                                                <span class="text-muted-foreground">Nama Perusahaan:</span>
+                                                <p class="font-semibold text-foreground">{{ $penagihan['company'] }}</p>
+                                            </div>
+                                        @endif
+                                        <div>
+                                            <span class="text-muted-foreground">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Nama PIC:' : 'Nama Lengkap:' }}</span>
                                             <p class="font-medium text-foreground">{{ $penagihan['nama'] }}</p>
                                         </div>
                                         <div>
-                                            <span class="text-muted-foreground">Email:</span>
+                                            <span class="text-muted-foreground">Email Penagihan:</span>
                                             <p class="font-medium text-foreground">{{ $penagihan['email'] }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted-foreground">Nomor WhatsApp:</span>
+                                            <p class="font-mono text-foreground">{{ $penagihan['telepon'] ?? '-' }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted-foreground">Rekening Bank:</span>
+                                            <p class="font-medium text-foreground">{{ $penagihan['bank_name'] ?? '-' }} ({{ $penagihan['bank_account'] ?? '-' }})</p>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <span class="text-muted-foreground">{{ ($penagihan['type'] ?? 'individu') === 'badan' ? 'Alamat Kantor Perusahaan:' : 'Alamat Domisili Tempat Tinggal:' }}</span>
+                                            <p class="font-medium text-foreground">
+                                                {{ implode(', ', array_filter([$penagihan['address'] ?? null, $penagihan['district'] ?? null, $penagihan['city'] ?? null, $penagihan['province'] ?? null, $penagihan['postal_code'] ?? null])) ?: '-' }}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -406,11 +812,10 @@
             </div>
 
             {{-- ===================== SISI KANAN ===================== --}}
-            <div class="lg:sticky lg:top-20">
+            <div class="lg:sticky lg:top-6 lg:self-start">
 
                 {{-- KANAN: SATU KARTU TERPADU (Ringkasan Biaya, Cara Pembayaran & Kirim Bukti Pembayaran) --}}
-                <section class="flex flex-col rounded-2xl border border-border bg-card shadow-sm transition overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border"
-                         :style="leftHeight > 0 ? 'max-height: ' + leftHeight + 'px;' : ''">
+                <section class="flex flex-col rounded-2xl border border-border bg-card shadow-sm transition">
                     
                     <div class="p-4 sm:p-5 space-y-4">
                         
@@ -555,11 +960,11 @@
                                         <span class="font-bold text-primary text-sm">Rp {{ number_format($invoice->total, 0, ',', '.') }}</span>
                                     </div>
 
-                                    <div class="pt-1">
+                                    <div class="pt-1 space-y-2">
                                         <button type="button" 
                                                 @click="bayarMayar()"
                                                 :disabled="mayarLoading"
-                                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-md hover:opacity-95 active:scale-[0.98] transition-all disabled:opacity-50">
+                                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-md active:scale-[0.98] transition-all hover:opacity-95 disabled:opacity-50">
                                             <template x-if="mayarLoading">
                                                 <svg class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -635,13 +1040,13 @@
                                  class="space-y-3 border-t border-border/80 pt-3.5">
                                 
                                 {{-- Jika ada lebih dari 1 rekening/VA, tampilkan pemilih rekening --}}
-                                @if ($daftarBank->count() > 1)
+                                @if ($daftarRekeningTujuan->count() > 1)
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Pilih Bank / Rekening Tujuan:
+                                            Pilih Bank atau Rekening Tujuan:
                                         </label>
                                         <div class="flex flex-wrap gap-1.5">
-                                            @foreach ($daftarBank as $idx => $item)
+                                            @foreach ($daftarRekeningTujuan as $idx => $item)
                                                 <button type="button" @click="bankIndex = {{ $idx }}"
                                                         class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border select-none flex items-center gap-1.5"
                                                         :class="bankIndex === {{ $idx }} ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-xs' : 'border-border bg-card text-muted-foreground hover:bg-muted/80'">
@@ -655,12 +1060,12 @@
                                     </div>
                                 @endif
 
-                                @foreach ($daftarBank as $idx => $item)
+                                @foreach ($daftarRekeningTujuan as $idx => $item)
                                     <div x-show="bankIndex === {{ $idx }}" @if($idx !== 0) x-cloak @endif class="space-y-3">
                                         <div class="overflow-hidden rounded-xl border border-border bg-muted/30 p-3.5">
                                             <div class="flex items-center justify-between border-b border-border/80 pb-2.5">
                                                 <div>
-                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer bank / Rekening Tujuan:</span>
+                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Transfer bank atau Rekening Tujuan:</span>
                                                     <p class="text-sm font-bold text-foreground">{{ $item->bank_name }}</p>
                                                 </div>
                                                 <span class="rounded px-2 py-0.5 text-[10px] font-semibold {{ (isset($item->type) && $item->type === 'va') ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-primary/10 text-primary' }}">
@@ -787,7 +1192,8 @@
                                             Selesaikan transfer atau scan QRIS di atas sesuai nominal tagihan, lalu tekan tombol di bawah untuk verifikasi transaksi Anda.
                                         </p>
 
-                                        <form method="POST" action="{{ route('billing.invoice.confirm', $invoice->id) }}" class="space-y-2.5">
+                                        <form method="POST" action="{{ route('billing.invoice.confirm', $invoice->id) }}" class="space-y-2.5"
+                                              @submit.prevent="if (!billingLengkap) { bayarMayar(); } else { $el.submit(); }">
                                             @csrf
                                             <input type="hidden" name="metode_bayar" :value="metode">
 
