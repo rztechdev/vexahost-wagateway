@@ -23,15 +23,26 @@ class MayarService
     {
         $setting = PaymentGatewaySetting::mayar();
         $this->isActive = (bool) ($setting['is_active'] ?? true);
-        $this->apiKey = filled($setting['api_key'] ?? null)
+
+        $rawApiKey = filled($setting['api_key'] ?? null)
             ? (string) $setting['api_key']
-            : config('services.mayar.api_key');
-        $this->apiUrl = rtrim(filled($setting['api_url'] ?? null)
+            : (string) config('services.mayar.api_key', '');
+
+        // Bersihkan whitespace, tanda kutip ("..."), atau awalan "Bearer "
+        $cleanedKey = trim($rawApiKey);
+        $cleanedKey = trim($cleanedKey, '"\'');
+        $cleanedKey = trim(preg_replace('/^Bearer\s+/i', '', $cleanedKey));
+        $this->apiKey = filled($cleanedKey) ? $cleanedKey : null;
+
+        $rawApiUrl = filled($setting['api_url'] ?? null)
             ? (string) $setting['api_url']
-            : config('services.mayar.api_url', 'https://api.mayar.id/hl/v2'), '/');
-        $this->webhookToken = filled($setting['webhook_token'] ?? null)
+            : (string) config('services.mayar.api_url', 'https://api.mayar.id/hl/v2');
+        $this->apiUrl = rtrim(trim(trim($rawApiUrl), '"\''), '/');
+
+        $rawWebhook = filled($setting['webhook_token'] ?? null)
             ? (string) $setting['webhook_token']
-            : config('services.mayar.webhook_token');
+            : (string) config('services.mayar.webhook_token', '');
+        $this->webhookToken = filled($rawWebhook) ? trim(trim($rawWebhook), '"\'') : null;
     }
 
     /**
@@ -127,6 +138,10 @@ class MayarService
                     'body' => $response->json() ?? $response->body(),
                     'invoice' => $invoice->number,
                 ]);
+
+                if ($response->status() === 401) {
+                    throw new RuntimeException('Mayar: Kredensial API tidak valid atau tidak memiliki otorisasi (401 Unauthorized). Pastikan API Key diisi dengan benar dari Dashboard Mayar (Menu Integrasi / Pengembang) dan cocok dengan URL API.');
+                }
 
                 $body = $response->json() ?? [];
                 $detail = '';
