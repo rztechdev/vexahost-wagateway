@@ -60,7 +60,9 @@ class AkunTertautTest extends TestCase
             'name' => 'Budi Santoso',
             'phone' => '081234567890',
             'password_hash' => Hash::make('sandi-rahasia-1'),
-            'email_verified_at' => null,
+            // Terverifikasi di asal: hanya kiriman seperti ini yang boleh mengubah
+            // akun yang sudah ada. Kasus belum terverifikasi diuji tersendiri.
+            'email_verified_at' => '2026-09-19T10:00:00+07:00',
         ], $timpa);
     }
 
@@ -136,6 +138,28 @@ class AkunTertautTest extends TestCase
             ->assertStatus(409);
 
         $this->assertNotNull(User::where('email', 'budi@contoh.id')->first());
+    }
+
+    /**
+     * Pengambilalihan akun: seseorang mendaftar di seberang memakai email orang
+     * lain (pendaftaran belum tentu memverifikasi email), lalu penautan mengganti
+     * kata sandi akun asli pemilik email itu di sini.
+     */
+    public function test_kiriman_belum_terverifikasi_tidak_mengubah_akun_yang_sudah_ada(): void
+    {
+        $this->kirimMasuk($this->isi())->assertOk()->assertJson(['action' => 'dibuat']);
+
+        $this->kirimMasuk($this->isi(['email_verified_at' => null, 'password_hash' => Hash::make('sandi-penyerang')]))
+            ->assertOk()->assertJson(['action' => 'dilindungi']);
+
+        $this->assertTrue(Hash::check('sandi-rahasia-1', User::first()->password));
+    }
+
+    public function test_kiriman_belum_terverifikasi_tetap_membuat_akun_baru(): void
+    {
+        $this->kirimMasuk($this->isi(['email_verified_at' => null]))->assertOk()->assertJson(['action' => 'dibuat']);
+
+        $this->assertNull(User::first()->email_verified_at);
     }
 
     public function test_super_admin_tidak_bisa_diubah_dari_seberang(): void

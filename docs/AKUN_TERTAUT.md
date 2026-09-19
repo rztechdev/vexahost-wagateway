@@ -22,6 +22,7 @@ terlihat pengguna.
 | Percobaan pertama | job di antrean (`afterCommit`) | job **setelah respons** — worker antrean di vexahost opsional |
 | Pengulangan | `akun-tertaut:kirim` tiap menit | sama |
 | Penautan awal | `akun-tertaut:tautkan` | sama |
+| Menjemput saat masuk | `LinkedAccountLookup` (login email & Google) | `POST /api/internal/akun-tertaut/cari` |
 | Tes | `tests/Feature/AkunTertautTest.php` | sama |
 
 ## Env
@@ -71,7 +72,7 @@ kiriman tidak cukup untuk memutarnya ulang besok.
 | `200 {"action":"dibuat"}` | akun belum ada, dibuatkan | lepas penanda |
 | `200 {"action":"diperbarui"}` | email/kata sandi/verifikasi diganti | lepas penanda |
 | `200 {"action":"tidak_berubah"}` | sudah sama | lepas penanda |
-| `200 {"action":"dilindungi"}` | akun admin di penerima — tidak disentuh | lepas penanda |
+| `200 {"action":"dilindungi"}` | akun admin di penerima, atau akun yang sudah ada sementara email kiriman belum terverifikasi — tidak disentuh | lepas penanda |
 | `401` | tanda tangan salah/kedaluwarsa — rahasia belum disamakan | **penanda tetap**, diulang |
 | `429` | terlalu banyak kiriman | **penanda tetap**, diulang |
 | `409` | email baru sudah dipakai akun lain di penerima | lepas penanda, catat `error` |
@@ -97,7 +98,13 @@ Endpoint dibatasi 600 permintaan per menit — cukup longgar untuk
    `is_admin` di vexahost) → tidak diubah sama sekali. Rahasia penautan yang
    bocor di satu aplikasi tidak boleh jadi kunci masuk panel admin aplikasi
    lain; identitas admin keduanya sudah disamakan lewat env `ADMIN_*`.
-4. Ketemu → ganti email kalau berbeda (di WA `workspaces.owner_email` ikut),
+4. Ketemu, tapi `email_verified_at` di kiriman kosong → **tidak diubah**
+   (`dilindungi`). Tanpa aturan ini siapa pun bisa mendaftar di satu aplikasi
+   memakai email orang lain — pendaftaran WA tidak memverifikasi email — lalu
+   penautan mengganti kata sandi akun asli pemilik email itu di aplikasi lain.
+   Akun baru (langkah 2) tetap dibuat tanpa syarat ini: belum ada pemilik yang
+   bisa dirugikan. Karena itu verifikasi email ikut memicu pengiriman.
+5. Ketemu → ganti email kalau berbeda (di WA `workspaces.owner_email` ikut),
    ganti kata sandi **hanya pada mode `sync`**, isi `email_verified_at` kalau
    di penerima masih kosong. Nama, nomor, dan data profil lain tidak pernah
    ditimpa — itu milik masing-masing aplikasi.
@@ -107,14 +114,35 @@ lingkaran: perubahan dari seberang tidak memicu observer, jadi tidak dikirim
 balik ke asalnya lalu dikirim balik lagi. Tes "perubahan dari seberang tidak
 dikirim balik" menjaganya.
 
+## Menjemput akun saat masuk
+
+Pengiriman otomatis hanya membawa akun yang lahir atau berubah **setelah**
+penautan menyala. Akun vexahost yang sudah ada sebelumnya baru sampai ke WA
+kalau `akun-tertaut:tautkan` dijalankan — dan sampai saat itu pemiliknya disuruh
+mendaftar ulang dengan email dan kata sandi yang sebenarnya benar. Ini sudah
+terjadi di produksi pertama.
+
+Sekarang login WA yang gagal karena akunnya belum ada (atau kata sandinya
+tertinggal) bertanya ke vexahost lewat `POST /api/internal/akun-tertaut/cari`
+(`{"email": …}`, tanda tangan sama). vexahost menjawab 404 kalau tidak ada, 403
+untuk akun admin, atau `{"data": <payload>}`. **Kata sandi yang diketik tidak
+pernah dikirim**: yang diminta hanya hash, pencocokannya di WA. Cocok → akunnya
+dibuat (atau diperbarui, dengan aturan verifikasi yang sama seperti di atas) dan
+langsung masuk. Login Google melakukan hal yang sama tanpa kata sandi — Google
+sudah membuktikan emailnya. Email yang tidak ditemukan tidak ditanyakan lagi
+selama semenit, supaya formulir masuk tidak jadi banjir permintaan.
+
+Arah sebaliknya (vexahost menjemput dari WA) sengaja tidak dibuat: akun WA
+dimulai dari database kosong dan setiap akun barunya langsung terkirim.
+
 ## Aturan pengirim
 
 - Pemicunya observer model, bukan controller: akun lahir dan kata sandi berganti
   lewat banyak jalan (daftar, Google, checkout, order Shopee, pembayaran Lynk,
   lupa kata sandi, admin, rehash otomatis saat masuk). Yang dipasang per
   controller suatu saat terlewat di satu jalan.
-- Yang dikirim: akun baru, kata sandi berganti, email berganti. Perubahan nama
-  atau profil **tidak** dikirim.
+- Yang dikirim: akun baru, kata sandi berganti, email berganti, email
+  terverifikasi. Perubahan nama atau profil **tidak** dikirim.
 - Setiap perubahan menandai `users.linked_sync_pending_at` lebih dulu — juga
   saat penautan mati, supaya perubahan selama masa mati ikut terkirim begitu
   env-nya diisi. Email lama disimpan di `linked_sync_previous_email` sampai

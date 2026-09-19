@@ -24,9 +24,11 @@ Gateway WhatsApp terpusat multi-tenant untuk ekosistem VexaHost, dirancang agar 
 > rusak oleh pergantian ini:
 >
 > - **Produksi baru mulai dari database kosong** (keputusan Ryan): belum ada
->   pelanggan, data lama hanya diarsipkan lewat satu `mysqldump`. Admin lahir dari
->   `php artisan db:seed --force` yang dijalankan sekali — `start.sh` tidak
->   menjalankan seeder. `APP_KEY` dibiarkan yang lama walau tidak lagi wajib.
+>   pelanggan, data lama hanya diarsipkan lewat satu `mysqldump`. Admin dibuat dan
+>   disamakan dengan env `ADMIN_*` oleh `start.sh` **setiap boot**
+>   (`AdminUserSeeder`) — dulu langkah manual `db:seed`, dan produksi pertama
+>   berakhir tanpa admin. Kata sandi admin diganti lewat env, bukan lewat profil.
+>   `APP_KEY` dibiarkan yang lama walau tidak lagi wajib.
 > - **API key baru berawalan `vwa_`, yang lama `fwa_` tetap dikenali** — kunci
 >   dicari lewat kolom `prefix`, bukan awalannya. Jangan menambah pemeriksaan
 >   awalan: database lokal dan yang pernah dipulihkan dari arsip masih memuat `fwa_`.
@@ -41,7 +43,11 @@ Gateway WhatsApp terpusat multi-tenant untuk ekosistem VexaHost, dirancang agar 
 >   protokolnya ada di **dua repo** dan harus sama persis:
 >   [docs/AKUN_TERTAUT.md](docs/AKUN_TERTAUT.md). Workspace, tagihan, VPS, 2FA,
 >   dan peran admin TIDAK dibagi; akun admin di penerima tidak pernah diubah dari
->   seberang.
+>   seberang, dan akun yang sudah ada hanya diubah oleh kiriman yang emailnya
+>   **terverifikasi** — tanpa itu pendaftaran dengan email orang lain bisa
+>   mengambil alih akunnya di aplikasi seberang. Login WA yang gagal menjemput
+>   akun dari vexahost (`LinkedAccountLookup`), jadi akun lama vexahost tidak
+>   disuruh mendaftar ulang.
 > - **Pembayaran belum dipindah.** Mayar dan rekening dibiarkan seperti sebelum
 >   pergantian merek sampai Ryan memilih gateway baru; QRIS memakai payload akun
 >   DANA yang sama (nama tokonya DESTINARA). Jangan mengusulkan Lynk — akun Lynk

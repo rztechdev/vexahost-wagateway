@@ -172,6 +172,18 @@ GAGAL
     exit 1
 fi
 
+# Admin dibuat dan disamakan dengan env ADMIN_* setiap boot. Dulu ini langkah
+# manual `db:seed` yang harus diingat seseorang — dan produksi pertama yang
+# dimulai dari database kosong berakhir tanpa admin sama sekali, sementara
+# pemiliknya disuruh mendaftar ulang dengan kredensial yang sebenarnya benar.
+# Gagal di sini tidak menghentikan container: layanan pelanggan lebih penting
+# daripada akun admin, dan pesan galatnya tetap tercatat di log.
+echo "[start.sh] Menyamakan akun admin dengan env ADMIN_*."
+
+if ! php artisan db:seed --class=AdminUserSeeder --force; then
+    echo "[start.sh] PERINGATAN: akun admin gagal disamakan dengan env; periksa ADMIN_* dan baris galat di atas." >&2
+fi
+
 echo "[start.sh] Menyalakan web, engine WhatsApp (Baileys), worker, dan penjadwal dalam satu container."
 
 php artisan serve --host=0.0.0.0 --port="$PORT_WEB" --no-reload &

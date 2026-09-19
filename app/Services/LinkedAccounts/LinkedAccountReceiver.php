@@ -62,6 +62,17 @@ class LinkedAccountReceiver
                 return self::DILINDUNGI;
             }
 
+            // Akun yang SUDAH ADA di sini hanya boleh diubah oleh kiriman yang
+            // emailnya sudah terbukti milik pengirimnya di aplikasi asal.
+            // Tanpa syarat ini, siapa pun bisa mendaftar di seberang memakai
+            // email orang lain — pendaftaran belum tentu memverifikasi email —
+            // lalu penautan mengganti kata sandi akun asli pemilik email itu di
+            // sini. Akun baru tetap dibuat tanpa syarat ini: belum ada pemilik
+            // yang bisa dirugikan.
+            if (blank($data['email_verified_at'] ?? null)) {
+                return self::DILINDUNGI;
+            }
+
             $ubah = [];
 
             if ($user->email !== $email) {

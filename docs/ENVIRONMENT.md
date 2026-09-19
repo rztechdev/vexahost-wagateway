@@ -329,8 +329,11 @@ diisi.
 
 Panel `/admin` hanya bisa dibuka super admin, dan super admin hanya bisa
 diangkat super admin lain — jadi akun pertama lahir dari seeder, bukan dari
-antarmuka. Seeder aman dijalankan berulang: akun yang sudah ada tidak ditimpa
-kata sandinya.
+antarmuka. `start.sh` menjalankan `AdminUserSeeder` **setiap boot**: admin
+dibuat kalau belum ada, dan nama, nomor, perusahaan, serta kata sandinya
+disamakan dengan env — persis seperti seeder aplikasi vexahost. Artinya kata
+sandi admin diganti **lewat env**; yang diganti lewat halaman profil kembali ke
+nilai env pada deploy berikutnya.
 
 Identitasnya disamakan **persis** dengan admin aplikasi vexahost — nama
 variabel dan isinya sama. Di database yang sudah berisi admin lama, migrasi
@@ -352,10 +355,11 @@ ADMIN_COMPANY="VexaHost Cloud Indonesia"
 AUTH_2FA_MANDATORY_FOR_ADMIN=false
 ```
 
-`ADMIN_PASSWORD` yang dikosongkan jatuh ke nilai bawaan `12345678`. Nilai itu
-ada di dalam repo, artinya **sudah bocor** — pakai hanya di lokal. Isi env-nya
-sebelum menjalankan `php artisan db:seed` di staging maupun produksi, atau
-ganti kata sandinya segera setelah akunnya terbuat.
+`ADMIN_PASSWORD` yang dikosongkan jatuh ke nilai bawaan `12345678` — tapi
+hanya di lokal. Nilai itu ada di dalam repo, artinya **sudah bocor**, jadi di
+produksi seeder menolak memakainya: selama `ADMIN_PASSWORD` kosong, admin tidak
+dibuat sama sekali dan log boot memuat peringatannya. Mengisi env-nya dengan
+nilai bawaan itu juga tetap memunculkan peringatan di setiap boot.
 
 ---
 
@@ -406,7 +410,7 @@ saat `$request->secure()`.
 
 1. Migrasi berjalan bersih di tahap sebelumnya (`php artisan migrate --force`).
 2. `php artisan test` hijau.
-2b. `php artisan db:seed --force` dijalankan sekali di tahap baru, dengan `ADMIN_PASSWORD` sudah terisi.
+2b. `ADMIN_PASSWORD` terisi di env tahap itu — admin dibuat dan disamakan otomatis oleh `start.sh` saat boot.
 3. Deploy ulang resource di tahap tersebut, lalu pastikan sesi kembali tersambung **tanpa scan QR** — ini uji regresi utamanya. Sejak penyatuan, redeploy ikut me-restart web, jadi uji ini sekaligus membuktikan penghentian rapi engine dan penantian boot-nya.
 4. Kirim satu pesan uji dan pastikan statusnya sampai `delivered`.
 5. Webhook uji coba menerima kiriman dan tanda tangannya lolos verifikasi.

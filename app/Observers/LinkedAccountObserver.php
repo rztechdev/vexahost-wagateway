@@ -28,7 +28,9 @@ class LinkedAccountObserver
 
     public function updated(User $user): void
     {
-        if (! $user->wasChanged(['password', 'email'])) {
+        // Verifikasi email ikut dikirim: sejak saat itulah seberang mau menerima
+        // perubahan kata sandi untuk akun yang sudah ada di sana.
+        if (! $user->wasChanged(['password', 'email', 'email_verified_at'])) {
             return;
         }
 

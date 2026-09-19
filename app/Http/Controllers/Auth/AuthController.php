@@ -7,6 +7,7 @@ use App\Models\PendingExemption;
 use App\Models\ReferralCode;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\LinkedAccounts\LinkedAccountLookup;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -39,11 +40,19 @@ class AuthController extends Controller
         ]);
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            // Pesan yang sama untuk email tidak dikenal maupun password salah,
-            // supaya form ini tidak bisa dipakai menebak email mana yang terdaftar.
-            throw ValidationException::withMessages([
-                'email' => 'Email atau kata sandi tidak cocok.',
-            ]);
+            // Akun tertaut: email dan kata sandi yang benar di vexahost tapi belum
+            // (atau belum terbaru) di sini dijemput dulu, bukan disuruh mendaftar
+            // ulang. Hanya hash yang diminta dari seberang; kata sandinya dicocokkan
+            // di sini.
+            $dijemput = app(LinkedAccountLookup::class)->masukDenganSandi($credentials['email'], $credentials['password']);
+
+            if (! $dijemput || ! Auth::attempt($credentials, $request->boolean('remember'))) {
+                // Pesan yang sama untuk email tidak dikenal maupun password salah,
+                // supaya form ini tidak bisa dipakai menebak email mana yang terdaftar.
+                throw ValidationException::withMessages([
+                    'email' => 'Email atau kata sandi tidak cocok.',
+                ]);
+            }
         }
 
         $request->session()->regenerate();

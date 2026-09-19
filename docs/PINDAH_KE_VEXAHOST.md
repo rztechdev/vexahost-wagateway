@@ -81,13 +81,16 @@ sudah pindah.
    Coolify akses ke repo baru.
 4. **DNS.** A record `wa`, `wa-staging`, `wa-dev` di `vexahostcloud.my.id`.
 5. **Deploy.** Migrasi berjalan sendiri saat boot (`start.sh`).
-6. **Buat admin — wajib, sekali:** di terminal Coolify
-   `php artisan db:seed --force`. `start.sh` hanya menjalankan migrasi, bukan
-   seeder; tanpa langkah ini database baru tidak punya satu pun admin.
+6. **Admin terbentuk sendiri.** `start.sh` menjalankan `AdminUserSeeder` setiap
+   boot: admin dibuat dan disamakan dengan `ADMIN_*` (termasuk kata sandinya).
+   Pastikan `ADMIN_PASSWORD` terisi — di produksi, kosong berarti admin tidak
+   dibuat sama sekali, supaya kata sandi bawaan yang tertulis di repo tidak
+   pernah menjaga panel admin sungguhan. Awalnya ini langkah manual `db:seed`,
+   dan produksi pertama berakhir tanpa admin.
 7. **Deploy vexahost** dengan `LINKED_ACCOUNTS_*` terisi, lalu **tautkan akun
-   sekali** di kedua aplikasi: `php artisan akun-tertaut:tautkan`. Urutannya
-   setelah langkah 6 — admin sudah ada, jadi akun admin vexahost tertaut ke
-   admin gateway, bukan lahir sebagai pengguna biasa.
+   sekali** di kedua aplikasi: `php artisan akun-tertaut:tautkan`. Tidak wajib
+   lagi untuk bisa masuk — akun yang belum sampai dijemput saat pemiliknya
+   login di WA — tapi membuat seluruh akun langsung ada tanpa menunggu.
 8. **Panel admin gateway**:
    - menu **Pengecualian**: buat workspace pengirim pemberitahuan, hubungkan
      sesi, **scan QR sekali dengan HP 085808749131**, daftarkan sebagai nomor

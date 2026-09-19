@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\LinkedAccounts\LinkedAccountLookup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,6 +68,10 @@ class GoogleAuthController extends Controller
         $user = User::where('google_id', $googleId)
             ->orWhere('email', $email)
             ->first();
+
+        // Akun tertaut: email yang sudah punya akun di vexahost tidak disuruh
+        // mendaftar ulang di sini. Google sudah membuktikan emailnya milik orang ini.
+        $user ??= app(LinkedAccountLookup::class)->masukDenganGoogle($email);
 
         // Jika akun belum terdaftar, arahkan ke form pendaftaran dengan membawa data dari Google
         if (! $user) {
