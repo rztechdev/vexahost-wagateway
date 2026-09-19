@@ -175,7 +175,7 @@ class MessageController extends ApiController
     /**
      * Kalau pemanggil tidak menyebut sesi, dipilih satu sesi workspace yang sedang
      * terhubung. Sesi platform tidak pernah dipilih otomatis — nomor itu hanya
-     * untuk pesan atas nama Flustra, bukan trafik workspace.
+     * untuk pesan atas nama VexaHost, bukan trafik workspace.
      */
     private function resolveSession(Request $request, ?string $sessionId): ?WaSession
     {

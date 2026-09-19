@@ -54,7 +54,7 @@ class TurPengenalanTest extends TestCase
         $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('data-tur-pengenalan', false)
-            ->assertSee('Selamat datang di Flustra WA');
+            ->assertSee('Selamat datang di VexaHost WA');
     }
 
     /**

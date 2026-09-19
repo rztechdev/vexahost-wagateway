@@ -4,7 +4,7 @@
    bawah tidak perlu ikut berubah — yang berganti hanya nilainya, mengikuti
    tema Nature yang dipakai app.css. Font tetap Outfit + Plus Jakarta Sans. */
 :root {
-  /* Aksen utama — hijau daun, sewarna logo Flustra */
+  /* Aksen utama — hijau daun, senada logo VexaHost */
   --color-brown: #2e7d32;
   --color-brown-10: rgba(46, 125, 50, 0.06);
   --color-brown-20: rgba(46, 125, 50, 0.12);

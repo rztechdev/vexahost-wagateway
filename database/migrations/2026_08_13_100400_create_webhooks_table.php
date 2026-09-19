@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->string('url');
-            // Dipakai tenant untuk memverifikasi header X-Flustra-Signature,
+            // Dipakai tenant untuk memverifikasi header X-VexaHost-Signature,
             // sehingga endpoint mereka bisa menolak payload palsu.
             $table->string('secret', 64);
             // null = semua event. Selain itu daftar seperti ["message.received"].

@@ -31,8 +31,8 @@ return [
         // dari harta pribadi pendirinya, TIDAK seperti usaha perorangan biasa.
         'form' => env('LEGAL_ENTITY_FORM', 'PT Perseorangan'),
 
-        // Nama lengkap sesuai SK Kemenkumham, contoh: "PT Flustra Digital Nusantara".
-        'name' => env('LEGAL_ENTITY_NAME'),
+        // Nama lengkap sesuai SK Kemenkumham, contoh: "PT Destinara Chakrawala Artha".
+        'name' => env('LEGAL_ENTITY_NAME', 'PT DESTINARA CHAKRAWALA ARTHA'),
 
         // Alamat terdaftar. Ditulis lengkap sampai kode pos — ini alamat resmi
         // untuk surat-menyurat hukum, dan alamat yang tidak bisa dijangkau
@@ -47,14 +47,14 @@ return [
 
     /*
     | Nama dagang. Berbeda dari `entity.name` dengan sengaja: pelanggan mengenal
-    | "Flustra", pengadilan mengenal nama PT-nya, dan dokumen yang baik menyebut
+    | "VexaHost", pengadilan mengenal nama PT-nya, dan dokumen yang baik menyebut
     | keduanya sekali di awal lalu memakai yang pendek seterusnya.
     */
-    'brand' => env('LEGAL_BRAND', 'Flustra'),
+    'brand' => env('LEGAL_BRAND', 'VexaHost'),
 
-    'product' => env('LEGAL_PRODUCT', 'Flustra WA Gateway'),
+    'product' => env('LEGAL_PRODUCT', 'VexaHost WA Gateway'),
 
-    'domain' => env('LEGAL_DOMAIN', 'wa.flustra.id'),
+    'domain' => env('LEGAL_DOMAIN', 'wa.vexahostcloud.my.id'),
 
     /*
     | Penyedia server tempat data pelanggan benar-benar berada. Wajib disebut
@@ -66,12 +66,12 @@ return [
     'hosting_region' => env('LEGAL_HOSTING_REGION', 'Singapura'),
 
     'contact' => [
-        'email' => env('LEGAL_CONTACT_EMAIL', env('BILLING_SUPPORT_EMAIL', 'flustrafinances@gmail.com')),
+        'email' => env('LEGAL_CONTACT_EMAIL', env('BILLING_SUPPORT_EMAIL', 'vexahostcloudtech@gmail.com')),
 
         // Alamat khusus urusan data pribadi. Dipisah dari email dukungan karena
         // UU PDP memberi tenggat 3×24 jam untuk permintaan subjek data, dan
         // permintaan seperti itu tidak boleh antre di belakang pertanyaan teknis.
-        'privacy_email' => env('LEGAL_PRIVACY_EMAIL', env('BILLING_SUPPORT_EMAIL', 'flustrafinances@gmail.com')),
+        'privacy_email' => env('LEGAL_PRIVACY_EMAIL', env('BILLING_SUPPORT_EMAIL', 'vexahostcloudtech@gmail.com')),
     ],
 
     /*

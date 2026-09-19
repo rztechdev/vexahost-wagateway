@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Log;
  * Pemangkasan retensi terjadwal, tiap hari pukul 03:15.
  *
  * Seluruh logikanya ada di `App\Support\Pemangkas`, dipakai bersama perintah
- * `flustra:pangkas`. Disatukan dengan sengaja: dua salinan aturan retensi
+ * `vexahost:pangkas`. Disatukan dengan sengaja: dua salinan aturan retensi
  * berarti dua aturan yang suatu saat berbeda, dan yang berbeda diam-diam di
  * sini adalah data pelanggan yang terhapus lebih cepat dari yang dijanjikan
  * paketnya.
  *
  * Job ini dulu menjalankan dua `DELETE` tanpa batas — satu atas `messages`, satu
  * atas `webhook_deliveries`. Pada tabel yang sudah besar, keduanya menahan kunci
- * dan menggelembungkan undo log MySQL yang dipakai bersama flustra-erp, dan
+ * dan menggelembungkan undo log MySQL yang dipakai bersama aplikasi vexahost, dan
  * gejalanya muncul di aplikasi yang tidak ada hubungannya dengan gateway ini.
  * Sekarang seluruhnya bertahap.
  *

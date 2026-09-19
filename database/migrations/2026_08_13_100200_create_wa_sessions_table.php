@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->string('name');
 
-            // platform = nomor resmi Flustra (OTP, undangan, billing, tiket).
+            // platform = nomor resmi VexaHost (OTP, undangan, billing, tiket).
             // tenant   = nomor milik pelanggan sendiri (invoice, PO, blast).
             $table->enum('kind', ['platform', 'tenant'])->default('tenant');
             $table->enum('driver', ['wwebjs', 'cloud_api', 'fonnte'])->default('wwebjs');

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class BersihkanBackupLamaCommand extends Command
 {
-    protected $signature = 'flustra:bersihkan-backup-lama
+    protected $signature = 'vexahost:bersihkan-backup-lama
         {--dry-run : Hanya melaporkan berapa backup yang akan dihapus, tidak menghapus apa pun}';
 
     protected $description = 'Membersihkan baris session_backups berformat lama (.zip) dan berkas fisiknya dari storage disk.';

@@ -32,7 +32,7 @@ class HeaderKeamanan
         // browser MENOLAK http:// untuk host itu selama setahun, dan sekali
         // tersimpan ia tidak bisa dibatalkan dengan menghapus kode — pengembang
         // yang terkena harus membersihkannya sendiri dari setelan browsernya.
-        // Di lokal (http://127.0.0.1:8070) itu berarti aplikasi tidak bisa
+        // Di lokal (http://127.0.0.1:8051) itu berarti aplikasi tidak bisa
         // dibuka sama sekali.
         if ($request->secure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');

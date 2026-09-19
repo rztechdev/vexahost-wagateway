@@ -140,7 +140,7 @@ class KesehatanAntreanTest extends TestCase
     {
         $admin = User::create([
             'name' => 'Admin',
-            'email' => 'admin@flustra.id',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

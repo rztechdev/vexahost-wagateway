@@ -116,7 +116,7 @@
         <div class="mt-5 max-w-2xl rounded-lg border border-border bg-muted/40 p-4 text-sm">
             <p class="font-medium">Cara memasangnya, sekali saja</p>
             <ol class="mt-2 list-decimal space-y-1.5 pl-5 leading-relaxed text-muted-foreground">
-                <li>Daftar akun biasa di dashboard, lalu buat workspace — misalnya bernama <em>Flustra Notifikasi</em>.</li>
+                <li>Daftar akun biasa di dashboard, lalu buat workspace — misalnya bernama <em>VexaHost Notifikasi</em>.</li>
                 <li>Bebaskan akun itu dari penagihan lewat menu <strong>Pengguna</strong>.</li>
                 <li>Buka menu Sesi WhatsApp di dashboard, buat sesi, klik Hubungkan, lalu <strong>scan QR satu kali</strong> dengan nomor perusahaan.</li>
                 <li>Daftarkan nomornya di <strong>Nomor istimewa</strong> supaya ia tidak pernah ikut dilepas.</li>
@@ -205,13 +205,13 @@
                 <label for="nomor_email" class="mb-1 block text-sm font-medium">
                     Email pemilik <span class="font-normal text-muted-foreground">(opsional)</span>
                 </label>
-                <input id="nomor_email" name="email" type="email" maxlength="180" placeholder="nama@flustra.id"
+                <input id="nomor_email" name="email" type="email" maxlength="180" placeholder="nama@vexahostcloud.my.id"
                        value="{{ old('email') }}"
                        class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
             </div>
             <div class="min-w-48 flex-1">
                 <label for="label" class="mb-1 block text-sm font-medium">Keterangan</label>
-                <input id="label" name="label" required maxlength="80" placeholder="mis. Nomor notifikasi Flustra"
+                <input id="label" name="label" required maxlength="80" placeholder="mis. Nomor notifikasi VexaHost"
                        value="{{ old('label') }}"
                        class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
             </div>

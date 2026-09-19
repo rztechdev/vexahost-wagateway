@@ -22,7 +22,7 @@ use Tests\TestCase;
  *
  * Satu alasan untuk ketiganya: WhatsApp adalah satu-satunya jalur yang dipakai,
  * dan satu-satunya jalur berarti satu titik yang kalau mati membuat semuanya
- * diam. Nomor Flustra terputus — hal yang memang terjadi saat deploy, saat
+ * diam. Nomor VexaHost terputus — hal yang memang terjadi saat deploy, saat
  * WhatsApp memutus perangkat tertaut, atau saat ponselnya lama offline — dan
  * seluruh kabar ke tim hilang tanpa satu pun gejala.
  */
@@ -45,13 +45,13 @@ class PengecualianEmailTest extends TestCase
         config([
             'mail.default' => 'smtp',
             'mail.mailers.smtp.host' => 'smtp-relay.brevo.com',
-            'mail.from.address' => 'flustrafinances@gmail.com',
-            'billing.support_email' => 'tim@flustra.id',
+            'mail.from.address' => 'vexahostcloudtech@gmail.com',
+            'billing.support_email' => 'tim@vexahostcloud.my.id',
         ]);
 
         $this->admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -82,7 +82,7 @@ class PengecualianEmailTest extends TestCase
             'body' => 'Sudah scan tiga kali.',
         ]);
 
-        Mail::assertSent(KabarTim::class, fn ($surat) => $surat->hasTo('tim@flustra.id'));
+        Mail::assertSent(KabarTim::class, fn ($surat) => $surat->hasTo('tim@vexahostcloud.my.id'));
         $this->assertSame(1, Ticket::count());
     }
 
@@ -117,11 +117,11 @@ class PengecualianEmailTest extends TestCase
     {
         $this->actingAs($this->admin)->post(route('admin.exemptions.numbers.store'), [
             'phone' => '081234567890',
-            'email' => 'operasional@flustra.id',
-            'label' => 'Nomor notifikasi Flustra',
+            'email' => 'operasional@vexahostcloud.my.id',
+            'label' => 'Nomor notifikasi VexaHost',
         ])->assertRedirect();
 
-        $this->assertSame('operasional@flustra.id', SpecialNumber::firstOrFail()->email);
+        $this->assertSame('operasional@vexahostcloud.my.id', SpecialNumber::firstOrFail()->email);
     }
 
     /** Email opsional: nomor lama tanpa email tidak boleh jadi tidak bisa disimpan. */

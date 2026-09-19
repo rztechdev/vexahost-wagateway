@@ -19,7 +19,7 @@ class InvoicePdfService
 
         $pdf = Pdf::loadView('pdf.payout-invoice', [
             'payout' => $payout,
-            'shaHash' => substr(hash('sha256', "flustra-payout-{$payout->id}-{$payout->payout_number}-{$payout->amount}"), 0, 16),
+            'shaHash' => substr(hash('sha256', "vexahost-payout-{$payout->id}-{$payout->payout_number}-{$payout->amount}"), 0, 16),
         ])->setPaper('a4', 'portrait');
 
         $filename = "invoices/payout-{$payout->payout_number}.pdf";
@@ -37,7 +37,7 @@ class InvoicePdfService
 
         return Pdf::loadView('pdf.payout-invoice', [
             'payout' => $payout,
-            'shaHash' => substr(hash('sha256', "flustra-payout-{$payout->id}-{$payout->payout_number}-{$payout->amount}"), 0, 16),
+            'shaHash' => substr(hash('sha256', "vexahost-payout-{$payout->id}-{$payout->payout_number}-{$payout->amount}"), 0, 16),
         ])->setPaper('a4', 'portrait');
     }
 }

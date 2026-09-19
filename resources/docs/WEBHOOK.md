@@ -9,7 +9,7 @@ Menerima pesan masuk dan perubahan status di aplikasi Anda.
 API dipakai untuk **mengirim**. Webhook adalah kebalikannya: saat ada kejadian, kami yang mengirim data ke aplikasi Anda.
 
 ```
-Pelanggan membalas  →  Flustra WA Gateway  →  POST ke URL Anda
+Pelanggan membalas  →  VexaHost WA Gateway  →  POST ke URL Anda
 ```
 
 Tanpa webhook, satu-satunya cara mengetahui ada balasan adalah memeriksa riwayat berulang-ulang — boros dan selalu terlambat.
@@ -92,8 +92,8 @@ Setiap kiriman membawa dua header:
 
 | Header | Isi |
 |---|---|
-| `X-Flustra-Signature` | Tanda tangan HMAC-SHA256 dari isi kiriman |
-| `X-Flustra-Event` | Nama kejadian |
+| `X-VexaHost-Signature` | Tanda tangan HMAC-SHA256 dari isi kiriman |
+| `X-VexaHost-Event` | Nama kejadian |
 
 ### PHP / Laravel
 
@@ -101,7 +101,7 @@ Setiap kiriman membawa dua header:
 Route::post('/webhook/whatsapp', function (Request $request) {
     $expected = hash_hmac('sha256', $request->getContent(), config('services.wa.webhook_secret'));
 
-    if (! hash_equals($expected, (string) $request->header('X-Flustra-Signature'))) {
+    if (! hash_equals($expected, (string) $request->header('X-VexaHost-Signature'))) {
         abort(401);
     }
 
@@ -129,7 +129,7 @@ app.post('/webhook/whatsapp',
             .update(req.body)
             .digest('hex');
 
-        const given = req.get('X-Flustra-Signature') ?? '';
+        const given = req.get('X-VexaHost-Signature') ?? '';
 
         if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(given))) {
             return res.sendStatus(401);
@@ -153,7 +153,7 @@ def webhook():
         hashlib.sha256,
     ).hexdigest()
 
-    if not hmac.compare_digest(expected, request.headers.get("X-Flustra-Signature", "")):
+    if not hmac.compare_digest(expected, request.headers.get("X-VexaHost-Signature", "")):
         return "", 401
 
     data = request.get_json()["data"]

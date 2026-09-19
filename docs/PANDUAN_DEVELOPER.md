@@ -20,8 +20,8 @@ Chromium tidak perlu dipasang sendiri; `whatsapp-web.js` mengunduhnya lewat Pupp
 ### Langkah
 
 ```bash
-git clone https://github.com/flustratech-dev/flustra-wa.git
-cd flustra-wa
+git clone https://github.com/rztechdev/vexahost-wagateway.git
+cd vexahost-wa
 
 composer install
 npm install
@@ -50,16 +50,16 @@ Kalau tidak punya `openssl`, string acak 40+ karakter apa pun bisa dipakai.
 npm run all
 ```
 
-Satu perintah, empat proses: Laravel (`:8070`), queue worker, Vite, dan engine (`:3100`).
+Satu perintah, empat proses: Laravel (`:8051`), queue worker, Vite, dan engine (`:3100`).
 
-Buka http://localhost:8070/register untuk membuat akun pertama.
+Buka http://localhost:8051/register untuk membuat akun pertama.
 
 > Laravel Pail sengaja tidak ikut: ia butuh ekstensi `pcntl` yang tidak ada di PHP Windows, dan karena `--kill-others`, matinya Pail akan menjatuhkan ketiga proses lain. Di Linux/WSL jalankan `php artisan pail` di terminal terpisah.
 
 ### Menjalankan terpisah
 
 ```bash
-php artisan serve --port=8070
+php artisan serve --port=8051
 php artisan queue:listen
 npm run dev
 npm --prefix engine run dev
@@ -70,21 +70,21 @@ npm --prefix engine run dev
 ## 2. Mencoba dari nol sampai terkirim
 
 ```bash
-# Daftar akun di http://localhost:8070, isi nama workspace,
+# Daftar akun di http://localhost:8051, isi nama workspace,
 # lalu buat sesi & API key lewat dashboard
 ```
 
 Keluarannya memuat ULID sesi dan API key penuh. Kunci juga bisa dibuka lagi kapan saja dari halaman API Keys.
 
 ```bash
-KEY="fwa_xxxxxxxx.xxxxxxxx"
+KEY="vwa_xxxxxxxx.xxxxxxxx"
 SID="01k..."
 
 # Jalankan sesi
-curl -X POST -H "X-Api-Key: $KEY" http://127.0.0.1:8070/api/v1/sessions/$SID/connect
+curl -X POST -H "X-Api-Key: $KEY" http://127.0.0.1:8051/api/v1/sessions/$SID/connect
 
 # Ambil QR (data URI PNG). Butuh beberapa detik sampai Chromium siap.
-curl -H "X-Api-Key: $KEY" http://127.0.0.1:8070/api/v1/sessions/$SID/qr
+curl -H "X-Api-Key: $KEY" http://127.0.0.1:8051/api/v1/sessions/$SID/qr
 ```
 
 Lebih mudah lewat dashboard: **Sesi WhatsApp → Hubungkan**, QR muncul di modal.
@@ -92,7 +92,7 @@ Lebih mudah lewat dashboard: **Sesi WhatsApp → Hubungkan**, QR muncul di modal
 Setelah tersambung:
 
 ```bash
-curl -X POST http://127.0.0.1:8070/api/v1/messages/text \
+curl -X POST http://127.0.0.1:8051/api/v1/messages/text \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{"to":"081234567890","message":"Halo dari lokal"}'
 ```
@@ -293,9 +293,9 @@ npm --prefix engine run dev | npx pino-pretty
 
 | Branch | Tahap | Domain |
 |---|---|---|
-| `dev` | Development | `wa-dev.flustra.tech` |
-| `staging` | Staging | `wa-staging.flustra.tech` |
-| `main` | Production | `wa.flustra.id` |
+| `dev` | Development | `wa-dev.vexahostcloud.my.id` |
+| `staging` | Staging | `wa-staging.vexahostcloud.my.id` |
+| `main` | Production | `wa.vexahostcloud.my.id` |
 
 Kerjakan di `dev`, promosikan ke `staging` setelah teruji, lalu ke `main`. Coolify men-deploy otomatis setiap push. Daftar periksa promosi ada di [ENVIRONMENT.md](ENVIRONMENT.md).
 

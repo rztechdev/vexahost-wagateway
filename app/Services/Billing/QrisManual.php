@@ -73,7 +73,7 @@ class QrisManual
 
     public function merchantName(): string
     {
-        return (string) AppSetting::ambil('qris_merchant_name', config('billing.qris.merchant', 'Flustra'));
+        return (string) AppSetting::ambil('qris_merchant_name', config('billing.qris.merchant', 'VexaHost'));
     }
 
     /**
@@ -95,7 +95,7 @@ class QrisManual
             $synthetic = new BankAccount([
                 'bank_name' => $legacy['name'] ?? 'Transfer Bank',
                 'account_number' => $legacy['account_number'],
-                'account_holder' => $legacy['account_holder'] ?? 'Flustra',
+                'account_holder' => $legacy['account_holder'] ?? 'VexaHost',
                 'type' => 'bank',
                 'is_active' => true,
             ]);

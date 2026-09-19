@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Meringkas /var/log/flustra-capacity.log jadi empat jawaban.
+# Meringkas /var/log/vexahost-capacity.log jadi empat jawaban.
 #
 # Perekamnya menulis satu baris per jam:
 #
@@ -17,7 +17,7 @@
 
 set -u
 
-LOG="${1:-/var/log/flustra-capacity.log}"
+LOG="${1:-/var/log/vexahost-capacity.log}"
 
 if [ ! -r "$LOG" ]; then
     echo "Tidak bisa membaca $LOG" >&2

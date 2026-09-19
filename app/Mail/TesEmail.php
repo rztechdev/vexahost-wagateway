@@ -19,7 +19,7 @@ class TesEmail extends Mailable
 {
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Tes email keluar — Flustra WA Gateway');
+        return new Envelope(subject: 'Tes email keluar — VexaHost WA Gateway');
     }
 
     public function content(): Content

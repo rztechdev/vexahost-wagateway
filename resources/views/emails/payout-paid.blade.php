@@ -28,7 +28,7 @@ Kabar gembira! Permohonan pencairan komisi kemitraan Anda dengan nomor dokumen *
 Lihat Bukti Invoice Online
 </x-mail::button>
 
-Terima kasih atas dedikasi dan kerja sama Anda sebagai mitra resmi Flustra. Terus tingkatkan promosi dan dapatkan komisi tanpa batas!
+Terima kasih atas dedikasi dan kerja sama Anda sebagai mitra resmi VexaHost. Terus tingkatkan promosi dan dapatkan komisi tanpa batas!
 
 Salam hangat,<br>
 Tim Finance {{ config('app.name') }}

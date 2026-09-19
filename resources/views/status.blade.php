@@ -1,7 +1,7 @@
 @extends('layouts.publik')
 
 @section('title', 'Status Layanan — ' . config('app.name'))
-@section('description', 'Keadaan REST API, dashboard, koneksi WhatsApp, dan antrean pengiriman Flustra WA Gateway secara langsung, beserta riwayat gangguannya.')
+@section('description', 'Keadaan REST API, dashboard, koneksi WhatsApp, dan antrean pengiriman VexaHost WA Gateway secara langsung, beserta riwayat gangguannya.')
 
 @php
     $gaya = [

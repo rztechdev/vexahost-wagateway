@@ -91,8 +91,8 @@ class MayarService
 
         // Susun item tagihan
         $itemDesc = $invoice->isTopup()
-            ? 'Pengisian Saldo PAYG Flustra WA'
-            : "Paket {$invoice->plan()->name()} ({$invoice->periodLabel()}) — Flustra WA";
+            ? 'Pengisian Saldo PAYG VexaHost WA'
+            : "Paket {$invoice->plan()->name()} ({$invoice->periodLabel()}) — VexaHost WA";
 
         if ($invoice->discount_amount > 0) {
             $itemDesc .= ' (Diskon Rp '.number_format($invoice->discount_amount, 0, ',', '.').')';

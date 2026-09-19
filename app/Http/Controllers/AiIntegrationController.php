@@ -24,21 +24,21 @@ class AiIntegrationController extends Controller
     {
         $agents = $this->agents();
 
-        $md = "# Flustra WA Gateway - Panduan Integrasi AI Agent & Developer\n\n";
-        $md .= "> Spesifikasi teknis resmi Flustra WA Gateway (https://wa.flustra.id) untuk AI Coding Assistants dan pengembang sistem.\n\n";
+        $md = "# VexaHost WA Gateway - Panduan Integrasi AI Agent & Developer\n\n";
+        $md .= "> Spesifikasi teknis resmi VexaHost WA Gateway (https://wa.vexahostcloud.my.id) untuk AI Coding Assistants dan pengembang sistem.\n\n";
         $md .= "---\n\n";
         $md .= "## 1. Ikhtisar & Arsitektur Gateway\n\n";
-        $md .= "- **Base URL:** `https://wa.flustra.id/api/v1`\n";
+        $md .= "- **Base URL:** `https://wa.vexahostcloud.my.id/api/v1`\n";
         $md .= "- **Protokol:** REST API murni berbasis `application/json`\n";
         $md .= "- **Header Autentikasi:** `X-Api-Key: <API_KEY_ANDA>`\n";
-        $md .= "- **Endpoint Status:** `GET https://wa.flustra.id/status.json`\n";
-        $md .= "- **Dokumentasi Web:** https://wa.flustra.id/docs\n\n";
+        $md .= "- **Endpoint Status:** `GET https://wa.vexahostcloud.my.id/status.json`\n";
+        $md .= "- **Dokumentasi Web:** https://wa.vexahostcloud.my.id/docs\n\n";
         $md .= "---\n\n";
         $md .= "## 2. Konfigurasi Variabel Lingkungan (.env)\n\n";
         $md .= "Simpan kredensial gateway di berkas `.env` backend Anda:\n\n";
         $md .= "```env\n";
-        $md .= "WA_GATEWAY_URL=https://wa.flustra.id\n";
-        $md .= "WA_GATEWAY_KEY=fwa_live_xxxxxxxxxxxxxxxx\n";
+        $md .= "WA_GATEWAY_URL=https://wa.vexahostcloud.my.id\n";
+        $md .= "WA_GATEWAY_KEY=vwa_live_xxxxxxxxxxxxxxxx\n";
         $md .= "```\n\n";
         $md .= "---\n\n";
         $md .= "## 3. Spesifikasi Endpoint REST API\n\n";
@@ -46,7 +46,7 @@ class AiIntegrationController extends Controller
         $md .= "- **Method:** `POST /api/v1/messages/text`\n";
         $md .= "- **Header:**\n";
         $md .= "  - `Content-Type: application/json`\n";
-        $md .= "  - `X-Api-Key: fwa_live_xxxxxxxxxxxxxxxx`\n";
+        $md .= "  - `X-Api-Key: vwa_live_xxxxxxxxxxxxxxxx`\n";
         $md .= "- **Payload JSON:**\n";
         $md .= "```json\n";
         $md .= "{\n";
@@ -66,7 +66,7 @@ class AiIntegrationController extends Controller
         $md .= "```\n\n";
         $md .= "### B. Kirim Dokumen & Media (PDF, Gambar, dsb)\n";
         $md .= "- **Method:** `POST /api/v1/messages/media`\n";
-        $md .= "- **Header:** `Content-Type: multipart/form-data`, `X-Api-Key: fwa_live_xxxxxxxxxxxxxxxx`\n";
+        $md .= "- **Header:** `Content-Type: multipart/form-data`, `X-Api-Key: vwa_live_xxxxxxxxxxxxxxxx`\n";
         $md .= "- **Parameter Form:**\n";
         $md .= "  - `to`: Nomor tujuan (format 08... atau 62...)\n";
         $md .= "  - `caption`: Teks pesan pendamping (opsional)\n";
@@ -74,7 +74,7 @@ class AiIntegrationController extends Controller
         $md .= "  - `file`: Berkas fisik yang dikirim\n\n";
         $md .= "### C. Pengiriman Massal (Bulk Messages)\n";
         $md .= "- **Method:** `POST /api/v1/messages/bulk`\n";
-        $md .= "- **Header:** `Content-Type: application/json`, `X-Api-Key: fwa_live_xxxxxxxxxxxxxxxx`\n";
+        $md .= "- **Header:** `Content-Type: application/json`, `X-Api-Key: vwa_live_xxxxxxxxxxxxxxxx`\n";
         $md .= "- **Catatan:** Server otomatis mengelola jeda dan antrean anti-blokir WhatsApp.\n\n";
         $md .= "---\n\n";
         $md .= "## 4. Instruksi & Prompt untuk AI Coding Assistant\n\n";
@@ -94,7 +94,7 @@ class AiIntegrationController extends Controller
 
         return response($md, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="FLUSTRA-AI.md"',
+            'Content-Disposition' => 'attachment; filename="VEXAHOST-AI.md"',
         ]);
     }
 
@@ -116,15 +116,15 @@ class AiIntegrationController extends Controller
         $content = match ($agent) {
             'claude' => "# Claude Code - WhatsApp Gateway Instructions\n\n{$prompt}\n",
             'cursor' => "{$prompt}\n",
-            'hermes' => "---\nname: flustra-wa-gateway\ndescription: Kirim pesan WhatsApp notifikasi dan dokumen via Flustra WA Gateway API.\n---\n\n# Flustra WA Gateway Skill\n\n{$prompt}\n",
+            'hermes' => "---\nname: vexahost-wa-gateway\ndescription: Kirim pesan WhatsApp notifikasi dan dokumen via VexaHost WA Gateway API.\n---\n\n# VexaHost WA Gateway Skill\n\n{$prompt}\n",
             'openclaw' => json_encode([
                 'name' => 'send_whatsapp',
-                'description' => 'Mengirim pesan WhatsApp menggunakan Flustra WA Gateway REST API',
-                'endpoint' => 'https://wa.flustra.id/api/v1/messages/text',
+                'description' => 'Mengirim pesan WhatsApp menggunakan VexaHost WA Gateway REST API',
+                'endpoint' => 'https://wa.vexahostcloud.my.id/api/v1/messages/text',
                 'method' => 'POST',
                 'headers' => [
                     'Content-Type' => 'application/json',
-                    'X-Api-Key' => '${env.FLUSTRA_WA_KEY}',
+                    'X-Api-Key' => '${env.VEXAHOST_WA_KEY}',
                 ],
                 'parameters' => [
                     'to' => 'string (nomor telepon WhatsApp penerima, format 08 atau 62)',
@@ -132,12 +132,12 @@ class AiIntegrationController extends Controller
                 ],
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             'antigravity' => json_encode([
-                'name' => 'flustra-wa-gateway',
+                'name' => 'vexahost-wa-gateway',
                 'description' => 'WhatsApp Gateway integration rules for Antigravity',
                 'api' => [
-                    'base_url' => 'https://wa.flustra.id/api/v1',
+                    'base_url' => 'https://wa.vexahostcloud.my.id/api/v1',
                     'auth_header' => 'X-Api-Key',
-                    'env_key' => 'FLUSTRA_WA_KEY',
+                    'env_key' => 'VEXAHOST_WA_KEY',
                 ],
                 'instructions' => $prompt,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
@@ -176,7 +176,7 @@ class AiIntegrationController extends Controller
                 'category' => 'CLI Coding Agent',
                 'badge' => 'Official CLI',
                 'desc' => 'Agent CLI otonom dari Anthropic yang mengeksekusi perintah terminal, merawat repositori, dan membaca instruksi dari berkas CLAUDE.md.',
-                'prompt' => "Tambahkan integrasi WhatsApp Gateway ke project ini menggunakan REST API Flustra WA (https://wa.flustra.id).\n\nSpesifikasi integrasi:\n- Base URL: https://wa.flustra.id/api/v1\n- Endpoint kirim teks: POST /messages/text\n- Header:\n    X-Api-Key: env('FLUSTRA_WA_KEY')\n    Content-Type: application/json\n- Payload JSON:\n    {\n      \"to\": \"081234567890\",\n      \"message\": \"Halo! Pesan transaksional dari sistem.\"\n    }\n- Format respon sukses:\n    { \"success\": true, \"data\": { \"id\": \"msg_1029\", \"status\": \"queued\" } }\n\nTolong buatkan helper service yang modular dengan validasi nomor tujuan dan error handling yang aman. Simpan petunjuk ini di berkas CLAUDE.md.",
+                'prompt' => "Tambahkan integrasi WhatsApp Gateway ke project ini menggunakan REST API VexaHost WA (https://wa.vexahostcloud.my.id).\n\nSpesifikasi integrasi:\n- Base URL: https://wa.vexahostcloud.my.id/api/v1\n- Endpoint kirim teks: POST /messages/text\n- Header:\n    X-Api-Key: env('VEXAHOST_WA_KEY')\n    Content-Type: application/json\n- Payload JSON:\n    {\n      \"to\": \"081234567890\",\n      \"message\": \"Halo! Pesan transaksional dari sistem.\"\n    }\n- Format respon sukses:\n    { \"success\": true, \"data\": { \"id\": \"msg_1029\", \"status\": \"queued\" } }\n\nTolong buatkan helper service yang modular dengan validasi nomor tujuan dan error handling yang aman. Simpan petunjuk ini di berkas CLAUDE.md.",
             ],
             'cursor' => [
                 'id' => 'cursor',
@@ -187,7 +187,7 @@ class AiIntegrationController extends Controller
                 'category' => 'IDE Agent',
                 'badge' => 'Rules Ready',
                 'desc' => 'Editor AI mutakhir dengan fitur Composer. Aturan .cursorrules memastikan AI selalu menerapkan best practice integrasi WhatsApp.',
-                'prompt' => "# Aturan Flustra WA Gateway untuk .cursorrules\n\nKetika membuat fitur pengiriman pesan, notifikasi, atau verifikasi OTP WhatsApp:\n1. Panggil endpoint REST API: POST https://wa.flustra.id/api/v1/messages/text\n2. Autentikasi: sertakan header 'X-Api-Key' dari variabel lingkungan FLUSTRA_WA_KEY.\n3. Payload JSON:\n   {\n     \"to\": \"08xxxxxxxxxx\",\n     \"message\": \"Isi pesan WhatsApp\"\n   }\n4. Jangan pernah mengekspos API key di client-side / frontend.\n5. Tangani respon galat 401 (kunci salah) dan 422 (data tidak valid) dengan elegan.",
+                'prompt' => "# Aturan VexaHost WA Gateway untuk .cursorrules\n\nKetika membuat fitur pengiriman pesan, notifikasi, atau verifikasi OTP WhatsApp:\n1. Panggil endpoint REST API: POST https://wa.vexahostcloud.my.id/api/v1/messages/text\n2. Autentikasi: sertakan header 'X-Api-Key' dari variabel lingkungan VEXAHOST_WA_KEY.\n3. Payload JSON:\n   {\n     \"to\": \"08xxxxxxxxxx\",\n     \"message\": \"Isi pesan WhatsApp\"\n   }\n4. Jangan pernah mengekspos API key di client-side / frontend.\n5. Tangani respon galat 401 (kunci salah) dan 422 (data tidak valid) dengan elegan.",
             ],
             'hermes' => [
                 'id' => 'hermes',
@@ -198,7 +198,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Persistent Autonomous Agent',
                 'badge' => 'Skills Spec',
                 'desc' => 'Framework autonomous AI agent dari Nous Research dengan memori persisten lintas sesi dan ekstensibilitas berbasis open standard SKILL.md.',
-                'prompt' => "Definisikan skill baru untuk Hermes Agent di folder `skills/flustra-wa/SKILL.md`:\n\n```yaml\nname: flustra-wa-gateway\ndescription: Kirim pesan WhatsApp notifikasi dan dokumen via Flustra WA Gateway API.\n```\n\nInstruksi teknis untuk agent:\n- Base URL: https://wa.flustra.id/api/v1\n- Method: POST /messages/text\n- Headers:\n    Content-Type: application/json\n    X-Api-Key: \${FLUSTRA_WA_KEY}\n- Parameter fungsi `send_whatsapp(to, message)`:\n    `to`: nomor WhatsApp tujuan (format 08 atau 62)\n    `message`: teks pesan WhatsApp yang dikirim\n- Agent harus mengecek apakah API key tersedia sebelum memanggil HTTP POST.\n- Kembalikan ID pesan ('id') dan status ('queued') saat pengiriman sukses.",
+                'prompt' => "Definisikan skill baru untuk Hermes Agent di folder `skills/vexahost-wa/SKILL.md`:\n\n```yaml\nname: vexahost-wa-gateway\ndescription: Kirim pesan WhatsApp notifikasi dan dokumen via VexaHost WA Gateway API.\n```\n\nInstruksi teknis untuk agent:\n- Base URL: https://wa.vexahostcloud.my.id/api/v1\n- Method: POST /messages/text\n- Headers:\n    Content-Type: application/json\n    X-Api-Key: \${VEXAHOST_WA_KEY}\n- Parameter fungsi `send_whatsapp(to, message)`:\n    `to`: nomor WhatsApp tujuan (format 08 atau 62)\n    `message`: teks pesan WhatsApp yang dikirim\n- Agent harus mengecek apakah API key tersedia sebelum memanggil HTTP POST.\n- Kembalikan ID pesan ('id') dan status ('queued') saat pengiriman sukses.",
             ],
             'openclaw' => [
                 'id' => 'openclaw',
@@ -209,7 +209,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Local-first ReAct Agent',
                 'badge' => 'Tool Calling',
                 'desc' => 'Autonomous personal AI employee & coding agent open-source (Peter Steinberger). Mengotomatiskan pesan WhatsApp langsung melalui ReAct loop & MCP.',
-                'prompt' => "Konfigurasikan OpenClaw (Clawdbot) dengan tool pengiriman WhatsApp resmi Flustra WA:\n\n1. Daftarkan tool 'send_whatsapp' di manifest tool OpenClaw:\n   - Description: Mengirim notifikasi atau balasan WhatsApp ke pengguna.\n   - Endpoint: POST https://wa.flustra.id/api/v1/messages/text\n   - Header: X-Api-Key: \${env.FLUSTRA_WA_KEY}\n   - Body: { \"to\": \"<recipient_phone>\", \"message\": \"<message_text>\" }\n2. Standarisasi format nomor: normalisasi awalan 08 menjadi 628 secara otomatis.\n3. Bila agent mendeteksi perintah pengiriman pesan atau alert sistem, jalankan tool ini dan laporkan queue ID yang diterima.",
+                'prompt' => "Konfigurasikan OpenClaw (Clawdbot) dengan tool pengiriman WhatsApp resmi VexaHost WA:\n\n1. Daftarkan tool 'send_whatsapp' di manifest tool OpenClaw:\n   - Description: Mengirim notifikasi atau balasan WhatsApp ke pengguna.\n   - Endpoint: POST https://wa.vexahostcloud.my.id/api/v1/messages/text\n   - Header: X-Api-Key: \${env.VEXAHOST_WA_KEY}\n   - Body: { \"to\": \"<recipient_phone>\", \"message\": \"<message_text>\" }\n2. Standarisasi format nomor: normalisasi awalan 08 menjadi 628 secara otomatis.\n3. Bila agent mendeteksi perintah pengiriman pesan atau alert sistem, jalankan tool ini dan laporkan queue ID yang diterima.",
             ],
             'antigravity' => [
                 'id' => 'antigravity',
@@ -220,7 +220,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Agentic Studio',
                 'badge' => 'Multi-Agent',
                 'desc' => 'AI coding assistant tingkat lanjut dengan dukungan subagents, declarative rules, dan eksekusi background task mandiri.',
-                'prompt' => "Konfigurasikan integrasi WhatsApp otomatis untuk workspace ini menggunakan Flustra WA Gateway API:\n- Base URL: https://wa.flustra.id/api/v1\n- Endpoint: POST /messages/text\n- Header: X-Api-Key: [API_KEY_ANDA], Content-Type: application/json\n- Body: { \"to\": \"08xxxxxxxxxx\", \"message\": \"Pesan otomatis sistem\" }\n- Dokumentasi API lengkap: https://wa.flustra.id/docs\n- Pastikan fungsi kirim mengembalikan status antrean pesan tanpa menghentikan thread utama aplikasi.",
+                'prompt' => "Konfigurasikan integrasi WhatsApp otomatis untuk workspace ini menggunakan VexaHost WA Gateway API:\n- Base URL: https://wa.vexahostcloud.my.id/api/v1\n- Endpoint: POST /messages/text\n- Header: X-Api-Key: [API_KEY_ANDA], Content-Type: application/json\n- Body: { \"to\": \"08xxxxxxxxxx\", \"message\": \"Pesan otomatis sistem\" }\n- Dokumentasi API lengkap: https://wa.vexahostcloud.my.id/docs\n- Pastikan fungsi kirim mengembalikan status antrean pesan tanpa menghentikan thread utama aplikasi.",
             ],
             'opencode' => [
                 'id' => 'opencode',
@@ -231,7 +231,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Terminal Coding Tool',
                 'badge' => 'Open-Source',
                 'desc' => 'Perangkat AI coding open-source berbasis terminal yang ringan dan cepat, siap membaca instruksi proyek langsung dari repositori.',
-                'prompt' => "Integrasikan pengiriman pesan WhatsApp via Flustra WA Gateway.\nURL: https://wa.flustra.id/api/v1/messages/text\nMethod: POST\nHeaders:\n  X-Api-Key: os.getenv('WA_KEY')\n  Content-Type: application/json\nBody:\n  {\n    \"to\": \"081234567890\",\n    \"message\": \"Pesan verifikasi sistem\"\n  }\nBuatkan modul client HTTP yang bersih dan siap diuji.",
+                'prompt' => "Integrasikan pengiriman pesan WhatsApp via VexaHost WA Gateway.\nURL: https://wa.vexahostcloud.my.id/api/v1/messages/text\nMethod: POST\nHeaders:\n  X-Api-Key: os.getenv('WA_KEY')\n  Content-Type: application/json\nBody:\n  {\n    \"to\": \"081234567890\",\n    \"message\": \"Pesan verifikasi sistem\"\n  }\nBuatkan modul client HTTP yang bersih dan siap diuji.",
             ],
             'codex' => [
                 'id' => 'codex',
@@ -242,7 +242,7 @@ class AiIntegrationController extends Controller
                 'category' => 'LLM Engine',
                 'badge' => 'OpenAI',
                 'desc' => 'Model bahasa penalaran kode dari OpenAI untuk scaffolding otomatis, pembuatan unit test, dan fungsi API helper.',
-                'prompt' => "Write a clean and robust service module to send WhatsApp messages using Flustra WA Gateway.\nAPI URL: https://wa.flustra.id/api/v1/messages/text\nMethod: POST\nHeaders:\n  X-Api-Key: process.env.WA_API_KEY\n  Content-Type: application/json\nBody:\n  { \"to\": recipient_phone, \"message\": text_message }\nRequirements:\n- Validate phone number input (supports 08... or 628...)\n- Parse JSON response and log queue message ID\n- Add exponential retry on 5xx server errors",
+                'prompt' => "Write a clean and robust service module to send WhatsApp messages using VexaHost WA Gateway.\nAPI URL: https://wa.vexahostcloud.my.id/api/v1/messages/text\nMethod: POST\nHeaders:\n  X-Api-Key: process.env.WA_API_KEY\n  Content-Type: application/json\nBody:\n  { \"to\": recipient_phone, \"message\": text_message }\nRequirements:\n- Validate phone number input (supports 08... or 628...)\n- Parse JSON response and log queue message ID\n- Add exponential retry on 5xx server errors",
             ],
             'windsurf' => [
                 'id' => 'windsurf',
@@ -253,7 +253,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Agentic IDE',
                 'badge' => 'Codeium',
                 'desc' => 'IDE Agentic dari Codeium dengan Cascade Flow yang memahami seluruh konteks codebase secara mendalam.',
-                'prompt' => "Integrasikan Flustra WA Gateway API ke dalam alur aplikasi:\n- Endpoint: POST https://wa.flustra.id/api/v1/messages/text\n- Header: X-Api-Key: env('WA_API_KEY')\n- Request Body: { \"to\": \"081234567890\", \"message\": \"Notifikasi pesanan siap dikirim\" }\n- Tangani status response: 'queued' menandakan pesan telah masuk antrean pengiriman server.",
+                'prompt' => "Integrasikan VexaHost WA Gateway API ke dalam alur aplikasi:\n- Endpoint: POST https://wa.vexahostcloud.my.id/api/v1/messages/text\n- Header: X-Api-Key: env('WA_API_KEY')\n- Request Body: { \"to\": \"081234567890\", \"message\": \"Notifikasi pesanan siap dikirim\" }\n- Tangani status response: 'queued' menandakan pesan telah masuk antrean pengiriman server.",
             ],
             'cline' => [
                 'id' => 'cline',
@@ -264,7 +264,7 @@ class AiIntegrationController extends Controller
                 'category' => 'Autonomous Coding',
                 'badge' => 'Rules File',
                 'desc' => 'Extension VS Code otonom yang dapat membuat file, menjalankan command terminal, dan mengintegrasikan API dengan panduan .clinerules.',
-                'prompt' => "# Panduan Flustra WA Gateway untuk .clinerules\n- Base URL: https://wa.flustra.id/api/v1\n- Endpoint Kirim Pesan: POST /messages/text\n- Headers:\n    Content-Type: application/json\n    X-Api-Key: \${WA_GATEWAY_KEY}\n- Buatkan service class modular dengan error handling yang aman tanpa menghentikan flow aplikasi saat network failure.",
+                'prompt' => "# Panduan VexaHost WA Gateway untuk .clinerules\n- Base URL: https://wa.vexahostcloud.my.id/api/v1\n- Endpoint Kirim Pesan: POST /messages/text\n- Headers:\n    Content-Type: application/json\n    X-Api-Key: \${WA_GATEWAY_KEY}\n- Buatkan service class modular dengan error handling yang aman tanpa menghentikan flow aplikasi saat network failure.",
             ],
             'copilot' => [
                 'id' => 'copilot',
@@ -274,8 +274,8 @@ class AiIntegrationController extends Controller
                 'color' => '#1F2937',
                 'category' => 'AI Pair Programmer',
                 'badge' => 'GitHub',
-                'desc' => 'Asisten AI dari GitHub. File instruksi khusus memastikan Copilot selalu mematuhi arsitektur REST API Flustra WA Gateway.',
-                'prompt' => "# GitHub Copilot Instructions for WhatsApp Gateway\nWhen implementing WhatsApp notifications, OTP, or messaging:\n- Use Flustra WA Gateway REST API: POST https://wa.flustra.id/api/v1/messages/text\n- Always read API key from environment variable `WA_GATEWAY_KEY` (Header: `X-Api-Key`)\n- Validate phone numbers to support standard Indonesian formats (08... and 62...)\n- Avoid throwing fatal exceptions on notification delivery failure.",
+                'desc' => 'Asisten AI dari GitHub. File instruksi khusus memastikan Copilot selalu mematuhi arsitektur REST API VexaHost WA Gateway.',
+                'prompt' => "# GitHub Copilot Instructions for WhatsApp Gateway\nWhen implementing WhatsApp notifications, OTP, or messaging:\n- Use VexaHost WA Gateway REST API: POST https://wa.vexahostcloud.my.id/api/v1/messages/text\n- Always read API key from environment variable `WA_GATEWAY_KEY` (Header: `X-Api-Key`)\n- Validate phone numbers to support standard Indonesian formats (08... and 62...)\n- Avoid throwing fatal exceptions on notification delivery failure.",
             ],
         ];
     }
@@ -288,28 +288,28 @@ class AiIntegrationController extends Controller
                 'lang' => 'PHP 8.2+ & Laravel',
                 'badge' => 'Service Pattern',
                 'desc' => 'Membuat config/whatsapp.php dan App\Services\WhatsAppGateway modular dengan Http client bawaan Laravel.',
-                'prompt' => "Buatkan modul client WhatsApp resmi untuk aplikasi Laravel ini:\n1. Buat file `config/whatsapp.php` yang membaca `WA_GATEWAY_URL` (default: https://wa.flustra.id), `WA_GATEWAY_KEY`, dan `WA_GATEWAY_SESSION` dari .env.\n2. Buat service class `App\\Services\\WhatsAppGateway` dengan method:\n   - `kirim(?string \$nomor, string \$pesan): bool` -> memanggil POST /api/v1/messages/text\n   - `template(?string \$nomor, string \$template, array \$variabel = []): bool` -> memanggil POST /api/v1/messages/template\n   - `media(?string \$nomor, string \$filePath, string \$caption = '', string \$type = 'image'): bool` -> memanggil POST /api/v1/messages/media\n3. Pastikan method selalu mengembalikan boolean aman tanpa exception crash, sertakan timeout 5 detik, dan tulis log peringatan saat terjadi galat.",
+                'prompt' => "Buatkan modul client WhatsApp resmi untuk aplikasi Laravel ini:\n1. Buat file `config/whatsapp.php` yang membaca `WA_GATEWAY_URL` (default: https://wa.vexahostcloud.my.id), `WA_GATEWAY_KEY`, dan `WA_GATEWAY_SESSION` dari .env.\n2. Buat service class `App\\Services\\WhatsAppGateway` dengan method:\n   - `kirim(?string \$nomor, string \$pesan): bool` -> memanggil POST /api/v1/messages/text\n   - `template(?string \$nomor, string \$template, array \$variabel = []): bool` -> memanggil POST /api/v1/messages/template\n   - `media(?string \$nomor, string \$filePath, string \$caption = '', string \$type = 'image'): bool` -> memanggil POST /api/v1/messages/media\n3. Pastikan method selalu mengembalikan boolean aman tanpa exception crash, sertakan timeout 5 detik, dan tulis log peringatan saat terjadi galat.",
             ],
             'nodejs' => [
                 'title' => 'Node.js / TypeScript',
                 'lang' => 'TypeScript / ESModule',
                 'badge' => 'Type Safe',
-                'desc' => 'Membuat modul client flustra-wa dengan fetch natif, Promise handler, dan deklarasi tipe TypeScript.',
-                'prompt' => "Buatkan client library Flustra WA Gateway untuk project Node.js / TypeScript ini:\n1. Buat berkas `src/services/flustraWa.ts` dengan interface `WhatsAppMessagePayload` dan `WhatsAppResponse`.\n2. Buat fungsi helper `kirimWhatsApp(nomor: string, pesan: string): Promise<boolean>` yang memanggil `POST https://wa.flustra.id/api/v1/messages/text`.\n3. Gunakan fetch natif dengan header `X-Api-Key: process.env.WA_GATEWAY_KEY` dan `Content-Type: application/json`.\n4. Sertakan timeout signal 5000ms dan penanganan galat yang aman.",
+                'desc' => 'Membuat modul client vexahost-wa dengan fetch natif, Promise handler, dan deklarasi tipe TypeScript.',
+                'prompt' => "Buatkan client library VexaHost WA Gateway untuk project Node.js / TypeScript ini:\n1. Buat berkas `src/services/vexahostWa.ts` dengan interface `WhatsAppMessagePayload` dan `WhatsAppResponse`.\n2. Buat fungsi helper `kirimWhatsApp(nomor: string, pesan: string): Promise<boolean>` yang memanggil `POST https://wa.vexahostcloud.my.id/api/v1/messages/text`.\n3. Gunakan fetch natif dengan header `X-Api-Key: process.env.WA_GATEWAY_KEY` dan `Content-Type: application/json`.\n4. Sertakan timeout signal 5000ms dan penanganan galat yang aman.",
             ],
             'python' => [
                 'title' => 'Python',
                 'lang' => 'Python 3.10+ (requests/httpx)',
                 'badge' => 'Clean OOP',
-                'desc' => 'Membuat class FlustraWAGateway dengan normalisasi nomor otomatis dan logging berbasis standar library.',
-                'prompt' => "Buatkan client library Python untuk Flustra WA Gateway:\n1. Buat class `FlustraWAGateway` di berkas `services/whatsapp_gateway.py`.\n2. Ambil URL (https://wa.flustra.id) dan KEY dari `os.environ.get('WA_GATEWAY_KEY')`.\n3. Sediakan method `kirim(nomor: str, pesan: str) -> bool` yang memanggil endpoint `POST /api/v1/messages/text`.\n4. Tambahkan fungsi normalisasi nomor agar awalan '08' otomatis dikonversi ke format yang valid.",
+                'desc' => 'Membuat class VexaHostWAGateway dengan normalisasi nomor otomatis dan logging berbasis standar library.',
+                'prompt' => "Buatkan client library Python untuk VexaHost WA Gateway:\n1. Buat class `VexaHostWAGateway` di berkas `services/whatsapp_gateway.py`.\n2. Ambil URL (https://wa.vexahostcloud.my.id) dan KEY dari `os.environ.get('WA_GATEWAY_KEY')`.\n3. Sediakan method `kirim(nomor: str, pesan: str) -> bool` yang memanggil endpoint `POST /api/v1/messages/text`.\n4. Tambahkan fungsi normalisasi nomor agar awalan '08' otomatis dikonversi ke format yang valid.",
             ],
             'curl' => [
                 'title' => 'Bash / cURL',
                 'lang' => 'Shell Script',
                 'badge' => 'Zero Dependency',
                 'desc' => 'Script CLI bash portabel untuk automasi server, CI/CD pipeline, atau cron job pengiriman notifikasi.',
-                'prompt' => "Buatkan script bash `kirim-wa.sh` yang menerima 2 argumen: \$1 (nomor tujuan) dan \$2 (isi pesan):\n- Periksa keberadaan variabel lingkungan \$WA_KEY sebelum mengirim.\n- Jalankan curl -s -X POST https://wa.flustra.id/api/v1/messages/text \\\n    -H \"X-Api-Key: \$WA_KEY\" \\\n    -H \"Content-Type: application/json\" \\\n    -d \"{\\\"to\\\": \\\"\$1\\\", \\\"message\\\": \\\"\$2\\\"}\"\n- Tampilkan pesan sukses jika status HTTP 200/202.",
+                'prompt' => "Buatkan script bash `kirim-wa.sh` yang menerima 2 argumen: \$1 (nomor tujuan) dan \$2 (isi pesan):\n- Periksa keberadaan variabel lingkungan \$WA_KEY sebelum mengirim.\n- Jalankan curl -s -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \\\n    -H \"X-Api-Key: \$WA_KEY\" \\\n    -H \"Content-Type: application/json\" \\\n    -d \"{\\\"to\\\": \\\"\$1\\\", \\\"message\\\": \\\"\$2\\\"}\"\n- Tampilkan pesan sukses jika status HTTP 200/202.",
             ],
         ];
     }
@@ -321,25 +321,25 @@ class AiIntegrationController extends Controller
                 'title' => 'Kirim OTP & Kode Verifikasi',
                 'tag' => 'Autentikasi & Keamanan',
                 'icon' => 'bi-shield-check',
-                'prompt' => "Tolong buatkan alur verifikasi nomor WhatsApp untuk pengguna baru:\n1. Generate kode OTP acak 6 angka dan simpan di cache selama 5 menit.\n2. Kirim kode OTP tersebut ke WhatsApp pengguna menggunakan Flustra WA Gateway via POST https://wa.flustra.id/api/v1/messages/text dengan pesan: 'Kode verifikasi Anda adalah [KODE]. Jangan berikan kode ini kepada siapapun demi keamanan akun Anda.'\n3. Buatkan endpoint verifikasi untuk mencocokkan input kode pengguna.",
+                'prompt' => "Tolong buatkan alur verifikasi nomor WhatsApp untuk pengguna baru:\n1. Generate kode OTP acak 6 angka dan simpan di cache selama 5 menit.\n2. Kirim kode OTP tersebut ke WhatsApp pengguna menggunakan VexaHost WA Gateway via POST https://wa.vexahostcloud.my.id/api/v1/messages/text dengan pesan: 'Kode verifikasi Anda adalah [KODE]. Jangan berikan kode ini kepada siapapun demi keamanan akun Anda.'\n3. Buatkan endpoint verifikasi untuk mencocokkan input kode pengguna.",
             ],
             'invoice' => [
                 'title' => 'Kirim Tagihan & Invoice PDF',
                 'tag' => 'E-Commerce & Billing',
                 'icon' => 'bi-receipt',
-                'prompt' => "Tolong buatkan fungsi otomatis untuk mengirimkan berkas tagihan/invoice PDF pesanan ke WhatsApp pelanggan:\n1. Ambil file PDF invoice yang tersimpan di storage.\n2. Panggil endpoint media Flustra WA: POST https://wa.flustra.id/api/v1/messages/media dengan multipart form-data (to, caption, type='document', file).\n3. Sertakan caption: 'Halo [Nama], pesanan #[NomorOrder] telah terbit. Silakan unduh bukti transaksi terlampir. Terima kasih!'",
+                'prompt' => "Tolong buatkan fungsi otomatis untuk mengirimkan berkas tagihan/invoice PDF pesanan ke WhatsApp pelanggan:\n1. Ambil file PDF invoice yang tersimpan di storage.\n2. Panggil endpoint media VexaHost WA: POST https://wa.vexahostcloud.my.id/api/v1/messages/media dengan multipart form-data (to, caption, type='document', file).\n3. Sertakan caption: 'Halo [Nama], pesanan #[NomorOrder] telah terbit. Silakan unduh bukti transaksi terlampir. Terima kasih!'",
             ],
             'webhook' => [
                 'title' => 'Webhook Bot Otomatis (Auto-Responder)',
                 'tag' => 'Chatbot & Layanan Pelanggan',
                 'icon' => 'bi-robot',
-                'prompt' => "Buatkan endpoint webhook penerima pesan masuk dari Flustra WA Gateway di route `POST /api/webhook/whatsapp`:\n1. Validasi signature pengirim dari header `X-Flustra-Signature` untuk keamanan.\n2. Ekstrak pesan dari payload (pengirim `from` dan teks `message`).\n3. Jika pengguna mengetik kata 'BANTUAN' atau 'MENU', balas otomatis dengan daftar layanan kami menggunakan panggilan balik POST https://wa.flustra.id/api/v1/messages/text.",
+                'prompt' => "Buatkan endpoint webhook penerima pesan masuk dari VexaHost WA Gateway di route `POST /api/webhook/whatsapp`:\n1. Validasi signature pengirim dari header `X-VexaHost-Signature` untuk keamanan.\n2. Ekstrak pesan dari payload (pengirim `from` dan teks `message`).\n3. Jika pengguna mengetik kata 'BANTUAN' atau 'MENU', balas otomatis dengan daftar layanan kami menggunakan panggilan balik POST https://wa.vexahostcloud.my.id/api/v1/messages/text.",
             ],
             'broadcast' => [
                 'title' => 'Broadcast Notifikasi Transaksional',
                 'tag' => 'Batch Processing',
                 'icon' => 'bi-megaphone',
-                'prompt' => "Buatkan command background job untuk mengirimkan pengumuman transaksional ke sekumpulan nomor pelanggan:\n1. Ambil daftar pelanggan yang berstatus aktif.\n2. Gunakan endpoint bulk POST https://wa.flustra.id/api/v1/messages/bulk dengan array data nomor dan pesan yang dipersonalisasi.\n3. Gateway akan mengatur jeda pengiriman otomatis anti-blokir di server, tugas kita hanya memantau status 'queued' yang dikembalikan.",
+                'prompt' => "Buatkan command background job untuk mengirimkan pengumuman transaksional ke sekumpulan nomor pelanggan:\n1. Ambil daftar pelanggan yang berstatus aktif.\n2. Gunakan endpoint bulk POST https://wa.vexahostcloud.my.id/api/v1/messages/bulk dengan array data nomor dan pesan yang dipersonalisasi.\n3. Gateway akan mengatur jeda pengiriman otomatis anti-blokir di server, tugas kita hanya memantau status 'queued' yang dikembalikan.",
             ],
         ];
     }
@@ -349,24 +349,24 @@ class AiIntegrationController extends Controller
         return [
             'curl_text' => [
                 'title' => 'cURL Kirim Pesan Teks',
-                'command' => 'curl -X POST https://wa.flustra.id/api/v1/messages/text \\'."\n".
-                             '  -H "X-Api-Key: fwa_live_xxxxxxxxxxxxxxxx" \\'."\n".
+                'command' => 'curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \\'."\n".
+                             '  -H "X-Api-Key: vwa_live_xxxxxxxxxxxxxxxx" \\'."\n".
                              '  -H "Content-Type: application/json" \\'."\n".
-                             '  -d \'{"to":"081234567890","message":"Halo dari terminal CLI Flustra WA!"}\'',
+                             '  -d \'{"to":"081234567890","message":"Halo dari terminal CLI VexaHost WA!"}\'',
             ],
             'curl_status' => [
                 'title' => 'cURL Cek Status Gateway',
-                'command' => 'curl -s https://wa.flustra.id/status.json',
+                'command' => 'curl -s https://wa.vexahostcloud.my.id/status.json',
             ],
             'powershell' => [
                 'title' => 'PowerShell (Windows)',
-                'command' => '$headers = @{ "X-Api-Key" = "fwa_live_xxxxxxxxxxxxxxxx"; "Content-Type" = "application/json" }'."\n".
+                'command' => '$headers = @{ "X-Api-Key" = "vwa_live_xxxxxxxxxxxxxxxx"; "Content-Type" = "application/json" }'."\n".
                              '$body = @{ to = "081234567890"; message = "Halo dari PowerShell!" } | ConvertTo-Json'."\n".
-                             'Invoke-RestMethod -Uri "https://wa.flustra.id/api/v1/messages/text" -Method Post -Headers $headers -Body $body',
+                             'Invoke-RestMethod -Uri "https://wa.vexahostcloud.my.id/api/v1/messages/text" -Method Post -Headers $headers -Body $body',
             ],
             'artisan' => [
                 'title' => 'Artisan CLI Runner (Laravel)',
-                'command' => 'php -r \'echo file_get_contents("https://wa.flustra.id/status.json");\'',
+                'command' => 'php -r \'echo file_get_contents("https://wa.vexahostcloud.my.id/status.json");\'',
             ],
         ];
     }

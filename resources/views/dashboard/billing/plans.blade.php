@@ -429,7 +429,7 @@
             <div>
                 <p class="font-medium">Butuh lebih dari paket Elite?</p>
                 <p class="mt-1 leading-relaxed text-muted-foreground">
-                    <a href="https://about.flustra.id/#contact" class="text-primary hover:underline">Hubungi kami</a>
+                    <a href="{{ route('enterprise') }}" class="text-primary hover:underline">Hubungi kami</a>
                     untuk penawaran khusus.
                 </p>
             </div>

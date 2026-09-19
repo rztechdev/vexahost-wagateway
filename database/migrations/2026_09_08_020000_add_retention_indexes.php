@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * Dijalankan sekarang, saat seluruh tabel ini masih di bawah 1 MB di produksi
  * (webhook_deliveries bahkan kosong). DDL yang sama setelah ada pelanggan
- * adalah operasi mahal pada MySQL yang dipakai bersama flustra-erp.
+ * adalah operasi mahal pada MySQL yang dipakai bersama aplikasi vexahost.
  */
 return new class extends Migration
 {

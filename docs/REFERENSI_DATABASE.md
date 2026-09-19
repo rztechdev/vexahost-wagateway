@@ -29,7 +29,7 @@ Pengecualian: `workspaces.owner_id` memakai `nullOnDelete`. Menghapus akun pengg
 
 ## `users`
 
-Akun yang bisa masuk ke dashboard. flustra-wa punya autentikasi lokalnya sendiri — setiap aplikasi Flustra memegang form login dan register masing-masing.
+Akun yang bisa masuk ke dashboard. vexahost-wa punya form login dan register sendiri, dan akunnya **tertaut** dengan aplikasi vexahost: email dan kata sandi yang sama berlaku di keduanya ([AKUN_TERTAUT.md](AKUN_TERTAUT.md)). Aplikasi Flustra yang memakai gateway ini tidak ikut tertaut — mereka memanggil API dengan API key workspace, bukan akun.
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
@@ -41,6 +41,8 @@ Akun yang bisa masuk ke dashboard. flustra-wa punya autentikasi lokalnya sendiri
 | `is_super_admin` | bool | Akses lintas workspace untuk keperluan dukungan. **Tidak bisa diatur lewat antarmuka mana pun** — hanya langsung di database |
 | `last_login_at` | timestamp null | Untuk melihat akun yang sudah lama tidak dipakai |
 | `remember_token` | string null | |
+| `linked_sync_pending_at` | timestamp null | Ada perubahan email/kata sandi yang belum sampai ke aplikasi vexahost. Diulang `akun-tertaut:kirim` tiap menit |
+| `linked_sync_previous_email` | string null | Email lama yang harus dicari di vexahost saat email berganti dan pengirimannya belum berhasil — tanpa ini percobaan ulang membuat akun kedua di sana |
 
 Satu pengguna bisa menjadi anggota banyak workspace lewat `workspace_members`.
 
@@ -60,7 +62,7 @@ Batas isolasi antar pelanggan. Semua data lain menggantung di sini.
 | `max_sessions` | int | Batas jumlah nomor |
 | `monthly_message_quota` | int | Batas pesan keluar per bulan. `0` berarti tanpa batas |
 | `api_rate_limit_per_minute` | int | Bawaan untuk API key milik workspace ini |
-| `is_internal` | bool | Workspace internal Flustra — dikecualikan dari kuota |
+| `is_internal` | bool | Workspace internal VexaHost — dikecualikan dari kuota |
 | `deleted_at` | timestamp null | Soft delete |
 
 **Kenapa soft delete.** Menghapus workspace membuang riwayat pesan yang mungkin masih dibutuhkan untuk audit atau sengketa tagihan. Soft delete memberi jeda sebelum penghapusan permanen.
@@ -94,7 +96,7 @@ Kredensial untuk REST API.
 | `id` | bigint PK | |
 | `workspace_id` | FK cascade | |
 | `name` | string | Label, mis. "flustra-erp produksi" |
-| `prefix` | string(12) unique | Bagian depan kunci, mis. `fwa_a1b2c3d4` |
+| `prefix` | string(12) unique | Bagian depan kunci, mis. `vwa_a1b2c3d4` |
 | `key_hash` | string | Hash dari bagian rahasia |
 | `scopes` | json null | `["*"]` atau daftar seperti `["otp"]` |
 | `rate_limit_per_minute` | int null | Menimpa batas workspace bila diisi |
@@ -138,7 +140,7 @@ Satu nomor WhatsApp yang tertaut.
 
 **Kenapa `qr_expires_at` penting.** whatsapp-web.js menerbitkan QR baru dengan jeda tidak tetap — pengamatan menunjukkan 20 sampai 60 detik. Kalau masa berlakunya lebih pendek dari jeda terlama itu, akan ada celah di mana QR dianggap kedaluwarsa padahal penggantinya belum datang, dan modal di dashboard mendadak kosong tepat saat pengguna bersiap men-scan. `QR_TTL_SECONDS` bawaannya 90 detik; jangan diturunkan di bawah 60.
 
-**Kenapa `kind` dihapus.** Kolom itu dulu memisahkan nomor Flustra dari nomor pelanggan, tapi pemisahannya tidak pernah tampil di antarmuka dan justru membuat sesi hijau ditolak saat `session_id` dikosongkan. Pemisahan nomor sekarang dilakukan dengan workspace terpisah, yang memang terlihat.
+**Kenapa `kind` dihapus.** Kolom itu dulu memisahkan nomor VexaHost dari nomor pelanggan, tapi pemisahannya tidak pernah tampil di antarmuka dan justru membuat sesi hijau ditolak saat `session_id` dikosongkan. Pemisahan nomor sekarang dilakukan dengan workspace terpisah, yang memang terlihat.
 
 Unik pada `(workspace_id, name)`. Indeks pada `(workspace_id, status)`.
 

@@ -17,7 +17,7 @@
                 'id' => 0,
                 'bank_name' => $bank['name'] ?? 'Transfer Bank',
                 'account_number' => $bank['account_number'],
-                'account_holder' => $bank['account_holder'] ?? 'Flustra',
+                'account_holder' => $bank['account_holder'] ?? 'VexaHost',
                 'type' => 'bank',
                 'instructions' => null,
             ]]) : collect());
@@ -1061,7 +1061,7 @@
                                             <span>Catatan Pembayaran</span>
                                         </div>
                                         <p class="text-muted-foreground text-[11px] leading-relaxed">
-                                            Demi keamanan transaksi Anda, sistem pembayaran kami diproses secara resmi oleh mitra payment gateway berlisensi Bank Indonesia (<strong>Mayar / Xendit</strong>). Nama tujuan transfer/QRIS yang muncul di aplikasi m-banking atau e-wallet adalah <strong>PT Mayar / Xendit</strong>, dan dana dipastikan 100% masuk ke rekening resmi <strong>FLUSTRA</strong>.
+                                            Demi keamanan transaksi Anda, sistem pembayaran kami diproses secara resmi oleh mitra payment gateway berlisensi Bank Indonesia (<strong>Mayar / Xendit</strong>). Nama tujuan transfer/QRIS yang muncul di aplikasi m-banking atau e-wallet adalah <strong>PT Mayar / Xendit</strong>, dan dana dipastikan 100% masuk ke rekening resmi <strong>VEXAHOST</strong>.
                                         </p>
                                     </div>
 
@@ -1341,7 +1341,7 @@
                                             <span class="text-[10px] text-muted-foreground">Tagihan dalam proses verifikasi</span>
                                         @endif
 
-                                        <a href="https://wa.me/6282318280376?text={{ rawurlencode('Halo Admin Flustra, saya ingin menanyakan perihal tagihan ' . $invoice->number . ' sebesar Rp ' . number_format($invoice->total, 0, ',', '.') . '. Mohon bantuannya.') }}"
+                                        <a href="https://wa.me/{{ \App\Support\KontakWhatsApp::nomor() }}?text={{ rawurlencode('Halo Admin VexaHost, saya ingin menanyakan perihal tagihan ' . $invoice->number . ' sebesar Rp ' . number_format($invoice->total, 0, ',', '.') . '. Mohon bantuannya.') }}"
                                            target="_blank" class="font-medium text-primary hover:underline inline-flex items-center gap-1">
                                             <span>Butuh Bantuan? Hubungi Admin</span>
                                         </a>

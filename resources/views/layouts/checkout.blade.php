@@ -7,9 +7,7 @@
     <title>@yield('title', 'Checkout Pembayaran') &middot; {{ config('app.name') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
@@ -47,9 +45,9 @@
             {{-- Logo & Identitas Brand --}}
             <div class="flex items-center gap-3">
                 <a href="{{ route('dashboard') }}" class="group flex items-center gap-2.5 transition">
-                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-8 w-auto object-contain transition group-hover:scale-105">
+                    <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost WA" class="h-8 w-auto object-contain transition group-hover:scale-105">
                     <div class="flex flex-col">
-                        <span class="text-base font-bold tracking-tight text-foreground">Flustra WA</span>
+                        <span class="text-base font-bold tracking-tight text-foreground">VexaHost WA</span>
                         <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Gateway Pembayaran</span>
                     </div>
                 </a>
@@ -150,13 +148,13 @@
                         <span>Verifikasi Akurat &amp; Cepat</span>
                     </div>
                     <span class="text-border">&bull;</span>
-                    <a href="https://about.flustra.id/#contact" target="_blank" class="hover:text-foreground hover:underline">
+                    <a href="{{ route('docs.show', 'bantuan') }}" target="_blank" class="hover:text-foreground hover:underline">
                         Butuh Bantuan? Hubungi Kami
                     </a>
                 </div>
 
                 {{-- Copyright --}}
-                <p>&copy; {{ date('Y') }} Flustra WA Gateway. Seluruh hak cipta dilindungi.</p>
+                <p>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</p>
             </div>
         </div>
     </footer>

@@ -162,7 +162,7 @@ class ApiKeyHashTest extends TestCase
     }
 
     /**
-     * Setelah `flustra:hash-api-bersihkan`, `key_hash` sendiri berisi SHA-256
+     * Setelah `vexahost:hash-api-bersihkan`, `key_hash` sendiri berisi SHA-256
      * dan `key_hash_fast` kosong. Verifikasi harus tetap bekerja — dan sejak
      * saat itu rollback memang tidak lagi mungkin tanpa langkah tambahan.
      */
@@ -173,7 +173,7 @@ class ApiKeyHashTest extends TestCase
 
         [, $rahasia] = explode('.', $plain, 2);
 
-        $this->artisan('flustra:hash-api-bersihkan')->assertSuccessful();
+        $this->artisan('vexahost:hash-api-bersihkan')->assertSuccessful();
 
         $key->refresh();
 
@@ -190,7 +190,7 @@ class ApiKeyHashTest extends TestCase
     {
         [$key] = ApiKey::issue($this->workspace(), 'kunci uji');
 
-        $this->artisan('flustra:hash-api-bersihkan', ['--dry-run' => true])->assertSuccessful();
+        $this->artisan('vexahost:hash-api-bersihkan', ['--dry-run' => true])->assertSuccessful();
 
         $this->assertStringStartsWith('$2', (string) $key->fresh()->key_hash, 'Mode kering mengubah sesuatu.');
         $this->assertNotNull($key->fresh()->key_hash_fast);

@@ -27,13 +27,13 @@ use Tests\TestCase;
  * dashboard hanya terlihat oleh yang kebetulan sedang membukanya.
  *
  * Yang diperiksa di sini bukan bunyi kalimatnya, melainkan bahwa pesannya
- * benar-benar mengantre — ke nomor yang benar, dari sesi Flustra, sekali saja.
+ * benar-benar mengantre — ke nomor yang benar, dari sesi VexaHost, sekali saja.
  */
 class WhatsAppNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Workspace $flustra;
+    private Workspace $vexahost;
 
     private Workspace $pelanggan;
 
@@ -46,16 +46,16 @@ class WhatsAppNotificationTest extends TestCase
         Http::fake();
         Queue::fake();
 
-        // Workspace milik Flustra sendiri, dengan satu nomor tersambung.
-        $this->flustra = Workspace::create([
-            'name' => 'Flustra Internal',
-            'slug' => 'flustra-internal',
+        // Workspace milik VexaHost sendiri, dengan satu nomor tersambung.
+        $this->vexahost = Workspace::create([
+            'name' => 'VexaHost Internal',
+            'slug' => 'vexahost-internal',
             'is_internal' => true,
             'max_sessions' => 1,
             'monthly_message_quota' => 0,
         ]);
 
-        $this->flustra->sessions()->create([
+        $this->vexahost->sessions()->create([
             'name' => 'Notifikasi',
             'status' => 'connected',
             'phone_number' => '6289999999999',
@@ -63,7 +63,7 @@ class WhatsAppNotificationTest extends TestCase
         ]);
 
         config([
-            'billing.notify_workspace_id' => $this->flustra->id,
+            'billing.notify_workspace_id' => $this->vexahost->id,
             'billing.admin_phone' => '6288888888888',
         ]);
 
@@ -104,9 +104,9 @@ class WhatsAppNotificationTest extends TestCase
         $this->assertStringContainsString('Pembayaran dikonfirmasi', $pesan->first()->body);
         $this->assertStringContainsString($invoice->number, $pesan->first()->body);
 
-        // Dikirim dari nomor Flustra, bukan dari nomor pelanggan mana pun.
+        // Dikirim dari nomor VexaHost, bukan dari nomor pelanggan mana pun.
         $this->assertSame(
-            $this->flustra->sessions()->first()->id,
+            $this->vexahost->sessions()->first()->id,
             $pesan->first()->wa_session_id,
         );
     }
@@ -205,7 +205,7 @@ class WhatsAppNotificationTest extends TestCase
         $invoice = app(SubscriptionService::class)->issueInvoice($this->pelanggan->fresh(), 'prime', 'monthly');
         app(SubscriptionService::class)->markPaid($invoice);
 
-        $this->assertSame(0, Message::where('workspace_id', $this->flustra->id)->count());
+        $this->assertSame(0, Message::where('workspace_id', $this->vexahost->id)->count());
     }
 
     /**
@@ -214,7 +214,7 @@ class WhatsAppNotificationTest extends TestCase
      */
     public function test_tanpa_sesi_pengirim_pembayaran_tetap_tercatat(): void
     {
-        $this->flustra->sessions()->update(['status' => 'disconnected']);
+        $this->vexahost->sessions()->update(['status' => 'disconnected']);
 
         $invoice = app(SubscriptionService::class)->issueInvoice($this->pelanggan, 'elite', 'monthly');
         app(SubscriptionService::class)->markPaid($invoice);

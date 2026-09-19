@@ -12,7 +12,7 @@ Bukan. Gateway ini memakai `whatsapp-web.js`, yang mengotomasi WhatsApp Web lewa
 
 ### Kalau tidak resmi, kenapa tidak pakai Twilio saja?
 
-Karena biayanya per pesan (±$0.008–$0.055 tergantung negara dan kategori), butuh verifikasi bisnis Meta, nomor khusus yang belum pernah dipakai WhatsApp biasa, dan template yang harus disetujui lebih dulu. Untuk kebutuhan Flustra sekarang, itu terlalu berat.
+Karena biayanya per pesan (±$0.008–$0.055 tergantung negara dan kategori), butuh verifikasi bisnis Meta, nomor khusus yang belum pernah dipakai WhatsApp biasa, dan template yang harus disetujui lebih dulu. Untuk kebutuhan VexaHost WA sekarang, itu terlalu berat.
 
 Arsitekturnya sudah multi-driver, jadi pindah ke API resmi nanti tidak mengubah cara aplikasi memanggilnya.
 
@@ -121,18 +121,18 @@ Supaya kunci yang bocor bisa dicabut tanpa mengganggu aplikasi lain. Kalau semua
 
 ### Apa itu scope `otp` dan kenapa dibatasi?
 
-Scope `otp` memberi kemampuan mengirim kode verifikasi ke nomor mana pun. Kunci yang bocor dengan scope ini bisa dipakai membombardir nomor orang lain — dan laporan spam dari mereka bisa membuat nomor platform Flustra diblokir, mematikan notifikasi seluruh ekosistem.
+Scope `otp` memberi kemampuan mengirim kode verifikasi ke nomor mana pun. Kunci yang bocor dengan scope ini bisa dipakai membombardir nomor orang lain — dan laporan spam dari mereka bisa membuat nomor platform VexaHost diblokir, mematikan notifikasi seluruh ekosistem.
 
 Karena itu scope ini hanya diberikan ke `flustra-auth`.
 
-### Bagaimana memastikan webhook benar-benar dari Flustra?
+### Bagaimana memastikan webhook benar-benar dari VexaHost?
 
-Verifikasi header `X-Flustra-Signature`:
+Verifikasi header `X-VexaHost-Signature`:
 
 ```php
 $expected = hash_hmac('sha256', $request->getContent(), $webhookSecret);
 
-if (! hash_equals($expected, $request->header('X-Flustra-Signature'))) {
+if (! hash_equals($expected, $request->header('X-VexaHost-Signature'))) {
     abort(401);
 }
 ```
@@ -151,11 +151,11 @@ Kiriman diulang 3 kali dengan jeda menaik. Setelah 50 kegagalan berturut-turut, 
 
 Dua alasan.
 
-Pertama, pelanggan Anda tidak mengenal Flustra. Invoice yang datang dari nomor asing terlihat seperti penipuan.
+Pertama, pelanggan Anda tidak mengenal VexaHost. Invoice yang datang dari nomor asing terlihat seperti penipuan.
 
-Kedua, mengirim ratusan invoice per hari dari satu nomor platform adalah cara tercepat membuat nomor itu diblokir. Kalau itu terjadi, OTP dan seluruh notifikasi Flustra ikut mati — untuk semua pelanggan sekaligus.
+Kedua, mengirim ratusan invoice per hari dari satu nomor platform adalah cara tercepat membuat nomor itu diblokir. Kalau itu terjadi, OTP dan seluruh notifikasi VexaHost ikut mati — untuk semua pelanggan sekaligus.
 
-### Kalau saya belum menautkan nomor sendiri, apakah dipakai nomor Flustra?
+### Kalau saya belum menautkan nomor sendiri, apakah dipakai nomor VexaHost?
 
 Tidak. Sistem sengaja **tidak** diam-diam memakai nomor platform. Yang terjadi: kembali ke tautan `wa.me` manual seperti sebelumnya.
 
@@ -187,4 +187,4 @@ Pail butuh ekstensi `pcntl` yang tidak ada di PHP Windows. Karena `--kill-others
 
 ### Bisakah dipakai tanpa aplikasi Flustra lain?
 
-Bisa. flustra-wa berdiri sendiri: punya login/register, dashboard, dan REST API-nya sendiri. Aplikasi apa pun yang bisa mengirim HTTP request bisa memakainya.
+Bisa. vexahost-wa berdiri sendiri: punya login/register, dashboard, dan REST API-nya sendiri. Aplikasi apa pun yang bisa mengirim HTTP request bisa memakainya.

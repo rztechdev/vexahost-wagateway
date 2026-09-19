@@ -457,8 +457,8 @@ class ReferralTest extends TestCase
     public function test_admin_bisa_membuat_kode_dan_menandai_komisi_dibayar(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -500,8 +500,8 @@ class ReferralTest extends TestCase
     public function test_satu_akun_hanya_bisa_memiliki_satu_kode_referal_selamanya(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Admin',
-            'email' => 'admin.unique@flustra.id',
+            'name' => 'VexaHost Admin',
+            'email' => 'admin.unique@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -519,8 +519,8 @@ class ReferralTest extends TestCase
     public function test_halaman_admin_reseller_terbuka(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

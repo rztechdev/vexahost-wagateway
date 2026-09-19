@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Program Kemitraan &amp; Reseller — {{ config('app.name') }}</title>
-    <meta name="description" content="Bergabunglah dengan Program Mitra Flustra WA Gateway. Dapatkan komisi 20% untuk setiap klien baru yang Anda rekomendasikan, dan klien Anda mendapatkan diskon 10%.">
+    <meta name="description" content="Bergabunglah dengan Program Mitra VexaHost WA Gateway. Dapatkan komisi 20% untuk setiap klien baru yang Anda rekomendasikan, dan klien Anda mendapatkan diskon 10%.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,8 +27,8 @@
     <header class="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 font-bold tracking-tight text-foreground transition hover:opacity-90">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="" class="h-8 w-auto object-contain">
-                <span class="text-base sm:text-lg">Flustra WA</span>
+                <img src="{{ asset('images/vexahost-wa.png') }}" alt="" class="h-8 w-auto object-contain">
+                <span class="text-base sm:text-lg">VexaHost WA</span>
             </a>
 
             <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
@@ -86,12 +86,12 @@
             </div>
 
             <h1 class="mt-6 text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Rekomendasikan Flustra WA, <br class="hidden sm:inline">
+                Rekomendasikan VexaHost WA, <br class="hidden sm:inline">
                 <span class="text-primary">Dapatkan Komisi 20%</span>
             </h1>
 
             <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-muted-foreground">
-                Ajak rekan developer, klien software house, agensi digital, atau pebisnis menggunakan Flustra WA Gateway. 
+                Ajak rekan developer, klien software house, agensi digital, atau pebisnis menggunakan VexaHost WA Gateway. 
                 Klien Anda mendapatkan <strong>diskon 10%</strong> untuk tagihan pertama, dan Anda menerima <strong>komisi 20%</strong> langsung ke kantong Anda.
             </p>
 
@@ -151,7 +151,7 @@
                     </div>
                     <h3 class="mt-5 text-lg font-semibold text-foreground">Daftar &amp; Aktifkan Kode</h3>
                     <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        Buat akun gratis di Flustra WA. Di dashboard akun Anda, buka menu <strong>Program Mitra</strong> lalu klik <em>Aktifkan Kode Referal</em> untuk mendapatkan kode unik 5 huruf.
+                        Buat akun gratis di VexaHost WA. Di dashboard akun Anda, buka menu <strong>Program Mitra</strong> lalu klik <em>Aktifkan Kode Referal</em> untuk mendapatkan kode unik 5 huruf.
                     </p>
                 </div>
 
@@ -308,7 +308,7 @@
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-5 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"></path></svg>
                     </div>
                     <h3 class="font-semibold text-foreground">Dukungan Prioritas</h3>
-                    <p class="mt-1 text-xs leading-relaxed text-muted-foreground">Tim teknis Flustra siap membantu kendala integrasi atau pertanyaan teknis dari klien Anda.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-muted-foreground">Tim teknis VexaHost siap membantu kendala integrasi atau pertanyaan teknis dari klien Anda.</p>
                 </div>
             </div>
         </div>
@@ -330,7 +330,7 @@
                         <svg class="h-5 w-5 text-muted-foreground transition group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                     </summary>
                     <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
-                        Siapa saja dapat bergabung tanpa syarat khusus — mulai dari software developer, freelance programmer, agensi pemasaran digital, pemilik komunitas, hingga pengguna aktif Flustra.
+                        Siapa saja dapat bergabung tanpa syarat khusus — mulai dari software developer, freelance programmer, agensi pemasaran digital, pemilik komunitas, hingga pengguna aktif VexaHost.
                     </p>
                 </details>
 
@@ -372,7 +372,7 @@
     <section class="border-t border-border bg-primary/5 py-16">
         <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Siap Mulai Menghasilkan Bersama Flustra?
+                Siap Mulai Menghasilkan Bersama VexaHost?
             </h2>
             <p class="mx-auto mt-3 max-w-xl text-sm sm:text-base text-muted-foreground">
                 Hanya butuh 1 menit untuk mendaftar dan mengaktifkan kode mitra Anda.
@@ -395,7 +395,7 @@
     <footer class="border-t border-border bg-background py-10">
         <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
             <p class="text-xs text-muted-foreground">
-                &copy; {{ date('Y') }} Flustra WA Gateway. Seluruh hak cipta dilindungi.
+                &copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.
             </p>
         </div>
     </footer>

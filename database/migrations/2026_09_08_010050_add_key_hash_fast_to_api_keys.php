@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Schema;
  * (bukan saat dipakai). Pembuatan kunci terjadi beberapa kali seumur hidup
  * sebuah workspace; verifikasinya ribuan kali sehari.
  *
- * Kolom ini dilepas nanti oleh `flustra:hash-api-bersihkan`, dan sejak saat itu
+ * Kolom ini dilepas nanti oleh `vexahost:hash-api-bersihkan`, dan sejak saat itu
  * rollback tidak lagi gratis. Waktu amannya ada di docs/CUTOVER.md.
  */
 return new class extends Migration

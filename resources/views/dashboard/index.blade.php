@@ -136,7 +136,7 @@
          ======================================================== --}}
     <x-tur-pengenalan kunci="dashboard.mulai" :versi="1" :langkah="[
         [
-            'judul' => 'Selamat datang di Flustra WA',
+            'judul' => 'Selamat datang di VexaHost WA',
             'isi' => 'Gateway ini menghubungkan nomor WhatsApp Anda dengan aplikasi mana pun lewat REST API. '
                 .'Tur singkat ini menunjukkan urutan yang perlu Anda lalui — sekitar satu menit, '
                 .'dan hanya muncul sekali.',

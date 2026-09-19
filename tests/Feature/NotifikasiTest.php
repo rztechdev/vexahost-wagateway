@@ -62,8 +62,8 @@ class NotifikasiTest extends TestCase
         ]);
 
         $this->admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -412,26 +412,26 @@ class NotifikasiTest extends TestCase
         config([
             'mail.default' => 'smtp',
             'mail.mailers.smtp.host' => 'smtp-relay.brevo.com',
-            'mail.from.address' => 'flustrafinances@gmail.com',
+            'mail.from.address' => 'vexahostcloudtech@gmail.com',
         ]);
 
         // Sesi pengirim siap.
-        $flustra = Workspace::create([
-            'name' => 'Flustra Notifikasi',
-            'slug' => 'flustra-notifikasi',
+        $vexahost = Workspace::create([
+            'name' => 'VexaHost Notifikasi',
+            'slug' => 'vexahost-notifikasi',
             'owner_id' => $this->admin->id,
             'owner_email' => $this->admin->email,
             'max_sessions' => 1,
             'monthly_message_quota' => 0,
         ]);
 
-        $flustra->sessions()->create([
-            'name' => 'Nomor Flustra',
+        $vexahost->sessions()->create([
+            'name' => 'Nomor VexaHost',
             'status' => 'connected',
             'driver' => 'wwebjs',
         ]);
 
-        config(['billing.notify_workspace_id' => $flustra->id]);
+        config(['billing.notify_workspace_id' => $vexahost->id]);
 
         app()->call([new PantauKesehatanJob, 'handle']);
 

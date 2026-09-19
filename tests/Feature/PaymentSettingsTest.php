@@ -32,8 +32,8 @@ class PaymentSettingsTest extends TestCase
         Http::fake();
 
         $this->admin = User::create([
-            'name' => 'Flustra Admin',
-            'email' => 'admin@flustra.id',
+            'name' => 'VexaHost Admin',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -65,7 +65,7 @@ class PaymentSettingsTest extends TestCase
             .'52045812'
             .'5303360'
             .'5802ID'
-            .'5907FLUSTRA'
+            .'5908VEXAHOST'
             .'6007JAKARTA'
             .'6304';
 
@@ -108,14 +108,14 @@ class PaymentSettingsTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->post(route('admin.payment-settings.qris'), [
                 'payload' => $payload,
-                'merchant' => 'PT Flustra Digital',
+                'merchant' => 'PT VexaHost Digital',
             ]);
 
         $response->assertRedirect();
         $response->assertSessionHas('swal.tipe', 'success');
 
         $this->assertEquals($payload, AppSetting::ambil('qris_payload'));
-        $this->assertEquals('PT Flustra Digital', AppSetting::ambil('qris_merchant_name'));
+        $this->assertEquals('PT VexaHost Digital', AppSetting::ambil('qris_merchant_name'));
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'settings.qris.saved',
         ]);
@@ -141,7 +141,7 @@ class PaymentSettingsTest extends TestCase
             ->post(route('admin.payment-settings.bank.store'), [
                 'bank_name' => 'Bank Central Asia (BCA)',
                 'account_number' => '1234567890',
-                'account_holder' => 'PT Flustra Media',
+                'account_holder' => 'PT VexaHost Media',
                 'type' => 'bank',
                 'instructions' => 'Transfer manual dan konfirmasi',
                 'is_active' => '1',
@@ -161,7 +161,7 @@ class PaymentSettingsTest extends TestCase
             ->post(route('admin.payment-settings.bank.store'), [
                 'bank_name' => 'BCA Virtual Account',
                 'account_number' => '8800012345678',
-                'account_holder' => 'Flustra VA',
+                'account_holder' => 'VexaHost VA',
                 'type' => 'va',
                 'instructions' => 'Bayar via menu Virtual Account',
                 'is_active' => '1',
@@ -182,7 +182,7 @@ class PaymentSettingsTest extends TestCase
             ->post(route('admin.payment-settings.bank.update', $bank->id), [
                 'bank_name' => 'Bank Mandiri',
                 'account_number' => '9876543210',
-                'account_holder' => 'PT Flustra Baru',
+                'account_holder' => 'PT VexaHost Baru',
                 'type' => 'bank',
                 'instructions' => 'Gunakan ATM atau Livin Mandiri',
                 'is_active' => '1',
@@ -219,7 +219,7 @@ class PaymentSettingsTest extends TestCase
         BankAccount::create([
             'bank_name' => 'Bank Rakyat Indonesia (BRI)',
             'account_number' => '001122334455',
-            'account_holder' => 'PT Flustra Checkout Test',
+            'account_holder' => 'PT VexaHost Checkout Test',
             'type' => 'bank',
             'instructions' => 'Transfer via ATM BRI / BRImo',
             'is_active' => true,
@@ -229,7 +229,7 @@ class PaymentSettingsTest extends TestCase
         BankAccount::create([
             'bank_name' => 'Mandiri Virtual Account',
             'account_number' => '89000888999',
-            'account_holder' => 'Flustra VA Service',
+            'account_holder' => 'VexaHost VA Service',
             'type' => 'va',
             'instructions' => 'Transfer bayar via Livin Mandiri Menu Multipayment',
             'is_active' => true,

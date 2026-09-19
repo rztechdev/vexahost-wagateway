@@ -1,6 +1,6 @@
-# Flustra WA Gateway — catatan untuk sesi berikutnya
+# VexaHost WA Gateway — catatan untuk sesi berikutnya
 
-Gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra, dirancang agar bisa dijual sebagai SaaS. Menggantikan proses `whatsapp-web.js` yang dulu menempel di dalam `flustra-erp`.
+Gateway WhatsApp terpusat multi-tenant untuk ekosistem VexaHost, dirancang agar bisa dijual sebagai SaaS. Menggantikan proses `whatsapp-web.js` yang dulu menempel di dalam `flustra-erp`.
 
 > **Sedang berjalan: enam penambahan menuju enterprise.** Rencananya lengkap di
 > [PRD.md](PRD.md) — reseller & referal, pay as you go, keamanan, webhook per
@@ -13,6 +13,44 @@ Gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra, dirancang agar b
 > diusulkan alternatifnya**. Yang paling sering tergoda ditawar: helpdesk dibangun
 > **baru di dalam repo ini**, dan `flustra-helpdesk` yang sudah ada **tidak boleh
 > disambungkan** — Ryan sudah tahu project itu ada dan sudah memutuskan.
+
+> **Merek produk ini VexaHost sejak 19 Sep 2026 — dulu Flustra.** Domain
+> `wa.vexahostcloud.my.id` (dev `wa-dev.`, staging `wa-staging.`), badan hukum
+> **PT DESTINARA CHAKRAWALA ARTHA**, repo tujuan `rztechdev/vexahost-wagateway`. Yang
+> tetap bernama Flustra hanyalah **project lain** yang memakai gateway ini
+> (flustra-erp, flustra-web, flustra-pricing, flustra-helpdesk,
+> flustra-clientportal, flustra-auth): sebutan mereka di kode dan dokumentasi
+> adalah fakta, **jangan diganti dan jangan dihapus**. Yang tidak boleh ikut
+> rusak oleh pergantian ini:
+>
+> - **Produksi baru mulai dari database kosong** (keputusan Ryan): belum ada
+>   pelanggan, data lama hanya diarsipkan lewat satu `mysqldump`. Admin lahir dari
+>   `php artisan db:seed --force` yang dijalankan sekali — `start.sh` tidak
+>   menjalankan seeder. `APP_KEY` dibiarkan yang lama walau tidak lagi wajib.
+> - **API key baru berawalan `vwa_`, yang lama `fwa_` tetap dikenali** — kunci
+>   dicari lewat kolom `prefix`, bukan awalannya. Jangan menambah pemeriksaan
+>   awalan: database lokal dan yang pernah dipulihkan dari arsip masih memuat `fwa_`.
+> - **Header webhook `X-VexaHost-Signature` / `X-VexaHost-Event`.**
+> - **Admin disamakan persis dengan vexahost** (`ADMIN_*` di `config/vexahost.php`).
+>   Admin lama diubah di tempat oleh migrasi `pindahkan_admin_ke_identitas_vexahost`,
+>   bukan dibuatkan akun kedua.
+> - **Akun tertaut dengan vexahost — hanya auth.** Daftar atau ganti kata sandi
+>   di satu aplikasi ikut berlaku di aplikasi lain lewat endpoint bertanda tangan
+>   HMAC (`/api/internal/akun-tertaut`), dipicu observer model `User` — bukan
+>   controller, karena akun lahir lewat terlalu banyak jalan. Kode dan
+>   protokolnya ada di **dua repo** dan harus sama persis:
+>   [docs/AKUN_TERTAUT.md](docs/AKUN_TERTAUT.md). Workspace, tagihan, VPS, 2FA,
+>   dan peran admin TIDAK dibagi; akun admin di penerima tidak pernah diubah dari
+>   seberang.
+> - **Pembayaran belum dipindah.** Mayar dan rekening dibiarkan seperti sebelum
+>   pergantian merek sampai Ryan memilih gateway baru; QRIS memakai payload akun
+>   DANA yang sama (nama tokonya DESTINARA). Jangan mengusulkan Lynk — akun Lynk
+>   VexaHost cuma punya satu webhook dan sudah dipakai aplikasi vexahost.
+> - **Nomor WhatsApp bisnis `085808749131`** untuk admin, notifikasi tim, dan
+>   kontak publik — dibaca `App\Support\KontakWhatsApp` dari env, tidak pernah
+>   ditulis mati di Blade.
+>
+> Riwayat dan urutan pindahnya: [docs/PINDAH_KE_VEXAHOST.md](docs/PINDAH_KE_VEXAHOST.md).
 
 **Baca dulu:** [docs/PENGANTAR.md](docs/PENGANTAR.md) lalu [docs/ARSITEKTUR.md](docs/ARSITEKTUR.md). Peta seluruh dokumentasi internal ada di [docs/README.md](docs/README.md).
 
@@ -36,12 +74,12 @@ Ketahanan sesi (alasan utama project ini ada): kredensial disimpan di persistent
 ## Perintah
 
 ```bash
-npm run all          # Laravel :8070 + engine :3100 + queue + vite sekaligus
+npm run all          # Laravel :8051 + engine :3100 + queue + vite sekaligus
 php artisan test     # seluruh tes
 ./vendor/bin/pint    # format PHP, jalankan sebelum commit
 ```
 
-Tidak ada perintah CLI untuk menyiapkan workspace — semuanya lewat dashboard, termasuk untuk Flustra sendiri.
+Tidak ada perintah CLI untuk menyiapkan workspace — semuanya lewat dashboard, termasuk untuk VexaHost sendiri dan aplikasi Flustra yang memakainya.
 
 ## Aturan yang berlaku di seluruh kode
 
@@ -161,11 +199,11 @@ Data penagihan (`workspaces.billing_name/billing_email/billing_phone`) menempel 
 
 **Tidak ada pemulihan kata sandi mandiri, dan itu keputusan sadar (6 Sep 2026).** Selama email belum benar-benar terkirim, tautan reset akan berakhir di berkas log sementara antarmuka tetap bilang "sudah kami kirim" — kegagalan yang baru ketahuan saat ada pelanggan terkunci. Jalur resminya: pelanggan menghubungi admin, admin mengatur ulang dari `/admin/pengguna`. Halaman login menyembunyikan tautan "Lupa kata sandi?" sendiri lewat `Route::has('password.request')`, jadi tidak ada tombol yang menuju jalan buntu. Kalau nanti SMTP sudah jalan, yang perlu dibuat kembali: `PasswordResetController` + dua view + empat rute bernama `password.*`.
 
-**Pemberitahuan WhatsApp dikirim lewat gateway ini sendiri.** Semua teksnya di `BillingMessages`, pengirimannya lewat `WhatsAppNotifier` — jangan menulis pesan langsung di controller: pelanggan menerima semuanya dari nomor yang sama, dan nada yang berbeda-beda terbaca sebagai ketidakrapian atau penipuan. Tiga aturan yang berlaku di sana: tidak pernah melempar galat (notifikasi itu pelengkap, tagihan tetap harus lunas meski pesannya gagal), selalu dari sesi workspace Flustra (`BILLING_NOTIFY_WORKSPACE_ID`) bukan sesi pelanggan, dan satu peristiwa satu pesan lewat penanda cache.
+**Pemberitahuan WhatsApp dikirim lewat gateway ini sendiri.** Semua teksnya di `BillingMessages`, pengirimannya lewat `WhatsAppNotifier` — jangan menulis pesan langsung di controller: pelanggan menerima semuanya dari nomor yang sama, dan nada yang berbeda-beda terbaca sebagai ketidakrapian atau penipuan. Tiga aturan yang berlaku di sana: tidak pernah melempar galat (notifikasi itu pelengkap, tagihan tetap harus lunas meski pesannya gagal), selalu dari sesi workspace VexaHost (`BILLING_NOTIFY_WORKSPACE_ID`) bukan sesi pelanggan, dan satu peristiwa satu pesan lewat penanda cache.
 
 Yang perlu diingat saat menambah pemanggil baru: `WhatsAppNotifier` memakai `MessageDispatcher`, jadi apa pun yang dipakai `MessageDispatcher` **tidak boleh** menyuntikkan notifier lewat constructor — ambil dari container di dalam method (lihat `warnIfQuotaLow`), kalau tidak lingkarannya menutup dan seluruh pengiriman pesan mati. Dan panggil di luar `DB::transaction`: di dalamnya, pesan yang gagal akan menggulung balik penandaan lunas.
 
-Kalau `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra terputus, **seluruh** pemberitahuan diam tanpa satu pun gejala. Halaman Ringkasan panel admin menampilkan peringatan merah selama keadaan itu berlangsung — itu satu-satunya cara menyadarinya.
+Kalau `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor VexaHost terputus, **seluruh** pemberitahuan diam tanpa satu pun gejala. Halaman Ringkasan panel admin menampilkan peringatan merah selama keadaan itu berlangsung — itu satu-satunya cara menyadarinya.
 
 **Bukti yang sudah masuk mengunci tagihannya.** Pelanggan tidak bisa membatalkan tagihan yang buktinya sudah dikirim, dan saringan bawaan `/admin/tagihan` adalah **perlu-diperiksa** — yang menentukan sebuah tagihan perlu dilihat manusia bukan statusnya, melainkan adanya bukti yang belum dijawab. Keduanya menutup kegagalan yang sudah benar-benar terjadi (6 Sep 2026): bukti terunggah, tidak ada tanda yang cukup jelas bahwa ia diterima, pelanggan mengira gagal lalu membatalkan tagihannya 24 detik kemudian — dan tagihan `canceled` waktu itu lenyap dari layar admin. Uang masuk, layanan mati, tidak ada satu pun tempat yang menunjukkannya. Tagihan yang telanjur ditutup **tetap** bisa ditandai lunas dari panel; menolaknya berarti memaksa pelanggan membayar dua kali.
 
@@ -179,7 +217,7 @@ Kalau `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra terputus, **seluru
 
 **Pembayaran masih dicocokkan manusia.** Tidak ada notifikasi otomatis dari mana pun. Yang menghubungkan uang masuk dengan tagihan cuma nominal yang dibuat unik lewat kode tiga digit dan bukti transfer yang diunggah pelanggan; admin yang memutuskan di `/admin/tagihan`. Karena itu `QrisManual` sengaja **tidak** diberi antarmuka bersama meski iPaymu direncanakan — antarmuka dengan satu implementasi adalah slot kosong yang menjanjikan sesuatu yang belum ada, persis pola `cloud_api` yang akhirnya dihapus. Saat iPaymu jalan, saat itulah antarmukanya dibuat dengan dua implementasi nyata. Yang sudah disiapkan dari sekarang hanya bekasnya di data: `invoices.channel` dan `invoices.external_id`.
 
-**`QRIS_PAYLOAD` di env wajib dikutip.** Payload QRIS memuat nama kota merchant (tag 60) yang hampir selalu mengandung spasi — punya Flustra berbunyi `6015Kota Tangerang ` lengkap dengan spasi di ujungnya. Tanpa kutip, dotenv menolak **seluruh** berkas dan aplikasi gagal boot dengan `Failed to parse dotenv file`, bukan sekadar kehilangan QRIS-nya. Dan spasi itu ikut dihitung panjang tag: dikutip tapi terpangkas berarti CRC tidak cocok lagi, `Qris::valid()` menolaknya, dan halaman bayar diam-diam turun ke transfer bank untuk payload yang sebenarnya benar.
+**`QRIS_PAYLOAD` di env wajib dikutip.** Payload QRIS memuat nama kota merchant (tag 60) yang hampir selalu mengandung spasi — punya kita berbunyi `6015Kota Tangerang ` lengkap dengan spasi di ujungnya. Tanpa kutip, dotenv menolak **seluruh** berkas dan aplikasi gagal boot dengan `Failed to parse dotenv file`, bukan sekadar kehilangan QRIS-nya. Dan spasi itu ikut dihitung panjang tag: dikutip tapi terpangkas berarti CRC tidak cocok lagi, `Qris::valid()` menolaknya, dan halaman bayar diam-diam turun ke transfer bank untuk payload yang sebenarnya benar.
 
 **QRIS rusak tidak boleh tergambar.** Payload yang salah ketik saat disalin ke env menghasilkan kode QR yang tampak wajar tapi ditolak setiap aplikasi bank — dan kegagalannya baru terlihat saat pelanggan sudah berdiri di depan layar. `Qris::valid()` memeriksa CRC sebelum halaman merender apa pun; yang gagal jatuh ke instruksi transfer bank. Batasnya: CRC dihitung atas string mentah tanpa memedulikan struktur TLV, jadi panjang tag yang salah tulis tetap lolos. `tests/Unit/QrisTest.php` menjaga keduanya.
 
@@ -205,11 +243,11 @@ Satu sumber kebenaran: `Workspace::isExempt()` = `is_internal || owner->is_exemp
 
 Di dalam workspace pengirim, sesi bernomor istimewa didahulukan — nomor itu tidak pernah ikut dilepas, jadi pemberitahuan penagihan kami tidak bisa ikut mati bersama pelanggan yang menunggak.
 
-**Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
+**VexaHost dan aplikasi Flustra bukan pengguna istimewa.** Tidak ada tenant internal yang dibuat lewat CLI, tidak ada sesi bertipe `platform`. Aplikasi Flustra mendaftar, membuat workspace, dan menempel API key ke `.env` seperti pelanggan mana pun. Jalur istimewa yang dulu ada menghasilkan workspace tanpa anggota — mustahil dibuka lewat dashboard oleh siapa pun — dan sesi yang tidak pernah terpilih otomatis saat `session_id` dikosongkan. Keduanya tidak terlihat di antarmuka mana pun. Kalau ada kebutuhan baru yang "cuma bisa lewat CLI", itu tanda antarmukanya yang kurang, bukan alasan menambah command.
 
 **Satu produk, satu cara mengirim.** Driver `fonnte` (layanan gateway berbayar milik pihak lain) dan slot `cloud_api` yang tidak pernah diimplementasi sudah dihapus sampai ke kelasnya. Keduanya dulu muncul sebagai pilihan di form pembuatan sesi — halaman pertama yang dilihat pelanggan baru menawarkan produk orang lain dan sebuah janji yang belum ada. `wa_sessions.driver` sekarang mencatat, bukan menawarkan pilihan; API menolak nilai selain `wwebjs`. Jangan menambahkan penyalur pihak ketiga ke sini lagi; kalau sebuah kebutuhan menuntut jalur resmi Meta, arahkan keluar — alasannya di [docs/PERBANDINGAN_PROVIDER.md](docs/PERBANDINGAN_PROVIDER.md).
 
-**OTP dikirim dari nomor workspace pemanggil.** Dulu seluruh OTP keluar dari satu sesi global (`OTP_SESSION_ID`) dengan teks yang menyebut "Flustra" — padahal endpoint-nya terbuka untuk API key mana pun ber-scope `otp`. Artinya pelanggan mengirim kode dari nomor kami, atas nama kami, memotong kuota kami, dan laporan spam atasnya jatuh ke nomor kami. Sekarang pengirimnya dipilih dengan aturan yang sama persis dengan pesan biasa, dan teksnya memakai nama workspace.
+**OTP dikirim dari nomor workspace pemanggil.** Dulu seluruh OTP keluar dari satu sesi global (`OTP_SESSION_ID`) dengan teks yang menyebut merek kami sendiri — padahal endpoint-nya terbuka untuk API key mana pun ber-scope `otp`. Artinya pelanggan mengirim kode dari nomor kami, atas nama kami, memotong kuota kami, dan laporan spam atasnya jatuh ke nomor kami. Sekarang pengirimnya dipilih dengan aturan yang sama persis dengan pesan biasa, dan teksnya memakai nama workspace.
 
 **API key bisa dibuka lagi, dan itu disengaja.** `key_hash` tetap satu-satunya jalan verifikasi permintaan; `key_ciphertext` (cast `encrypted`) adalah salinan terpisah untuk ditampilkan ulang di dashboard kepada owner dan admin, dan dibuang saat kunci dicabut. Pertimbangannya: "hanya tampil sekali" tidak membuat orang lebih hati-hati, ia membuat mereka menyalin kunci ke catatan pribadi dan grup chat — tempat yang jauh lebih mudah bocor daripada tabel ini. Jangan menyatukan kedua kolom itu.
 
@@ -253,7 +291,7 @@ Cara memastikan gejalanya ini dan bukan yang lain: `grep -c Restarting` di log e
 
 Sudah ter-deploy di Coolify, **belum diuji end-to-end di produksi**. Uji regresi wajib ada di [docs/SETUP_VPS_COOLIFY.md](docs/SETUP_VPS_COOLIFY.md) Bagian 10 — yang terpenting: redeploy lalu pastikan sesi tersambung sendiri tanpa scan QR.
 
-**Penyatuan tiga resource jadi satu — sudah berjalan di server.** Sampai tanggal itu tiap tahap punya tiga resource Coolify (`flustra-wa`, `-engine`, `-worker`) yang masing-masing membangun ulang aplikasinya sendiri tiap deploy — tiga kali `composer install` + `npm ci` di VPS 2 vCPU yang menampung tujuh aplikasi Flustra lain. Sekarang satu container menjalankan keempat prosesnya lewat `start.sh`, mengikuti pola `flustra-erp` dan `flustra-clientportal`. **Sudah diterapkan di server** (dikonfirmasi Ryan 6 Sep 2026): tinggal satu resource Coolify per tahap, resource `-engine` dan `-worker` sudah tidak ada, dan gateway berjalan normal begitu. Yang perlu diingat saat membaca log atau menjelaskan arsitekturnya: "tidak ada engine dan worker" berarti tidak ada **resource** terpisah — prosesnya tetap empat dan tetap jalan, dijaga loop pengawas di `start.sh`. Kalau engine benar-benar mati, tidak ada satu pun pesan WhatsApp yang bisa keluar; kalau `queue:work` mati, pesan menumpuk `queued` selamanya. Langkah pindahnya tetap tercatat di [docs/DEPLOYMENT.md §5](docs/DEPLOYMENT.md) sebagai riwayat.
+**Penyatuan tiga resource jadi satu — sudah berjalan di server.** Sampai tanggal itu tiap tahap punya tiga resource Coolify (`vexahost-wa`, `-engine`, `-worker`) yang masing-masing membangun ulang aplikasinya sendiri tiap deploy — tiga kali `composer install` + `npm ci` di VPS 2 vCPU yang menampung tujuh aplikasi Flustra lain. Sekarang satu container menjalankan keempat prosesnya lewat `start.sh`, mengikuti pola `flustra-erp` dan `flustra-clientportal`. **Sudah diterapkan di server** (dikonfirmasi Ryan 6 Sep 2026): tinggal satu resource Coolify per tahap, resource `-engine` dan `-worker` sudah tidak ada, dan gateway berjalan normal begitu. Yang perlu diingat saat membaca log atau menjelaskan arsitekturnya: "tidak ada engine dan worker" berarti tidak ada **resource** terpisah — prosesnya tetap empat dan tetap jalan, dijaga loop pengawas di `start.sh`. Kalau engine benar-benar mati, tidak ada satu pun pesan WhatsApp yang bisa keluar; kalau `queue:work` mati, pesan menumpuk `queued` selamanya. Langkah pindahnya tetap tercatat di [docs/DEPLOYMENT.md §5](docs/DEPLOYMENT.md) sebagai riwayat.
 
 Alasan lama untuk memisahkan engine masih tertulis di [docs/ARSITEKTUR.md §2](docs/ARSITEKTUR.md) beserta apa yang terjadi pada masing-masing — baca itu dulu sebelum mengusulkan memisahkannya lagi. Yang tidak terjawab dan harus dijaga dengan angka, bukan arsitektur: Chromium berebut RAM dengan PHP, jadi `WA_MAX_SESSIONS` diturunkan dari 10 ke 3.
 
@@ -265,4 +303,4 @@ Yang belum: gateway pembayaran otomatis (iPaymu, menunggu verifikasi akun), real
 
 **Kapasitas adalah pembatas jualan, bukan kode.** `WA_MAX_SESSIONS=3` di `.env.production`, sama dengan bawaan di `engine/src/config.js` dan dengan [docs/DEPLOYMENT.md §2](docs/DEPLOYMENT.md). Artinya platform ini sanggup melayani **tiga nomor aktif untuk seluruh pelanggan sekaligus** — itu batas jualannya, dan free tier ikut memakan dari jatah yang sama. Angka 10 lahir waktu engine punya container sendiri; sekarang RAM-nya dibagi dengan PHP, worker, penjadwal, MySQL, dan aplikasi Flustra lain, dan yang dibunuh OOM killer belum tentu Chromium. Panel `/admin` menampilkan angkanya paling atas supaya batas itu tidak baru ketahuan dari keluhan.
 
-**Env engine yang benar ada di `.env.production`, bukan di `engine/.env.production`.** Berkas kedua itu gitignored dan sudah mati sejak resource-nya disatukan — baris pertamanya sendiri berbunyi "TIDAK DIPAKAI LAGI", ia ditinggalkan cuma sebagai arsip nilai lama. Nilai di dalamnya (termasuk `WA_MAX_SESSIONS=10`) **tidak pernah dibaca siapa pun**. Ini sudah sekali membuat catatan di berkas ini sendiri salah selama beberapa hari: dilaporkan "kapasitas masih disetel 10" padahal yang hidup sudah 3. Kalau perlu memastikan nilai env produksi, baca `.env.production` di root — dan yang benar-benar berlaku adalah yang tersalin ke environment resource Coolify.
+**Env engine yang benar ada di `.env.production`, bukan di `engine/.env.production`.** Berkas kedua itu mati sejak resource-nya disatukan, dan pada 19 Sep 2026 ketiga `engine/.env.<tahap>` dihapus sekalian — nilainya (termasuk `WA_MAX_SESSIONS=10` dan domain merek lama) **tidak pernah dibaca siapa pun**, tapi terus menyesatkan yang membacanya. `engine/.env` polos tetap ada: itu milik engine lokal (`npm --prefix engine run dev`). Ini sudah sekali membuat catatan di berkas ini sendiri salah selama beberapa hari: dilaporkan "kapasitas masih disetel 10" padahal yang hidup sudah 3. Kalau perlu memastikan nilai env produksi, baca `.env.production` di root — dan yang benar-benar berlaku adalah yang tersalin ke environment resource Coolify.

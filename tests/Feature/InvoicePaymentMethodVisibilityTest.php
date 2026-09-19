@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\AppSetting;
 use App\Models\BankAccount;
-use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
@@ -18,6 +17,7 @@ class InvoicePaymentMethodVisibilityTest extends TestCase
     use RefreshDatabase;
 
     private User $owner;
+
     private Workspace $workspace;
 
     protected function setUp(): void
@@ -80,7 +80,7 @@ class InvoicePaymentMethodVisibilityTest extends TestCase
         BankAccount::create([
             'bank_name' => 'BCA',
             'account_number' => '1234567890',
-            'account_holder' => 'PT Flustra',
+            'account_holder' => 'PT VexaHost',
             'type' => 'bank',
             'is_active' => true,
         ]);
@@ -98,7 +98,7 @@ class InvoicePaymentMethodVisibilityTest extends TestCase
 
     public function test_jika_qris_diisi_kembali_maka_pilih_cara_pembayaran_muncul_lagi(): void
     {
-        $qrisContoh = '00020101021126570011ID.DANA.WWW011893600915397150317902099715031790303UMI51440014ID.CO.QRIS.WWW0215ID10254240438220303UMI5204654053033605802ID5910flustra.id6015Kota Tangerang 61051522463047D8A';
+        $qrisContoh = '00020101021126570011ID.DANA.WWW011893600915397150317902099715031790303UMI51440014ID.CO.QRIS.WWW0215ID10254240438220303UMI5204654053033605802ID5909DESTINARA6015Kota Tangerang 61051522463045BF1';
 
         config([
             'billing.qris.payload' => null,

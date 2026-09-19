@@ -1,4 +1,4 @@
-# Dokumentasi Internal — Flustra WA Gateway
+# Dokumentasi Internal — VexaHost WA Gateway
 
 Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 
@@ -73,6 +73,7 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 | [API.md](API.md) | Referensi REST API v1: setiap endpoint, contoh, kode galat, contoh integrasi |
 | [INTEGRASI_APP.md](INTEGRASI_APP.md) | Menyambungkan aplikasi Flustra lain ke gateway |
 | [VERIFIKASI_NOMOR.md](VERIFIKASI_NOMOR.md) | Alur OTP dan kenapa nomor wajib diverifikasi |
+| [AKUN_TERTAUT.md](AKUN_TERTAUT.md) | Satu akun untuk WA Gateway dan vexahost — protokol, env, dan cara menyalakannya |
 
 ### Menjalankan
 
@@ -80,6 +81,7 @@ Peta dokumentasi teknis untuk tim. Semua Bahasa Indonesia.
 |---|---|
 | [SETUP_VPS_COOLIFY.md](SETUP_VPS_COOLIFY.md) | **Dari VPS kosong sampai gateway melayani permintaan** — pasang Coolify, DNS, database, satu resource, verifikasi |
 | [ENVIRONMENT.md](ENVIRONMENT.md) | Tiga tahap: development, staging, production |
+| [PINDAH_KE_VEXAHOST.md](PINDAH_KE_VEXAHOST.md) | **Pindah dari merek Flustra ke VexaHost** — apa yang berubah, dan urutan aman memindahkan database, domain, dan repo |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Rincian tiap resource Coolify, plus uji regresi wajib |
 | [CUTOVER.md](CUTOVER.md) | **Deploy perbaikan kebocoran memori** — checklist sebelum menekan Deploy, lima menit sesudahnya, dan rollback (termasuk satu arah yang tidak bisa dibalik begitu saja) |
 | [OPERASIONAL.md](OPERASIONAL.md) | Pemantauan, pemulihan, pemecahan masalah, skala, keamanan |

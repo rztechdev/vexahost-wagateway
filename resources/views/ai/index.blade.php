@@ -4,12 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Integrasi AI Agent WhatsApp Gateway &middot; {{ config('app.name') }}</title>
-    <meta name="description" content="Panduan integrasi lengkap Flustra WA Gateway untuk AI Coding Agent: Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, Codex, dan Windsurf. Salin prompt instalasi sekali klik.">
+    <meta name="description" content="Panduan integrasi lengkap VexaHost WA Gateway untuk AI Coding Agent: Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, Codex, dan Windsurf. Salin prompt instalasi sekali klik.">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
@@ -56,7 +54,7 @@
             </h1>
 
             <p class="muncul mt-5 text-sm sm:text-base lg:text-lg leading-relaxed text-muted-foreground" style="--tunda: 60ms">
-                Hubungkan asisten AI favorit Anda (Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, dan lainnya) ke Flustra WA Gateway. Salin prompt instalasi satu-klik, pasang aturan rules, dan biarkan AI menyusun integrasi pesan WhatsApp otomatis tanpa repot.
+                Hubungkan asisten AI favorit Anda (Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, dan lainnya) ke VexaHost WA Gateway. Salin prompt instalasi satu-klik, pasang aturan rules, dan biarkan AI menyusun integrasi pesan WhatsApp otomatis tanpa repot.
             </p>
 
             <div class="muncul mt-8 flex flex-wrap items-center gap-3" style="--tunda: 110ms">
@@ -457,7 +455,7 @@
                                 <span>Langkah 2 &middot; Kredensial & Endpoint</span>
                             </div>
                             <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                                Hubungkan AI ke WA Gateway Flustra
+                                Hubungkan AI ke WA Gateway VexaHost
                             </h2>
                             <p class="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                                 Pastikan AI Anda memiliki informasi kredensial dan endpoint yang benar. Cukup simpan di berkas environment lokal proyek Anda:
@@ -472,7 +470,7 @@
                                     <span>Dapatkan API Key</span>
                                 </div>
                                 <p class="text-xs text-muted-foreground leading-relaxed">
-                                    Masuk ke Dashboard Flustra WA, buka menu <strong>API Keys</strong>, dan terbitkan kunci baru dengan hak akses yang Anda butuhkan.
+                                    Masuk ke Dashboard VexaHost WA, buka menu <strong>API Keys</strong>, dan terbitkan kunci baru dengan hak akses yang Anda butuhkan.
                                 </p>
                                 <a href="{{ route('docs.show', 'api-key') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
                                     <span>Pelajari Scoped Key</span>
@@ -490,7 +488,7 @@
                                     Tambahkan parameter berikut ke file <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-foreground">.env</code> lokal agar AI tidak pernah melakukan hardcode kunci rahasia.
                                 </p>
                                 <button type="button"
-                                        @click="salinTeks('WA_GATEWAY_URL=https://wa.flustra.id\nWA_GATEWAY_KEY=fwa_live_xxxxxxxxxxxxxxxx\nWA_GATEWAY_SESSION=', 'env_cfg')"
+                                        @click="salinTeks('WA_GATEWAY_URL=https://wa.vexahostcloud.my.id\nWA_GATEWAY_KEY=vwa_live_xxxxxxxxxxxxxxxx\nWA_GATEWAY_SESSION=', 'env_cfg')"
                                         class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer">
                                     <i class="bi" :class="disalinKey === 'env_cfg' ? 'bi-check2' : 'bi-clipboard'"></i>
                                     <span x-text="disalinKey === 'env_cfg' ? 'Tersalin!' : 'Salin Snippet .env'">Salin Snippet .env</span>
@@ -517,7 +515,7 @@
                         <div class="mt-8 rounded-2xl border border-border/80 bg-muted/30 p-5">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                                 <span class="text-xs font-bold uppercase tracking-wider text-foreground">Spesifikasi Endpoint REST API Utama</span>
-                                <span class="font-mono text-xs text-primary font-semibold">Base: https://wa.flustra.id/api/v1</span>
+                                <span class="font-mono text-xs text-primary font-semibold">Base: https://wa.vexahostcloud.my.id/api/v1</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
                                 <div class="p-2.5 rounded-xl bg-card border border-border">

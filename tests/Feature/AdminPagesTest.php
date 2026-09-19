@@ -38,8 +38,8 @@ class AdminPagesTest extends TestCase
         Http::fake();
 
         $this->admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

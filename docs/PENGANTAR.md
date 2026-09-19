@@ -1,4 +1,4 @@
-# Pengantar: Apa Itu Flustra WA Gateway
+# Pengantar: Apa Itu VexaHost WA Gateway
 
 Dokumen ini untuk siapa pun yang baru menyentuh project ini — developer baru, calon rekan kerja, atau Anda sendiri enam bulan dari sekarang. Tidak ada asumsi pengetahuan sebelumnya.
 
@@ -13,7 +13,7 @@ Masalahnya, mengirim WhatsApp dari sebuah aplikasi tidak sesederhana mengirim em
 1. **Cara resmi** — WhatsApp Business API dari Meta, langsung atau lewat perantara seperti Twilio. Stabil dan resmi, tapi butuh verifikasi bisnis, nomor khusus, template yang harus disetujui, dan bayar per pesan.
 2. **Cara tidak resmi** — mengendalikan WhatsApp Web lewat browser yang diotomasi. Gratis, nomor apa pun bisa, langsung jalan. Tapi tidak resmi, dan nomor berisiko diblokir.
 
-Flustra memilih jalan kedua untuk sekarang, dengan pintu terbuka ke jalan pertama nanti.
+VexaHost memilih jalan kedua untuk sekarang, dengan pintu terbuka ke jalan pertama nanti.
 
 ### Kenapa tidak cukup menempelkannya di aplikasi yang sudah ada?
 
@@ -29,7 +29,7 @@ Empat masalah yang muncul:
 
 **Tidak ada pengamanan.** Endpoint pengirimnya terbuka tanpa autentikasi. Siapa pun yang bisa menjangkau port itu bisa mengirim WhatsApp atas nama perusahaan.
 
-Flustra WA Gateway lahir untuk menyelesaikan keempatnya sekaligus.
+VexaHost WA Gateway lahir untuk menyelesaikan keempatnya sekaligus.
 
 ---
 
@@ -38,7 +38,7 @@ Flustra WA Gateway lahir untuk menyelesaikan keempatnya sekaligus.
 Gateway ini duduk di tengah, antara aplikasi Anda dan WhatsApp:
 
 ```
-Aplikasi Anda  ──HTTP──▶  Flustra WA Gateway  ──▶  WhatsApp
+Aplikasi Anda  ──HTTP──▶  VexaHost WA Gateway  ──▶  WhatsApp
                                   │
                                   └──webhook──▶  Aplikasi Anda (pesan masuk)
 ```
@@ -100,13 +100,13 @@ Engine tidak punya database dan tidak menyimpan daftar sesi. Semuanya ia tanyaka
 
 ### API key
 
-Kunci yang dipakai aplikasi untuk memanggil gateway, dikirim lewat header `X-Api-Key`. Formatnya `fwa_<prefix>.<rahasia>`.
+Kunci yang dipakai aplikasi untuk memanggil gateway, dikirim lewat header `X-Api-Key`. Formatnya `vwa_<prefix>.<rahasia>`.
 
 Yang disimpan di server hanya hash-nya, jadi kunci penuh **hanya bisa dilihat sekali** saat dibuat. Satu aplikasi satu kunci, supaya kunci yang bocor bisa dicabut tanpa mengganggu yang lain.
 
 ### Webhook
 
-Kebalikan arah dari API. Kalau ada yang membalas pesan Anda, gateway mengirim POST ke URL yang Anda daftarkan. Setiap kiriman ditandatangani supaya Anda bisa memastikan itu benar-benar dari Flustra.
+Kebalikan arah dari API. Kalau ada yang membalas pesan Anda, gateway mengirim POST ke URL yang Anda daftarkan. Setiap kiriman ditandatangani supaya Anda bisa memastikan itu benar-benar dari VexaHost.
 
 ### Driver
 

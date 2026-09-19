@@ -339,8 +339,8 @@ class PaygTest extends TestCase
         $this->workspace->forceFill(['balance' => 99_000])->save();
 
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

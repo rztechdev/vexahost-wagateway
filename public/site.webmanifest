@@ -1,6 +1,6 @@
 {
-    "name": "Flustra WA Gateway",
-    "short_name": "Flustra WA",
+    "name": "VexaHost WA Gateway",
+    "short_name": "VexaHost WA",
     "description": "Gateway WhatsApp terpusat untuk notifikasi otomatis dari aplikasi Anda.",
     "start_url": "/dashboard",
     "scope": "/",

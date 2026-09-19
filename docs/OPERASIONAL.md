@@ -1,6 +1,6 @@
 # Operasional
 
-Menjalankan flustra-wa di produksi: apa yang perlu dipantau, apa yang harus dilakukan saat bermasalah, dan bagaimana memulihkannya.
+Menjalankan vexahost-wa di produksi: apa yang perlu dipantau, apa yang harus dilakukan saat bermasalah, dan bagaimana memulihkannya.
 
 ---
 
@@ -60,7 +60,7 @@ Tidak ada cara memulihkan dari sisi sistem. Yang bisa dilakukan:
 
 Urutan pemeriksaan:
 
-1. Worker jalan? `docker exec <container-flustra-wa> pgrep -af queue:work` — harus ada satu. Kosong berarti Start Command resource-nya bukan `bash ./start.sh`.
+1. Worker jalan? `docker exec <container-vexahost-wa> pgrep -af queue:work` — harus ada satu. Kosong berarti Start Command resource-nya bukan `bash ./start.sh`.
 2. Sesi terhubung? Pesan untuk sesi yang putus memang sengaja ditahan, bukan dibuang.
 3. Broadcast besar? Dengan jeda 3–8 detik, 500 pesan wajar memakan 30–60 menit. Ini bukan kemacetan.
 

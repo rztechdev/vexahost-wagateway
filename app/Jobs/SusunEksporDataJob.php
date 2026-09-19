@@ -98,7 +98,7 @@ class SusunEksporDataJob implements ShouldQueue
     {
         $workspace = $ekspor->workspace;
         $disk = Storage::disk('local');
-        $relatif = "ekspor/{$workspace->id}/flustra-ekspor-{$workspace->slug}-".now()->format('Ymd-His').'.zip';
+        $relatif = "ekspor/{$workspace->id}/vexahost-ekspor-{$workspace->slug}-".now()->format('Ymd-His').'.zip';
 
         $disk->makeDirectory(dirname($relatif));
         $penuh = $disk->path($relatif);

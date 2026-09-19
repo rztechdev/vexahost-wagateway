@@ -29,7 +29,7 @@ class QrisTest extends TestCase
             .'52045812'
             .'5303360'
             .'5802ID'
-            .'5907FLUSTRA'
+            .'5908VEXAHOST'
             .'6007JAKARTA'
             .'6304';
 

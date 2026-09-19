@@ -23,7 +23,7 @@ use Illuminate\Console\Command;
  */
 class BersihkanHashApiCommand extends Command
 {
-    protected $signature = 'flustra:hash-api-bersihkan
+    protected $signature = 'vexahost:hash-api-bersihkan
         {--dry-run : Hanya melaporkan, tidak mengubah apa pun}';
 
     protected $description = 'Memindahkan hash API key ke bentuk cepat sepenuhnya. Melepas kemampuan rollback.';

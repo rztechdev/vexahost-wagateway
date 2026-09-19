@@ -358,7 +358,7 @@ class SessionBackupTest extends TestCase
             'backed_up_at' => now(),
         ]);
 
-        $this->artisan('flustra:bersihkan-backup-lama', ['--dry-run' => true])
+        $this->artisan('vexahost:bersihkan-backup-lama', ['--dry-run' => true])
             ->expectsOutputToContain('Mode kering')
             ->assertSuccessful();
 
@@ -393,7 +393,7 @@ class SessionBackupTest extends TestCase
             'backed_up_at' => now(),
         ]);
 
-        $this->artisan('flustra:bersihkan-backup-lama')
+        $this->artisan('vexahost:bersihkan-backup-lama')
             ->expectsOutputToContain('berhasil dihapus')
             ->assertSuccessful();
 

@@ -1,5 +1,5 @@
 @extends('layouts.publik')
-@section('title', 'Enterprise — Flustra WA Gateway')
+@section('title', 'Enterprise — VexaHost WA Gateway')
 
 @section('content')
 <section class="border-b border-border/60 bg-muted/30 py-8 sm:py-10">
@@ -108,7 +108,7 @@
                 template kosong — tim langsung punya konteksnya di pesan pertama. */
              get pesanWa() {
                  return encodeURIComponent(
-                     `Halo Flustra, saya ingin menanyakan paket Enterprise.\n\n`
+                     `Halo VexaHost, saya ingin menanyakan paket Enterprise.\n\n`
                      + `Nomor WhatsApp: ${this.nomorAman}\n`
                      + `Pesan per bulan: ${this.rupiahPolos(this.pesanAman)}\n`
                      + `Retensi: ${this.retensi} bulan\n`

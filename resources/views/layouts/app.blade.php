@@ -7,9 +7,7 @@
     <title>@yield('title', 'Dashboard') &middot; {{ config('app.name') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
@@ -73,10 +71,13 @@
             ['rute' => 'tickets.index', 'label' => 'Bantuan', 'cocok' => ['tickets.*'], 'ikon' => 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],
             ['rute' => 'docs.index', 'label' => 'Dokumentasi', 'eksternal' => true, 'ikon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z'],
         ],
+        'Layanan Lain' => [
+            ['url' => 'https://vexahostcloud.my.id/', 'label' => 'Cloud VPS', 'eksternal' => true, 'ikon' => 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2'],
+        ],
     ];
 
     $aktif = function (array $item): bool {
-        return request()->routeIs(...($item['cocok'] ?? [$item['rute']]));
+        return isset($item['rute']) && request()->routeIs(...($item['cocok'] ?? [$item['rute']]));
     };
 @endphp
 
@@ -109,9 +110,9 @@
 
         <div class="flex h-20 shrink-0 items-center gap-3.5 px-5">
             <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3.5">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA Gateway" class="h-11 w-auto shrink-0 object-contain">
+                <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost WA Gateway" class="h-11 w-auto shrink-0 object-contain">
                 <div class="flex min-w-0 flex-col">
-                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">Flustra</span>
+                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">VexaHost</span>
                     <span class="truncate text-xs font-semibold tracking-wide text-muted-foreground leading-tight">WA Gateway</span>
                 </div>
             </a>
@@ -178,8 +179,8 @@
                                  tiap kali menunya ditata ulang, dan tur yang
                                  menunjuk sudut kosong layar lebih buruk
                                  daripada tur yang tidak ada. --}}
-                            <a data-tur-menu="{{ $item['rute'] }}"
-                               href="{{ ($eksternal || $punyaWorkspace) ? route($item['rute']) : route('onboarding.create') }}"
+                            <a @if(isset($item['rute'])) data-tur-menu="{{ $item['rute'] }}" @endif
+                               href="{{ $item['url'] ?? (($eksternal || $punyaWorkspace) ? route($item['rute']) : route('onboarding.create')) }}"
                                @if ($eksternal) target="_blank" rel="noopener" @endif
                                class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm {{ ! $eksternal && $punyaWorkspace && $aktif($item) ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' }}">
                                 <svg class="h-[1.05rem] w-[1.05rem] shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $item['ikon'] }}"/></svg>
@@ -245,21 +246,31 @@
                          bersama email — di bilah atas ia cuma mengulang sesuatu yang
                          sudah pasti diketahui orang yang sedang login. --}}
                     <button @click="profil = ! profil"
-                            class="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                            class="flex items-center gap-1.5 p-1 rounded-lg hover:bg-muted transition-colors focus:outline-none"
                             :aria-expanded="profil" aria-haspopup="true"
-                            aria-label="Menu akun">
-                        @if (auth()->user()->avatarUrl())
-                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
-                        @else
-                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
-                        @endif
+                            aria-label="Menu akun" title="{{ auth()->user()->name }}">
+                        <div class="rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; aspect-ratio: 1 / 1;">
+                            <svg class="text-primary shrink-0" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
 
                     <div x-show="profil" x-cloak x-transition.opacity.duration.150ms
                          class="absolute right-0 z-40 mt-1.5 w-60 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
-                        <div class="border-b border-border px-4 py-3">
-                            <p class="truncate text-sm font-medium">{{ auth()->user()->name }}</p>
-                            <p class="truncate text-xs text-muted-foreground">{{ auth()->user()->email }}</p>
+                        <div class="border-b border-border px-4 py-3 flex items-center gap-3">
+                            <div class="rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0"
+                                 style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 9999px; aspect-ratio: 1 / 1;">
+                                <svg class="text-primary shrink-0" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium">{{ auth()->user()->name }}</p>
+                                <p class="truncate text-xs text-muted-foreground">{{ auth()->user()->email }}</p>
+                            </div>
                         </div>
 
                         <div class="p-1.5">

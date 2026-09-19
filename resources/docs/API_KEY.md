@@ -11,7 +11,7 @@ Menu **API Keys** → beri nama → **Buat**.
 Kuncinya berbentuk seperti ini:
 
 ```
-fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
 **Bisa dilihat lagi kapan saja.** Kuncinya tampil tersamar seperti kolom kata sandi; klik ikon mata untuk menampilkannya. Anda tidak perlu mencatatnya di tempat lain — dan tempat lain itulah (catatan pribadi, chat, screenshot) yang paling sering menjadi jalan bocornya kunci.
@@ -23,8 +23,8 @@ Kunci disimpan dalam bentuk terenkripsi, dan begitu sebuah kunci dicabut, nilain
 Setiap kunci punya blok `.env` siap salin di halaman yang sama:
 
 ```
-WA_GATEWAY_URL=https://wa.flustra.id
-WA_GATEWAY_KEY=fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+WA_GATEWAY_KEY=vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 WA_GATEWAY_SESSION=
 ```
 
@@ -37,13 +37,13 @@ Kalau Anda punya lebih dari satu workspace, tiap workspace punya kunci sendiri d
 Sertakan di setiap permintaan:
 
 ```http
-X-Api-Key: fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+X-Api-Key: vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
 Atau sebagai bearer token, kalau pustaka HTTP Anda lebih nyaman dengan pola itu:
 
 ```http
-Authorization: Bearer fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+Authorization: Bearer vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
 Keduanya sama saja.
@@ -69,8 +69,8 @@ Kalau semua aplikasi berbagi satu kunci, mencabutnya berarti mematikan semuanya 
 Taruh di environment variable:
 
 ```env
-WA_GATEWAY_URL=https://wa.flustra.id
-WA_GATEWAY_KEY=fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+WA_GATEWAY_KEY=vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
 **Jangan pakai di sisi browser.** Kunci yang dipakai di JavaScript halaman web bisa dibaca siapa pun yang membuka Inspect Element. Panggilan ke gateway harus dari server aplikasi Anda.

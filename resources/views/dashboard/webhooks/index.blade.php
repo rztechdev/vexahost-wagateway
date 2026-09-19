@@ -91,7 +91,7 @@
                             <input readonly value="{{ $webhook->secret }}"
                                    class="mt-1 w-full rounded-lg border-input bg-muted/50 font-mono text-xs focus:ring-0">
                             <p class="mt-1 text-xs text-muted-foreground">
-                                Bandingkan header <code>X-Flustra-Signature</code> dengan
+                                Bandingkan header <code>X-VexaHost-Signature</code> dengan
                                 <code>hash_hmac('sha256', $rawBody, $secret)</code> sebelum memproses payload.
                             </p>
                         </div>
@@ -165,7 +165,7 @@
         ],
         [
             'judul' => 'Verifikasi tanda tangannya',
-            'isi' => 'Setiap kiriman membawa header X-Flustra-Signature. Cocokkan dengan '
+            'isi' => 'Setiap kiriman membawa header X-VexaHost-Signature. Cocokkan dengan '
                 .'signing secret Anda sebelum memproses isinya — tanpa itu, siapa pun yang tahu '
                 .'alamat webhook Anda bisa mengirim data palsu ke sana.',
         ],

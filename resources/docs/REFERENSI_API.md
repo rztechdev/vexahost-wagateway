@@ -7,7 +7,7 @@ REST API v1. Setiap endpoint dengan parameter, contoh, dan kode galatnya.
 ## Alamat dasar
 
 ```
-https://wa.flustra.id
+https://wa.vexahostcloud.my.id
 ```
 
 Semua endpoint diawali `/api/v1`.
@@ -15,7 +15,7 @@ Semua endpoint diawali `/api/v1`.
 ## Autentikasi
 
 ```http
-X-Api-Key: fwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
+X-Api-Key: vwa_a1b2c3d4.7HkQmZpXvR2wLnT9sYbF4jGcE6dAuN8i
 ```
 
 Lihat [API Key & Keamanan](API_KEY.md).
@@ -67,7 +67,7 @@ Bentuknya sama untuk semua endpoint, termasuk galat validasi dan autentikasi. Ja
 | `session_id` | string | tidak | Kosongkan untuk memakai sesi aktif pertama |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
   -H "X-Api-Key: $KEY" \
   -H "Content-Type: application/json" \
   -d '{"to":"081234567890","message":"Halo!"}'
@@ -112,7 +112,7 @@ Galat `422` yang mungkin muncul:
 | `session_id` | string | tidak | |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/media \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/media \
   -H "X-Api-Key: $KEY" \
   -F "to=081234567890" \
   -F "caption=Invoice Agustus" \
@@ -158,7 +158,7 @@ Nomor rusak masuk `rejected` tanpa membatalkan sisanya. Nomor ganda dibuang otom
 | `session_id` | string | tidak | |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/template \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/template \
   -H "X-Api-Key: $KEY" \
   -H "Content-Type: application/json" \
   -d '{

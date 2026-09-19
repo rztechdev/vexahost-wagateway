@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Titik masuk container produksi flustra-wa.
+# Titik masuk container produksi vexahost-wa.
 #
 # SATU resource Coolify menjalankan EMPAT proses: web, engine WhatsApp (Node +
 # Baileys websocket), worker antrean, dan penjadwal.
@@ -22,8 +22,8 @@ URL_KESEHATAN="http://127.0.0.1:${PORT_WEB}/up"
 
 # Penanda bahwa container sedang berhenti dengan sengaja. Tanpa ini, loop
 # pengawas akan dengan patuh menghidupkan lagi proses yang baru saja kita bunuh.
-TANDA_BERHENTI="/tmp/flustra-wa.berhenti"
-PIDFILE_ENGINE="/tmp/flustra-wa-engine.pid"
+TANDA_BERHENTI="/tmp/vexahost-wa.berhenti"
+PIDFILE_ENGINE="/tmp/vexahost-wa-engine.pid"
 rm -f "$TANDA_BERHENTI" "$PIDFILE_ENGINE"
 
 # --- Engine WhatsApp (Node + Baileys) -------------------------------------

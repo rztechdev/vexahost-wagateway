@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  * memutus sesi — dan itu tidak boleh gagal gara-gara lonceng.
  *
  * Bedanya dari keduanya: ini satu-satunya jalur yang tidak bergantung pada apa
- * pun di luar sistem. Nomor Flustra terputus dan seluruh pesan WhatsApp diam;
+ * pun di luar sistem. Nomor VexaHost terputus dan seluruh pesan WhatsApp diam;
  * `MAIL_MAILER` salah dan tidak satu pun email terkirim. Notifikasi tetap
  * sampai — dan ia juga satu-satunya yang menyimpan riwayat.
  *

@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "flustratech/flustra-wa",
+    "name": "rztechdev/vexahost-wagateway",
     "type": "project",
-    "description": "Flustra WA Gateway — gateway WhatsApp terpusat multi-tenant untuk ekosistem Flustra.",
-    "keywords": ["flustra", "whatsapp", "gateway"],
+    "description": "VexaHost WA Gateway — gateway WhatsApp terpusat multi-tenant untuk ekosistem VexaHost.",
+    "keywords": ["vexahost", "whatsapp", "gateway"],
     "license": "proprietary",
     "require": {
         "php": "^8.2",
@@ -43,9 +43,11 @@
             "npm run build"
         ],
         "_comment_dev": "Laravel Pail sengaja tidak disertakan di sini: Pail butuh ekstensi pcntl yang tidak tersedia di PHP Windows, dan karena --kill-others, matinya Pail akan menjatuhkan seluruh proses lain. Jalankan `php artisan pail` di terminal terpisah bila memakai Linux/WSL.",
+        "_comment_dev_migrate": "Migrasi dijalankan lebih dulu: kode baru yang berjalan di atas skema lama gagal di tempat yang tidak terduga -- admin yang identitasnya dipindahkan lewat migrasi tidak bisa masuk sama sekali.",
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#34d399\" \"php artisan serve --port=8070\" \"php artisan queue:listen --tries=1 --timeout=0\" \"npm run dev\" \"npm --prefix engine run dev\" --names=server,queue,vite,engine --kill-others"
+            "@php artisan migrate --ansi",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#34d399\" \"php artisan serve --port=8051\" \"php artisan queue:listen --tries=1 --timeout=0\" \"npm run dev\" \"npm --prefix engine run dev\" --names=server,queue,vite,engine --kill-others"
         ],
         "test": [
             "@php artisan config:clear --ansi",

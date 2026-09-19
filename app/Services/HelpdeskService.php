@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Storage;
  * akan menyimpang begitu ada jalur keempat.
  *
  * Pengirimannya WAJIB lewat `WhatsAppNotifier` — tidak pernah melempar galat,
- * selalu dari sesi Flustra, satu peristiwa satu pesan. Menulis pengiriman
+ * selalu dari sesi VexaHost, satu peristiwa satu pesan. Menulis pengiriman
  * sendiri di sini akan melanggar ketiganya sekaligus, dan yang paling mahal
  * yang pertama: tiket yang gagal tersimpan karena WhatsApp sedang tersendat
  * adalah pelanggan yang tidak bisa mengeluh.

@@ -158,7 +158,7 @@ return [
     | Bentuk pemangkasannya, bukan lamanya.
     |
     | Tidak ada DELETE tanpa batas di mana pun. MySQL yang dipakai gateway ini
-    | juga dipakai flustra-erp: satu DELETE atas ratusan ribu baris menahan
+    | juga dipakai aplikasi vexahost: satu DELETE atas ratusan ribu baris menahan
     | kunci dan menggelembungkan undo log untuk SELURUH aplikasi di server itu,
     | dan gejalanya muncul di tempat yang tidak ada hubungannya dengan kita.
     */

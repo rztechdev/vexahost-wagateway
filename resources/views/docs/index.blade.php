@@ -1,7 +1,7 @@
 @extends('layouts.docs')
 
 @section('title', 'Dokumentasi')
-@section('description', 'Dokumentasi lengkap Flustra WA Gateway: instalasi, arsitektur, referensi API, dan panduan operasional.')
+@section('description', 'Dokumentasi lengkap VexaHost WA Gateway: instalasi, arsitektur, referensi API, dan panduan operasional.')
 
 @section('content')
     <div class="space-y-12">
@@ -13,7 +13,7 @@
 
             <div class="relative z-10 max-w-3xl">
                 <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-                    Dokumentasi Flustra WA Gateway
+                    Dokumentasi VexaHost WA Gateway
                 </h1>
                 
                 <p class="mt-3 text-base text-muted-foreground leading-relaxed sm:text-lg">
@@ -200,9 +200,9 @@
                 <button type="button"
                         onclick="navigator.clipboard.writeText(this.getAttribute('data-code')); this.innerHTML = '<i class=\'bi bi-check2 text-emerald-400\'></i> <span class=\'text-emerald-400\'>Tersalin!</span>'; setTimeout(() => this.innerHTML = '<i class=\'bi bi-clipboard\'></i> <span>Salin cURL</span>', 2000)"
                         data-code="curl -X POST {{ config('app.url') }}/api/v1/messages/text \
-  -H &quot;X-Api-Key: fwa_xxxxxxxx.xxxxxxxx&quot; \
+  -H &quot;X-Api-Key: vwa_xxxxxxxx.xxxxxxxx&quot; \
   -H &quot;Content-Type: application/json&quot; \
-  -d '{&quot;to&quot;:&quot;081234567890&quot;,&quot;message&quot;:&quot;Halo dari Flustra WA Gateway!&quot;}'"
+  -d '{&quot;to&quot;:&quot;081234567890&quot;,&quot;message&quot;:&quot;Halo dari VexaHost WA Gateway!&quot;}'"
                         class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-700 hover:text-white cursor-pointer">
                     <i class="bi bi-clipboard"></i>
                     <span>Salin cURL</span>
@@ -214,9 +214,9 @@
             </p>
 
             <pre class="mt-3 overflow-x-auto rounded-xl bg-[#070b14] p-4 text-[13px] leading-relaxed font-mono text-emerald-400 border border-slate-800/80"><code>curl -X POST {{ config('app.url') }}/api/v1/messages/text \
-  -H "X-Api-Key: fwa_xxxxxxxx.xxxxxxxx" \
+  -H "X-Api-Key: vwa_xxxxxxxx.xxxxxxxx" \
   -H "Content-Type: application/json" \
-  -d '{"to":"081234567890","message":"Halo dari Flustra WA Gateway!"}'</code></pre>
+  -d '{"to":"081234567890","message":"Halo dari VexaHost WA Gateway!"}'</code></pre>
 
             <div class="mt-5 flex flex-wrap items-center gap-4 text-xs font-semibold">
                 <a href="{{ route('docs.show', 'mulai-cepat') }}" class="inline-flex items-center gap-1 text-primary hover:underline">
@@ -236,11 +236,11 @@
             <div>
                 <h3 class="text-base font-bold text-foreground">Butuh Bantuan Integrasi Lebih Lanjut?</h3>
                 <p class="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
-                    Tim teknis Flustra siap membantu setup gateway, konsultasi arsitektur webhook, hingga pengujian broadcast nomor bisnis Anda.
+                    Tim teknis VexaHost siap membantu setup gateway, konsultasi arsitektur webhook, hingga pengujian broadcast nomor bisnis Anda.
                 </p>
             </div>
             <div class="flex items-center gap-3 shrink-0">
-                <a href="https://about.flustra.id/#contact" target="_blank" rel="noopener noreferrer"
+                <a href="{{ route('docs.show', 'bantuan') }}"
                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-95">
                     <i class="bi bi-chat-dots-fill"></i>
                     <span>Hubungi Dukungan</span>

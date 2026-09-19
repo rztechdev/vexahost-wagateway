@@ -69,12 +69,12 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Palet: tema "Nature" dari tweakcn, dipilih karena logo Flustra berwarna
+   Palet: tema "Nature" dari tweakcn, dipilih karena logo VexaHost bernuansa
    hijau — warna aplikasi mengikuti logonya, bukan sebaliknya.
 
    Nilainya disalin apa adanya dari preset supaya bisa dibandingkan langsung
    dengan sumbernya. Yang sengaja TIDAK diikuti: font. Preset itu memakai
-   Montserrat/Merriweather, sedangkan Flustra memakai Plus Jakarta Sans —
+   Montserrat/Merriweather, sedangkan VexaHost WA memakai Plus Jakarta Sans —
    font yang sama dengan halaman auth, supaya seluruh produk terasa satu.
    --------------------------------------------------------------------------- */
 @layer base {
@@ -495,30 +495,30 @@
 /* ---------------------------------------------------------------------------
    Marquee metode pembayaran & hero ekosistem.
    --------------------------------------------------------------------------- */
-@keyframes flustra-marquee-scroll {
+@keyframes vexahost-marquee-scroll {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
 }
 
-.flustra-pay-track {
-    animation: flustra-marquee-scroll 35s linear infinite;
+.vexahost-pay-track {
+    animation: vexahost-marquee-scroll 35s linear infinite;
     will-change: transform;
 }
 
-.flustra-hero-track {
+.vexahost-hero-track {
     display: flex;
     width: max-content;
-    animation: flustra-marquee-scroll 30s linear infinite;
+    animation: vexahost-marquee-scroll 30s linear infinite;
     will-change: transform;
 }
 
-.flustra-pay-marquee:hover .flustra-pay-track,
-.flustra-hero-marquee:hover .flustra-hero-track {
+.vexahost-pay-marquee:hover .vexahost-pay-track,
+.vexahost-hero-marquee:hover .vexahost-hero-track {
     animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .flustra-pay-track,
-    .flustra-hero-track { animation: none; }
+    .vexahost-pay-track,
+    .vexahost-hero-track { animation: none; }
 }
 

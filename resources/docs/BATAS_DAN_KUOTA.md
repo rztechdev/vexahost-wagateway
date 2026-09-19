@@ -13,7 +13,7 @@ Menu **Ringkasan** menampilkan pemakaian bulan berjalan dengan indikator kuota.
 Lewat API:
 
 ```bash
-curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
+curl -H "X-Api-Key: $KEY" https://wa.vexahostcloud.my.id/api/v1/health
 ```
 
 ```json

@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Masuk - Flustra WA Gateway')
+@section('title', 'Masuk - VexaHost WA Gateway')
 
 @section('content')
 <div>
@@ -10,7 +10,7 @@
             Selamat Datang
         </h2>
         <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground">
-            Masuk ke dashboard akun Flustra WA Anda
+            Masuk ke dashboard akun VexaHost WA Anda
         </p>
     </div>
 
@@ -99,7 +99,7 @@
                     Lupa kata sandi?
                 </a>
             @else
-                <a href="mailto:{{ config('billing.support_email') }}?subject=Lupa%20kata%20sandi%20Flustra%20WA"
+                <a href="mailto:{{ config('billing.support_email') }}?subject=Lupa%20kata%20sandi%20VexaHost%20WA"
                    class="font-medium text-primary hover:underline">
                     Lupa kata sandi?
                 </a>

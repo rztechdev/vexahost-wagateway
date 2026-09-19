@@ -48,7 +48,7 @@ class StatusTest extends TestCase
     {
         return User::create([
             'name' => 'Admin',
-            'email' => 'admin-status@flustra.id',
+            'email' => 'admin-status@vexahostcloud.my.id',
             'password' => 'rahasia123',
             'is_super_admin' => true,
         ]);
@@ -218,7 +218,7 @@ class StatusTest extends TestCase
     {
         $biasa = User::create([
             'name' => 'Pelanggan',
-            'email' => 'pelanggan-status@flustra.id',
+            'email' => 'pelanggan-status@vexahostcloud.my.id',
             'password' => 'rahasia123',
         ]);
 

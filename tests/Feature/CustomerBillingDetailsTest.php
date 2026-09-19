@@ -6,7 +6,9 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Billing\SubscriptionService;
+use App\Support\WilayahIndonesia;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -16,15 +18,16 @@ class CustomerBillingDetailsTest extends TestCase
     use RefreshDatabase;
 
     private User $owner;
+
     private Workspace $workspace;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        \Illuminate\Support\Facades\Config::set('services.mayar.api_key', 'test_api_key_123');
-        \Illuminate\Support\Facades\Config::set('services.mayar.api_url', 'https://api.mayar.id/hl/v2');
-        \Illuminate\Support\Facades\Config::set('services.mayar.webhook_token', 'test_webhook_token_secret');
+        Config::set('services.mayar.api_key', 'test_api_key_123');
+        Config::set('services.mayar.api_url', 'https://api.mayar.id/hl/v2');
+        Config::set('services.mayar.webhook_token', 'test_webhook_token_secret');
 
         $this->owner = User::create([
             'name' => 'Budi Santoso',
@@ -136,15 +139,15 @@ class CustomerBillingDetailsTest extends TestCase
 
     public function test_wilayah_indonesia_cascading_data(): void
     {
-        $provinces = \App\Support\WilayahIndonesia::provinsi();
+        $provinces = WilayahIndonesia::provinsi();
         $this->assertContains('DKI Jakarta', $provinces);
         $this->assertContains('Jawa Barat', $provinces);
 
-        $citiesJakarta = \App\Support\WilayahIndonesia::kota('DKI Jakarta');
+        $citiesJakarta = WilayahIndonesia::kota('DKI Jakarta');
         $this->assertContains('Kota Jakarta Selatan', $citiesJakarta);
         $this->assertContains('Kota Jakarta Pusat', $citiesJakarta);
 
-        $districtsJaksel = \App\Support\WilayahIndonesia::kecamatan('DKI Jakarta', 'Kota Jakarta Selatan');
+        $districtsJaksel = WilayahIndonesia::kecamatan('DKI Jakarta', 'Kota Jakarta Selatan');
         $this->assertContains('Tebet', $districtsJaksel);
         $this->assertContains('Cilandak', $districtsJaksel);
     }
@@ -228,24 +231,24 @@ class CustomerBillingDetailsTest extends TestCase
     {
         $superAdmin = User::create([
             'name' => 'Super Admin',
-            'email' => 'superadmin@flustra.id',
+            'email' => 'superadmin@vexahostcloud.my.id',
             'password' => Hash::make('secret'),
             'is_super_admin' => true,
         ]);
 
         $this->workspace->forceFill([
             'billing_type' => 'badan',
-            'billing_company' => 'PT Flustra Digital Solusi',
+            'billing_company' => 'PT VexaHost Digital Solusi',
             'billing_name' => 'Rian PIC',
-            'billing_email' => 'finance@flustradigital.id',
+            'billing_email' => 'finance@vexahostdigital.id',
             'billing_phone' => '628999888777',
             'billing_bank_name' => 'Bank Mandiri',
             'billing_bank_account' => '9876543210',
-            'billing_bank_holder' => 'PT Flustra Digital Solusi',
+            'billing_bank_holder' => 'PT VexaHost Digital Solusi',
             'billing_province' => 'DKI Jakarta',
             'billing_city' => 'Kota Jakarta Selatan',
             'billing_district' => 'Kebayoran Baru',
-            'billing_address' => 'Gedung Menara Flustra Lt. 12',
+            'billing_address' => 'Gedung Menara VexaHost Lt. 12',
             'billing_postal_code' => '12190',
         ])->save();
 
@@ -256,7 +259,7 @@ class CustomerBillingDetailsTest extends TestCase
             ->get(route('admin.invoices'));
 
         $responseInvoices->assertOk();
-        $responseInvoices->assertSee('PT Flustra Digital Solusi');
+        $responseInvoices->assertSee('PT VexaHost Digital Solusi');
         $responseInvoices->assertSee('Rian PIC');
         $responseInvoices->assertSee('628999888777');
         $responseInvoices->assertSee('Bank Mandiri');
@@ -268,12 +271,12 @@ class CustomerBillingDetailsTest extends TestCase
 
         $responseDetail->assertOk();
         $responseDetail->assertSee('Data Pelanggan');
-        $responseDetail->assertSee('PT Flustra Digital Solusi');
+        $responseDetail->assertSee('PT VexaHost Digital Solusi');
         $responseDetail->assertSee('Rian PIC');
-        $responseDetail->assertSee('finance@flustradigital.id');
+        $responseDetail->assertSee('finance@vexahostdigital.id');
         $responseDetail->assertSee('628999888777');
         $responseDetail->assertSee('Bank Mandiri');
-        $responseDetail->assertSee('Gedung Menara Flustra Lt. 12');
+        $responseDetail->assertSee('Gedung Menara VexaHost Lt. 12');
     }
 
     public function test_checkout_page_does_not_leak_raw_javascript_outside_script_tags(): void

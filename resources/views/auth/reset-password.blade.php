@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Atur Ulang Kata Sandi - Flustra WA Gateway')
+@section('title', 'Atur Ulang Kata Sandi - VexaHost WA Gateway')
 
 @section('content')
 <div>

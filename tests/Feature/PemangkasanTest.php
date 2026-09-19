@@ -255,7 +255,7 @@ class PemangkasanTest extends TestCase
         $this->assertGreaterThan(
             1,
             $hapus,
-            'Seluruh 25 baris terhapus dalam satu DELETE — persis yang menahan kunci MySQL bersama flustra-erp.'
+            'Seluruh 25 baris terhapus dalam satu DELETE — persis yang menahan kunci MySQL bersama aplikasi vexahost.'
         );
     }
 
@@ -279,7 +279,7 @@ class PemangkasanTest extends TestCase
     {
         $this->kirimanWebhook(4);
 
-        $this->artisan('flustra:pangkas', ['--dry-run' => true])
+        $this->artisan('vexahost:pangkas', ['--dry-run' => true])
             ->assertSuccessful();
 
         $this->assertSame(4, WebhookDelivery::count());
@@ -292,7 +292,7 @@ class PemangkasanTest extends TestCase
         $lama = AuditLog::create(['action' => 'lama']);
         $this->tuakan('audit_logs', $lama->id, now()->subDays(400));
 
-        $this->artisan('flustra:pangkas', ['--tabel' => 'webhook_deliveries'])
+        $this->artisan('vexahost:pangkas', ['--tabel' => 'webhook_deliveries'])
             ->assertSuccessful();
 
         $this->assertSame(0, WebhookDelivery::count());
@@ -301,7 +301,7 @@ class PemangkasanTest extends TestCase
 
     public function test_perintah_menolak_tabel_yang_tidak_dikelola(): void
     {
-        $this->artisan('flustra:pangkas', ['--tabel' => 'invoices'])
+        $this->artisan('vexahost:pangkas', ['--tabel' => 'invoices'])
             ->assertFailed();
     }
 }

@@ -36,7 +36,7 @@
                 <div @class(['rounded-lg p-4', 'bg-primary/5 border border-primary/15' => $pesan->is_from_admin, 'bg-muted/40' => ! $pesan->is_from_admin])>
                     <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-xs">
                         <span class="font-medium">
-                            {{ $pesan->is_from_admin ? 'Tim Flustra' : ($pesan->user?->name ?? 'Pelanggan') }}
+                            {{ $pesan->is_from_admin ? 'Tim VexaHost' : ($pesan->user?->name ?? 'Pelanggan') }}
                         </span>
                         <span class="text-muted-foreground">{{ $pesan->created_at->translatedFormat('j M Y, H:i') }}</span>
                     </div>

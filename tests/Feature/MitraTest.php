@@ -107,7 +107,7 @@ class MitraTest extends TestCase
             ->get(route('mitra.index'));
 
         $response->assertOk();
-        $response->assertSee('Pendaftaran Program Mitra Flustra');
+        $response->assertSee('Pendaftaran Program Mitra VexaHost');
         $response->assertSee(route('mitra.apply'));
     }
 
@@ -184,8 +184,8 @@ class MitraTest extends TestCase
     public function test_admin_bisa_menyetujui_permohonan_mitra(): void
     {
         $admin = User::create([
-            'name' => 'Admin Flustra',
-            'email' => 'admin@flustra.id',
+            'name' => 'Admin VexaHost',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('password123'),
             'is_super_admin' => true,
         ]);
@@ -219,8 +219,8 @@ class MitraTest extends TestCase
     public function test_admin_bisa_menolak_permohonan_mitra_dengan_alasan(): void
     {
         $admin = User::create([
-            'name' => 'Admin Flustra',
-            'email' => 'admin@flustra.id',
+            'name' => 'Admin VexaHost',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('password123'),
             'is_super_admin' => true,
         ]);
@@ -457,8 +457,8 @@ class MitraTest extends TestCase
     public function test_admin_bisa_menandai_pencairan_komisi_selesai_dan_komisi_menjadi_paid(): void
     {
         $admin = User::create([
-            'name' => 'Admin Flustra',
-            'email' => 'admin@flustra.id',
+            'name' => 'Admin VexaHost',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('password123'),
             'is_super_admin' => true,
         ]);
@@ -510,8 +510,8 @@ class MitraTest extends TestCase
     public function test_mitra_dan_admin_bisa_melihat_invoice_resmi_pencairan(): void
     {
         $admin = User::create([
-            'name' => 'Admin Flustra',
-            'email' => 'admin-inv@flustra.id',
+            'name' => 'Admin VexaHost',
+            'email' => 'admin-inv@vexahostcloud.my.id',
             'password' => Hash::make('password123'),
             'is_super_admin' => true,
         ]);

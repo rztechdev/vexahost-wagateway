@@ -359,7 +359,7 @@ class HakDataTest extends TestCase
     {
         $admin = User::create([
             'name' => 'Admin',
-            'email' => 'admin-hakdata@flustra.id',
+            'email' => 'admin-hakdata@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

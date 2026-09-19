@@ -15,7 +15,7 @@ use Tests\TestCase;
  * host yang bersangkutan selama setahun, dan sekali tersimpan ia tidak bisa
  * dibatalkan dengan menghapus kodenya — pengembang yang terkena harus
  * membersihkannya dari setelan browsernya sendiri. Satu commit ceroboh di sini
- * membuat http://127.0.0.1:8070 tidak bisa dibuka siapa pun di tim.
+ * membuat http://127.0.0.1:8051 tidak bisa dibuka siapa pun di tim.
  */
 class KeamananTest extends TestCase
 {
@@ -72,8 +72,8 @@ class KeamananTest extends TestCase
     public function test_halaman_sistem_menyebut_empat_pemeriksaan_keamanan(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

@@ -14,7 +14,7 @@ class AuthenticationTest extends TestCase
 
     public function test_halaman_landing_bisa_diakses_publik(): void
     {
-        $this->get('/')->assertOk()->assertSee('Flustra WA Gateway');
+        $this->get('/')->assertOk()->assertSee('VexaHost WA Gateway');
     }
 
     public function test_dashboard_menolak_tamu_dan_mengarahkan_ke_login(): void

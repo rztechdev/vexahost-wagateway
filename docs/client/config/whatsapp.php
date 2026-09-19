@@ -2,14 +2,14 @@
 
 /*
 |--------------------------------------------------------------------------
-| Klien Flustra WA Gateway
+| Klien VexaHost WA Gateway
 |--------------------------------------------------------------------------
 |
 | File ini disalin apa adanya ke setiap aplikasi Flustra yang perlu mengirim
 | WhatsApp (flustra-erp, flustra-web, flustra-pricing, flustra-helpdesk).
 | Pasangannya: app/Services/WhatsAppGateway.php.
 |
-| Sumber aslinya ada di repo flustra-wa (docs/client/). Kalau ada perubahan,
+| Sumber aslinya ada di repo vexahost-wa (docs/client/). Kalau ada perubahan,
 | ubah di sana dulu lalu salin ulang ke tiap aplikasi.
 |
 */
@@ -18,7 +18,7 @@ return [
 
     'enabled' => env('WA_GATEWAY_ENABLED', true),
 
-    'url' => env('WA_GATEWAY_URL', 'https://wa.flustra.id'),
+    'url' => env('WA_GATEWAY_URL', 'https://wa.vexahostcloud.my.id'),
 
     // API key milik tenant aplikasi ini di dashboard gateway.
     'key' => env('WA_GATEWAY_KEY'),

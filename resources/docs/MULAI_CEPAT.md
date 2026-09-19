@@ -54,8 +54,8 @@ Kunci ditampilkan **satu kali saja**. Salin dan simpan di tempat aman — kami h
 ### Kirim pesan pertama lewat API
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
-  -H "X-Api-Key: fwa_xxxxxxxx.xxxxxxxxxxxx" \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
+  -H "X-Api-Key: vwa_xxxxxxxx.xxxxxxxxxxxx" \
   -H "Content-Type: application/json" \
   -d '{
     "to": "081234567890",
@@ -83,8 +83,8 @@ Balasannya:
 Halaman **API Keys** menampilkan blok ini siap salin begitu kunci dibuat:
 
 ```
-WA_GATEWAY_URL=https://wa.flustra.id
-WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxx
+WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+WA_GATEWAY_KEY=vwa_xxxxxxxx.xxxxxxxxxxxx
 WA_GATEWAY_SESSION=
 ```
 

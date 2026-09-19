@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * Pusat notifikasi — dua aliran, satu tabel.
  *
  * Kenapa ini ada padahal sudah ada WhatsApp dan email: keduanya keluar dari
- * sistem dan bisa gagal tanpa gejala. Nomor Flustra terputus dan seluruh kabar
+ * sistem dan bisa gagal tanpa gejala. Nomor VexaHost terputus dan seluruh kabar
  * diam; `MAIL_MAILER` salah dan tidak satu pun email terkirim. Lonceng di
  * dalam aplikasi adalah satu-satunya jalur yang tidak bergantung pada apa pun
  * di luar — dan ia juga satu-satunya yang menyimpan riwayat, karena WhatsApp

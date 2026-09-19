@@ -1,5 +1,5 @@
 /**
- * WebGL Smokey Background — Flustra Custom Shader
+ * WebGL Smokey Background — VexaHost Custom Shader
  */
 (function () {
   const canvas = document.getElementById('auth-smokey-canvas');

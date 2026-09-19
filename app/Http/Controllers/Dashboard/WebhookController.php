@@ -86,7 +86,7 @@ class WebhookController extends Controller
         $webhook = EnsureWorkspaceSelected::from($request)->webhooks()->findOrFail($id);
 
         DeliverWebhookJob::dispatch($webhook->id, 'webhook.test', [
-            'message' => 'Ini kiriman uji coba dari Flustra WA Gateway.',
+            'message' => 'Ini kiriman uji coba dari VexaHost WA Gateway.',
             'sent_at' => now()->toIso8601String(),
         ]);
 

@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Internal\LinkedAccountController;
 use App\Http\Controllers\Webhooks\MayarWebhookController;
+use App\Http\Middleware\VerifyLinkedAccountSignature;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,3 +69,13 @@ Route::prefix('v1')->middleware('apikey')->group(function (): void {
 */
 Route::post('webhooks/mayar', [MayarWebhookController::class, 'handle'])
     ->name('api.webhooks.mayar');
+
+/*
+| Akun tertaut dengan aplikasi vexahost — satu akun, dua aplikasi, hanya
+| autentikasi. Bukan untuk pelanggan: dijaga tanda tangan HMAC dengan rahasia
+| bersama (LINKED_ACCOUNTS_SECRET), bukan API key workspace. Protokolnya di
+| docs/AKUN_TERTAUT.md.
+*/
+Route::post('internal/akun-tertaut', LinkedAccountController::class)
+    ->middleware([VerifyLinkedAccountSignature::class, 'throttle:600,1'])
+    ->name('api.akun-tertaut');

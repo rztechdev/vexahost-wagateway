@@ -43,13 +43,13 @@
         {{-- Header Korporat --}}
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-border/80 pb-8">
             <div class="flex items-start gap-4">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra Logo" class="h-12 w-auto object-contain shrink-0">
+                <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost Logo" class="h-12 w-auto object-contain shrink-0">
                 <div>
-                    <h2 class="text-xl font-bold tracking-tight text-foreground">Flustra WA Gateway</h2>
-                    <p class="text-xs font-semibold text-primary uppercase tracking-wider">Flustra Technology Indonesia</p>
+                    <h2 class="text-xl font-bold tracking-tight text-foreground">VexaHost WA Gateway</h2>
+                    <p class="text-xs font-semibold text-primary uppercase tracking-wider">PT DESTINARA CHAKRAWALA ARTHA</p>
                     <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
                         Layanan WhatsApp API Gateway &amp; Enterprise Messaging<br>
-                        Email: flustrafinances@gmail.com &bull; Web: flustra.id
+                        Email: vexahostcloudtech@gmail.com &bull; Web: wa.vexahostcloud.my.id
                     </p>
                 </div>
             </div>
@@ -157,7 +157,7 @@
                         <td class="py-4 pr-4">
                             <p class="font-semibold text-foreground">Biaya Administrasi &amp; Penanganan Pencairan</p>
                             <p class="mt-1 text-xs text-muted-foreground leading-relaxed">
-                                Biaya pemrosesan transfer perbankan dan administrasi sistem kemitraan sesuai Syarat &amp; Ketentuan resmi Flustra WA Gateway ({{ $payout->fee_percent }}%).
+                                Biaya pemrosesan transfer perbankan dan administrasi sistem kemitraan sesuai Syarat &amp; Ketentuan resmi VexaHost WA Gateway ({{ $payout->fee_percent }}%).
                             </p>
                         </td>
                         <td class="py-4 px-2 text-center text-xs text-muted-foreground whitespace-nowrap">
@@ -199,7 +199,7 @@
             <div class="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-2">
                 <span class="font-bold text-foreground">Catatan / Keterangan Transaksi:</span>
                 <p class="text-muted-foreground leading-relaxed">
-                    {{ $payout->admin_notes ?: ($payout->notes ?: 'Pencairan komisi reseller diproses dan diverifikasi manual oleh Finance Flustra sesuai prosedur pencairan 1x24 jam kerja.') }}
+                    {{ $payout->admin_notes ?: ($payout->notes ?: 'Pencairan komisi reseller diproses dan diverifikasi manual oleh Finance VexaHost sesuai prosedur pencairan 1x24 jam kerja.') }}
                 </p>
                 @if ($payout->isPaid() && $payout->payer)
                     <p class="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
@@ -214,11 +214,11 @@
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
                     </div>
                     <span class="text-[10px] uppercase font-bold tracking-wider text-primary">Dokumen Elektronik Sah</span>
-                    <span class="text-[11px] font-semibold text-foreground">Flustra Technology Indonesia</span>
+                    <span class="text-[11px] font-semibold text-foreground">PT DESTINARA CHAKRAWALA ARTHA</span>
                     <span class="text-[9px] text-muted-foreground font-mono mt-0.5">SHA256: {{ substr(hash('sha256', $payout->payout_number . $payout->amount . $payout->created_at), 0, 16) }}</span>
                 </div>
                 <p class="text-[10px] text-muted-foreground leading-tight">
-                    Dokumen ini sah dan diterbitkan otomatis oleh sistem penagihan Flustra WA Gateway.<br>
+                    Dokumen ini sah dan diterbitkan otomatis oleh sistem penagihan VexaHost WA Gateway.<br>
                     Diakui secara legal berdasarkan UU ITE Republik Indonesia.
                 </p>
             </div>
@@ -228,7 +228,7 @@
 
     {{-- Footnote Print --}}
     <div class="mt-4 text-center text-[11px] text-muted-foreground hidden print:block">
-        Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }} WIB &bull; Flustra WA Gateway Enterprise System
+        Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }} WIB &bull; VexaHost WA Gateway Enterprise System
     </div>
 
 </div>

@@ -1,4 +1,4 @@
-# Nixpacks untuk container tunggal flustra-wa.
+# Nixpacks untuk container tunggal vexahost-wa.
 #
 # Sejak 17 Agustus 2026 satu container menjalankan Laravel DAN engine
 # Baileys (websocket murni, lihat start.sh).

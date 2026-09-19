@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->string('name');
 
-            // Kunci penuh berformat `fwa_<prefix><random>` dan hanya ditampilkan
+            // Kunci penuh berformat `vwa_<prefix><random>` dan hanya ditampilkan
             // sekali saat dibuat. Yang disimpan cuma hash-nya; `prefix` dipakai
             // untuk mempersempit pencarian sebelum verifikasi hash, supaya tidak
             // perlu membandingkan hash ke seluruh baris tabel.

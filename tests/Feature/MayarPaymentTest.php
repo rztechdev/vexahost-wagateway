@@ -36,8 +36,8 @@ class MayarPaymentTest extends TestCase
         ]);
 
         $this->workspace = Workspace::create([
-            'name' => 'Toko Flustra',
-            'slug' => 'toko-flustra',
+            'name' => 'Toko VexaHost',
+            'slug' => 'toko-vexahost',
             'owner_id' => $this->owner->id,
             'owner_email' => $this->owner->email,
             'billing_type' => 'individu',

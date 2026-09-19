@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Schema;
  * Helpdesk, dibangun di dalam produk ini sendiri.
  *
  * Keputusan Ryan, dan sudah diambil: `flustra-helpdesk` memang ada dan sudah
- * memakai gateway ini, tapi pelanggan flustra-wa tidak seharusnya dilempar ke
+ * memakai gateway ini, tapi pelanggan vexahost-wa tidak seharusnya dilempar ke
  * produk lain untuk mengeluh.
  *
  * `user_id` di `ticket_messages` nullable karena `null` berarti balasan admin.
  * Dibedakan begitu — bukan dengan menyimpan id admin — supaya nama karyawan
- * kami tidak pernah bocor ke layar pelanggan; yang menjawab adalah Flustra,
+ * kami tidak pernah bocor ke layar pelanggan; yang menjawab adalah VexaHost,
  * bukan orang tertentu. `is_from_admin` tetap ada sebagai penanda eksplisit,
  * karena `user_id` yang kosong juga bisa berarti akun penanyanya sudah dihapus.
  *

@@ -1,6 +1,6 @@
 # Arsitektur
 
-Dokumen ini menjelaskan bagaimana bagian-bagian flustra-wa bekerja sama, dan **kenapa** dirancang begitu. Baca [PENGANTAR.md](PENGANTAR.md) dulu kalau belum.
+Dokumen ini menjelaskan bagaimana bagian-bagian vexahost-wa bekerja sama, dan **kenapa** dirancang begitu. Baca [PENGANTAR.md](PENGANTAR.md) dulu kalau belum.
 
 ---
 
@@ -163,7 +163,7 @@ Dua hal yang perlu diperhatikan:
 3. Engine     callback bertanda tangan ke Laravel
 4. Laravel    simpan `messages` direction=inbound, naikkan hitungan
 5. Laravel    antrekan DeliverWebhookJob untuk tiap webhook aktif
-6. Worker     POST ke URL workspace dengan X-Flustra-Signature
+6. Worker     POST ke URL workspace dengan X-VexaHost-Signature
 ```
 
 ### Menautkan nomor

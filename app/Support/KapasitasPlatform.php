@@ -42,7 +42,7 @@ class KapasitasPlatform
     /**
      * Slot yang sudah dijanjikan kepada pelanggan yang layanannya hidup.
      *
-     * Nomor istimewa (milik Flustra sendiri) tidak ikut dihitung di sisi
+     * Nomor istimewa (milik VexaHost sendiri) tidak ikut dihitung di sisi
      * workspace — `sessionsTerhitung()` sudah mengecualikannya — tapi ia TETAP
      * memakan slot engine yang nyata. Jadi ia ditambahkan terpisah di sini.
      * Pengecualian yang bocor lebih jauh dari maksudnya adalah cara paling
@@ -79,7 +79,7 @@ class KapasitasPlatform
             ->whereHas('subscription', fn ($q) => $q->where('status', 'active'))
             ->sum('max_sessions');
 
-        // Nomor milik Flustra sendiri tidak menghitung jatah workspace mana pun
+        // Nomor milik VexaHost sendiri tidak menghitung jatah workspace mana pun
         // (`sessionsTerhitung()` mengecualikannya), tapi ia TETAP memakan slot
         // engine yang nyata. Pengecualian yang bocor lebih jauh dari maksudnya
         // adalah cara paling halus sebuah SaaS menjual kapasitas yang tidak

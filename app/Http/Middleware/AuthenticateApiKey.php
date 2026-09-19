@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Autentikasi REST API publik memakai kunci berformat `fwa_xxxxxxxx.<secret>`.
+ * Autentikasi REST API publik memakai kunci berformat `vwa_xxxxxxxx.<secret>`.
+ *
+ * Kunci yang terbit sebelum pergantian merek berawalan `fwa_` dan tetap sah:
+ * kunci dicari lewat kolom `prefix` apa adanya, bukan dengan mencocokkan
+ * awalannya. Jangan menambah pemeriksaan `str_starts_with($kunci, 'vwa_')` —
+ * itu mematikan seluruh integrasi yang sudah berjalan tanpa satu pun dari
+ * mereka mengubah apa pun.
  *
  * Kunci dikirim lewat header `X-Api-Key`, atau `Authorization: Bearer <kunci>`
  * untuk klien yang lebih nyaman dengan pola bearer.

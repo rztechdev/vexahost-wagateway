@@ -34,7 +34,7 @@ class TwoFactorTest extends TestCase
     {
         return User::create([
             'name' => $admin ? 'Admin' : 'Pelanggan',
-            'email' => $admin ? 'admin-2fa@flustra.id' : 'orang-2fa@contoh.id',
+            'email' => $admin ? 'admin-2fa@vexahostcloud.my.id' : 'orang-2fa@contoh.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => $admin,
         ]);

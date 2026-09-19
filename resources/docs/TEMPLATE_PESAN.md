@@ -35,7 +35,7 @@ Bagian di dalam `{{ }}` adalah **placeholder** — nilainya dikirim saat pesan d
 ## Memakainya
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/template \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/template \
   -H "X-Api-Key: $KEY" \
   -H "Content-Type: application/json" \
   -d '{

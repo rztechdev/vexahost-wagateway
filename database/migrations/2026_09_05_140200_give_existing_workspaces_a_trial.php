@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * pelanggan mengalaminya sebagai kerusakan, bukan sebagai kebijakan harga.
  * Batas paket mulai berlaku saat langganan pertama dibayar.
  *
- * Workspace internal Flustra dilewati: ia tidak pernah menagih dirinya sendiri.
+ * Workspace internal VexaHost dilewati: ia tidak pernah menagih dirinya sendiri.
  */
 return new class extends Migration
 {

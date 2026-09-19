@@ -38,7 +38,7 @@ Notifikasi adalah pelengkap. Invoice tetap harus tersimpan meski WhatsApp-nya ga
 
 ### `User`
 
-Akun dashboard. Autentikasi lokal — flustra-wa punya form login dan register sendiri.
+Akun dashboard. Autentikasi lokal — vexahost-wa punya form login dan register sendiri.
 
 | Method | Kegunaan |
 |---|---|

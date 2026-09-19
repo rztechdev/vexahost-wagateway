@@ -53,7 +53,7 @@ class ApiKey extends Model
      */
     public static function issue(Workspace $workspace, string $name, array $scopes = ['*'], ?int $createdBy = null): array
     {
-        $prefix = 'fwa_'.Str::lower(Str::random(8));
+        $prefix = 'vwa_'.Str::lower(Str::random(8));
         $secret = Str::random(40);
         $plain = $prefix.'.'.$secret;
 
@@ -138,7 +138,7 @@ class ApiKey extends Model
             return hash_equals((string) $this->key_hash_fast, self::hashSecret($secret));
         }
 
-        // 2. Setelah `flustra:hash-api-bersihkan` dijalankan, `key_hash_fast`
+        // 2. Setelah `vexahost:hash-api-bersihkan` dijalankan, `key_hash_fast`
         //    dikosongkan dan `key_hash` sendiri sudah berisi SHA-256. Hash
         //    bcrypt selalu diawali $2y$ / $2a$ / $2b$; punya kami 64 digit heksa.
         if (! str_starts_with((string) $this->key_hash, '$2')) {

@@ -1,6 +1,6 @@
 # Setup VPS & Coolify
 
-Dari VPS kosong sampai Flustra WA Gateway melayani permintaan. Ikuti berurutan — setiap bagian mengandalkan yang sebelumnya.
+Dari VPS kosong sampai VexaHost WA Gateway melayani permintaan. Ikuti berurutan — setiap bagian mengandalkan yang sebelumnya.
 
 Dokumen internal. Untuk pembagian tahap dev/staging/production lihat [ENVIRONMENT.md](ENVIRONMENT.md); untuk detail tiap resource lihat [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -11,8 +11,8 @@ Dokumen internal. Untuk pembagian tahap dev/staging/production lihat [ENVIRONMEN
 | | Keterangan |
 |---|---|
 | VPS | Ubuntu 22.04/24.04 LTS. **Minimal 4 GB RAM** kalau engine ikut di sini |
-| Domain | `flustra.id` (produksi) dan `flustra.tech` (dev & staging) |
-| Akses | SSH root, dan akses ke organisasi GitHub `flustratech-dev` |
+| Domain | `vexahostcloud.my.id` — `wa` (produksi), `wa-staging`, dan `wa-dev` |
+| Akses | SSH root, dan akses ke akun GitHub `rztechdev` |
 | Nomor WhatsApp | Nomor uji coba, **terpisah** dari nomor produksi |
 
 ### Kenapa RAM jadi penentu
@@ -116,30 +116,26 @@ Buka `http://IP_VPS:8000`, buat akun admin **pertama kali itu juga** — pendaft
 
 Setelah masuk:
 
-1. **Projects** → **+ New** → beri nama `Flustra Ecosystem` (kalau belum ada)
-2. **Sources** → hubungkan GitHub App, beri akses ke repo `flustratech-dev/flustra-wa`
+1. **Projects** → **+ New** → beri nama `VexaHost` (kalau belum ada)
+2. **Sources** → hubungkan GitHub App, beri akses ke repo `rztechdev/vexahost-wagateway`
 
 ---
 
 ## Bagian 3 — DNS
 
-Di pengelola DNS `flustra.id`:
+Di pengelola DNS `vexahostcloud.my.id`:
 
 | Tipe | Nama | Nilai |
 |---|---|---|
 | A | `wa` | IP VPS |
-
-Di `flustra.tech`, wildcard biasanya sudah ada. Kalau belum:
-
-| Tipe | Nama | Nilai |
-|---|---|---|
-| A | `*` | IP VPS |
+| A | `wa-staging` | IP VPS |
+| A | `wa-dev` | IP VPS |
 
 Tunggu propagasi, lalu pastikan sudah mengarah:
 
 ```bash
-dig +short wa.flustra.id
-dig +short wa-dev.flustra.tech
+dig +short wa.vexahostcloud.my.id
+dig +short wa-dev.vexahostcloud.my.id
 ```
 
 Keduanya harus mengembalikan IP VPS. Jangan lanjut sebelum ini benar — Let's Encrypt akan gagal menerbitkan sertifikat dan Coolify menandai deploy sebagai gagal.
@@ -153,9 +149,9 @@ Kalau MySQL bersama belum ada, buat lewat Coolify: **+ New** → **Database** �
 Masuk ke containernya, lalu buat tiga database:
 
 ```sql
-CREATE DATABASE `db_flustra-wa`         CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE `db_flustra-wa_staging` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE `db_flustra-wa_dev`     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE `db_vexahost-wa-production`         CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE `db_vexahost-wa-staging` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE `db_vexahost-wa-dev`     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 `DB_HOST` diisi **nama service internal** MySQL di Coolify, bukan `localhost` — keduanya container terpisah.
@@ -183,15 +179,15 @@ Kalau token bocor lewat log, ia tidak boleh sekaligus memberi kemampuan memalsuk
 
 ## Bagian 6 — Resource aplikasi (satu-satunya)
 
-**+ New** → **Public/Private Repository** → pilih `flustratech-dev/flustra-wa`.
+**+ New** → **Public/Private Repository** → pilih `rztechdev/vexahost-wagateway`.
 
 | Pengaturan | Nilai |
 |---|---|
-| Name | `flustra-wa` |
+| Name | `vexahost-wa` |
 | Branch | `main` |
 | Build Pack | Nixpacks |
 | Base Directory | `/` |
-| Domain | `https://wa.flustra.id` |
+| Domain | `https://wa.vexahostcloud.my.id` |
 | Health Check | **Dimatikan** |
 
 **Install Command**
@@ -249,13 +245,13 @@ Pastikan opsi **Connect To Predefined Network** diaktifkan (di tab Configuration
 
 > **Pastikan `APP_DEBUG=false`.** Kalau `true`, halaman error menampilkan seluruh isi environment — termasuk password database dan secret HMAC.
 
-Deploy. Buka `https://wa.flustra.id` — halaman utama harus muncul dengan HTTPS.
+Deploy. Buka `https://wa.vexahostcloud.my.id` — halaman utama harus muncul dengan HTTPS.
 
 ---
 
 ## Bagian 7 — Empat proses dalam satu container
 
-**Tidak ada Resource 2 dan Resource 3.** Sampai 16 Agustus 2026 bagian ini berisi cara membuat resource `flustra-wa-engine` dan `flustra-wa-worker`. Keduanya dihapus pada 17 Agustus 2026; engine, worker, dan penjadwal sekarang berjalan sebagai proses di dalam container yang sama, diatur [`start.sh`](../start.sh).
+**Tidak ada Resource 2 dan Resource 3.** Sampai 16 Agustus 2026 bagian ini berisi cara membuat resource `vexahost-wa-engine` dan `vexahost-wa-worker`. Keduanya dihapus pada 17 Agustus 2026; engine, worker, dan penjadwal sekarang berjalan sebagai proses di dalam container yang sama, diatur [`start.sh`](../start.sh).
 
 Alasannya bukan beban proses — worker yang menganggur puluhan MB, engine tanpa sesi sekitar 80 MB. Alasannya biaya build: **setiap resource Coolify membangun ulang aplikasinya sendiri.** Tiga resource berarti tiga kali `composer install` + `npm ci` pada setiap deploy di VPS 2 vCPU yang juga menampung tujuh aplikasi Flustra lain. Pola yang sama sudah dipakai `flustra-erp` dan `flustra-clientportal`.
 
@@ -290,7 +286,7 @@ Baris ketiga membuktikan engine berhasil menghubungi Laravel **dan** tanda tanga
 Memastikan keempatnya benar-benar hidup:
 
 ```bash
-sudo docker exec -it <container-flustra-wa> ps -eo comm,rss --sort=-rss | head -20
+sudo docker exec -it <container-vexahost-wa> ps -eo comm,rss --sort=-rss | head -20
 ```
 
 Harus terlihat tiga `php` dan satu `node`.
@@ -327,14 +323,14 @@ Dev dan staging cukup `WA_MAX_SESSIONS=1`. Keduanya hanya perlu membuktikan satu
 
 ## Bagian 9 — Penyiapan pertama
 
-Buka terminal resource `flustra-wa` di Coolify.
+Buka terminal resource `vexahost-wa` di Coolify.
 
 ### 9.1 Akun, workspace, nomor, dan kunci
 
 Penyiapan dilakukan lewat dashboard, sama persis seperti pelanggan mana pun — tidak ada jalur CLI istimewa. Perintah `gateway:setup-tenant` dulu ada dan sudah dihapus: ia membuat workspace **tanpa anggota**, sehingga tidak bisa dibuka dari dashboard oleh siapa pun, dan sesi bertipe `platform` yang tidak pernah terpilih otomatis saat pemanggil API mengosongkan `session_id`. Dua sifat itu tidak terlihat di antarmuka mana pun dan menghabiskan berjam-jam penelusuran.
 
-1. Buka `https://wa.flustra.id`, daftar akun, isi nama workspace
-2. **Sesi WhatsApp** → Buat sesi → **Hubungkan** → scan QR dengan nomor resmi Flustra
+1. Buka `https://wa.vexahostcloud.my.id`, daftar akun, isi nama workspace
+2. **Sesi WhatsApp** → Buat sesi → **Hubungkan** → scan QR dengan nomor resmi VexaHost
 3. **API Keys** → buat satu kunci untuk tiap aplikasi konsumen (`flustra-erp produksi`, `flustra-web produksi`, dan seterusnya). Halaman itu langsung menampilkan cuplikan `.env` siap salin
 4. Untuk **flustra-auth**, buat kunci tersendiri dengan scope `otp` dicentang — scope ini tidak boleh diberikan ke kunci integrasi biasa. Tidak ada langkah lanjutan: OTP dikirim dari sesi terhubung milik workspace pemegang kunci, sama seperti pesan biasa
 
@@ -348,7 +344,7 @@ Masukkan tiap kunci ke `WA_GATEWAY_KEY` aplikasi yang bersangkutan, beserta:
 
 ```env
 WA_GATEWAY_ENABLED=true
-WA_GATEWAY_URL=https://wa.flustra.id
+WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
 WA_GATEWAY_KEY=<kunci aplikasi ini>
 WA_GATEWAY_SESSION=
 ```
@@ -366,7 +362,7 @@ Jangan anggap selesai sebelum kelimanya lulus.
 Kalau ini gagal, sisanya tidak perlu dijalankan.
 
 ```bash
-sudo docker exec -it <container-flustra-wa> ps -eo comm,rss --sort=-rss | head -20
+sudo docker exec -it <container-vexahost-wa> ps -eo comm,rss --sort=-rss | head -20
 ```
 
 Harus terlihat tiga `php` (serve, queue:work, schedule:work) dan satu `node`.
@@ -377,7 +373,7 @@ Ini uji terpenting.
 
 1. Pastikan satu sesi berstatus **Terhubung**
 2. Tunggu ±5 menit sampai log memuat `Backup sesi terkirim`
-3. Redeploy resource `flustra-wa`
+3. Redeploy resource `vexahost-wa`
 4. Sesi harus kembali **Terhubung sendiri, tanpa scan QR**
 
 > Uji ini lebih berarti daripada sebelumnya. Dulu redeploy engine tidak menyentuh Laravel; sekarang keduanya restart bersamaan, jadi yang dibuktikan sekaligus adalah penghentian rapi engine **dan** penantian boot-nya.
@@ -403,7 +399,7 @@ Uji 1 dan 2 membuktikan nomor tidak terputus sendiri. Uji 3 membuktikan nomor ti
 Ini yang menggantikan jaminan lama "Chromium crash tidak menyentuh aplikasi", satu-satunya hal yang benar-benar hilang saat ketiga resource disatukan.
 
 ```bash
-sudo docker exec -it <container-flustra-wa> pkill -f 'node engine/src/server.js'
+sudo docker exec -it <container-vexahost-wa> pkill -f 'node engine/src/server.js'
 ```
 
 Dashboard harus tetap terbuka. Dalam ±3 detik log memuat `[start.sh] engine berhenti, dijalankan ulang dalam 3 detik.`, lalu sesi kembali terhubung sendiri.
@@ -411,7 +407,7 @@ Dashboard harus tetap terbuka. Dalam ±3 detik log memuat `[start.sh] engine ber
 ### Uji 4 — pengiriman
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{"to":"08xxxxxxxxxx","message":"Uji dari produksi"}'
 ```
@@ -431,9 +427,9 @@ Ulangi Bagian 6–9 dengan perbedaan berikut — satu resource per tahap, jadi t
 | | Development | Staging |
 |---|---|---|
 | Branch | `dev` | `staging` |
-| Domain | `wa-dev.flustra.tech` | `wa-staging.flustra.tech` |
-| Nama resource | `flustra-wa-dev` | `flustra-wa-staging` |
-| Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` |
+| Domain | `wa-dev.vexahostcloud.my.id` | `wa-staging.vexahostcloud.my.id` |
+| Nama resource | `vexahost-wa-dev` | `vexahost-wa-staging` |
+| Database | `db_vexahost-wa-dev` | `db_vexahost-wa-staging` |
 | Volume | `wa-sessions-dev` → `/data`, `wa-storage-dev` → `/app/storage/app/private` | `…-staging` |
 | `WA_MAX_SESSIONS` | 1 | 1 |
 | Acuan env | Coolify resource `…-dev` | Coolify resource `…-staging` |

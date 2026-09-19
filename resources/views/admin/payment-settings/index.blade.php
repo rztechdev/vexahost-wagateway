@@ -90,7 +90,7 @@
                         </label>
                         <input id="merchant" name="merchant" type="text" maxlength="100"
                                value="{{ old('merchant', $qrisMerchant) }}"
-                               placeholder="Flustra WA Gateway"
+                               placeholder="VexaHost WA Gateway"
                                class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
                     </div>
                 </div>
@@ -672,7 +672,7 @@
 
                 <div>
                     <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-foreground">Atas Nama / Pemilik Akun</label>
-                    <input type="text" name="account_holder" required placeholder="Contoh: PT Flustra Solusi Digital" class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none">
+                    <input type="text" name="account_holder" required placeholder="Contoh: PT DESTINARA CHAKRAWALA ARTHA" class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground transition focus:border-primary focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">

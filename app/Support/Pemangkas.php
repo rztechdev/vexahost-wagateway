@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
  * Pemangkas retensi. Satu tempat untuk seluruh penghapusan berjadwal.
  *
  * Tiga aturan yang berlaku untuk SETIAP tabel di sini, dan ketiganya lahir dari
- * satu hal yang sama — MySQL ini dipakai bersama flustra-erp:
+ * satu hal yang sama — MySQL ini dipakai bersama aplikasi vexahost:
  *
  * 1. **Tidak ada DELETE tanpa batas.** Satu DELETE atas ratusan ribu baris
  *    menahan kunci dan menggelembungkan undo log untuk SELURUH aplikasi di

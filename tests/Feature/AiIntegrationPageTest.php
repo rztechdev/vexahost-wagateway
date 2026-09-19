@@ -52,8 +52,8 @@ class AiIntegrationPageTest extends TestCase
             ->assertSee('PHP / Laravel')
             ->assertSee('Node.js / TypeScript')
             ->assertSee('Python')
-            // 2. Hubungkan AI ke wa gateway flustra
-            ->assertSee('Hubungkan AI ke WA Gateway Flustra')
+            // 2. Hubungkan AI ke wa gateway vexahost
+            ->assertSee('Hubungkan AI ke WA Gateway VexaHost')
             ->assertSee('WA_GATEWAY_URL')
             ->assertSee('WA_GATEWAY_KEY')
             // 3. Tulis prompt pertama kamu
@@ -62,7 +62,7 @@ class AiIntegrationPageTest extends TestCase
             ->assertSee('Kirim Tagihan & Invoice PDF')
             // 4. CLI
             ->assertSee('CLI (Command Line Interface')
-            ->assertSee('curl -X POST https://wa.flustra.id/api/v1/messages/text');
+            ->assertSee('curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text');
     }
 
     public function test_landing_page_memuat_tombol_lihat_lengkap_dan_agent_baru(): void
@@ -93,7 +93,7 @@ class AiIntegrationPageTest extends TestCase
 
         $response->assertOk()
             ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
-            ->assertSee('Flustra WA Gateway - Panduan Integrasi AI Agent & Developer', false)
+            ->assertSee('VexaHost WA Gateway - Panduan Integrasi AI Agent & Developer', false)
             ->assertSee('POST /api/v1/messages/text')
             ->assertSee('Claude Code')
             ->assertSee('Hermes Agent');
@@ -109,7 +109,7 @@ class AiIntegrationPageTest extends TestCase
         $this->get('/ai/agent/hermes/unduh')
             ->assertOk()
             ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
-            ->assertSee('flustra-wa-gateway');
+            ->assertSee('vexahost-wa-gateway');
 
         $this->get('/ai/agent/openclaw/unduh')
             ->assertOk()

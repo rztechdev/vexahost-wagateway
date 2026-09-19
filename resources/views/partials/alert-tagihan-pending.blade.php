@@ -10,10 +10,10 @@
 
 @if ($tagihan && ! request()->routeIs('billing.*'))
     @php
-        $waAdminNomor = '6282318280376';
+        $waAdminNomor = \App\Support\KontakWhatsApp::nomor();
         $dikonfirmasi = $tagihan->isAwaitingVerification();
         $pesanWa = rawurlencode(
-            "Halo Admin Flustra, saya ingin konfirmasi transaksi tagihan *" . $tagihan->number . "* "
+            "Halo Admin VexaHost, saya ingin konfirmasi transaksi tagihan *" . $tagihan->number . "* "
             ."(Paket " . $tagihan->plan()->name() . ") sebesar *Rp "
             . number_format($tagihan->total, 0, ',', '.') . "*. "
             . ($dikonfirmasi ? "Transaksi saya masih pending / menunggu verifikasi. Mohon dibantu konfirmasinya." : "Status tagihan masih pending. Mohon dibantu.")

@@ -14,9 +14,12 @@ use App\Services\Notifications\EmailNotifier;
 use App\Services\Notifications\PeringatanSistem;
 use App\Services\Notifications\WhatsAppNotifier;
 use App\Services\Payment\MayarService;
+use App\Support\DaftarBank;
 use App\Support\KapasitasPlatform;
+use App\Support\KontakWhatsApp;
 use App\Support\PhoneNumber;
 use App\Support\Plan;
+use App\Support\WilayahIndonesia;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -273,8 +276,8 @@ class BillingController extends Controller
         $selectedProvince = old('billing_province', $workspace->billing_province);
         $selectedCity = old('billing_city', $workspace->billing_city);
 
-        $daftarKota = $selectedProvince ? \App\Support\WilayahIndonesia::kota($selectedProvince) : [];
-        $daftarKecamatan = ($selectedProvince && $selectedCity) ? \App\Support\WilayahIndonesia::kecamatan($selectedProvince, $selectedCity) : [];
+        $daftarKota = $selectedProvince ? WilayahIndonesia::kota($selectedProvince) : [];
+        $daftarKecamatan = ($selectedProvince && $selectedCity) ? WilayahIndonesia::kecamatan($selectedProvince, $selectedCity) : [];
 
         return view('dashboard.billing.invoice', [
             'invoice' => $invoice,
@@ -313,8 +316,8 @@ class BillingController extends Controller
                 'lengkap' => $workspace->isBillingComplete(),
             ],
 
-            'daftarBank' => \App\Support\DaftarBank::all(),
-            'daftarProvinsi' => \App\Support\WilayahIndonesia::provinsi(),
+            'daftarBank' => DaftarBank::all(),
+            'daftarProvinsi' => WilayahIndonesia::provinsi(),
             'daftarKota' => $daftarKota,
             'daftarKecamatan' => $daftarKecamatan,
             'mayarAvailable' => $this->mayar->isConfigured(),
@@ -432,6 +435,7 @@ class BillingController extends Controller
                     'errors' => ['billing_company' => ['Nama perusahaan / badan usaha wajib diisi.']],
                 ], 422);
             }
+
             return back()->withErrors(['billing_company' => 'Nama perusahaan / badan usaha wajib diisi.'])->withInput();
         }
 
@@ -448,6 +452,7 @@ class BillingController extends Controller
                     'errors' => ['billing_phone' => ['Nomor WhatsApp tidak valid. Masukkan format nomor yang benar.']],
                 ], 422);
             }
+
             return back()->withErrors(['billing_phone' => 'Nomor WhatsApp tidak valid. Masukkan format nomor yang benar.'])->withInput();
         }
 
@@ -646,7 +651,7 @@ class BillingController extends Controller
             'plan' => $invoice->plan(),
             'subscription' => $this->subscriptions->ensureFor($workspace),
             'sisaDetik' => $sisaDetik,
-            'adminWa' => '6282318280376',
+            'adminWa' => KontakWhatsApp::nomor(),
         ]);
     }
 

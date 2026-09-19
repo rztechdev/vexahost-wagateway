@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Log;
  *    harus lunas meski pesannya gagal terkirim. Semua kegagalan dicatat, tidak
  *    ada yang merambat ke pemanggil.
  *
- * 2. **Dikirim dari nomor Flustra, bukan nomor pelanggan.** Memakai sesi
+ * 2. **Dikirim dari nomor VexaHost, bukan nomor pelanggan.** Memakai sesi
  *    pelanggan berarti kuota mereka yang terpotong dan laporan spam-nya jatuh
  *    ke nomor mereka.
  *
@@ -141,7 +141,7 @@ class WhatsAppNotifier
 
         try {
             $this->dispatcher->queue($this->senderSession(), $nomor, [
-                'body' => '*Tes pemberitahuan Flustra WA*
+                'body' => '*Tes pemberitahuan VexaHost WA*
 
 '
                     .'Kalau pesan ini sampai, jalur pemberitahuan sudah benar: tagihan, pengingat masa '
@@ -210,7 +210,7 @@ class WhatsAppNotifier
     }
 
     /**
-     * Sesi milik Flustra yang dipakai mengirim.
+     * Sesi milik VexaHost yang dipakai mengirim.
      *
      * Dikonfigurasi lewat env dan bukan dipilih otomatis dari sesi mana pun
      * yang kebetulan tersambung: memilih sendiri berarti suatu hari

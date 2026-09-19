@@ -35,4 +35,22 @@ return [
         'mode' => env('MAYAR_MODE', 'production'),
     ],
 
+    /*
+    | Akun tertaut dengan aplikasi vexahost — satu akun, dua aplikasi, HANYA
+    | autentikasi (email, kata sandi, status verifikasi). Tidak ada data lain
+    | yang dibagi. Protokolnya di docs/AKUN_TERTAUT.md dan harus sama persis
+    | dengan salinannya di repo vexahost.
+    |
+    | `url` alamat dasar aplikasi vexahost di tahap yang sama; `secret` rahasia
+    | HMAC yang identik di kedua aplikasi dan berbeda tiap tahap. Salah satunya
+    | kosong = penautan mati di kedua arah: yang keluar tidak dikirim, yang
+    | masuk ditolak 503. Mati total lebih aman daripada endpoint yang bisa
+    | mengganti kata sandi siapa pun tanpa tanda tangan.
+    */
+    'linked_accounts' => [
+        'url' => rtrim((string) env('LINKED_ACCOUNTS_URL', ''), '/'),
+        'secret' => env('LINKED_ACCOUNTS_SECRET'),
+        'timeout' => (int) env('LINKED_ACCOUNTS_TIMEOUT', 10),
+    ],
+
 ];

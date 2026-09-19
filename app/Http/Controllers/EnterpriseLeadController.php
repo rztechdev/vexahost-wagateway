@@ -107,7 +107,7 @@ class EnterpriseLeadController extends Controller
          | Permintaan penawaran adalah calon pelanggan terbesar yang pernah
          | mengetuk, dan yang menentukan ia jadi atau tidak hampir selalu
          | seberapa cepat dijawab. WhatsApp saja berarti satu titik yang kalau
-         | mati — nomor Flustra terputus, dan itu memang terjadi saat deploy
+         | mati — nomor VexaHost terputus, dan itu memang terjadi saat deploy
          | atau saat WhatsApp memutus perangkat tertaut — membuat seluruh kabar
          | diam tanpa satu pun gejala.
          |

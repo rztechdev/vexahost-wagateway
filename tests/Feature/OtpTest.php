@@ -14,7 +14,7 @@ use Tests\TestCase;
  * pusat.
  *
  * Dulu seluruh OTP keluar lewat sesi yang ditunjuk OTP_SESSION_ID dengan teks
- * yang menyebut "Flustra". Endpoint-nya terbuka untuk API key mana pun yang
+ * yang menyebut "VexaHost". Endpoint-nya terbuka untuk API key mana pun yang
  * punya scope `otp`, jadi pelanggan yang memakainya mengirim kode dari nomor
  * kami, atas nama kami, dan memotong kuota kami — sementara penerimanya melihat
  * merek yang sama sekali bukan merek yang mereka daftarkan.
@@ -79,7 +79,7 @@ class OtpTest extends TestCase
         $body = Message::first()->body;
 
         $this->assertStringContainsString('Toko Mawar', $body);
-        $this->assertStringNotContainsString('Flustra', $body);
+        $this->assertStringNotContainsString('VexaHost', $body);
     }
 
     /**

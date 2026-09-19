@@ -140,7 +140,7 @@ class SystemController extends Controller
     {
         return [
             // HTTPS dan cookie secure SENGAJA mati di lokal — dev berjalan di
-            // http://127.0.0.1:8070. Menandainya merah tiap hari di mesin
+            // http://127.0.0.1:8051. Menandainya merah tiap hari di mesin
             // pengembang melatih orang mengabaikan warna merah di halaman ini,
             // dan halaman ini cuma berguna selama merahnya masih berarti.
             'wajib_aman' => ! app()->environment(['local', 'testing']),

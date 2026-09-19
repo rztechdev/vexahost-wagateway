@@ -15,7 +15,7 @@ use RuntimeException;
  *
  * Dikirim dari nomor workspace pemanggil, dan menyebut nama workspace itu.
  * Sebelumnya seluruh OTP keluar dari satu sesi global (OTP_SESSION_ID) dengan
- * teks yang menyebut "Flustra" — artinya pelanggan yang memakai endpoint ini
+ * teks yang menyebut merek kami sendiri — artinya pelanggan yang memakai endpoint ini
  * mengirim kode dari nomor kami, atas nama kami, dan memakannya dari kuota
  * kami. Pelanggan yang menerimanya pun melihat merek yang bukan merek yang
  * mereka daftarkan, dan laporan spam atas kiriman itu jatuh ke nomor kami.

@@ -59,7 +59,7 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <a href="https://wa.me/6282318280376?text={{ rawurlencode('Halo Admin Flustra, tagihan ' . $tagihanTerbuka->number . ' sebesar Rp ' . number_format($tagihanTerbuka->total, 0, ',', '.') . ' sedang menunggu verifikasi. Mohon dibantu cek mutasi.') }}"
+                    <a href="https://wa.me/{{ \App\Support\KontakWhatsApp::nomor() }}?text={{ rawurlencode('Halo Admin VexaHost, tagihan ' . $tagihanTerbuka->number . ' sebesar Rp ' . number_format($tagihanTerbuka->total, 0, ',', '.') . ' sedang menunggu verifikasi. Mohon dibantu cek mutasi.') }}"
                        target="_blank"
                        class="shrink-0 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 transition hover:bg-emerald-500/20">
                         Chat Admin WhatsApp

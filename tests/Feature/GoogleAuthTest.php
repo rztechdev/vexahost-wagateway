@@ -19,7 +19,7 @@ class GoogleAuthTest extends TestCase
         config([
             'services.google.client_id' => 'test-client-id.apps.googleusercontent.com',
             'services.google.client_secret' => 'test-client-secret',
-            'services.google.redirect' => 'http://localhost:8070/auth/google/callback',
+            'services.google.redirect' => 'http://localhost:8051/auth/google/callback',
         ]);
     }
 
@@ -61,26 +61,26 @@ class GoogleAuthTest extends TestCase
     {
         $this->setupGoogleConfig();
 
-        $socialiteUser = $this->makeSocialiteUser('calon.member@flustra.id', '9988776655', 'Calon Member');
+        $socialiteUser = $this->makeSocialiteUser('calon.member@vexahostcloud.my.id', '9988776655', 'Calon Member');
         Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
 
         $response = $this->get(route('auth.google.callback'));
 
         $response->assertRedirect(route('register'));
-        $response->assertSessionHas('google_email', 'calon.member@flustra.id');
+        $response->assertSessionHas('google_email', 'calon.member@vexahostcloud.my.id');
         $response->assertSessionHas('google_name', 'Calon Member');
         $response->assertSessionHas('google_id', '9988776655');
         $response->assertSessionHas('info');
 
         $this->assertGuest();
-        $this->assertDatabaseMissing('users', ['email' => 'calon.member@flustra.id']);
+        $this->assertDatabaseMissing('users', ['email' => 'calon.member@vexahostcloud.my.id']);
     }
 
     public function test_pendaftaran_dengan_data_google_tersimpan_dan_email_terverifikasi(): void
     {
         $response = $this->post(route('register'), [
             'name' => 'Calon Member',
-            'email' => 'calon.member@flustra.id',
+            'email' => 'calon.member@vexahostcloud.my.id',
             'workspace' => 'Kopi Senja Store',
             'password' => 'Rahasia1234#',
             'password_confirmation' => 'Rahasia1234#',
@@ -91,7 +91,7 @@ class GoogleAuthTest extends TestCase
 
         $response->assertRedirect(route('sessions.index'));
 
-        $user = User::where('email', 'calon.member@flustra.id')->first();
+        $user = User::where('email', 'calon.member@vexahostcloud.my.id')->first();
         $this->assertNotNull($user);
         $this->assertSame('9988776655', $user->google_id);
         $this->assertSame('https://lh3.googleusercontent.com/a/default-user', $user->avatar);
@@ -108,8 +108,8 @@ class GoogleAuthTest extends TestCase
         $this->setupGoogleConfig();
 
         $existingUser = User::create([
-            'name' => 'Member Flustra',
-            'email' => 'member.lama@flustra.id',
+            'name' => 'Member VexaHost',
+            'email' => 'member.lama@vexahostcloud.my.id',
             'password' => Hash::make('PasswordLama123#'),
         ]);
 
@@ -121,7 +121,7 @@ class GoogleAuthTest extends TestCase
         ]);
         $workspace->members()->attach($existingUser->id, ['role' => 'owner']);
 
-        $socialiteUser = $this->makeSocialiteUser('member.lama@flustra.id', '4455667788', 'Member Flustra');
+        $socialiteUser = $this->makeSocialiteUser('member.lama@vexahostcloud.my.id', '4455667788', 'Member VexaHost');
         Socialite::shouldReceive('driver->user')->andReturn($socialiteUser);
 
         $response = $this->get(route('auth.google.callback'));

@@ -233,7 +233,7 @@ class ReferralController extends Controller
                 .'Nominal Ditransfer (Net): Rp '.number_format($payout->net_amount, 0, ',', '.')."\n"
                 ."Rekening Tujuan: {$payout->bank_name} - {$payout->bank_account_number} a.n {$payout->bank_account_name}\n"
                 .($payout->admin_notes ? "Catatan Finance: {$payout->admin_notes}\n\n" : "\n")
-                ."Terlampir dokumen invoice PDF resmi berstatus DITRANSFER / LUNAS sebagai bukti sah pelunasan. Terima kasih atas kerja sama Anda bersama Flustra!\n\n"
+                ."Terlampir dokumen invoice PDF resmi berstatus DITRANSFER / LUNAS sebagai bukti sah pelunasan. Terima kasih atas kerja sama Anda bersama VexaHost!\n\n"
                 .'Lihat invoice online: '.route('mitra.payout.invoice', $payout->id);
             $this->notifier->toPhone($targetWaUser, $pesanWaUser, media: $pdfMedia);
         }

@@ -3,10 +3,13 @@
 namespace App\Providers;
 
 use App\Models\ApiKey;
+use App\Models\User;
+use App\Observers\LinkedAccountObserver;
 use App\Services\Providers\ProviderManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,10 +22,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         $this->configureRateLimiting();
+
+        // Setiap perubahan identitas masuk ikut dikirim ke aplikasi vexahost,
+        // dari jalur mana pun perubahannya datang. Lihat docs/AKUN_TERTAUT.md.
+        User::observe(LinkedAccountObserver::class);
     }
 
     /**

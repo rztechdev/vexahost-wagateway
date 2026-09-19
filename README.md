@@ -1,12 +1,12 @@
-# Flustra WA Gateway
+# VexaHost WA Gateway
 
-Gateway WhatsApp terpusat untuk seluruh ekosistem Flustra — multi-nomor, multi-tenant, REST API, webhook, dan riwayat pesan. Dirancang agar bisa dijual sebagai SaaS.
+Gateway WhatsApp terpusat untuk ekosistem VexaHost — multi-nomor, multi-tenant, REST API, webhook, dan riwayat pesan. Dirancang agar bisa dijual sebagai SaaS.
 
 **Satu kalimat:** aplikasi Anda memanggil satu endpoint HTTP, dan pesan WhatsApp terkirim dari nomor yang sudah Anda tautkan.
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
-  -H "X-Api-Key: fwa_a1b2c3d4.…" \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
+  -H "X-Api-Key: vwa_a1b2c3d4.…" \
   -H "Content-Type: application/json" \
   -d '{"to":"081234567890","message":"Invoice INV-001 sudah lunas."}'
 ```
@@ -73,11 +73,11 @@ Jalankan semuanya sekaligus:
 npm run all
 ```
 
-- Laravel — http://localhost:8070
+- Laravel — http://localhost:8051
 - Engine — http://127.0.0.1:3100
 - Vite dan queue worker ikut berjalan
 
-Daftar akun lewat http://localhost:8070/register, lalu buat sesi dan scan QR-nya.
+Daftar akun lewat http://localhost:8051/register, lalu buat sesi dan scan QR-nya.
 
 Detail lengkap ada di [docs/PANDUAN_DEVELOPER.md](docs/PANDUAN_DEVELOPER.md).
 
@@ -89,4 +89,4 @@ php artisan test
 
 ## Lisensi
 
-Proprietary — milik Flustra Tech. Bukan produk resmi WhatsApp atau Meta.
+Proprietary — milik PT DESTINARA CHAKRAWALA ARTHA (VexaHost). Bukan produk resmi WhatsApp atau Meta.

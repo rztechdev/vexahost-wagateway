@@ -47,7 +47,7 @@ return [
 
     'qris' => [
         'payload' => env('QRIS_PAYLOAD'),
-        'merchant' => env('QRIS_MERCHANT_NAME', 'Flustra'),
+        'merchant' => env('QRIS_MERCHANT_NAME', 'VexaHost'),
     ],
 
     /*
@@ -131,7 +131,7 @@ return [
     | Pengingat lewat WhatsApp
     |--------------------------------------------------------------------------
     |
-    | Diisi id workspace milik Flustra sendiri yang nomornya sudah tertaut.
+    | Diisi id workspace milik VexaHost sendiri yang nomornya sudah tertaut.
     | Kosong = pengingat cukup lewat spanduk di dashboard. Kegagalan mengirim
     | pengingat tidak pernah boleh menjatuhkan siklus penagihan; ia pelengkap.
     |
@@ -145,7 +145,7 @@ return [
     | karena selama pembayaran dicocokkan manual, tagihan hanya menjadi lunas
     | kalau ada orang yang membukanya di panel.
     */
-    'admin_phone' => env('BILLING_ADMIN_PHONE', '085774410978'),
+    'admin_phone' => env('BILLING_ADMIN_PHONE', '085808749131'),
 
     /*
     | Biaya administrasi & penanganan pencairan komisi reseller (persen).
@@ -157,7 +157,7 @@ return [
     | Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa
     | kata sandi, karena pemulihan mandiri sengaja belum dibuat.
     */
-    'support_email' => env('BILLING_SUPPORT_EMAIL', 'flustrafinances@gmail.com'),
+    'support_email' => env('BILLING_SUPPORT_EMAIL', 'vexahostcloudtech@gmail.com'),
 
     /*
     |--------------------------------------------------------------------------
@@ -223,7 +223,10 @@ return [
          | nomor, yang membuka WhatsApp ke layar galat. Formulirnya tetap ada,
          | jadi halaman ini tidak pernah kehilangan satu-satunya cara menghubungi.
         */
-        'whatsapp' => env('ENTERPRISE_WHATSAPP'),
+        // Nomor ini juga yang dipakai setiap tautan "Hubungi admin" yang dilihat
+        // pelanggan (tagihan, verifikasi pembayaran, footer) lewat
+        // App\Support\KontakWhatsApp — satu nomor publik, satu tempat.
+        'whatsapp' => env('ENTERPRISE_WHATSAPP', '6285808749131'),
 
         // Sudah termasuk: 1 nomor, 50.000 pesan/bln, retensi 12 bulan,
         // API 300/menit, API key dan anggota tanpa batas.

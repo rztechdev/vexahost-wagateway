@@ -19,7 +19,7 @@ use Illuminate\Console\Command;
  */
 class PangkasCommand extends Command
 {
-    protected $signature = 'flustra:pangkas
+    protected $signature = 'vexahost:pangkas
         {--dry-run : Hanya melaporkan berapa baris yang akan terhapus, tidak menghapus apa pun}
         {--tabel= : Batasi ke satu tabel saja}';
 

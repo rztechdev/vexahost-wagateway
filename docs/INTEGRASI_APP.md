@@ -25,8 +25,8 @@ Karena itu, bila perusahaan belum menautkan nomornya sendiri, sistem **tidak** d
 2. Tambahkan ke `.env` aplikasi:
 
    ```env
-   WA_GATEWAY_URL=https://wa.flustra.id
-   WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxxxxxx
+   WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+   WA_GATEWAY_KEY=vwa_xxxxxxxx.xxxxxxxxxxxxxxxx
    WA_GATEWAY_SESSION=
    WA_CS_GATEWAY_KEY=
    WA_CS_GATEWAY_SESSION=

@@ -3,9 +3,9 @@
 
 @section('content')
     @php
-        $waAdminNomor = $adminWa ?? '6282318280376';
+        $waAdminNomor = $adminWa ?? \App\Support\KontakWhatsApp::nomor();
         $waPesan = rawurlencode(
-            "Halo Admin Flustra, saya sudah melakukan pembayaran untuk tagihan *{$invoice->number}* "
+            "Halo Admin VexaHost, saya sudah melakukan pembayaran untuk tagihan *{$invoice->number}* "
             ."(Paket {$plan->name()} · {$invoice->periodLabel()}) sebesar *Rp "
             .number_format($invoice->total, 0, ',', '.')
             ."*. Mohon bantuannya untuk verifikasi. Terima kasih."

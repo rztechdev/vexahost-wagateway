@@ -12,7 +12,7 @@
                     ['Mitra', route('mitra.landing')],
                     ['Dokumentasi', route('docs.index')],
                 ],
-                'Produk Flustra lain' => collect(config('flustra.produk'))
+                'Produk VexaHost lain' => collect(config('vexahost.produk'))
                     ->map(fn ($alamat, $nama) => [$nama, $alamat])
                     ->values()
                     ->all(),
@@ -58,8 +58,8 @@
         :class="scrolled ? 'border-border/70 bg-background/80 backdrop-blur-md shadow-2xs' : 'border-transparent bg-transparent'">
     <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-3.5">
         <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 font-semibold text-foreground transition-opacity hover:opacity-90">
-            <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-7 w-auto object-contain">
-            <span class="text-sm sm:text-base font-semibold tracking-tight">Flustra WA Gateway</span>
+            <img src="{{ asset('images/vexahost-wa.png') }}" alt="Logo" class="h-7 w-auto object-contain">
+            <span class="text-sm sm:text-base font-semibold tracking-tight">VexaHost WA Gateway</span>
         </a>
 
         <nav class="ml-auto flex items-center gap-1 text-sm">
@@ -125,6 +125,11 @@
                     <span>AI Agent</span>
                     <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
+                <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener noreferrer" class="group relative flex items-center gap-1 px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                    <span>VPS</span>
+                    <svg class="h-3.5 w-3.5 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                </a>
             </div>
 
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'"
@@ -174,8 +179,8 @@
 
     <div class="flex items-center justify-between border-b border-border px-5 py-4">
         <a href="{{ route('welcome') }}" class="flex items-center gap-2 font-semibold text-foreground">
-            <img src="{{ asset('images/flustra-wa.png') }}" alt="Logo" class="h-6 w-auto object-contain">
-            <span class="text-sm">Flustra WA Gateway</span>
+            <img src="{{ asset('images/vexahost-wa.png') }}" alt="Logo" class="h-6 w-auto object-contain">
+            <span class="text-sm">VexaHost WA Gateway</span>
         </a>
         <button @click="mobileMenu = false" class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted" aria-label="Tutup Menu">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -196,7 +201,11 @@
             @endforeach
         @endforeach
 
-        <div class="border-t border-border pt-3">
+        <div class="border-t border-border pt-3 space-y-1">
+            <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-between py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+                <span>Layanan Cloud VPS</span>
+                <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+            </a>
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" class="flex w-full items-center justify-between py-1.5 text-sm font-medium text-foreground">
                 <span>Tema Tampilan</span>
                 <svg class="hidden h-4 w-4 dark:block text-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>

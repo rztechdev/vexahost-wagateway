@@ -8,9 +8,9 @@ Aturan kerja di repo ini: alur git, standar kode, dan daftar periksa sebelum men
 
 | Branch | Tahap | Domain | Deploy |
 |---|---|---|---|
-| `dev` | Development | `wa-dev.flustra.tech` | Otomatis setiap push |
-| `staging` | Staging | `wa-staging.flustra.tech` | Otomatis setiap push |
-| `main` | Production | `wa.flustra.id` | Otomatis setiap push |
+| `dev` | Development | `wa-dev.vexahostcloud.my.id` | Otomatis setiap push |
+| `staging` | Staging | `wa-staging.vexahostcloud.my.id` | Otomatis setiap push |
+| `main` | Production | `wa.vexahostcloud.my.id` | Otomatis setiap push |
 
 Arahnya selalu satu: `dev` → `staging` → `main`. Jangan pernah mendorong langsung ke `main`.
 
@@ -174,11 +174,11 @@ Env baru harus ditambahkan ke **empat** file template sekaligus, dengan nilai ya
 | File | Nilai |
 |---|---|
 | `.env` lokal | Nilai lokal |
-| Coolify `flustra-wa-dev` | Boleh longgar |
-| Coolify `flustra-wa-staging` | Sama dengan production |
-| Coolify `flustra-wa` | Nilai konservatif |
+| Coolify `vexahost-wa-dev` | Boleh longgar |
+| Coolify `vexahost-wa-staging` | Sama dengan production |
+| Coolify `vexahost-wa` | Nilai konservatif |
 
-Lalu perbarui `ENV/flustra-wa.md` di repo utama, dan `docs/ENVIRONMENT.md` bila nilainya berbeda antar tahap.
+Lalu perbarui berkas `.env.<tahap>` di root repo ini, dan `docs/ENVIRONMENT.md` bila nilainya berbeda antar tahap.
 
 Env yang hanya ditambahkan di satu file akan terlewat saat deploy ke tahap lain, dan gejalanya muncul jauh dari penyebabnya.
 

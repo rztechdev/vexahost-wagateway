@@ -7,7 +7,7 @@
         "dev": "vite",
         "all": "composer dev",
         "engine": "npm --prefix engine run dev",
-        "ngrok": "ngrok http 8070"
+        "ngrok": "ngrok http 8051"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

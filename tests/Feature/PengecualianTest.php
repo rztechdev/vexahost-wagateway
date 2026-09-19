@@ -210,14 +210,14 @@ class PengecualianTest extends TestCase
     {
         config(['billing.notify_workspace_id' => null]);
 
-        $flustra = Workspace::create(['name' => 'Flustra Notifikasi', 'slug' => 'flustra-notif']);
-        $this->sesi($flustra, '6282318280376', 'Notifikasi');
+        $vexahost = Workspace::create(['name' => 'VexaHost Notifikasi', 'slug' => 'vexahost-notif']);
+        $this->sesi($vexahost, '6282318280376', 'Notifikasi');
 
         $notifier = app(WhatsAppNotifier::class);
 
         $this->assertFalse($notifier->ready(), 'Belum dipilih tapi sudah mengaku siap.');
 
-        AppSetting::simpan('notify_workspace_id', $flustra->id);
+        AppSetting::simpan('notify_workspace_id', $vexahost->id);
 
         $this->assertTrue(app(WhatsAppNotifier::class)->ready());
     }
@@ -228,7 +228,7 @@ class PengecualianTest extends TestCase
     {
         $admin = User::create([
             'name' => 'Admin',
-            'email' => 'admin@flustra.id',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -285,9 +285,9 @@ class PengecualianTest extends TestCase
         $this->assertStringContainsString('belum dipilih', $hasil['pesan']);
 
         // 2. Pengirim ada, sesinya ada, tapi belum tersambung.
-        $flustra = Workspace::create(['name' => 'Flustra Notifikasi', 'slug' => 'flustra-notif']);
-        $sesi = $flustra->sessions()->create(['name' => 'Notifikasi', 'status' => 'pending', 'driver' => 'wwebjs']);
-        AppSetting::simpan('notify_workspace_id', $flustra->id);
+        $vexahost = Workspace::create(['name' => 'VexaHost Notifikasi', 'slug' => 'vexahost-notif']);
+        $sesi = $vexahost->sessions()->create(['name' => 'Notifikasi', 'status' => 'pending', 'driver' => 'wwebjs']);
+        AppSetting::simpan('notify_workspace_id', $vexahost->id);
 
         $hasil = app(WhatsAppNotifier::class)->kirimTes('085774410978');
         $this->assertFalse($hasil['berhasil']);
@@ -302,7 +302,7 @@ class PengecualianTest extends TestCase
 
         // Nomornya dinormalkan sebelum dikirim: 085xxx tidak dikenali WhatsApp.
         $this->assertDatabaseHas('messages', [
-            'workspace_id' => $flustra->id,
+            'workspace_id' => $vexahost->id,
             'to_number' => '6285774410978',
             'direction' => 'outbound',
         ]);

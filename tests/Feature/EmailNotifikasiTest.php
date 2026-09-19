@@ -46,7 +46,7 @@ class EmailNotifikasiTest extends TestCase
         config([
             'mail.default' => 'smtp',
             'mail.mailers.smtp.host' => 'smtp-relay.brevo.com',
-            'mail.from.address' => 'flustrafinances@gmail.com',
+            'mail.from.address' => 'vexahostcloudtech@gmail.com',
         ]);
 
         $pemilik = User::create([
@@ -190,8 +190,8 @@ class EmailNotifikasiTest extends TestCase
     public function test_tombol_kirim_email_tes_berhasil(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -241,8 +241,8 @@ class EmailNotifikasiTest extends TestCase
     public function test_halaman_sistem_menyebut_keadaan_email(): void
     {
         $admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);

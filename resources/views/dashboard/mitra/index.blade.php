@@ -26,7 +26,7 @@
                             <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
                         </div>
                         <h2 class="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                            Pendaftaran Program Mitra Flustra
+                            Pendaftaran Program Mitra VexaHost
                         </h2>
                         <p class="mx-auto mt-2 max-w-lg text-xs sm:text-sm text-muted-foreground leading-relaxed">
                             Lengkapi data rekening bank atau e-wallet Anda untuk penerimaan komisi reseller. Setelah permohonan disetujui oleh admin, kode referal unik 5 digit Anda akan aktif permanen.
@@ -119,7 +119,7 @@
                                 <label class="flex items-start gap-2.5 cursor-pointer text-xs sm:text-sm text-foreground">
                                     <input type="checkbox" name="terms" value="1" required class="mt-0.5 rounded border-input text-primary focus:ring-primary/20">
                                     <span>
-                                        Saya telah membaca dan menyetujui <button type="button" @click="modalTerms = true" class="font-semibold text-primary underline hover:text-primary/80">Syarat &amp; Ketentuan Program Kemitraan Flustra</button>.
+                                        Saya telah membaca dan menyetujui <button type="button" @click="modalTerms = true" class="font-semibold text-primary underline hover:text-primary/80">Syarat &amp; Ketentuan Program Kemitraan VexaHost</button>.
                                     </span>
                                 </label>
                                 @error('terms')
@@ -151,7 +151,7 @@
                             Permohonan Sedang Ditinjau Admin
                         </h2>
                         <p class="mx-auto mt-2 max-w-md text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                            Terima kasih! Permohonan pendaftaran kemitraan Anda telah masuk antrean verifikasi admin Flustra. Kami akan memvalidasi data dalam waktu 1x24 jam kerja.
+                            Terima kasih! Permohonan pendaftaran kemitraan Anda telah masuk antrean verifikasi admin VexaHost. Kami akan memvalidasi data dalam waktu 1x24 jam kerja.
                         </p>
                     </div>
 
@@ -197,7 +197,7 @@
                         </div>
 
                         <p class="text-xs text-muted-foreground text-center pt-2">
-                            Jika ingin mengganti nomor rekening sebelum di-ACC, silakan hubungi tim kami via WhatsApp resmi Flustra.
+                            Jika ingin mengganti nomor rekening sebelum di-ACC, silakan hubungi tim kami via WhatsApp resmi VexaHost.
                         </p>
                     </div>
                 </div>
@@ -247,7 +247,7 @@
 
                         {{-- Bagikan via WhatsApp --}}
                         @php
-                            $pesanWa = urlencode("Halo! Dapatkan diskon {$referralCode->discount_percent}% langganan WhatsApp Gateway di Flustra menggunakan kode promo referal saya: {$referralCode->code}. Daftar di sini: {$tautanReferal}");
+                            $pesanWa = urlencode("Halo! Dapatkan diskon {$referralCode->discount_percent}% langganan WhatsApp Gateway di VexaHost menggunakan kode promo referal saya: {$referralCode->code}. Daftar di sini: {$tautanReferal}");
                         @endphp
                         <a href="https://api.whatsapp.com/send?text={{ $pesanWa }}"
                            target="_blank" rel="noopener noreferrer"
@@ -381,7 +381,7 @@
                         <div class="rounded-xl border border-border bg-card p-3">
                             <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs mb-2">3</span>
                             <p class="font-semibold text-foreground">Notifikasi ke Admin</p>
-                            <p class="mt-1 text-muted-foreground leading-relaxed">Sistem otomatis mengirim pemberitahuan instan via WhatsApp dan Gmail ke Admin Flustra.</p>
+                            <p class="mt-1 text-muted-foreground leading-relaxed">Sistem otomatis mengirim pemberitahuan instan via WhatsApp dan Gmail ke Admin VexaHost.</p>
                         </div>
                         <div class="rounded-xl border border-border bg-card p-3">
                             <span class="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs mb-2">4</span>
@@ -597,7 +597,7 @@
                     <div class="border-b border-border p-5 flex items-center justify-between">
                         <h3 class="text-base font-bold text-foreground flex items-center gap-2" id="modal-terms-title">
                             <i class="bi bi-shield-check text-primary"></i>
-                            <span>Syarat &amp; Ketentuan Program Mitra Flustra</span>
+                            <span>Syarat &amp; Ketentuan Program Mitra VexaHost</span>
                         </h3>
                         <button type="button" @click="modalTerms = false" class="text-muted-foreground hover:text-foreground">
                             <i class="bi bi-x-lg"></i>

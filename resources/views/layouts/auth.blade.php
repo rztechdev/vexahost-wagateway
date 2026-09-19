@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Flustra WA Gateway')</title>
+    <title>@yield('title', 'VexaHost WA Gateway')</title>
 
     <!-- Meta Tags & Favicon -->
-    <meta name="description" content="Masuk atau daftar ke Flustra WA Gateway - Layanan Notifikasi & Gateway WhatsApp API Terbaik.">
+    <meta name="description" content="Masuk atau daftar ke VexaHost WA Gateway - Layanan Notifikasi & Gateway WhatsApp API Terbaik.">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#2e7d32">
     
-    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
@@ -50,7 +47,7 @@
         {{-- ===================== SISI KIRI: HERO / BRAND PANEL ===================== --}}
         <div class="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 overflow-hidden bg-[#123524] text-white select-none">
             {{-- Visual 3D Hero Render (Tajam, Minimalis, Warna Asli #123524, Tanpa Blur) --}}
-            <img src="{{ asset('images/auth-hero.jpg') }}" alt="Flustra WA Enterprise Gateway" class="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none">
+            <img src="{{ asset('images/auth-hero.jpg') }}" alt="VexaHost WA Enterprise Gateway" class="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none">
             
             {{-- Subtle Vignette agar kontras teks tetap optimal tanpa merusak warna asli #123524 --}}
             <div class="absolute inset-0 bg-gradient-to-t from-[#123524]/90 via-[#123524]/30 to-[#123524]/60 pointer-events-none"></div>
@@ -58,9 +55,9 @@
             {{-- Header Kiri: Brand Identity --}}
             <div class="relative z-10">
                 <a href="{{ route('welcome') }}" class="group inline-flex items-center gap-3 transition">
-                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-9 w-auto object-contain transition group-hover:scale-105">
+                    <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost WA" class="h-9 w-auto object-contain transition group-hover:scale-105">
                     <div class="flex flex-col">
-                        <span class="text-xl font-bold tracking-tight text-white">Flustra WA</span>
+                        <span class="text-xl font-bold tracking-tight text-white">VexaHost WA</span>
                         <span class="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">Gateway API Platform</span>
                     </div>
                 </a>
@@ -93,9 +90,9 @@
                 </div>
             </div>
 
-            {{-- Footer Kiri: Copyright Resmi PT --}}
+            {{-- Footer Kiri: Copyright Resmi --}}
             <div class="relative z-10 text-xs text-slate-300/80 font-normal flex flex-wrap items-center justify-between gap-2">
-                <span>&copy; {{ date('Y') }} PT FLUSTRA FINANCES ARTHA. Hak cipta dilindungi undang-undang.</span>
+                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
                 <span class="text-slate-400 text-[11px]">Gateway Notifikasi Resmi</span>
             </div>
         </div>
@@ -106,8 +103,8 @@
             {{-- Topbar Khusus Layar Mobile (Logo Brand) --}}
             <div class="lg:hidden flex items-center justify-between gap-4 w-full mb-6">
                 <a href="{{ route('welcome') }}" class="flex items-center gap-2">
-                    <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA" class="h-8 w-auto object-contain">
-                    <span class="text-base font-bold text-foreground">Flustra WA</span>
+                    <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost WA" class="h-8 w-auto object-contain">
+                    <span class="text-base font-bold text-foreground">VexaHost WA</span>
                 </a>
             </div>
 
@@ -122,6 +119,11 @@
                         <i class="bi bi-arrow-left text-base"></i>
                         <span>Kembali ke Website</span>
                     </a>
+                </div>
+
+                {{-- Copyright untuk Layar Mobile --}}
+                <div class="lg:hidden mt-6 text-center text-xs text-muted-foreground">
+                    <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
                 </div>
             </div>
         </div>

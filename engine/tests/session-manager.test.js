@@ -19,7 +19,7 @@ function socketTiruan(overrides = {}) {
     const ev = new EventEmitter();
     const sock = {
         ev,
-        user: { id: '628123456789:1@s.whatsapp.net', name: 'Uji Flustra' },
+        user: { id: '628123456789:1@s.whatsapp.net', name: 'Uji VexaHost' },
         ditutup: false,
         end: () => {
             sock.ditutup = true;
@@ -96,7 +96,7 @@ test('connection open mengubah status menjadi connected dan mengisi data nomor',
     const st = manager.status('sesi-open');
     assert.equal(st.status, 'connected');
     assert.equal(st.phone_number, '628123456789');
-    assert.equal(st.push_name, 'Uji Flustra');
+    assert.equal(st.push_name, 'Uji VexaHost');
 
     await tunggu(350);
     assert.deepEqual(manager.listSessionIds(), ['sesi-open']);

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * percakapan tidak bisa dipercaya.
  *
  * Nama admin sengaja tidak pernah ditampilkan ke pelanggan — yang menjawab
- * adalah Flustra, bukan orang tertentu.
+ * adalah VexaHost, bukan orang tertentu.
  */
 class TicketMessage extends Model
 {

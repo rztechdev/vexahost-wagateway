@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Daftar Akun - Flustra WA Gateway')
+@section('title', 'Daftar Akun - VexaHost WA Gateway')
 @section('container_width', 'max-w-[420px]')
 
 @section('content')
@@ -11,7 +11,7 @@
             Daftar Akun Baru
         </h2>
         <p class="mt-1.5 text-xs sm:text-sm text-muted-foreground">
-            Mulai kelola pesan dan otomatisasi WhatsApp Anda bersama Flustra
+            Mulai kelola pesan dan otomatisasi WhatsApp Anda bersama VexaHost
         </p>
     </div>
 
@@ -197,7 +197,7 @@
                 <input type="checkbox" name="terms" id="terms" value="1" required @checked(old('terms'))
                        class="mt-0.5 rounded border-input text-primary focus:ring-primary h-4 w-4 shrink-0">
                 <span>
-                    Saya menyetujui <a href="https://flustra.jagoankode.my.id/syarat-dan-ketentuan" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary hover:underline">Syarat &amp; Ketentuan</a> serta <a href="https://flustra.jagoankode.my.id/kebijakan-privasi" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary hover:underline">Kebijakan Privasi</a> Flustra.
+                    Saya menyetujui <a href="{{ route('docs.show', 'syarat-layanan') }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary hover:underline">Syarat &amp; Ketentuan</a> serta <a href="{{ route('docs.show', 'kebijakan-privasi') }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary hover:underline">Kebijakan Privasi</a> VexaHost.
                 </span>
             </label>
             @error('terms')

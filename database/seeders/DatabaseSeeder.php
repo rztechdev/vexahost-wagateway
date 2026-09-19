@@ -13,9 +13,10 @@ class DatabaseSeeder extends Seeder
      * Berlaku di semua tahap — lokal, staging, dan produksi.
      *
      * Isinya hanya akun super admin. Tidak ada data contoh: workspace, sesi,
-     * dan API key semuanya dibuat lewat dashboard, termasuk milik Flustra
-     * sendiri, jadi seeder yang membuatkannya akan menghasilkan baris yang
-     * tidak pernah bisa dibuka siapa pun lewat antarmuka.
+     * dan API key semuanya dibuat lewat dashboard, termasuk milik VexaHost
+     * sendiri dan aplikasi Flustra yang memakainya, jadi seeder yang
+     * membuatkannya akan menghasilkan baris yang tidak pernah bisa dibuka
+     * siapa pun lewat antarmuka.
      */
     public function run(): void
     {

@@ -1,6 +1,6 @@
 # Environment: Development, Staging, Production
 
-Flustra WA Gateway berjalan di **tiga tahap terpisah**, mengikuti pola yang sudah dipakai seluruh ekosistem Flustra (`PANDUAN_DEVTOSPROD_DAN_COOLIFY_FLUSTRA.md`).
+VexaHost WA Gateway berjalan di **tiga tahap terpisah**, mengikuti pola yang sudah dipakai seluruh ekosistem Flustra (`PANDUAN_DEVTOSPROD_DAN_COOLIFY_FLUSTRA.md`).
 
 Setiap tahap adalah lingkungan yang berdiri sendiri: domain sendiri, database sendiri, volume sendiri, dan **nomor WhatsApp sendiri**.
 
@@ -8,18 +8,18 @@ Setiap tahap adalah lingkungan yang berdiri sendiri: domain sendiri, database se
 
 | | Development | Staging | Production |
 |---|---|---|---|
-| Domain | `wa-dev.flustra.tech` | `wa-staging.flustra.tech` | `wa.flustra.id` |
+| Domain | `wa-dev.vexahostcloud.my.id` | `wa-staging.vexahostcloud.my.id` | `wa.vexahostcloud.my.id` |
 | Branch git | `dev` | `staging` | `main` |
 | `APP_ENV` | `development` | `staging` | `production` |
 | `APP_DEBUG` | `true` | `false` | `false` |
 | `LOG_LEVEL` | `debug` | `info` | `error` |
-| Database | `db_flustra-wa_dev` | `db_flustra-wa_staging` | `db_flustra-wa` |
-| Nama resource | `flustra-wa-dev` | `flustra-wa-staging` | `flustra-wa` |
+| Database | `db_vexahost-wa-dev` | `db_vexahost-wa-staging` | `db_vexahost-wa-production` |
+| Nama resource | `vexahost-wa-dev` | `vexahost-wa-staging` | `vexahost-wa` |
 | `ENGINE_URL` | `http://127.0.0.1:3100` | idem | idem |
 | Volume sesi | `wa-sessions-dev` | `wa-sessions-staging` | `wa-sessions` |
 | Volume cadangan | `wa-storage-dev` | `wa-storage-staging` | `wa-storage` |
 | `WA_MAX_SESSIONS` | 1 | 1 | 3 |
-| Nomor WhatsApp | nomor uji coba | nomor uji coba (boleh sama dengan dev, sesi terpisah) | nomor resmi Flustra |
+| Nomor WhatsApp | nomor uji coba | nomor uji coba (boleh sama dengan dev, sesi terpisah) | nomor resmi VexaHost |
 
 > **Satu resource per tahap sejak 17 Agustus 2026.** Engine dan worker tidak lagi punya resource sendiri; keduanya proses di dalam container yang sama (lihat [DEPLOYMENT.md](DEPLOYMENT.md)). Akibatnya untuk berkas ini: **variabel Laravel dan engine berada di satu daftar env yang sama**, dan tiga nama harus diberi awalan supaya tidak bertabrakan — `ENGINE_PORT`, `ENGINE_HOST`, `ENGINE_LOG_LEVEL`. `PORT`, `HOST`, dan `LOG_LEVEL` polos sekarang milik Laravel dan Coolify.
 >
@@ -29,21 +29,21 @@ Setiap tahap adalah lingkungan yang berdiri sendiri: domain sendiri, database se
 
 ## Sumber kebenaran nilai rahasia
 
-Nilai lengkap per tahap ada di `ENV/flustra-wa.md` pada repo utama (di luar repo ini, tidak pernah ikut ter-commit). Bagian di bawah hanya menjelaskan **yang berbeda antar tahap**; selebihnya sama.
+Nilai lengkap per tahap ada di berkas `.env.development`, `.env.staging`, dan `.env.production` di root repo ini (gitignored, tidak pernah ikut ter-commit). Bagian di bawah hanya menjelaskan **yang berbeda antar tahap**; selebihnya sama.
 
 ---
 
-## Development — `wa-dev.flustra.tech`
+## Development — `wa-dev.vexahostcloud.my.id`
 
 Tempat mencoba hal baru. Boleh dirusak.
 
 ```env
 APP_ENV=development
 APP_DEBUG=true
-APP_URL=https://wa-dev.flustra.tech
+APP_URL=https://wa-dev.vexahostcloud.my.id
 LOG_LEVEL=debug
 
-DB_DATABASE=db_flustra-wa_dev
+DB_DATABASE=db_vexahost-wa-dev
 
 ENGINE_URL=http://127.0.0.1:3100
 
@@ -72,17 +72,17 @@ WA_DATA_PATH=/data/.wwebjs_auth
 WA_MAX_SESSIONS=1
 ```
 
-## Staging — `wa-staging.flustra.tech`
+## Staging — `wa-staging.vexahostcloud.my.id`
 
 Latihan sebelum produksi. Nilainya **harus semirip mungkin dengan produksi** — kalau staging dibuat lebih longgar, ia berhenti berfungsi sebagai latihan.
 
 ```env
 APP_ENV=staging
 APP_DEBUG=false
-APP_URL=https://wa-staging.flustra.tech
+APP_URL=https://wa-staging.vexahostcloud.my.id
 LOG_LEVEL=info
 
-DB_DATABASE=db_flustra-wa_staging
+DB_DATABASE=db_vexahost-wa-staging
 
 ENGINE_URL=http://127.0.0.1:3100
 
@@ -109,15 +109,15 @@ WA_DATA_PATH=/data/.wwebjs_auth
 WA_MAX_SESSIONS=1
 ```
 
-## Production — `wa.flustra.id`
+## Production — `wa.vexahostcloud.my.id`
 
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://wa.flustra.id
+APP_URL=https://wa.vexahostcloud.my.id
 LOG_LEVEL=error
 
-DB_DATABASE=db_flustra-wa
+DB_DATABASE=db_vexahost-wa-production
 
 ENGINE_URL=http://127.0.0.1:3100
 
@@ -158,7 +158,7 @@ sana akan menghasilkan kode QR yang benar-benar bisa dibayar orang.
 
 ```env
 > **Aturan kutip berlaku untuk SEMUA nilai bernilai lebih dari satu kata, bukan
-> hanya QRIS.** `APP_NAME=Flustra WA Gateway` tanpa kutip menolak seluruh berkas
+> hanya QRIS.** `APP_NAME=VexaHost WA Gateway` tanpa kutip menolak seluruh berkas
 > dengan `Failed to parse dotenv file ... unexpected whitespace` dan aplikasi
 > tidak boot sama sekali — bukan sekadar kehilangan nama aplikasinya. Ini sudah
 > terjadi di `.env.production` dan tidak ketahuan sampai berkasnya benar-benar
@@ -176,7 +176,7 @@ sana akan menghasilkan kode QR yang benar-benar bisa dibayar orang.
 # kota ikut dihitung panjang tag, dan satu saja terpangkas membuat CRC-nya
 # tidak cocok lagi.
 QRIS_PAYLOAD=
-QRIS_MERCHANT_NAME=Flustra
+QRIS_MERCHANT_NAME=DESTINARA
 
 # Ditampilkan berdampingan dengan kode QR, bukan sebagai jalur darurat: batas
 # QRIS per transaksi mengikuti kebijakan tiap dompet digital dan bisa berhenti
@@ -192,7 +192,7 @@ BILLING_GRACE_DAYS=30           # jarak antara pengiriman berhenti dan sesi dile
 BILLING_UNIQUE_CODE=true        # kode unik 3 digit di nominal, untuk mencocokkan mutasi
 BILLING_TAX_PERCENT=0           # 0 = harga yang dipajang sudah final, tanpa baris pajak
 
-# Workspace milik Flustra sendiri yang nomornya dipakai mengirim SELURUH
+# Workspace milik VexaHost sendiri yang nomornya dipakai mengirim SELURUH
 # pemberitahuan WhatsApp. Jangan diisi workspace pelanggan: kuotanya yang
 # terpotong dan laporan spam-nya yang jatuh ke nomor mereka.
 #
@@ -224,7 +224,7 @@ ENTERPRISE_WHATSAPP=
 
 # Alamat yang dipakai pelanggan saat butuh manusia — termasuk saat lupa kata
 # sandi, karena pemulihan mandiri sengaja belum dibuat.
-BILLING_SUPPORT_EMAIL=flustrafinances@gmail.com
+BILLING_SUPPORT_EMAIL=vexahostcloudtech@gmail.com
 
 # Lantai masa percobaan. Percobaan selalu berakhir di akhir bulan; kalau sisa
 # bulan berjalan lebih pendek dari ini, masanya melompat ke akhir bulan
@@ -234,7 +234,7 @@ BILLING_TRIAL_MIN_DAYS=10
 
 ### Pemberitahuan WhatsApp — apa saja yang dikirim
 
-Semuanya lewat gateway ini sendiri, dari nomor workspace Flustra.
+Semuanya lewat gateway ini sendiri, dari nomor workspace VexaHost.
 
 | Peristiwa | Kepada | Kenapa ada |
 |---|---|---|
@@ -254,15 +254,76 @@ gagal terkirim. Tiap peristiwa dijaga penanda di cache supaya job yang berjalan
 dua kali tidak mengirim pesan yang sama dua kali; pesan kembar soal uang membuat
 orang mengira ia ditagih dua kali.
 
-### Email — belum dipakai
+### Email — Brevo milik vexahost
 
-`MAIL_MAILER=log` dan memang belum ada satu pun alur yang mengandalkan email.
-Pemulihan kata sandi sengaja belum dibuat; pelanggan yang lupa kata sandinya
-menghubungi admin, dan admin mengatur ulang dari `/admin/pengguna`.
+Sejak pergantian merek ke VexaHost (19 Sep 2026), seluruh `MAIL_*` disamakan
+**persis** dengan aplikasi vexahost: akun Brevo yang sama, pengirim yang sama.
+Satu orang yang membaca kotak masuk `vexahostcloudtech@gmail.com` menerima
+balasan dari kedua aplikasi, dan reputasi pengirim di Brevo tidak terpecah dua.
 
-Isi `MAIL_*` hanya kalau alur yang butuh email benar-benar dibuat — jangan
-mengisinya lebih dulu, karena kotak email yang terpasang tapi tidak terpakai
-memberi kesan pemberitahuan sudah berjalan padahal tidak.
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=              # sama dengan MAIL_USERNAME aplikasi vexahost
+MAIL_PASSWORD=              # sama dengan MAIL_PASSWORD aplikasi vexahost
+MAIL_SCHEME=null            # Laravel 12 membaca MAIL_SCHEME; MAIL_ENCRYPTION tidak dibaca siapa pun
+MAIL_FROM_ADDRESS=vexahostcloudtech@gmail.com
+MAIL_FROM_NAME="VexaHost Cloud"
+```
+
+Setelah mengganti kredensial, kirim email tes dari `/admin/pengecualian` —
+pengirim yang belum terverifikasi di Brevo ditolak tanpa gejala di sisi kita.
+
+### Database — MySQL milik vexahost
+
+Ketiga tahap memakai server MySQL yang sama dengan aplikasi vexahost: `DB_HOST`
+berisi UUID resource MySQL-nya (bukan nama tampilan, lihat CLAUDE.md),
+`DB_USERNAME`/`DB_PASSWORD` sama dengan milik vexahost, dan tiap tahap punya
+database sendiri (`db_vexahost-wa-dev`, `db_vexahost-wa-staging`,
+`db_vexahost-wa-production`). Server yang dipakai bersama inilah alasan
+pemangkasan data dijalankan bertahap — satu DELETE besar menahan kunci yang
+juga dibutuhkan aplikasi vexahost.
+
+### Login Google
+
+Memakai OAuth client milik vexahost — satu project Google untuk kedua
+aplikasi, jadi akun Google yang sama dikenali sebagai orang yang sama. Tiap
+tahap wajib didaftarkan sebagai *Authorized redirect URI* di Google Cloud
+Console, kalau tidak tombolnya gagal dengan `redirect_uri_mismatch`:
+
+```
+https://wa.vexahostcloud.my.id/auth/google/callback
+https://wa-staging.vexahostcloud.my.id/auth/google/callback
+https://wa-dev.vexahostcloud.my.id/auth/google/callback
+```
+
+```env
+GOOGLE_CLIENT_ID=           # sama dengan milik vexahost
+GOOGLE_CLIENT_SECRET=       # sama dengan milik vexahost
+GOOGLE_REDIRECT_URI="${APP_URL}/auth/google/callback"
+```
+
+### Akun tertaut dengan vexahost
+
+Satu akun untuk WA Gateway dan vexahost — hanya autentikasi. Rincian protokol
+dan cara menyalakannya di [AKUN_TERTAUT.md](AKUN_TERTAUT.md).
+
+```env
+LINKED_ACCOUNTS_URL=https://vexahostcloud.my.id   # alamat vexahost di tahap yang sama
+LINKED_ACCOUNTS_SECRET=                            # IDENTIK dengan milik vexahost, BERBEDA tiap tahap
+```
+
+| Tahap | `LINKED_ACCOUNTS_URL` |
+|---|---|
+| dev | `https://dev.vexahostcloud.my.id` |
+| staging | `https://staging.vexahostcloud.my.id` |
+| produksi | `https://vexahostcloud.my.id` |
+
+Kosong di lokal, dan `phpunit.xml` memaksanya kosong di tes. Salah satu dari
+keduanya kosong = penautan mati di kedua arah, tanpa galat apa pun — akun
+yang didaftarkan selama itu tetap ditandai dan ikut terkirim begitu env-nya
+diisi.
 
 ### Akun super admin
 
@@ -271,10 +332,18 @@ diangkat super admin lain — jadi akun pertama lahir dari seeder, bukan dari
 antarmuka. Seeder aman dijalankan berulang: akun yang sudah ada tidak ditimpa
 kata sandinya.
 
+Identitasnya disamakan **persis** dengan admin aplikasi vexahost — nama
+variabel dan isinya sama. Di database yang sudah berisi admin lama, migrasi
+`pindahkan_admin_ke_identitas_vexahost` mengubah super admin tertua di tempat
+ke identitas ini (bukan membuat admin kedua); kata sandinya hanya diganti kalau
+`ADMIN_PASSWORD` terisi saat deploy.
+
 ```env
-ADMIN_EMAIL=flustrafinances@gmail.com
-ADMIN_NAME="Flustra Finance"
-ADMIN_PASSWORD=            # WAJIB diisi di staging dan produksi
+ADMIN_NAME="Ryan Rizki"
+ADMIN_EMAIL=vexahostcloudtech@gmail.com
+ADMIN_PASSWORD=            # WAJIB diisi di staging dan produksi, sama dengan vexahost
+ADMIN_PHONE=6285808749131
+ADMIN_COMPANY="VexaHost Cloud Indonesia"
 
 # Autentikasi dua faktor (2FA) untuk super admin.
 # Bawaannya false (2FA opsional untuk semua akun). Jika diatur true, super admin
@@ -315,7 +384,7 @@ Jangan pernah menyalin nilai ini antar tahap. Kalau secret dev bocor dan nilainy
 `http://`. Tanpanya, satu permintaan polos sebelum redirect ke HTTPS sudah cukup
 membocorkan sesi admin kepada siapa pun yang sejaringan.
 
-**Jangan diisi di `.env` lokal.** Dev berjalan di `http://127.0.0.1:8070`, dan
+**Jangan diisi di `.env` lokal.** Dev berjalan di `http://127.0.0.1:8051`, dan
 cookie secure di sana membuat login gagal **tanpa satu pun pesan galat** —
 gejalanya cuma formulir yang kembali ke halaman login, dan itu sangat sulit
 ditebak penyebabnya.
@@ -347,8 +416,10 @@ saat `$request->secure()`.
 
 Lokal adalah tahap keempat yang tidak ada di Coolify, dan satu-satunya tempat engine masih dijalankan sebagai proses yang benar-benar terpisah (`npm --prefix engine run dev` membaca `engine/.env` sendiri). Buat `.env` di root dan di `engine/` — daftar variabelnya ada di tabel atas — lalu:
 
+> `engine/.env` hanya untuk lokal. Berkas `engine/.env.development`, `.env.staging`, dan `.env.production` sudah dihapus (19 Sep 2026): sejak penyatuan container tidak ada yang membacanya, dan isinya masih menunjuk domain merek lama.
+
 ```bash
 npm run all
 ```
 
-Laravel di `http://localhost:8070`, engine di `http://127.0.0.1:3100`, plus queue worker dan Vite.
+Laravel di `http://localhost:8051`, engine di `http://127.0.0.1:3100`, plus queue worker dan Vite.

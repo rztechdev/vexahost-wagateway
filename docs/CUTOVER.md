@@ -1,4 +1,4 @@
-# Cutover — Migrasi Engine flustra-wa: whatsapp-web.js → Baileys
+# Cutover — Migrasi Engine vexahost-wa: whatsapp-web.js → Baileys
 
 Dokumen panduan cutover dan operasional deploy migrasi engine WhatsApp dari
 `whatsapp-web.js` (Chromium-based) ke **Baileys** (`@whiskeysockets/baileys` websocket murni).
@@ -27,7 +27,7 @@ Dokumen panduan cutover dan operasional deploy migrasi engine WhatsApp dari
 ## 1. Urutan Cutover 2 Nomor Produksi
 
 Saat ini terdapat **2 nomor aktif** di produksi:
-1. **Nomor Internal / Tim Flustra** (pengujian & notifikasi sistem)
+1. **Nomor Internal / Tim VexaHost** (pengujian & notifikasi sistem)
 2. **Nomor Produksi / Pelanggan** (trafik pesan nyata)
 
 ### Urutan Pelaksanaan
@@ -48,7 +48,7 @@ Saat ini terdapat **2 nomor aktif** di produksi:
    - Engine Baileys menyala di port 3100.
 
 4. **Langkah 2: Tautkan Nomor 1 (Internal Tim)**
-   - Buka Dashboard Flustra WA → Menu **Sesi**.
+   - Buka Dashboard VexaHost WA → Menu **Sesi**.
    - Klik **Hubungkan** pada nomor internal.
    - Scan QR code yang muncul di layar dengan aplikasi WhatsApp di HP.
    - Verifikasi status berubah menjadi `connected` (hijau).
@@ -68,9 +68,9 @@ Saat ini terdapat **2 nomor aktif** di produksi:
 Jalankan blok berikut langsung di terminal server (HOST):
 
 ```bash
-CID=$(docker ps -qf name=flustra-wa)
+CID=$(docker ps -qf name=vexahost-wa)
 
-echo "== 1. Status Container ==" && docker ps --filter name=flustra-wa --format '{{.Status}}'
+echo "== 1. Status Container ==" && docker ps --filter name=vexahost-wa --format '{{.Status}}'
 
 echo "== 2. Log Booting ==" && docker logs --tail 80 "$CID" 2>&1 | grep -E 'start.sh|migrat|Baileys|Engine'
 
@@ -140,7 +140,7 @@ Pengukuran wajib dilakukan secara empiris di server produksi menggunakan kernel 
 
 1. **Catat Baseline Bersih (0 Sesi):**
    ```bash
-   CID=$(docker ps -qf name=flustra-wa)
+   CID=$(docker ps -qf name=vexahost-wa)
    docker exec "$CID" sh -c '
      cur=$(cat /sys/fs/cgroup/memory.current 2>/dev/null)
      echo "Baseline memory.current = $((cur / 1048576)) MB"
@@ -179,7 +179,7 @@ Dengan arsitektur Baileys saat ini, seluruh sesi berjalan di dalam satu containe
    - Sistem `LaravelStore` saat ini sudah menyimpan bundel `session.json` di storage Laravel (`session-backups` disk).
    - Pada arsitektur multi-node, persistent storage disk bersama (seperti NFS atau S3-compatible Object Storage seperti MinIO/R2) memungkinkan node mana pun memulihkan sesi jika node sebelumnya mati (*failover*).
 3. **Pemisahan Container Web dan Engine:**
-   - Jika beban traffic pesan harian mencapai ratusan ribu, pisahkan kembali resource Coolify menjadi `flustra-wa-web` dan `flustra-wa-engine` dengan jaringan private Docker overlay / internal mesh.
+   - Jika beban traffic pesan harian mencapai ratusan ribu, pisahkan kembali resource Coolify menjadi `vexahost-wa-web` dan `vexahost-wa-engine` dengan jaringan private Docker overlay / internal mesh.
    - Untuk skala saat ini, container tunggal terbukti efisien, hemat build resource, dan minim latensi IPC (127.0.0.1).
 
 ---
@@ -193,7 +193,7 @@ Gunakan skrip yang telah diperbarui untuk memantau server:
 ./scripts/pantau.sh
 
 # Ringkasan lantai memori jangka panjang (24-48 jam)
-./scripts/ringkas-kapasitas.sh /var/log/flustra-capacity.log
+./scripts/ringkas-kapasitas.sh /var/log/vexahost-capacity.log
 ```
 
 - Pantau nilai `connected_sessions` di `scripts/pantau.sh`.

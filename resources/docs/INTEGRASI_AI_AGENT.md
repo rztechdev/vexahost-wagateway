@@ -4,7 +4,7 @@ Panduan prompt dan integrasi untuk Claude Code, Cursor, Antigravity, OpenCode, C
 
 ---
 
-## Mengapa Flustra WA Gateway Ramah AI Agent?
+## Mengapa VexaHost WA Gateway Ramah AI Agent?
 
 AI coding assistant bekerja paling baik dengan arsitektur yang sederhana, deterministik, dan terdokumentasi rapi:
 
@@ -22,10 +22,10 @@ Salin salah satu prompt di bawah ini langsung ke obrolan AI agent Anda (Claude C
 ### Prompt Umum (Universal)
 
 ```text
-Integrasikan pengiriman pesan WhatsApp ke dalam project ini menggunakan Flustra WA Gateway.
+Integrasikan pengiriman pesan WhatsApp ke dalam project ini menggunakan VexaHost WA Gateway.
 
 Spesifikasi teknis:
-- Base URL: https://wa.flustra.id/api/v1
+- Base URL: https://wa.vexahostcloud.my.id/api/v1
 - Endpoint kirim pesan teks: POST /messages/text
 - Header autentikasi: 
     Content-Type: application/json
@@ -52,10 +52,10 @@ Tolong buatkan modul helper/service yang rapi, simpan API key di variabel lingku
 Jika Anda menggunakan **Cursor**, buat berkas `.cursorrules` di root repositori Anda dan tempelkan instruksi berikut:
 
 ```markdown
-# Aturan WhatsApp Gateway (Flustra WA)
+# Aturan WhatsApp Gateway (VexaHost WA)
 
 Ketika menambahkan fitur pengiriman pesan, OTP, verifikasi, atau notifikasi WhatsApp:
-- Selalu gunakan endpoint REST API: `POST https://wa.flustra.id/api/v1/messages/text`
+- Selalu gunakan endpoint REST API: `POST https://wa.vexahostcloud.my.id/api/v1/messages/text`
 - Jangan pernah melakukan hardcode API key ke dalam berkas kode. Gunakan variabel lingkungan `WA_GATEWAY_KEY`.
 - Payload JSON:
   - `to` (string, wajib): nomor penerima (contoh: "081234567890")
@@ -73,9 +73,9 @@ Untuk pengguna **Claude Code CLI**, tambahkan bagian berikut ke dalam berkas `CL
 ```markdown
 ## Integrasi WhatsApp Gateway
 
-Project ini menggunakan Flustra WA Gateway untuk pesan transaksional:
-- Dokumentasi: https://wa.flustra.id/docs
-- API Endpoint: `POST https://wa.flustra.id/api/v1/messages/text`
+Project ini menggunakan VexaHost WA Gateway untuk pesan transaksional:
+- Dokumentasi: https://wa.vexahostcloud.my.id/docs
+- API Endpoint: `POST https://wa.vexahostcloud.my.id/api/v1/messages/text`
 - Headers: `X-Api-Key: <env:WA_KEY>`, `Content-Type: application/json`
 - Request: `{ "to": "<phone>", "message": "<text>" }`
 - Buat reusable service class atau helper function saat menambahkan pesan baru.
@@ -88,8 +88,8 @@ Project ini menggunakan Flustra WA Gateway untuk pesan transaksional:
 Bagi Anda yang memakai asisten cerdas berbasis **Antigravity**, definisikan petunjuk berikut:
 
 ```text
-Buatkan service pengiriman notifikasi WhatsApp berbasis Flustra WA Gateway:
-- Endpoint: POST https://wa.flustra.id/api/v1/messages/text
+Buatkan service pengiriman notifikasi WhatsApp berbasis VexaHost WA Gateway:
+- Endpoint: POST https://wa.vexahostcloud.my.id/api/v1/messages/text
 - Header: X-Api-Key diambil dari konfigurasi aman.
 - Pastikan method mengembalikan status boolean berhasil/gagal tanpa menghentikan flow utama aplikasi jika terjadi kegagalan jaringan.
 ```
@@ -103,7 +103,7 @@ Pada IDE atau agen otonom berbasis OpenCode dan OpenAI Codex:
 ```python
 # Contoh petunjuk untuk Codex / OpenCode:
 # Tulis fungsi kirim_whatsapp(nomor, pesan) yang memanggil:
-# POST https://wa.flustra.id/api/v1/messages/text
+# POST https://wa.vexahostcloud.my.id/api/v1/messages/text
 # Headers: {'X-Api-Key': os.environ['WA_GATEWAY_KEY']}
 # Body: {'to': nomor, 'message': pesan}
 # Sertakan try-except dan logging yang informatif.
@@ -116,19 +116,19 @@ Pada IDE atau agen otonom berbasis OpenCode dan OpenAI Codex:
 Bagi pengguna **Hermes Agent** (Nous Research) yang memakai standar skill berbasis `SKILL.md`:
 
 ```yaml
-# Simpan di skills/flustra-wa/SKILL.md
-name: flustra-wa-gateway
-description: Kirim notifikasi WhatsApp dan dokumen via Flustra WA Gateway API.
+# Simpan di skills/vexahost-wa/SKILL.md
+name: vexahost-wa-gateway
+description: Kirim notifikasi WhatsApp dan dokumen via VexaHost WA Gateway API.
 ```
 
 Prompt instruksi untuk Hermes Agent:
 ```text
 Definisikan tool send_whatsapp(to, message):
-- Base URL: https://wa.flustra.id/api/v1
+- Base URL: https://wa.vexahostcloud.my.id/api/v1
 - Endpoint: POST /messages/text
 - Headers:
     Content-Type: application/json
-    X-Api-Key: ${FLUSTRA_WA_KEY}
+    X-Api-Key: ${VEXAHOST_WA_KEY}
 - Normalisasi nomor penerima: dukung awalan 08 maupun 62.
 - Laporkan status antrean (queued) dan ID pesan kembali ke user.
 ```
@@ -142,12 +142,12 @@ Untuk pengguna **OpenClaw** (personal autonomous agent):
 ```json
 {
   "name": "send_whatsapp",
-  "description": "Mengirim pesan WhatsApp menggunakan Flustra WA Gateway",
-  "endpoint": "https://wa.flustra.id/api/v1/messages/text",
+  "description": "Mengirim pesan WhatsApp menggunakan VexaHost WA Gateway",
+  "endpoint": "https://wa.vexahostcloud.my.id/api/v1/messages/text",
   "method": "POST",
   "headers": {
     "Content-Type": "application/json",
-    "X-Api-Key": "${env.FLUSTRA_WA_KEY}"
+    "X-Api-Key": "${env.VEXAHOST_WA_KEY}"
   },
   "parameters": {
     "to": "string (nomor telepon WhatsApp penerima)",
@@ -167,5 +167,5 @@ Hubungkan tool send_whatsapp ke alur kerja ReAct Anda. Setiap kali ada notifikas
 
 Saat bekerja dengan AI Agent:
 1. **Simpan di Variabel Lingkungan:** Jangan pernah memasukkan nilai asli API key ke dalam prompt AI publik atau berkas kode yang diunggah ke repositori.
-2. **Gunakan Nilai Dummy saat Generasi Kode:** Berikan contoh seperti `fwa_live_contoh123` saat AI menuliskan kode, lalu isi nilai sebenarnya di berkas `.env` lokal Anda.
+2. **Gunakan Nilai Dummy saat Generasi Kode:** Berikan contoh seperti `vwa_live_contoh123` saat AI menuliskan kode, lalu isi nilai sebenarnya di berkas `.env` lokal Anda.
 3. **Cabut Kunci jika Terbocorkan:** Jika API key tidak sengaja tertulis di prompt atau log AI, segera cabut (*revoke*) kunci tersebut di halaman Dashboard dan buat kunci baru.

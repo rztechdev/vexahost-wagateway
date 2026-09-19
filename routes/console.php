@@ -73,3 +73,11 @@ Schedule::job(new RekamStatusJob)->everyMinute()->withoutOverlapping();
 */
 Schedule::job(new EksekusiPenghapusanAkunJob)->dailyAt('03:40')->withoutOverlapping();
 Schedule::job(new BersihkanEksporJob)->dailyAt('03:50')->withoutOverlapping();
+
+/*
+| Perubahan akun yang belum sampai ke aplikasi vexahost dikirim ulang tiap menit.
+| Percobaan pertamanya seketika lewat antrean; yang ini menangkap sisanya saat
+| aplikasi seberang sedang deploy — kalau tidak, kata sandi yang diganti tepat
+| saat itu tidak pernah sampai dan satu orang berakhir dengan dua kata sandi.
+*/
+Schedule::command('akun-tertaut:kirim')->everyMinute()->withoutOverlapping();

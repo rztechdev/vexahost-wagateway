@@ -28,7 +28,7 @@ class EnsureSubscriptionActive
     {
         $workspace = EnsureWorkspaceSelected::from($request);
 
-        // Workspace internal Flustra tidak pernah menagih dirinya sendiri.
+        // Workspace internal VexaHost tidak pernah menagih dirinya sendiri.
         // Dibebaskan lewat panel admin — nomor perusahaan sendiri, dan akun
         // yang memang tidak ditagih.
         if ($workspace->isExempt()) {

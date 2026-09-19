@@ -48,10 +48,10 @@ class SessionLifecycleTest extends TestCase
     {
         $sessions = app(SessionService::class);
 
-        $pertama = $sessions->create($this->workspace, 'flustra.id');
+        $pertama = $sessions->create($this->workspace, 'vexahost.id');
         $pertama->delete();
 
-        $kedua = $sessions->create($this->workspace, 'flustra.id');
+        $kedua = $sessions->create($this->workspace, 'vexahost.id');
 
         $this->assertNotSame($pertama->id, $kedua->id);
         $this->assertSame('pending', $kedua->status);

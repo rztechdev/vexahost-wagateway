@@ -138,7 +138,7 @@ class Workspace extends Model
     /**
      * Paket yang sedang berlaku.
      *
-     * Workspace tanpa langganan — internal Flustra, atau baris yang terbuat
+     * Workspace tanpa langganan — internal VexaHost, atau baris yang terbuat
      * sebelum penagihan dinyalakan — jatuh ke paket bawaan. Itu membuat setiap
      * pemanggil bisa menganggap paket selalu ada, sehingga tidak ada satu pun
      * tempat di antarmuka yang perlu menangani "workspace tanpa paket".

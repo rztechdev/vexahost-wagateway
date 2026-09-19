@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# Memantau kesehatan container flustra-wa dan engine websocket (Baileys).
+# Memantau kesehatan container vexahost-wa dan engine websocket (Baileys).
 # Dijalankan di HOST, bukan di dalam container.
 #
 # Pemakaian:  ./pantau.sh
 
 set -u
 
-NAMA="${1:-flustra-wa}"
+NAMA="${1:-vexahost-wa}"
 CID="$(docker ps -qf "name=${NAMA}" | head -1)"
 
 if [ -z "$CID" ]; then
@@ -16,7 +16,7 @@ if [ -z "$CID" ]; then
 fi
 
 echo "=============================================================="
-echo " Pemantauan flustra-wa - $(date -Is)"
+echo " Pemantauan vexahost-wa - $(date -Is)"
 echo "=============================================================="
 echo ""
 

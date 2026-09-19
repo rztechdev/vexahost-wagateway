@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Program Mitra (Reseller / Afiliasi) Flustra.
+ * Program Mitra (Reseller / Afiliasi) VexaHost.
  *
  * Mengelola pendaftaran kemitraan dengan verifikasi rekening oleh admin,
  * pelacakan downline, pengajuan pencairan komisi (min. Rp 100.000) dengan
@@ -137,7 +137,7 @@ class MitraController extends Controller
             'bank_account_number.required' => 'Nomor rekening atau nomor e-wallet wajib diisi.',
             'bank_account_name.required' => 'Nama pemilik rekening wajib diisi sesuai buku tabungan.',
             'whatsapp_number.required' => 'Nomor WhatsApp aktif wajib diisi untuk koordinasi pencairan komisi.',
-            'terms.accepted' => 'Anda wajib membaca dan menyetujui Syarat & Ketentuan Program Kemitraan Flustra.',
+            'terms.accepted' => 'Anda wajib membaca dan menyetujui Syarat & Ketentuan Program Kemitraan VexaHost.',
         ]);
 
         if ($existing) {
@@ -177,7 +177,7 @@ class MitraController extends Controller
         ]);
 
         // Beri tahu admin lewat WhatsApp bahwa ada pendaftar reseller baru
-        $pesanAdmin = "Halo Admin Flustra, ada pendaftaran mitra/reseller baru yang menunggu konfirmasi (ACC):\n\n"
+        $pesanAdmin = "Halo Admin VexaHost, ada pendaftaran mitra/reseller baru yang menunggu konfirmasi (ACC):\n\n"
             ."Nama: {$user->name} ({$user->email})\n"
             ."WhatsApp: {$kode->whatsapp_number}\n"
             ."Rekening: {$kode->bank_name} - {$kode->bank_account_number} a.n {$kode->bank_account_name}\n"
@@ -283,7 +283,7 @@ class MitraController extends Controller
         ] : [];
 
         // 1. Notifikasi WhatsApp ke Admin (disertai dokumen invoice PDF)
-        $pesanWaAdmin = "Halo Admin Flustra, ada permintaan pencairan dana komisi mitra baru!\n\n"
+        $pesanWaAdmin = "Halo Admin VexaHost, ada permintaan pencairan dana komisi mitra baru!\n\n"
             ."No. Invoice: {$payout->payout_number}\n"
             ."Mitra: {$user->name} ({$user->email})\n"
             ."Nomor WA: {$referralCode->whatsapp_number}\n"
@@ -316,14 +316,14 @@ class MitraController extends Controller
                 ."Potongan Administrasi ({$payout->fee_percent}%): Rp ".number_format($payout->fee_amount, 0, ',', '.')."\n"
                 .'Nominal Transfer Bersih: Rp '.number_format($payout->net_amount, 0, ',', '.')."\n"
                 ."Rekening Tujuan: {$payout->bank_name} - {$payout->bank_account_number} a.n {$payout->bank_account_name}\n\n"
-                ."Terlampir dokumen invoice PDF resmi penarikan dana ini. Tim Finance Flustra akan memproses transfer manual dalam 1x24 jam kerja.\n\n"
+                ."Terlampir dokumen invoice PDF resmi penarikan dana ini. Tim Finance VexaHost akan memproses transfer manual dalam 1x24 jam kerja.\n\n"
                 .'Cek status invoice online: '.route('mitra.payout.invoice', $payout->id);
             $this->notifier->toPhone($targetWaUser, $pesanWaUser, media: $pdfMedia);
         }
 
         // 3. Notifikasi Email ke Admin (Gmail / Brevo, disertakan lampiran PDF)
         try {
-            $adminEmail = config('billing.support_email', 'flustrafinances@gmail.com');
+            $adminEmail = config('billing.support_email', 'vexahostcloudtech@gmail.com');
             Mail::to($adminEmail)->send(new PayoutRequestedMail($payout, isForAdmin: true));
         } catch (\Throwable $e) {
             // Kegagalan email tidak membatalkan pengajuan pencairan
@@ -340,7 +340,7 @@ class MitraController extends Controller
             'tipe' => 'success',
             'judul' => 'Pencairan Dana Diajukan',
             'pesan' => 'Permintaan pencairan komisi '.$payout->payout_number.' sebesar Rp '.number_format($payout->amount, 0, ',', '.')
-                .' (Bersih: Rp '.number_format($payout->net_amount, 0, ',', '.').') berhasil dikirim. Dokumen invoice PDF telah diteruskan ke WhatsApp & Email Anda dan Admin Flustra.',
+                .' (Bersih: Rp '.number_format($payout->net_amount, 0, ',', '.').') berhasil dikirim. Dokumen invoice PDF telah diteruskan ke WhatsApp & Email Anda dan Admin VexaHost.',
         ]);
     }
 

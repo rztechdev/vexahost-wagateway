@@ -217,7 +217,7 @@ class KapasitasPlatformTest extends TestCase
             $sessions->create($ws, 'CS')->forceFill(['status' => 'connected'])->save();
         }
 
-        $internal = $this->workspace('flustra', 1);
+        $internal = $this->workspace('vexahost', 1);
         $internal->forceFill(['is_internal' => true])->save();
 
         // Nomor kami sendiri mengirim pemberitahuan penagihan ke seluruh

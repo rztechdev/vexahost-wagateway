@@ -27,10 +27,10 @@ Referensi lengkap setiap endpoint: parameter, contoh permintaan, contoh balasan,
 
 | Tahap | Base URL |
 |---|---|
-| Production | `https://wa.flustra.id` |
-| Staging | `https://wa-staging.flustra.tech` |
-| Development | `https://wa-dev.flustra.tech` |
-| Lokal | `http://localhost:8070` |
+| Production | `https://wa.vexahostcloud.my.id` |
+| Staging | `https://wa-staging.vexahostcloud.my.id` |
+| Development | `https://wa-dev.vexahostcloud.my.id` |
+| Lokal | `http://localhost:8051` |
 
 API key berbeda per tahap dan tidak bisa dipakai lintas tahap.
 
@@ -39,13 +39,13 @@ API key berbeda per tahap dan tidak bisa dipakai lintas tahap.
 Setiap permintaan menyertakan API key:
 
 ```http
-X-Api-Key: fwa_a1b2c3d4.PANJANGSEKALIRAHASIA
+X-Api-Key: vwa_a1b2c3d4.PANJANGSEKALIRAHASIA
 ```
 
 Atau sebagai bearer token, untuk klien yang lebih nyaman dengan pola itu:
 
 ```http
-Authorization: Bearer fwa_a1b2c3d4.PANJANGSEKALIRAHASIA
+Authorization: Bearer vwa_a1b2c3d4.PANJANGSEKALIRAHASIA
 ```
 
 Kunci dibuat di dashboard (**API Keys**) atau lewat CLI:
@@ -138,7 +138,7 @@ Untuk grup, kirim chat id lengkap berakhiran `@g.us`. Cara mendapatkannya: kirim
 Keadaan workspace dan pemakaian bulan berjalan. Tidak terkena rate limit.
 
 ```bash
-curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
+curl -H "X-Api-Key: $KEY" https://wa.vexahostcloud.my.id/api/v1/health
 ```
 
 ```json
@@ -205,7 +205,7 @@ curl -H "X-Api-Key: $KEY" https://wa.flustra.id/api/v1/health
 | `name` | string, maks 60 | ya | Unik dalam satu workspace |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/sessions \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/sessions \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{"name":"CS Utama"}'
 ```
@@ -224,7 +224,7 @@ Menjalankan sesi. Balasan langsung dengan `status: "connecting"` — QR belum te
 
 ```bash
 curl -X POST -H "X-Api-Key: $KEY" \
-  https://wa.flustra.id/api/v1/sessions/$SID/connect
+  https://wa.vexahostcloud.my.id/api/v1/sessions/$SID/connect
 ```
 
 Setelah ini, poll `GET /sessions/{id}/qr` sampai QR muncul.
@@ -285,7 +285,7 @@ Pesan yang pernah dikirim lewat sesi ini tetap ada di riwayat, dengan `session_i
 | `session_id` | string | tidak | Bila kosong, dipilih otomatis |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{
     "to": "081234567890",
@@ -339,7 +339,7 @@ Galat `422`:
 | `session_id` | string | tidak | |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/media \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/media \
   -H "X-Api-Key: $KEY" \
   -F "to=081234567890" \
   -F "caption=Invoice Agustus" \
@@ -359,7 +359,7 @@ Balasan `202` dengan objek pesan.
 | `session_id` | string | tidak | |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/bulk \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/bulk \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{
     "to": ["081234567890", "081298765432", "bukan-nomor"],
@@ -403,7 +403,7 @@ Halo {{ nama }}, faktur {{ nomor }} jatuh tempo {{ tanggal }}.
 ```
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/template \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/template \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{
     "to": "081234567890",
@@ -487,7 +487,7 @@ Status **tidak pernah mundur**, meski ack dari WhatsApp datang tidak berurutan.
 | `events` | array | tidak | Kosong berarti semua event |
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/webhooks \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/webhooks \
   -H "X-Api-Key: $KEY" -H "Content-Type: application/json" \
   -d '{
     "url": "https://app.contoh.id/webhook/whatsapp",
@@ -580,8 +580,8 @@ Header:
 
 | Header | Isi |
 |---|---|
-| `X-Flustra-Signature` | HMAC-SHA256 dari body mentah, dengan secret webhook |
-| `X-Flustra-Event` | Nama event |
+| `X-VexaHost-Signature` | HMAC-SHA256 dari body mentah, dengan secret webhook |
+| `X-VexaHost-Event` | Nama event |
 
 PHP / Laravel:
 
@@ -589,7 +589,7 @@ PHP / Laravel:
 Route::post('/webhook/whatsapp', function (Request $request) {
     $expected = hash_hmac('sha256', $request->getContent(), config('services.wa.webhook_secret'));
 
-    if (! hash_equals($expected, (string) $request->header('X-Flustra-Signature'))) {
+    if (! hash_equals($expected, (string) $request->header('X-VexaHost-Signature'))) {
         abort(401);
     }
 
@@ -613,7 +613,7 @@ app.post('/webhook/whatsapp',
             .update(req.body)
             .digest('hex');
 
-        const given = req.get('X-Flustra-Signature') ?? '';
+        const given = req.get('X-VexaHost-Signature') ?? '';
 
         if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(given))) {
             return res.sendStatus(401);

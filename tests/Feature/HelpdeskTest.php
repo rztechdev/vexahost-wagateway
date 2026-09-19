@@ -50,7 +50,7 @@ class HelpdeskTest extends TestCase
         config([
             'mail.default' => 'smtp',
             'mail.mailers.smtp.host' => 'smtp-relay.brevo.com',
-            'mail.from.address' => 'flustrafinances@gmail.com',
+            'mail.from.address' => 'vexahostcloudtech@gmail.com',
         ]);
 
         $this->pelanggan = User::create([
@@ -60,8 +60,8 @@ class HelpdeskTest extends TestCase
         ]);
 
         $this->admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -229,7 +229,7 @@ class HelpdeskTest extends TestCase
     public function test_isi_balasan_tidak_ikut_dikirim_keluar(): void
     {
         $ticket = $this->buatTiket();
-        $rahasia = 'fwa_rahasiasekali.JANGANBOCOR';
+        $rahasia = 'vwa_rahasiasekali.JANGANBOCOR';
 
         $pesanWa = HelpdeskMessages::balasanUntukPelanggan($ticket);
         $this->assertStringNotContainsString($rahasia, $pesanWa);

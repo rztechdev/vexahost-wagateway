@@ -46,8 +46,8 @@ harus dibatalkan, yang batal cuma satu fitur.
 | Harga PAYG | **Rp 200 per pesan** |
 | Reseller | Pembeli dapat **diskon**, reseller dapat **komisi** — dua-duanya |
 | Kode referal | **5 huruf kapital acak**, ditukar saat checkout |
-| Helpdesk | **Bangun baru di dalam flustra-wa.** JANGAN disambungkan ke `flustra-helpdesk` |
-| Email | Pengirim pakai **email admin** (`flustrafinances@gmail.com`). Ryan yang mengonfigurasi di Brevo |
+| Helpdesk | **Bangun baru di dalam vexahost-wa.** JANGAN disambungkan ke `flustra-helpdesk` |
+| Email | Pengirim pakai **email admin** (`vexahostcloudtech@gmail.com`). Ryan yang mengonfigurasi di Brevo |
 
 ---
 
@@ -105,7 +105,7 @@ kode:
 ## Definisi selesai
 
 - [x] Header muncul di respons produksi, dan tidak ada satu pun halaman yang rusak
-- [x] Login lokal (`http://127.0.0.1:8070`) tetap berfungsi
+- [x] Login lokal (`http://127.0.0.1:8051`) tetap berfungsi
 - [x] Halaman Sistem menampilkan empat pemeriksaan baru dengan akibatnya
 - [x] `KeamananTest`: header ada saat HTTPS, HSTS **tidak** ada saat HTTP
 - [x] Seluruh suite lulus di SQLite **dan** MySQL
@@ -142,14 +142,18 @@ MAIL_ENCRYPTION=tls
 (Ada di `flustra-clientportal/.env.production` dan `flustra-erp/.env.production`.
 Keduanya mengirim dari `officeflustra@gmail.com`.)
 
-**Keputusan Ryan: flustra-wa memakai email admin sebagai pengirim, bukan
+**Keputusan Ryan: vexahost-wa memakai email admin sebagai pengirim, bukan
 `officeflustra@gmail.com`.** Ryan sendiri yang mendaftarkannya di Brevo.
+
+**Sejak pergantian merek ke VexaHost (19 Sep 2026)** kredensial Brevo-nya
+disamakan persis dengan aplikasi vexahost — akun Brevo milik vexahost, pengirim
+`vexahostcloudtech@gmail.com`. Kredensial Flustra di atas tidak dipakai lagi.
 
 ## Ruang lingkup
 
 1. Isi `MAIL_*` di `.env.production` dan `.env.staging`:
    `MAIL_MAILER=smtp`, host/port/username/encryption seperti di atas,
-   `MAIL_FROM_ADDRESS=flustrafinances@gmail.com`, `MAIL_FROM_NAME="${APP_NAME}"`.
+   `MAIL_FROM_ADDRESS=vexahostcloudtech@gmail.com`, `MAIL_FROM_NAME="${APP_NAME}"`.
    **`MAIL_PASSWORD` diisi Ryan** — jangan menyalin kredensial project lain ke
    sini tanpa persetujuannya.
 2. **Halaman Sistem**: pemeriksaan "Email keluar" — `MAIL_MAILER` bukan `log`,
@@ -166,7 +170,7 @@ Keduanya mengirim dari `officeflustra@gmail.com`.)
 ## Yang mudah salah
 
 - **Brevo menolak pengirim yang belum diverifikasi.** Kalau
-  `flustrafinances@gmail.com` belum didaftarkan sebagai sender di Brevo,
+  `vexahostcloudtech@gmail.com` belum didaftarkan sebagai sender di Brevo,
   seluruh email gagal dengan `550` dan itu **tidak terlihat di antarmuka mana
   pun** — sama persis dengan masalah notifikasi WhatsApp yang diam. Karena itu
   tombol tes di poin 3 wajib ada, bukan opsional.
@@ -187,7 +191,7 @@ jalurnya terbukti utuh — form → controller → `EmailNotifier::kirimTes()` �
 `AuditLog` (`settings.email.tested`) — tapi di lokal `MAIL_MAILER=log`, jadi
 yang terbukti barulah jalur gagalnya, dengan pesan yang menyebut langkah yang
 kurang. **Kotak pertama baru bisa dicentang setelah Ryan mengisi
-`MAIL_PASSWORD` di Coolify dan mendaftarkan `flustrafinances@gmail.com`
+`MAIL_PASSWORD` di Coolify dan mendaftarkan `vexahostcloudtech@gmail.com`
 sebagai sender di Brevo**, lalu menekan tombolnya sekali di staging.
 
 `MAIL_*` sudah terisi di `.env.production` dan `.env.staging` (keduanya
@@ -505,12 +509,12 @@ antre **dan** saat kirim.
 
 ## Keputusan Ryan
 
-**Bangun baru di dalam flustra-wa. JANGAN disambungkan ke `flustra-helpdesk`.**
+**Bangun baru di dalam vexahost-wa. JANGAN disambungkan ke `flustra-helpdesk`.**
 
 Catatan untuk agent berikutnya, sekali saja lalu jangan diperdebatkan lagi:
 `flustra-helpdesk` memang sudah ada dan sudah memakai gateway ini. Ryan sudah
 tahu, dan memilih helpdesk yang berdiri sendiri di dalam produk ini. Alasannya
-masuk akal untuk SaaS: pelanggan flustra-wa tidak seharusnya dilempar ke produk
+masuk akal untuk SaaS: pelanggan vexahost-wa tidak seharusnya dilempar ke produk
 lain untuk mengeluh. **Kerjakan sesuai keputusannya, jangan mengusulkan
 integrasi lagi.**
 
@@ -546,7 +550,7 @@ ticket_messages
 ## Yang mudah salah
 
 - Notifikasi tiket **wajib** lewat `WhatsAppNotifier` — tidak pernah melempar
-  galat, selalu dari sesi Flustra, satu peristiwa satu pesan. Menulis pengiriman
+  galat, selalu dari sesi VexaHost, satu peristiwa satu pesan. Menulis pengiriman
   sendiri di controller melanggar aturan yang sudah ditulis di CLAUDE.md.
 - Lampiran: batasi jenis dan ukuran, simpan di disk `media` seperti bukti bayar.
   Jangan pernah menyajikannya lewat URL yang bisa ditebak — ikuti pola
@@ -574,7 +578,7 @@ ticket_messages
   masalah, dan keduanya diteruskan serta diarsipkan di tempat yang tidak kami
   kendalikan.
 - **Nama admin tidak pernah tampil ke pelanggan** — yang menjawab adalah
-  Flustra, bukan orang tertentu. Itu sebabnya `ticket_messages.user_id` null
+  VexaHost, bukan orang tertentu. Itu sebabnya `ticket_messages.user_id` null
   untuk balasan admin, dan `is_from_admin` ada terpisah sebagai penanda: null
   juga terjadi saat akun penanyanya dihapus.
 - Lampiran di disk `media` yang privat, diambil lewat rute yang selalu
@@ -602,8 +606,8 @@ ticket_messages
 ## Cara menguji di MySQL
 
 ```bash
-php -r "(new PDO('mysql:host=127.0.0.1','root',''))->exec('CREATE DATABASE uji_flustra CHARACTER SET utf8mb4');"
-DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=uji_flustra DB_USERNAME=root DB_PASSWORD= php artisan test
+php -r "(new PDO('mysql:host=127.0.0.1','root',''))->exec('CREATE DATABASE uji_vexahost CHARACTER SET utf8mb4');"
+DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=uji_vexahost DB_USERNAME=root DB_PASSWORD= php artisan test
 ```
 
 ## Yang sengaja TIDAK ada di PRD ini

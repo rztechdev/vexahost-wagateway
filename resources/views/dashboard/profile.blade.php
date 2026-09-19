@@ -11,7 +11,7 @@
             <div>
                 <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Profil Akun</h1>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Kelola identitas pribadi, foto profil, dan keamanan akun Anda.
+                    Kelola identitas pribadi dan keamanan akun Anda.
                 </p>
             </div>
 
@@ -39,14 +39,13 @@
             </h3>
 
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                {{-- Foto Avatar --}}
+                {{-- Avatar Icon (Tanpa Foto) --}}
                 <div class="relative shrink-0">
-                    <div class="h-20 w-20 overflow-hidden rounded-2xl border-2 border-primary/20 bg-primary/10 grid place-items-center shadow-xs">
-                        @if ($user->avatarUrl())
-                            <img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
-                        @else
-                            <span class="text-2xl font-bold text-primary">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
-                        @endif
+                    <div class="rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0"
+                         style="width: 52px; height: 52px; min-width: 52px; min-height: 52px; border-radius: 9999px; aspect-ratio: 1 / 1;">
+                        <svg class="text-primary shrink-0" style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
 
@@ -112,33 +111,12 @@
             </div>
         </div>
 
-        {{-- ===================== Edit Data Pribadi & Foto ===================== --}}
-        <x-section judul="Perbarui Informasi Pribadi & Foto Profil"
+        {{-- ===================== Edit Data Pribadi ===================== --}}
+        <x-section judul="Perbarui Informasi Pribadi"
                    sub="Lengkapi identitas diri Anda sebagai pelengkap akun.">
-            <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="max-w-3xl space-y-5">
+            <form method="POST" action="{{ route('profile.update') }}" class="max-w-3xl space-y-5">
                 @csrf
                 @method('PUT')
-
-                {{-- Upload Foto Profil --}}
-                <div>
-                    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-foreground">
-                        Foto Profil (Avatar)
-                    </label>
-                    <div class="flex items-center gap-4">
-                        <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border bg-muted/40 grid place-items-center">
-                            @if ($user->avatarUrl())
-                                <img src="{{ $user->avatarUrl() }}" alt="" class="h-full w-full object-cover">
-                            @else
-                                <span class="font-bold text-muted-foreground">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
-                            @endif
-                        </div>
-                        <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/webp"
-                               class="text-xs text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20">
-                    </div>
-                    @error('avatar')
-                        <p class="mt-1.5 text-xs text-destructive font-medium">{{ $message }}</p>
-                    @enderror
-                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -324,21 +302,21 @@
                         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        link.download = 'flustra-kode-pemulihan-2fa.csv';
+                        link.download = 'vexahost-kode-pemulihan-2fa.csv';
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
                         URL.revokeObjectURL(link.href);
                     },
                     unduhTxt() {
-                        const txtContent = 'FLUSTRA WA GATEWAY - KODE PEMULIHAN 2FA\r\n'
+                        const txtContent = 'VEXAHOST WA GATEWAY - KODE PEMULIHAN 2FA\r\n'
                             + 'Tanggal: ' + new Date().toLocaleDateString('id-ID') + '\r\n'
                             + 'Simpan berkas ini di tempat aman. Setiap kode hanya berlaku sekali.\r\n\r\n'
                             + this.kodes.map((k, i) => `${i + 1}. ${k}`).join('\r\n');
                         const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        link.download = 'flustra-kode-pemulihan-2fa.txt';
+                        link.download = 'vexahost-kode-pemulihan-2fa.txt';
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);

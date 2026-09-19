@@ -110,7 +110,7 @@ class TwoFactorController extends Controller
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=utf-8',
-            'Content-Disposition' => 'attachment; filename="flustra-kode-pemulihan-2fa.csv"',
+            'Content-Disposition' => 'attachment; filename="vexahost-kode-pemulihan-2fa.csv"',
         ]);
     }
 

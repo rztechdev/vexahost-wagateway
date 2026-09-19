@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Kode Verifikasi - Flustra WA Gateway')
+@section('title', 'Kode Verifikasi - VexaHost WA Gateway')
 
 @section('content')
 <div>

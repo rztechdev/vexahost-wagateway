@@ -66,7 +66,7 @@ class OverviewController extends Controller
              | Apakah pemberitahuan WhatsApp benar-benar bisa dikirim.
              |
              | Ini keadaan yang paling sulit disadari kalau tidak ditampilkan:
-             | begitu `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor Flustra
+             | begitu `BILLING_NOTIFY_WORKSPACE_ID` kosong atau nomor VexaHost
              | terputus, SELURUH pemberitahuan berhenti tanpa satu pun gejala —
              | pelanggan tidak diberi tahu tagihannya lunas, tim tidak diberi
              | tahu ada bukti masuk, dan tidak ada yang gagal secara terlihat.

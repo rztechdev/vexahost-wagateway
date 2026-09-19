@@ -9,9 +9,7 @@
     <title>@yield('title', 'Admin') &middot; Admin {{ config('app.name') }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/icon-16x16.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
@@ -101,9 +99,9 @@
         {{-- Header Sidebar: Logo & Nama Aplikasi (sama persis seperti panel user) --}}
         <div class="flex h-20 shrink-0 items-center gap-3.5 px-5">
             <a href="{{ route('admin.overview') }}" class="flex min-w-0 items-center gap-3.5">
-                <img src="{{ asset('images/flustra-wa.png') }}" alt="Flustra WA Gateway" class="h-11 w-auto shrink-0 object-contain">
+                <img src="{{ asset('images/vexahost-wa.png') }}" alt="VexaHost WA Gateway" class="h-11 w-auto shrink-0 object-contain">
                 <div class="flex min-w-0 flex-col">
-                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">Flustra</span>
+                    <span class="truncate text-lg font-extrabold tracking-tight text-foreground leading-tight">VexaHost</span>
                     <span class="truncate text-xs font-semibold tracking-wide text-muted-foreground leading-tight">WA Gateway</span>
                 </div>
             </a>
@@ -159,6 +157,16 @@
                             <path d="M7 17L17 7M17 7H7M17 7V17"/>
                         </svg>
                     </a>
+                    <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener"
+                       class="group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                        <svg class="h-[1.05rem] w-[1.05rem] shrink-0 text-current" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                        </svg>
+                        <span class="truncate">Cloud VPS</span>
+                        <svg class="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                        </svg>
+                    </a>
                 </div>
             </div>
         </nav>
@@ -202,21 +210,31 @@
                      ============================================ --}}
                 <div class="relative ml-1" x-data="{ profil: false }" @click.outside="profil = false" @keydown.escape.window="profil = false">
                     <button @click="profil = ! profil"
-                            class="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                            class="flex items-center gap-1.5 p-1 rounded-lg hover:bg-muted transition-colors focus:outline-none"
                             :aria-expanded="profil" aria-haspopup="true"
-                            aria-label="Menu akun">
-                        @if (auth()->user()->avatarUrl())
-                            <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
-                        @else
-                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
-                        @endif
+                            aria-label="Menu akun" title="{{ auth()->user()->name }} (Admin)">
+                        <div class="rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 9999px; aspect-ratio: 1 / 1;">
+                            <svg class="text-primary shrink-0" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
 
                     <div x-show="profil" x-cloak x-transition.opacity.duration.150ms
                          class="absolute right-0 z-40 mt-1.5 w-60 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
-                        <div class="border-b border-border px-4 py-3">
-                            <p class="truncate text-sm font-medium">{{ auth()->user()->name }}</p>
-                            <p class="truncate text-xs text-muted-foreground">{{ auth()->user()->email }}</p>
+                        <div class="border-b border-border px-4 py-3 flex items-center gap-3">
+                            <div class="rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0"
+                                 style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 9999px; aspect-ratio: 1 / 1;">
+                                <svg class="text-primary shrink-0" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-medium">{{ auth()->user()->name }} <span class="text-xs text-muted-foreground font-normal">(Admin)</span></p>
+                                <p class="truncate text-xs text-muted-foreground">{{ auth()->user()->email }}</p>
+                            </div>
                         </div>
 
                         <div class="p-1.5">

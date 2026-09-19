@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * Tiga penambahan, satu alasan yang sama: WhatsApp adalah satu-satunya jalur
  * yang dipakai, dan satu-satunya jalur berarti satu titik yang kalau mati
- * membuat semuanya diam. Nomor Flustra terputus — hal yang memang terjadi saat
+ * membuat semuanya diam. Nomor VexaHost terputus — hal yang memang terjadi saat
  * deploy, saat WhatsApp memutus perangkat tertaut, atau saat ponselnya lama
  * offline — dan seluruh kabar ke tim hilang tanpa satu pun gejala.
  *

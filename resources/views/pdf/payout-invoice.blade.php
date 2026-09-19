@@ -209,11 +209,11 @@
     <table class="header-table">
         <tr>
             <td style="vertical-align: top;">
-                <div class="company-name">Flustra WA Gateway</div>
-                <div class="company-sub">Flustra Technology Indonesia</div>
+                <div class="company-name">VexaHost WA Gateway</div>
+                <div class="company-sub">PT DESTINARA CHAKRAWALA ARTHA</div>
                 <div class="company-meta">
                     Layanan WhatsApp API Gateway &amp; Enterprise Messaging Platform<br>
-                    Email: flustrafinances@gmail.com &bull; Web: https://flustra.id
+                    Email: vexahostcloudtech@gmail.com &bull; Web: https://wa.vexahostcloud.my.id
                 </div>
             </td>
             <td style="text-align: right; vertical-align: top;">
@@ -283,7 +283,7 @@
                 <td>
                     <strong>Biaya Administrasi &amp; Penanganan Pemrosesan</strong><br>
                     <span style="font-size: 10px; color: #64748b;">
-                        Biaya pemrosesan transfer perbankan sesuai Syarat &amp; Ketentuan resmi kemitraan Flustra ({{ $payout->fee_percent }}%).
+                        Biaya pemrosesan transfer perbankan sesuai Syarat &amp; Ketentuan resmi kemitraan VexaHost ({{ $payout->fee_percent }}%).
                     </span>
                 </td>
                 <td style="text-align: center; color: #64748b;">{{ $payout->fee_percent }}% dari nominal</td>
@@ -337,14 +337,14 @@
     <table class="footer-table">
         <tr>
             <td style="vertical-align: bottom; font-size: 9px; color: #94a3b8; line-height: 1.4;">
-                Dokumen elektronik ini diterbitkan secara otomatis dan sah oleh sistem Flustra WA Gateway.<br>
+                Dokumen elektronik ini diterbitkan secara otomatis dan sah oleh sistem VexaHost WA Gateway.<br>
                 Diakui secara legal berdasarkan UU ITE Republik Indonesia Pasal 5 ayat 1.<br>
                 Dicetak pada {{ now()->format('d/m/Y, H:i') }} WIB.
             </td>
             <td style="text-align: right; vertical-align: bottom;">
                 <div class="seal-card">
                     <div class="seal-title">&#10003; DOKUMEN ELEKTRONIK SAH</div>
-                    <div class="seal-company">Flustra Technology Indonesia</div>
+                    <div class="seal-company">PT DESTINARA CHAKRAWALA ARTHA</div>
                     <div class="seal-hash">SHA256: {{ $shaHash }}</div>
                 </div>
             </td>

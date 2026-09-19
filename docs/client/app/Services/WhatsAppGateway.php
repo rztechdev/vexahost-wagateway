@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Klien Flustra WA Gateway.
+ * Klien VexaHost WA Gateway.
  *
  * Disalin apa adanya ke setiap aplikasi Flustra yang perlu mengirim WhatsApp.
- * Sumber aslinya ada di repo flustra-wa (docs/client/) — ubah di sana dulu,
+ * Sumber aslinya ada di repo vexahost-wa (docs/client/) — ubah di sana dulu,
  * lalu salin ulang, mengikuti pola yang sama dengan CentralAuthClient dan
  * SloNotifier.
  *

@@ -562,7 +562,7 @@ class BillingTest extends TestCase
             'billing.qris.payload' => $this->payloadQrisContoh(),
             'billing.bank.name' => 'BCA',
             'billing.bank.account_number' => '8880123456',
-            'billing.bank.account_holder' => 'PT FLUSTRA FINANCES ARTHA',
+            'billing.bank.account_holder' => 'PT DESTINARA CHAKRAWALA ARTHA',
         ]);
 
         $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
@@ -573,7 +573,7 @@ class BillingTest extends TestCase
             ->assertSee('Transfer bank')
             ->assertSee('BCA')
             ->assertSee('8880123456')
-            ->assertSee('PT FLUSTRA FINANCES ARTHA');
+            ->assertSee('PT DESTINARA CHAKRAWALA ARTHA');
     }
 
     public function test_alur_pembayaran_qris_unggah_bukti_sampai_verifikasi_admin(): void
@@ -604,8 +604,8 @@ class BillingTest extends TestCase
 
         // 4. Super admin memeriksa di panel admin
         $admin = User::create([
-            'name' => 'Admin Flustra',
-            'email' => 'admin@flustra.id',
+            'name' => 'Admin VexaHost',
+            'email' => 'admin@vexahostcloud.my.id',
             'password' => Hash::make('password123'),
             'is_super_admin' => true,
         ]);
@@ -655,7 +655,7 @@ class BillingTest extends TestCase
             'billing.qris.payload' => null,
             'billing.bank.name' => 'BCA',
             'billing.bank.account_number' => '1234567890',
-            'billing.bank.account_holder' => 'PT Flustra',
+            'billing.bank.account_holder' => 'PT VexaHost',
         ]);
 
         $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
@@ -744,7 +744,7 @@ class BillingTest extends TestCase
             .'52045812'
             .'5303360'
             .'5802ID'
-            .'5907FLUSTRA'
+            .'5908VEXAHOST'
             .'6007JAKARTA'
             .'6304';
 
@@ -773,6 +773,9 @@ class BillingTest extends TestCase
 
     public function test_dashboard_menampilkan_alert_tagihan_pending_dengan_tombol_wa(): void
     {
+        // Nomornya dibaca dari config, bukan ditulis mati di Blade — tes ini
+        // memastikan nomor bisnis yang berganti benar-benar ikut tampil.
+        config(['billing.enterprise.whatsapp' => '085808749131']);
         $invoice = app(SubscriptionService::class)->issueInvoice($this->workspace, 'prime', 'monthly');
 
         // Sebelum dikonfirmasi bayar: muncul alert transaksi pending
@@ -782,7 +785,7 @@ class BillingTest extends TestCase
             ->assertSee('Transaksi Pending')
             ->assertSee($invoice->number)
             ->assertSee('Hubungi Admin WA')
-            ->assertSee('6282318280376');
+            ->assertSee('wa.me/6285808749131', false);
 
         // Setelah dikonfirmasi bayar: muncul alert sedang diverifikasi
         $invoice->forceFill(['payment_confirmed_at' => now()])->save();

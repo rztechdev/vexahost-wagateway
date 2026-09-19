@@ -22,7 +22,7 @@ Untuk grup, gunakan ID grup yang berakhiran `@g.us`. Cara mendapatkannya: kirim 
 ## Pesan teks
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/text \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/text \
   -H "X-Api-Key: $KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -45,7 +45,7 @@ Format WhatsApp berlaku seperti biasa:
 ## Pesan dengan lampiran
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/media \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/media \
   -H "X-Api-Key: $KEY" \
   -F "to=081234567890" \
   -F "caption=Invoice Agustus 2026" \
@@ -65,7 +65,7 @@ Batas ukuran **16 MB** — itu batas dari WhatsApp, bukan dari kami.
 ## Mengirim ke banyak nomor
 
 ```bash
-curl -X POST https://wa.flustra.id/api/v1/messages/bulk \
+curl -X POST https://wa.vexahostcloud.my.id/api/v1/messages/bulk \
   -H "X-Api-Key: $KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -102,7 +102,7 @@ Pantau kemajuannya lewat `batch_id`:
 
 ```bash
 curl -H "X-Api-Key: $KEY" \
-  "https://wa.flustra.id/api/v1/messages?batch_id=01K2CDEFGH7JKMNPQRSTVWXYZ"
+  "https://wa.vexahostcloud.my.id/api/v1/messages?batch_id=01K2CDEFGH7JKMNPQRSTVWXYZ"
 ```
 
 ## Melacak status pengiriman
@@ -111,7 +111,7 @@ Setiap pesan punya ID. Simpan dan gunakan untuk memeriksa statusnya:
 
 ```bash
 curl -H "X-Api-Key: $KEY" \
-  https://wa.flustra.id/api/v1/messages/01K2CDEFGH7JKMNPQRSTVWXYZ
+  https://wa.vexahostcloud.my.id/api/v1/messages/01K2CDEFGH7JKMNPQRSTVWXYZ
 ```
 
 | Status | Arti |

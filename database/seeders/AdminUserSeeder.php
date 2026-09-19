@@ -13,11 +13,13 @@ use Illuminate\Support\Facades\Hash;
  * hanya bisa diangkat oleh super admin lain — tanpa akun pertama yang lahir di
  * luar antarmuka, panel itu terkunci dari dalam sejak menit pertama.
  *
- * Kredensialnya dibaca dari env dengan nilai bawaan yang sengaja mudah dipakai
- * saat pengembangan. **Nilai bawaan itu tidak boleh dipakai di produksi.**
- * Isi `ADMIN_PASSWORD` di env produksi sebelum menjalankan seeder, atau ganti
- * kata sandinya lewat panel begitu akunnya terbuat: kata sandi yang tertulis di
- * dalam repo adalah kata sandi yang sudah bocor.
+ * Identitasnya disamakan persis dengan admin aplikasi vexahost: dibaca dari
+ * `config('vexahost.admin')`, yang membaca variabel `ADMIN_*` yang sama dengan
+ * milik vexahost. Kata sandi bawaan `12345678` hanya untuk pengembangan.
+ * **Nilai bawaan itu tidak boleh dipakai di produksi.** Isi `ADMIN_PASSWORD`
+ * di env produksi sebelum menjalankan seeder, atau ganti kata sandinya lewat
+ * panel begitu akunnya terbuat: kata sandi yang tertulis di dalam repo adalah
+ * kata sandi yang sudah bocor.
  *
  * Aman dijalankan berulang. Akun yang sudah ada tidak ditimpa kata sandinya —
  * menjalankan ulang seeder saat deploy tidak boleh diam-diam mengembalikan kata
@@ -27,9 +29,9 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = env('ADMIN_EMAIL', 'flustrafinances@gmail.com');
-        $password = env('ADMIN_PASSWORD', '12345678');
-        $name = env('ADMIN_NAME', 'Flustra Finance');
+        $admin = config('vexahost.admin');
+        $email = $admin['email'];
+        $password = filled($admin['password']) ? $admin['password'] : '12345678';
 
         $user = User::where('email', $email)->first();
 
@@ -47,8 +49,10 @@ class AdminUserSeeder extends Seeder
         }
 
         User::create([
-            'name' => $name,
+            'name' => $admin['name'],
             'email' => $email,
+            'phone' => $admin['phone'],
+            'company' => $admin['company'],
             'password' => Hash::make($password),
             'email_verified_at' => now(),
             'is_super_admin' => true,

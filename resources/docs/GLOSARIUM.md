@@ -10,7 +10,7 @@ Cara aplikasi Anda berbicara dengan gateway lewat permintaan HTTP. Lihat [Refere
 
 ### API key
 
-Kunci yang dipakai aplikasi Anda untuk membuktikan diri saat memanggil gateway. Berbentuk `fwa_xxxxxxxx.xxxxxxxx`. Tersimpan terenkripsi dan bisa dibuka lagi kapan saja dari halaman API Keys oleh owner atau admin workspace.
+Kunci yang dipakai aplikasi Anda untuk membuktikan diri saat memanggil gateway. Berbentuk `vwa_xxxxxxxx.xxxxxxxx`. Tersimpan terenkripsi dan bisa dibuka lagi kapan saja dari halaman API Keys oleh owner atau admin workspace.
 
 ### Antrean
 

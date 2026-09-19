@@ -154,7 +154,7 @@ class BillingCycleTest extends TestCase
 
     public function test_workspace_internal_tidak_pernah_ditagih(): void
     {
-        $workspace = $this->workspace('flustra');
+        $workspace = $this->workspace('vexahost');
         $workspace->forceFill(['is_internal' => true])->save();
 
         $subscription = $this->langgananBerakhir($workspace, '-5 days');

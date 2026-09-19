@@ -6,9 +6,9 @@ import { test } from 'node:test';
 
 process.env.ENGINE_TOKEN = 'uji';
 process.env.ENGINE_HMAC_SECRET = 'uji';
-process.env.LARAVEL_URL = 'http://localhost:8070';
+process.env.LARAVEL_URL = 'http://localhost:8051';
 
-const dataPath = await mkdtemp(path.join(tmpdir(), 'flustra-wa-store-'));
+const dataPath = await mkdtemp(path.join(tmpdir(), 'vexahost-wa-store-'));
 process.env.WA_DATA_PATH = dataPath;
 
 const { LaravelStore } = await import('../src/stores/laravel-store.js');

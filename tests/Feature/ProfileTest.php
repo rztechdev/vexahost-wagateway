@@ -97,7 +97,7 @@ class ProfileTest extends TestCase
             ->put(route('profile.update'), [
                 'name' => 'Budi Santoso',
                 'phone' => '081234567890',
-                'company' => 'PT Digital Flustra',
+                'company' => 'PT Digital VexaHost',
                 'city' => 'Bandung',
                 'address' => 'Jl. Asia Afrika No. 10',
                 'bio' => 'Pengembang aplikasi web dan SaaS.',
@@ -107,7 +107,7 @@ class ProfileTest extends TestCase
         $user = $this->user->fresh();
         $this->assertEquals('Budi Santoso', $user->name);
         $this->assertEquals('081234567890', $user->phone);
-        $this->assertEquals('PT Digital Flustra', $user->company);
+        $this->assertEquals('PT Digital VexaHost', $user->company);
         $this->assertEquals('Bandung', $user->city);
         $this->assertEquals('Jl. Asia Afrika No. 10', $user->address);
         $this->assertEquals('Pengembang aplikasi web dan SaaS.', $user->bio);

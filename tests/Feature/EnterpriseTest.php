@@ -43,8 +43,8 @@ class EnterpriseTest extends TestCase
         Mail::fake();
 
         $this->admin = User::create([
-            'name' => 'Flustra Finance',
-            'email' => 'finance@flustra.id',
+            'name' => 'VexaHost Finance',
+            'email' => 'finance@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -515,8 +515,8 @@ class EnterpriseTest extends TestCase
     {
         $this->get(route('enterprise'))
             ->assertOk()
-            ->assertSee('Flustra WA Gateway')
-            ->assertSee('images/flustra-wa.png')
+            ->assertSee('VexaHost WA Gateway')
+            ->assertSee('images/vexahost-wa.png')
             ->assertSee('Cara Kerja')
             ->assertSee('Fitur')
             ->assertSee('Harga')
@@ -532,7 +532,7 @@ class EnterpriseTest extends TestCase
 
     /**
      * Footer halaman enterprise harus persis dengan footer landing page,
-     * memuat banner ajakan, pilar keamanan, 4 kolom link, copyright legal, dan 7 sosial media.
+     * memuat banner ajakan, pilar keamanan, 4 kolom link, copyright legal, dan kanal resmi VexaHost.
      */
     public function test_halaman_enterprise_menampilkan_footer_lengkap_seperti_halaman_depan(): void
     {
@@ -543,10 +543,14 @@ class EnterpriseTest extends TestCase
             ->assertSee('Isolasi Volume Sesi Terenkripsi')
             ->assertSee('Produk API')
             ->assertSee('Pusat Dokumentasi')
-            ->assertSee('PT FLUSTRA FINANCES ARTHA')
-            ->assertSee('instagram.com/flustra.id')
-            ->assertSee('threads.net/@flustra.id')
-            ->assertSee('linkedin.com/company/flustra');
+            ->assertSee('VexaHost. All rights reserved.')
+            ->assertSee('lynk.id/vexahost')
+            // Akun media sosial merek lama tidak boleh ikut tampil di footer.
+            ->assertDontSee('instagram.com')
+            ->assertDontSee('threads.net')
+            ->assertDontSee('x.com/')
+            ->assertDontSee('tiktok.com')
+            ->assertDontSee('linkedin.com');
     }
 
     public function test_halaman_enterprise_menampilkan_kalkulator_slider_dan_tanpa_teks_lama(): void

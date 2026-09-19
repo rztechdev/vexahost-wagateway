@@ -36,8 +36,8 @@ class WorkspaceSettingsTest extends TestCase
         ]);
 
         $this->workspace = Workspace::create([
-            'name' => 'Flustra internal',
-            'slug' => 'flustra-internal',
+            'name' => 'VexaHost internal',
+            'slug' => 'vexahost-internal',
             'owner_id' => $this->owner->id,
             'owner_email' => $this->owner->email,
             'max_sessions' => 1,
@@ -53,10 +53,10 @@ class WorkspaceSettingsTest extends TestCase
     public function test_owner_bisa_mengganti_nama_workspace(): void
     {
         $this->actingAs($this->owner)
-            ->put(route('settings.update'), ['name' => 'flustra.id'])
+            ->put(route('settings.update'), ['name' => 'vexahost.id'])
             ->assertRedirect();
 
-        $this->assertSame('flustra.id', $this->workspace->fresh()->name);
+        $this->assertSame('vexahost.id', $this->workspace->fresh()->name);
     }
 
     public function test_slug_tidak_ikut_berubah_saat_nama_diganti(): void
@@ -65,7 +65,7 @@ class WorkspaceSettingsTest extends TestCase
 
         // Slug dipakai sebagai pengenal tetap di catatan audit; kalau ikut
         // berubah, jejak sebelum dan sesudah penggantian nama jadi terputus.
-        $this->assertSame('flustra-internal', $this->workspace->fresh()->slug);
+        $this->assertSame('vexahost-internal', $this->workspace->fresh()->slug);
     }
 
     public function test_member_biasa_tidak_bisa_mengganti_nama(): void
@@ -82,13 +82,13 @@ class WorkspaceSettingsTest extends TestCase
             ->put(route('settings.update'), ['name' => 'Coba Ganti'])
             ->assertForbidden();
 
-        $this->assertSame('Flustra internal', $this->workspace->fresh()->name);
+        $this->assertSame('VexaHost internal', $this->workspace->fresh()->name);
     }
 
     public function test_workspace_terhapus_kalau_namanya_diketik_benar(): void
     {
         $this->actingAs($this->owner)
-            ->delete(route('settings.destroy'), ['confirm' => 'Flustra internal'])
+            ->delete(route('settings.destroy'), ['confirm' => 'VexaHost internal'])
             ->assertRedirect();
 
         $this->assertSoftDeleted('workspaces', ['id' => $this->workspace->id]);
@@ -97,7 +97,7 @@ class WorkspaceSettingsTest extends TestCase
     public function test_workspace_tidak_terhapus_kalau_nama_konfirmasi_salah(): void
     {
         $this->actingAs($this->owner)
-            ->delete(route('settings.destroy'), ['confirm' => 'flustra internal'])
+            ->delete(route('settings.destroy'), ['confirm' => 'vexahost internal'])
             ->assertSessionHasErrors('confirm');
 
         $this->assertNotSoftDeleted('workspaces', ['id' => $this->workspace->id]);
@@ -117,7 +117,7 @@ class WorkspaceSettingsTest extends TestCase
         // seluruh riwayat pesan dan mematikan API key yang dipakai aplikasi
         // lain — itu keputusan owner.
         $this->actingAs($admin)
-            ->delete(route('settings.destroy'), ['confirm' => 'Flustra internal'])
+            ->delete(route('settings.destroy'), ['confirm' => 'VexaHost internal'])
             ->assertForbidden();
 
         $this->assertNotSoftDeleted('workspaces', ['id' => $this->workspace->id]);

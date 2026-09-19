@@ -15,7 +15,7 @@ Selama gateway hanya dipakai internal, ini tidak terasa. Begitu sistem mulai men
 
 | Bagian | Siapa |
 |---|---|
-| Membuat, mengirim, dan mencocokkan kode OTP | **flustra-wa** — hanya di sini ada kemampuan mengirim WhatsApp |
+| Membuat, mengirim, dan mencocokkan kode OTP | **vexahost-wa** — hanya di sini ada kemampuan mengirim WhatsApp |
 | Menyimpan nomor & status verifikasinya | **flustra-auth** — nomor adalah bagian dari identitas |
 | Menyebarkan status ke aplikasi lain | claim `phone` & `phone_verified` di `/oauth/userinfo` |
 | Mematuhi status tersebut | setiap aplikasi konsumen, lewat `require_verified_phone` |
@@ -25,7 +25,7 @@ Hasilnya: pengguna cukup verifikasi **satu kali**, dan berlaku di web, pricing, 
 ## Alur
 
 ```
-Pengguna                flustra-auth                 flustra-wa
+Pengguna                flustra-auth                 vexahost-wa
    │                         │                            │
    ├─ isi nomor ────────────▶│                            │
    │                         ├─ POST /api/v1/otp/send ───▶│
@@ -62,12 +62,12 @@ Kode disimpan ter-hash, bukan apa adanya. Kode lama untuk tujuan yang sama dimat
 1. Jalankan migrasi `2026_08_13_120000_add_phone_to_users_table`.
 2. Isi env:
    ```env
-   WA_GATEWAY_URL=https://wa.flustra.id
-   WA_GATEWAY_KEY=fwa_xxxx.xxxx    # kunci dengan scope `otp`
+   WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+   WA_GATEWAY_KEY=vwa_xxxx.xxxx    # kunci dengan scope `otp`
    ```
 3. Halaman verifikasi ada di `/account/phone`.
 
-> flustra-wa sendiri **tidak** memakai SSO — ia punya login dan register lokalnya
+> vexahost-wa sendiri **tidak** memakai SSO — ia punya login dan register lokalnya
 > sendiri, sama seperti aplikasi Flustra lain. Hubungannya dengan flustra-auth
 > di sini hanya satu arah: flustra-auth memanggil API OTP milik gateway.
 

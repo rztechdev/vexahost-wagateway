@@ -22,7 +22,7 @@ class PaymentSettingController extends Controller
     public function index(): View
     {
         $qrisPayload = AppSetting::ambil('qris_payload', config('billing.qris.payload'));
-        $qrisMerchant = AppSetting::ambil('qris_merchant_name', config('billing.qris.merchant', 'Flustra'));
+        $qrisMerchant = AppSetting::ambil('qris_merchant_name', config('billing.qris.merchant', 'VexaHost'));
         $qrisValid = filled($qrisPayload) && Qris::valid($qrisPayload);
 
         $bankAccounts = BankAccount::orderBy('sort_order')->orderBy('id')->get();

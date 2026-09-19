@@ -1,6 +1,6 @@
 # Memantau Koneksi
 
-Panduan memasang pemantauan koneksi WhatsApp **di dalam aplikasi Anda sendiri**, supaya Anda tidak perlu membuka dashboard Flustra untuk tahu nomor Anda masih tertaut atau tidak.
+Panduan memasang pemantauan koneksi WhatsApp **di dalam aplikasi Anda sendiri**, supaya Anda tidak perlu membuka dashboard VexaHost untuk tahu nomor Anda masih tertaut atau tidak.
 
 Ini bukan kenyamanan. Nomor WhatsApp bisa terputus tanpa satu pun gejala di aplikasi Anda: pengiriman berikutnya gagal, dan yang pertama menyadarinya biasanya pelanggan Anda yang tidak menerima notifikasi. Dengan lencana status di halaman admin Anda sendiri, keadaan itu terlihat sebelum ada yang mengeluh.
 
@@ -64,7 +64,7 @@ Endpoint ini **tidak** memotong kuota pesan Anda, tetapi tetap dihitung terhadap
 
 Pola yang kami pakai sendiri di Flustra Office: satu endpoint proksi di aplikasi Anda, satu lencana kecil yang menyegarkan sendiri.
 
-**Kenapa harus lewat proksi, bukan memanggil Flustra langsung dari peramban:** API key Anda akan terbaca siapa pun yang membuka Inspect Element. Kunci yang bocor bisa dipakai mengirim pesan atas nama Anda dan memotong kuota Anda. Panggilan ke Flustra **selalu** dari server aplikasi Anda.
+**Kenapa harus lewat proksi, bukan memanggil VexaHost langsung dari peramban:** API key Anda akan terbaca siapa pun yang membuka Inspect Element. Kunci yang bocor bisa dipakai mengirim pesan atas nama Anda dan memotong kuota Anda. Panggilan ke VexaHost **selalu** dari server aplikasi Anda.
 
 ### Laravel — controller proksi
 
@@ -82,10 +82,10 @@ class StatusWhatsAppController extends Controller
 {
     public function __invoke(): JsonResponse
     {
-        if (! config('flustra.key')) {
+        if (! config('vexahost.key')) {
             return response()->json([
                 'status' => 'belum_dikonfigurasi',
-                'pesan' => 'FLUSTRA_WA_KEY belum diisi di .env aplikasi ini.',
+                'pesan' => 'VEXAHOST_WA_KEY belum diisi di .env aplikasi ini.',
             ]);
         }
 
@@ -94,8 +94,8 @@ class StatusWhatsAppController extends Controller
         // gateway sedang lambat, yang justru saat halaman ini paling dibuka.
         $hasil = Cache::remember('wa:status', 30, function (): array {
             try {
-                $jawaban = Http::baseUrl(rtrim(config('flustra.url'), '/'))
-                    ->withHeader('X-Api-Key', config('flustra.key'))
+                $jawaban = Http::baseUrl(rtrim(config('vexahost.url'), '/'))
+                    ->withHeader('X-Api-Key', config('vexahost.key'))
                     ->connectTimeout(3)
                     ->timeout(8)
                     ->acceptJson()
@@ -140,14 +140,14 @@ class StatusWhatsAppController extends Controller
 }
 ```
 
-`config/flustra.php`:
+`config/vexahost.php`:
 
 ```php
 <?php
 
 return [
-    'url' => env('FLUSTRA_WA_URL', 'https://{{legal.domain}}'),
-    'key' => env('FLUSTRA_WA_KEY'),
+    'url' => env('VEXAHOST_WA_URL', 'https://{{legal.domain}}'),
+    'key' => env('VEXAHOST_WA_KEY'),
 ];
 ```
 
@@ -235,8 +235,8 @@ export async function statusWhatsApp() {
   const batas = setTimeout(() => kendali.abort(), 8000);
 
   try {
-    const r = await fetch(`${process.env.FLUSTRA_WA_URL}/api/v1/health`, {
-      headers: { 'X-Api-Key': process.env.FLUSTRA_WA_KEY, Accept: 'application/json' },
+    const r = await fetch(`${process.env.VEXAHOST_WA_URL}/api/v1/health`, {
+      headers: { 'X-Api-Key': process.env.VEXAHOST_WA_KEY, Accept: 'application/json' },
       signal: kendali.signal,
     });
 
@@ -278,8 +278,8 @@ def status_whatsapp():
 
     try:
         r = requests.get(
-            f"{os.environ['FLUSTRA_WA_URL']}/api/v1/health",
-            headers={"X-Api-Key": os.environ["FLUSTRA_WA_KEY"]},
+            f"{os.environ['VEXAHOST_WA_URL']}/api/v1/health",
+            headers={"X-Api-Key": os.environ["VEXAHOST_WA_KEY"]},
             timeout=(3, 8),
         )
         r.raise_for_status()
@@ -328,17 +328,17 @@ Nilai `status` yang mungkin: `connecting`, `qr`, `connected`, `disconnected`, `f
 ### Menerimanya di Laravel
 
 ```php
-Route::post('/webhook/flustra', function (Request $request) {
+Route::post('/webhook/vexahost', function (Request $request) {
     // Tanda tangan diperiksa SEBELUM apa pun dibaca dari isinya. Tanpa ini,
     // siapa pun yang menebak alamat webhook Anda bisa mengirimkan
     // "nomor Anda terputus" dan memicu peringatan palsu — atau sebaliknya,
     // menutupi gangguan yang sungguhan.
-    $tandaTangan = hash_hmac('sha256', $request->getContent(), config('flustra.webhook_secret'));
+    $tandaTangan = hash_hmac('sha256', $request->getContent(), config('vexahost.webhook_secret'));
 
     // hash_equals, bukan ===. Perbandingan string biasa berhenti di karakter
     // pertama yang berbeda, dan selisih waktunya cukup untuk menebak tanda
     // tangan satu karakter demi satu karakter.
-    abort_unless(hash_equals($tandaTangan, $request->header('X-Flustra-Signature', '')), 403);
+    abort_unless(hash_equals($tandaTangan, $request->header('X-VexaHost-Signature', '')), 403);
 
     if ($request->input('event') !== 'session.status') {
         return response()->noContent();
@@ -370,7 +370,7 @@ Route::post('/webhook/flustra', function (Request $request) {
 
 ## 4. Keadaan gateway kami sendiri
 
-Endpoint di atas menjawab keadaan **workspace Anda**. Untuk keadaan **layanan Flustra secara keseluruhan** — API, dashboard, engine WhatsApp, antrean — ada halaman status publik yang tidak memerlukan API key:
+Endpoint di atas menjawab keadaan **workspace Anda**. Untuk keadaan **layanan VexaHost secara keseluruhan** — API, dashboard, engine WhatsApp, antrean — ada halaman status publik yang tidak memerlukan API key:
 
 ```http
 GET https://{{legal.domain}}/status.json
@@ -411,7 +411,7 @@ $sekarang = $data['usage']['messages_failed'];
 $sebelumnya = Cache::get('wa:gagal_terakhir', $sekarang);
 
 if ($sekarang - $sebelumnya > 10) {
-    // Periksa nomor Anda di dashboard Flustra sebelum mengirim lagi.
+    // Periksa nomor Anda di dashboard VexaHost sebelum mengirim lagi.
     kabariTim('Pesan gagal melonjak — nomor mungkin dibatasi WhatsApp.');
 }
 
@@ -429,7 +429,7 @@ Cara memperkecil peluang nomor dibatasi ada di [Praktik Baik](praktik-baik).
 | Nomor saya masih tertaut? | `GET /api/v1/health` → `sessions.connected` |
 | Beri tahu saya begitu putus | Webhook `session.status` |
 | Kuota saya tinggal berapa? | `GET /api/v1/health` → `usage` |
-| Gateway Flustra sedang gangguan? | `GET /status.json` |
+| Gateway VexaHost sedang gangguan? | `GET /status.json` |
 | Nomor saya dibatasi WhatsApp? | Lonjakan `usage.messages_failed` |
 
 Lihat juga: [Referensi API](referensi-api), [Webhook](webhook), [Praktik Baik](praktik-baik).

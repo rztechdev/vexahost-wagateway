@@ -31,7 +31,7 @@ class PeringatanSistemTest extends TestCase
 
         User::create([
             'name' => 'Admin',
-            'email' => 'admin-peringatan@flustra.id',
+            'email' => 'admin-peringatan@vexahostcloud.my.id',
             'password' => Hash::make('rahasia12345'),
             'is_super_admin' => true,
         ]);
@@ -44,10 +44,10 @@ class PeringatanSistemTest extends TestCase
          | kirimannya, bukan mailer palsu.
         */
         config([
-            'billing.support_email' => 'tim@flustra.id',
+            'billing.support_email' => 'tim@vexahostcloud.my.id',
             'mail.default' => 'smtp',
             'mail.mailers.smtp.host' => 'smtp-relay.contoh',
-            'mail.from.address' => 'noreply@flustra.id',
+            'mail.from.address' => 'noreply@vexahostcloud.my.id',
         ]);
     }
 

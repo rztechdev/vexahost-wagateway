@@ -106,7 +106,7 @@
                     <p class="text-xs text-muted-foreground">Tim dukungan teknis kami siap menjawab pertanyaan implementasi Anda.</p>
                 </div>
             </div>
-            <a href="https://about.flustra.id/#contact" target="_blank" rel="noopener noreferrer"
+            <a href="{{ route('docs.show', 'bantuan') }}"
                class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted transition shrink-0">
                 <i class="bi bi-headset"></i>
                 <span>Hubungi Kami</span>

@@ -9,8 +9,8 @@ Kode siap pakai untuk menyambungkan aplikasi Anda ke gateway.
 Simpan kredensial di `.env`:
 
 ```env
-WA_GATEWAY_URL=https://wa.flustra.id
-WA_GATEWAY_KEY=fwa_xxxxxxxx.xxxxxxxxxxxx
+WA_GATEWAY_URL=https://wa.vexahostcloud.my.id
+WA_GATEWAY_KEY=vwa_xxxxxxxx.xxxxxxxxxxxx
 WA_GATEWAY_SESSION=
 ```
 
@@ -22,7 +22,7 @@ Blok itu bisa disalin langsung dari halaman **API Keys** setelah kunci dibuat. `
 <?php
 
 return [
-    'url' => env('WA_GATEWAY_URL', 'https://wa.flustra.id'),
+    'url' => env('WA_GATEWAY_URL', 'https://wa.vexahostcloud.my.id'),
     'key' => env('WA_GATEWAY_KEY'),
 
     // Kosong = kirim dari nomor yang sedang terhubung. Isi dengan ID sesi
@@ -152,7 +152,7 @@ KirimNotifikasiWhatsApp::dispatch($pelanggan->telepon, 'Pesanan diterima.');
 ## Node.js
 
 ```js
-const WA_URL = process.env.WA_GATEWAY_URL ?? 'https://wa.flustra.id';
+const WA_URL = process.env.WA_GATEWAY_URL ?? 'https://wa.vexahostcloud.my.id';
 const WA_KEY = process.env.WA_GATEWAY_KEY;
 
 export async function kirimWhatsApp(nomor, pesan) {
@@ -194,7 +194,7 @@ import os
 import logging
 import requests
 
-WA_URL = os.getenv("WA_GATEWAY_URL", "https://wa.flustra.id")
+WA_URL = os.getenv("WA_GATEWAY_URL", "https://wa.vexahostcloud.my.id")
 WA_KEY = os.getenv("WA_GATEWAY_KEY")
 
 

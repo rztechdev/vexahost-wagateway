@@ -119,9 +119,9 @@ Supaya kunci yang bocor bisa dicabut tanpa mengganggu aplikasi lain. Kalau semua
 
 Status sebenarnya ditelusuri lewat ID pesan yang dikembalikan, atau lewat webhook.
 
-### Bagaimana memastikan webhook benar-benar dari Flustra?
+### Bagaimana memastikan webhook benar-benar dari VexaHost?
 
-Verifikasi header `X-Flustra-Signature` dengan signing secret webhook Anda. Contoh kodenya ada di [Webhook](WEBHOOK.md).
+Verifikasi header `X-VexaHost-Signature` dengan signing secret webhook Anda. Contoh kodenya ada di [Webhook](WEBHOOK.md).
 
 Tanpa verifikasi ini, siapa pun yang tahu URL webhook Anda bisa mengirim data palsu.
 
@@ -165,7 +165,7 @@ Kirim tiket dari menu **Bantuan** di dashboard — lihat [Bantuan & Tiket](BANTU
 
 ## Data & privasi
 
-### Apakah Flustra membaca pesan saya?
+### Apakah VexaHost membaca pesan saya?
 
 Isi pesan tersimpan di riwayat agar Anda bisa menelusurinya dan agar status pengiriman bisa dilacak. Kami tidak membacanya untuk keperluan lain.
 
