@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Program Kemitraan &amp; Reseller — {{ config('app.name') }}</title>
-    <meta name="description" content="Bergabunglah dengan Program Mitra VexaHost WA Gateway. Dapatkan komisi 20% untuk setiap klien baru yang Anda rekomendasikan, dan klien Anda mendapatkan diskon 10%.">
+    @include('partials.seo-head', [
+        'title' => 'Program Kemitraan & Reseller — ' . config('app.name'),
+        'description' => 'Bergabunglah dengan Program Mitra VexaHost WA Gateway. Dapatkan komisi 20% untuk setiap klien baru yang Anda rekomendasikan, dan klien Anda mendapatkan diskon 10%.',
+        'keywords' => 'program kemitraan wa gateway, reseller whatsapp api, afiliasi whatsapp gateway, komisi referral wa gateway',
+    ])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">

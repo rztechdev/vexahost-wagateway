@@ -4,8 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name'))</title>
-    <meta name="description" content="@yield('description', 'Gateway WhatsApp terpusat untuk aplikasi Anda — satu REST API, multi-nomor, webhook pesan masuk.')">
+    @php
+        $pageTitle = trim($__env->yieldContent('title'));
+        $pageDesc = trim($__env->yieldContent('description'));
+        $pageKeywords = trim($__env->yieldContent('keywords'));
+    @endphp
+    @include('partials.seo-head', [
+        'title' => !empty($pageTitle) ? $pageTitle : null,
+        'description' => !empty($pageDesc) ? $pageDesc : null,
+        'keywords' => !empty($pageKeywords) ? $pageKeywords : null,
+    ])
 
     <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">

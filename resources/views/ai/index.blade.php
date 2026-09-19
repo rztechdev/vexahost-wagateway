@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Integrasi AI Agent WhatsApp Gateway &middot; {{ config('app.name') }}</title>
-    <meta name="description" content="Panduan integrasi lengkap VexaHost WA Gateway untuk AI Coding Agent: Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, Codex, dan Windsurf. Salin prompt instalasi sekali klik.">
+    @include('partials.seo-head', [
+        'title' => 'Integrasi AI Agent WhatsApp Gateway · ' . config('app.name'),
+        'description' => 'Panduan integrasi lengkap VexaHost WA Gateway untuk AI Coding Agent: Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, Codex, dan Windsurf. Salin prompt instalasi sekali klik.',
+        'keywords' => 'ai agent whatsapp, claude code whatsapp gateway, cursor whatsapp api, antigravity whatsapp mcp, openclaw wa bot',
+    ])
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">

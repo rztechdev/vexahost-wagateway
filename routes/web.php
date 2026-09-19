@@ -41,6 +41,51 @@ use App\Support\DocsRepository;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('welcome');
+
+/*
+| Public XML Sitemap (Google Search Console & Mesin Pencari)
+*/
+Route::get('sitemap.xml', function () {
+    $baseUrl = rtrim(config('app.url', url('/')), '/');
+    $urls = [
+        ['loc' => $baseUrl.'/', 'changefreq' => 'daily', 'priority' => '1.0'],
+        ['loc' => $baseUrl.'/docs', 'changefreq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => $baseUrl.'/status', 'changefreq' => 'hourly', 'priority' => '0.7'],
+        ['loc' => $baseUrl.'/mitra', 'changefreq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => $baseUrl.'/ai', 'changefreq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => $baseUrl.'/enterprise', 'changefreq' => 'weekly', 'priority' => '0.8'],
+    ];
+
+    try {
+        foreach (array_keys(DocsRepository::flat()) as $docSlug) {
+            $urls[] = [
+                'loc' => $baseUrl.'/docs/'.$docSlug,
+                'changefreq' => 'weekly',
+                'priority' => '0.7',
+            ];
+        }
+    } catch (Throwable $e) {
+        // Fallback gracefully jika ada kendala pembacaan berkas docs
+    }
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+
+    foreach ($urls as $u) {
+        $xml .= "    <url>\n";
+        $xml .= '        <loc>'.htmlspecialchars($u['loc'], ENT_XML1)."</loc>\n";
+        $xml .= '        <lastmod>'.now()->toAtomString()."</lastmod>\n";
+        $xml .= '        <changefreq>'.$u['changefreq']."</changefreq>\n";
+        $xml .= '        <priority>'.$u['priority']."</priority>\n";
+        $xml .= "    </url>\n";
+    }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200, [
+        'Content-Type' => 'application/xml; charset=utf-8',
+    ]);
+})->name('sitemap');
 Route::get('mitra', [MitraController::class, 'landing'])->name('mitra.landing');
 Route::get('ai', [AiIntegrationController::class, 'index'])->name('ai.index');
 Route::redirect('integrasi-ai', 'ai');

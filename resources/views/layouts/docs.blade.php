@@ -3,8 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') &middot; Dokumentasi {{ config('app.name') }}</title>
-    <meta name="description" content="@yield('description', 'Dokumentasi VexaHost WA Gateway: Panduan integrasi WhatsApp API, automasi broadcast, webhook, dan multi-sesi.')">
+    @php
+        $docTitle = trim($__env->yieldContent('title'));
+        $docDesc = trim($__env->yieldContent('description'));
+    @endphp
+    @include('partials.seo-head', [
+        'title' => !empty($docTitle) ? $docTitle . ' · Dokumentasi ' . config('app.name') : 'Dokumentasi ' . config('app.name'),
+        'description' => !empty($docDesc) ? $docDesc : 'Dokumentasi VexaHost WA Gateway: Panduan integrasi WhatsApp API, automasi broadcast, webhook, dan multi-sesi.',
+        'keywords' => 'dokumentasi whatsapp api, panduan wa gateway, webhook whatsapp tutorial, nodejs wa gateway, php whatsapp api',
+    ])
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">

@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name') }} — Gateway WhatsApp untuk Aplikasi Anda</title>
-    <meta name="description" content="Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.">
+    @include('partials.seo-head', [
+        'title' => 'VexaHost WA Gateway — Kirim Notifikasi WhatsApp Lewat Satu REST API',
+        'description' => 'Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.',
+        'keywords' => 'whatsapp gateway indonesia, whatsapp api, wa blast resmi, webhook whatsapp, kirim wa otomatis, vexahost wa gateway, rest api whatsapp',
+    ])
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
