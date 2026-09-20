@@ -7,15 +7,25 @@
     @php
         $pageTitle = trim($__env->yieldContent('title'));
         $pageDesc = trim($__env->yieldContent('description'));
-        $pageKeywords = trim($__env->yieldContent('keywords'));
+
+        // Beranda tidak diberi remah jejak — ia akarnya sendiri.
+        $remahHalaman = [];
+        if (! empty($pageTitle) && ! request()->routeIs('welcome')) {
+            $remahHalaman = [
+                ['name' => 'Beranda', 'url' => url('/')],
+                ['name' => \Illuminate\Support\Str::before($pageTitle, ' — ')],
+            ];
+        }
     @endphp
     @include('partials.seo-head', [
         'title' => !empty($pageTitle) ? $pageTitle : null,
         'description' => !empty($pageDesc) ? $pageDesc : null,
-        'keywords' => !empty($pageKeywords) ? $pageKeywords : null,
+        'breadcrumbs' => $remahHalaman,
     ])
 
-    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 

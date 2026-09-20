@@ -8,10 +8,12 @@
 
     <!-- Meta Tags & Favicon -->
     <meta name="description" content="Masuk atau daftar ke VexaHost WA Gateway - Layanan Notifikasi & Gateway WhatsApp API Terbaik.">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#2e7d32">
     
-    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 

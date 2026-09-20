@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -209,6 +210,31 @@ class DocsRepository
             'prev' => $position > 0 ? ['slug' => $slugs[$position - 1]] + $flat[$slugs[$position - 1]] : null,
             'next' => isset($slugs[$position + 1]) ? ['slug' => $slugs[$position + 1]] + $flat[$slugs[$position + 1]] : null,
         ];
+    }
+
+    /**
+     * Kapan berkas markdown sebuah halaman terakhir berubah, untuk <lastmod> di
+     * sitemap. Dibaca dari berkasnya sendiri, bukan waktu permintaan: sitemap
+     * yang menyebut setiap URL "baru saja berubah" setiap kali diminta tidak
+     * dipercaya Google, dan tanggalnya berhenti berarti apa pun.
+     *
+     * Mengembalikan null kalau slug atau berkasnya tidak ada — pemanggil cukup
+     * menghilangkan <lastmod>, karena tanggal yang salah lebih buruk daripada
+     * tidak ada tanggal.
+     */
+    public static function lastModified(string $slug): ?string
+    {
+        $flat = self::flat();
+
+        if (! isset($flat[$slug])) {
+            return null;
+        }
+
+        $path = base_path(self::DIR."/{$flat[$slug]['file']}");
+
+        return is_file($path)
+            ? Carbon::createFromTimestamp(filemtime($path))->toAtomString()
+            : null;
     }
 
     /**

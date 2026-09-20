@@ -6,11 +6,12 @@
     @include('partials.seo-head', [
         'title' => 'Integrasi AI Agent WhatsApp Gateway · ' . config('app.name'),
         'description' => 'Panduan integrasi lengkap VexaHost WA Gateway untuk AI Coding Agent: Claude Code, Cursor, Hermes Agent, OpenClaw, Antigravity, OpenCode, Codex, dan Windsurf. Salin prompt instalasi sekali klik.',
-        'keywords' => 'ai agent whatsapp, claude code whatsapp gateway, cursor whatsapp api, antigravity whatsapp mcp, openclaw wa bot',
     ])
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
