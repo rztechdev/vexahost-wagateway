@@ -38,6 +38,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingGuideController;
 use App\Http\Controllers\StatusController;
 use App\Support\DocsRepository;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('welcome');
@@ -47,13 +48,25 @@ Route::view('/', 'welcome')->name('welcome');
 */
 Route::get('sitemap.xml', function () {
     $baseUrl = rtrim(config('app.url', url('/')), '/');
+
+    // lastmod dibaca dari berkas view/markdown-nya, bukan now(). Sitemap yang
+    // menyebut setiap URL "baru saja berubah" pada setiap permintaan diabaikan
+    // Google — tanggalnya harus benar-benar menandai perubahan.
+    $diubah = function (string $view): ?string {
+        $berkas = resource_path('views/'.str_replace('.', '/', $view).'.blade.php');
+
+        return is_file($berkas)
+            ? Carbon::createFromTimestamp(filemtime($berkas))->toAtomString()
+            : null;
+    };
+
     $urls = [
-        ['loc' => $baseUrl.'/', 'changefreq' => 'daily', 'priority' => '1.0'],
-        ['loc' => $baseUrl.'/docs', 'changefreq' => 'weekly', 'priority' => '0.8'],
-        ['loc' => $baseUrl.'/status', 'changefreq' => 'hourly', 'priority' => '0.7'],
-        ['loc' => $baseUrl.'/mitra', 'changefreq' => 'weekly', 'priority' => '0.8'],
-        ['loc' => $baseUrl.'/ai', 'changefreq' => 'weekly', 'priority' => '0.8'],
-        ['loc' => $baseUrl.'/enterprise', 'changefreq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => $baseUrl.'/', 'changefreq' => 'daily', 'priority' => '1.0', 'lastmod' => $diubah('welcome')],
+        ['loc' => $baseUrl.'/docs', 'changefreq' => 'weekly', 'priority' => '0.9', 'lastmod' => $diubah('docs.index')],
+        ['loc' => $baseUrl.'/mitra', 'changefreq' => 'weekly', 'priority' => '0.8', 'lastmod' => $diubah('mitra.index')],
+        ['loc' => $baseUrl.'/ai', 'changefreq' => 'weekly', 'priority' => '0.8', 'lastmod' => $diubah('ai.index')],
+        ['loc' => $baseUrl.'/enterprise', 'changefreq' => 'weekly', 'priority' => '0.8', 'lastmod' => $diubah('enterprise')],
+        ['loc' => $baseUrl.'/status', 'changefreq' => 'hourly', 'priority' => '0.7', 'lastmod' => $diubah('status')],
     ];
 
     try {
@@ -62,6 +75,7 @@ Route::get('sitemap.xml', function () {
                 'loc' => $baseUrl.'/docs/'.$docSlug,
                 'changefreq' => 'weekly',
                 'priority' => '0.7',
+                'lastmod' => DocsRepository::lastModified($docSlug),
             ];
         }
     } catch (Throwable $e) {
@@ -74,7 +88,9 @@ Route::get('sitemap.xml', function () {
     foreach ($urls as $u) {
         $xml .= "    <url>\n";
         $xml .= '        <loc>'.htmlspecialchars($u['loc'], ENT_XML1)."</loc>\n";
-        $xml .= '        <lastmod>'.now()->toAtomString()."</lastmod>\n";
+        if (! empty($u['lastmod'])) {
+            $xml .= '        <lastmod>'.$u['lastmod']."</lastmod>\n";
+        }
         $xml .= '        <changefreq>'.$u['changefreq']."</changefreq>\n";
         $xml .= '        <priority>'.$u['priority']."</priority>\n";
         $xml .= "    </url>\n";

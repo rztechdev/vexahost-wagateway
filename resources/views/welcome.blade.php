@@ -6,11 +6,12 @@
     @include('partials.seo-head', [
         'title' => 'VexaHost WA Gateway — Kirim Notifikasi WhatsApp Lewat Satu REST API',
         'description' => 'Kirim notifikasi WhatsApp dari aplikasi Anda lewat satu REST API. Multi-nomor, webhook pesan masuk, riwayat pengiriman, dan sesi yang tidak putus saat server di-deploy ulang.',
-        'keywords' => 'whatsapp gateway indonesia, whatsapp api, wa blast resmi, webhook whatsapp, kirim wa otomatis, vexahost wa gateway, rest api whatsapp',
     ])
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 

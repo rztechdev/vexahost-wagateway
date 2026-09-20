@@ -6,15 +6,27 @@
     @php
         $docTitle = trim($__env->yieldContent('title'));
         $docDesc = trim($__env->yieldContent('description'));
+
+        // Halaman dokumentasi berada dua tingkat di bawah beranda; indeksnya
+        // satu tingkat. Butir terakhir tanpa URL karena itu halaman ini sendiri.
+        $remahDokumentasi = [['name' => 'Beranda', 'url' => url('/')]];
+        if (request()->routeIs('docs.show') && ! empty($docTitle)) {
+            $remahDokumentasi[] = ['name' => 'Dokumentasi', 'url' => route('docs.index')];
+            $remahDokumentasi[] = ['name' => $docTitle];
+        } else {
+            $remahDokumentasi[] = ['name' => 'Dokumentasi'];
+        }
     @endphp
     @include('partials.seo-head', [
         'title' => !empty($docTitle) ? $docTitle . ' · Dokumentasi ' . config('app.name') : 'Dokumentasi ' . config('app.name'),
         'description' => !empty($docDesc) ? $docDesc : 'Dokumentasi VexaHost WA Gateway: Panduan integrasi WhatsApp API, automasi broadcast, webhook, dan multi-sesi.',
-        'keywords' => 'dokumentasi whatsapp api, panduan wa gateway, webhook whatsapp tutorial, nodejs wa gateway, php whatsapp api',
+        'breadcrumbs' => $remahDokumentasi,
     ])
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('images/vexahost-wa.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/android-chrome-192x192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 

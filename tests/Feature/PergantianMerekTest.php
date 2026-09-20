@@ -216,15 +216,26 @@ class PergantianMerekTest extends TestCase
     }
 
     /**
-     * Favicon persis seperti aplikasi vexahost: berkas logo yang sama, satu
-     * tautan ikon — bukan ikon persegi turunan yang terlihat berbeda di tab.
+     * Satu wajah ikon untuk kedua aplikasi — maksud aslinya tetap berlaku:
+     * berpindah antara vexahost dan WA Gateway tidak boleh terasa seperti
+     * membuka dua produk berbeda.
+     *
+     * Yang berubah hanya bentuknya. `vexahost-wa.png` berukuran 549x303, dan
+     * Google Search mengabaikan favicon yang tidak persegi lalu menggantinya
+     * dengan ikon bawaan di hasil pencarian — jadi ikon "yang sama" itu dulu
+     * tidak pernah benar-benar tampil di sana. Sekarang keduanya memakai berkas
+     * persegi turunan yang identik, bukan sekadar mirip.
      */
     public function test_favicon_sama_dengan_vexahost(): void
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('<link rel="icon" type="image/png" href="'.asset('images/vexahost-wa.png').'">', false)
-            ->assertDontSee('icon-32x32.png', false);
+            ->assertSee('<link rel="icon" href="'.asset('favicon.ico').'" sizes="48x48">', false)
+            ->assertDontSee('images/vexahost-wa.png" sizes', false);
+
+        // Logo lanskap tetap dipakai sebagai gambar pratinjau tautan dan logo
+        // di header; yang tidak boleh lagi adalah memakainya sebagai favicon.
+        $this->assertFileExists(public_path('images/vexahost-wa.png'));
     }
 
     public function test_database_kosong_dibiarkan_untuk_seeder(): void
