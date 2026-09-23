@@ -56,14 +56,14 @@
         @scroll.window.passive="scrolled = (window.scrollY > 10)"
         class="sticky top-0 z-50 w-full border-b transition-all duration-300"
         :class="scrolled ? 'border-border/70 bg-background/80 backdrop-blur-md shadow-2xs' : 'border-transparent bg-transparent'">
-    <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-3.5">
-        <a href="{{ route('welcome') }}" class="flex items-center gap-2.5 font-semibold text-foreground transition-opacity hover:opacity-90">
+    <div class="mx-auto flex w-full max-w-[1720px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-3.5">
+        <a href="{{ route('welcome') }}" class="flex shrink-0 items-center gap-2.5 font-semibold text-foreground transition-opacity hover:opacity-90">
             <img src="{{ asset('images/vexahost-wa.png') }}" alt="Logo" class="h-7 w-auto object-contain">
-            <span class="text-sm sm:text-base font-semibold tracking-tight">VexaHost WA Gateway</span>
+            <span class="text-sm sm:text-base font-semibold tracking-tight whitespace-nowrap">VexaHost WA Gateway</span>
         </a>
 
-        <nav class="ml-auto flex items-center gap-1 text-sm">
-            <div class="hidden items-center gap-2 md:flex"
+        <nav class="ml-auto flex shrink-0 items-center gap-1 text-sm">
+            <div class="hidden items-center gap-1 lg:gap-1.5 xl:gap-2 lg:flex shrink-0"
                  x-data="{
                      menu: null,
                      jeda: null,
@@ -73,16 +73,16 @@
                  }"
                  @keydown.escape.window="tutup()">
                 @foreach ($menuHeader as $kunci => $menu)
-                    <div class="relative" @mouseenter="buka('{{ $kunci }}')" @mouseleave="tundaTutup()">
+                    <div class="relative shrink-0" @mouseenter="buka('{{ $kunci }}')" @mouseleave="tundaTutup()">
                         <button type="button"
                                 @click="menu === '{{ $kunci }}' ? tutup() : buka('{{ $kunci }}')"
                                 :aria-expanded="menu === '{{ $kunci }}' ? 'true' : 'false'"
                                 aria-haspopup="true"
-                                class="group relative flex items-center gap-1.5 px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors hover:text-foreground"
+                                class="group relative flex shrink-0 items-center gap-1.5 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground"
                                 :class="menu === '{{ $kunci }}' ? 'text-foreground' : 'text-muted-foreground'">
-                            <span>{{ $menu['label'] }}</span>
-                            <svg class="h-3 w-3 transition-transform duration-200" :class="menu === '{{ $kunci }}' ? 'rotate-180 text-primary' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                            <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary transition-all duration-200"
+                            <span class="whitespace-nowrap">{{ $menu['label'] }}</span>
+                            <svg class="h-3 w-3 shrink-0 transition-transform duration-200" :class="menu === '{{ $kunci }}' ? 'rotate-180 text-primary' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary transition-all duration-200"
                                   :class="menu === '{{ $kunci }}' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"></span>
                         </button>
 
@@ -105,62 +105,67 @@
                     </div>
                 @endforeach
 
-                <a href="{{ $beranda }}#cara-kerja" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>Cara Kerja</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="{{ $beranda }}#cara-kerja" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">Cara Kerja</span>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
-                <a href="{{ $beranda }}#fitur" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>Fitur</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="{{ $beranda }}#fitur" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">Fitur</span>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
-                <a href="{{ $beranda }}#harga" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>Harga</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="{{ $beranda }}#harga" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">Harga</span>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
-                <a href="{{ route('mitra.landing') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>Mitra</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="{{ route('mitra.landing') }}" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">Mitra</span>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
-                <a href="{{ route('ai.index') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>AI Agent</span>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="{{ route('ai.index') }}" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">AI Agent</span>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
-                <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener noreferrer" class="group relative flex items-center gap-1 px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                    <span>VPS</span>
-                    <svg class="h-3.5 w-3.5 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"/></svg>
-                    <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener noreferrer" class="group relative flex shrink-0 items-center gap-1 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">VPS</span>
+                    <svg class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7H7M17 7V17"/></svg>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                </a>
+                <a href="https://build.vexahostcloud.my.id" target="_blank" rel="noopener noreferrer" class="group relative flex shrink-0 items-center gap-1 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                    <span class="whitespace-nowrap">Jasa Web</span>
+                    <svg class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7H7M17 7V17"/></svg>
+                    <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                 </a>
             </div>
 
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'"
-                    class="ml-1 rounded-lg p-2 text-muted-foreground hover:text-foreground transition-colors"
+                    class="ml-1 shrink-0 rounded-lg p-2 text-muted-foreground hover:text-foreground transition-colors"
                     aria-label="Toggle Dark Mode">
                 <svg class="hidden h-4 w-4 dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <svg class="block h-4 w-4 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
 
-            <a href="{{ route('docs.index') }}" class="group relative hidden md:block px-2.5 py-2 text-xs sm:text-sm font-medium text-foreground transition-colors">
-                <span>Docs</span>
-                <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+            <a href="{{ route('docs.index') }}" class="group relative hidden shrink-0 lg:block px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-foreground transition-colors">
+                <span class="whitespace-nowrap">Docs</span>
+                <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
             </a>
 
-            <div class="hidden items-center gap-3 pl-2 md:flex">
+            <div class="hidden shrink-0 items-center gap-2 xl:gap-3 pl-1.5 lg:flex">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 transition-all">
+                    <a href="{{ route('dashboard') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap text-primary-foreground shadow-xs hover:bg-primary/90 transition-all">
                         Dashboard
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="group relative px-2.5 py-2 text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                        <span>Masuk</span>
-                        <span class="absolute bottom-0 left-2.5 right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
+                    <a href="{{ route('login') }}" class="group relative shrink-0 px-2 xl:px-2.5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground">
+                        <span class="whitespace-nowrap">Masuk</span>
+                        <span class="absolute bottom-0 left-2 xl:left-2.5 right-2 xl:right-2.5 h-0.5 bg-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100"></span>
                     </a>
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center rounded-lg bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 transition-all">
+                    <a href="{{ route('register') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-primary px-3.5 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap text-primary-foreground shadow-xs hover:bg-primary/90 transition-all">
                         Buat akun
                     </a>
                 @endauth
             </div>
 
-            <button @click="mobileMenu = !mobileMenu" class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted md:hidden" aria-label="Menu Mobile">
+            <button @click="mobileMenu = !mobileMenu" class="rounded-lg p-1.5 text-muted-foreground hover:bg-muted lg:hidden shrink-0" aria-label="Menu Mobile">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
         </nav>
@@ -175,7 +180,7 @@
      x-transition:leave="transition-transform duration-250 ease-in"
      x-transition:leave-start="translate-y-0"
      x-transition:leave-end="translate-y-full"
-     class="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
+     class="fixed inset-0 z-50 flex flex-col bg-background lg:hidden">
 
     <div class="flex items-center justify-between border-b border-border px-5 py-4">
         <a href="{{ route('welcome') }}" class="flex items-center gap-2 font-semibold text-foreground">
@@ -204,6 +209,10 @@
         <div class="border-t border-border pt-3 space-y-1">
             <a href="https://vexahostcloud.my.id/" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-between py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
                 <span>Layanan Cloud VPS</span>
+                <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+            </a>
+            <a href="https://build.vexahostcloud.my.id" target="_blank" rel="noopener noreferrer" class="flex w-full items-center justify-between py-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors">
+                <span>Jasa Web</span>
                 <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7V17"/></svg>
             </a>
             <button @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'" class="flex w-full items-center justify-between py-1.5 text-sm font-medium text-foreground">

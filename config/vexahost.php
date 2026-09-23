@@ -15,6 +15,7 @@ return [
 
     'produk' => [
         'VexaHost Cloud' => 'https://vexahostcloud.my.id',
+        'Jasa Web' => 'https://build.vexahostcloud.my.id',
     ],
 
     /*
