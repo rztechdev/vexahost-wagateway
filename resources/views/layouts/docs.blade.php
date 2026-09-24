@@ -483,7 +483,7 @@
     <div class="border-t border-border/70 bg-muted/40 dark:bg-muted/20 py-3 sm:py-3.5">
         <div class="mx-auto flex max-w-[1440px] flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 lg:px-8 xl:px-10 text-xs text-muted-foreground">
             <div class="text-center sm:text-left">
-                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
+                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.</span>
             </div>
 
             {{-- Dokumen hukum & Kanal resmi VexaHost --}}

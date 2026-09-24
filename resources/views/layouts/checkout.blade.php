@@ -157,7 +157,7 @@
                 </div>
 
                 {{-- Copyright --}}
-                <p>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</p>
+                <p>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.</p>
             </div>
         </div>
     </footer>

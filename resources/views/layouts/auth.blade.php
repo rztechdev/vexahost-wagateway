@@ -94,7 +94,7 @@
 
             {{-- Footer Kiri: Copyright Resmi --}}
             <div class="relative z-10 text-xs text-slate-300/80 font-normal flex flex-wrap items-center justify-between gap-2">
-                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
+                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.</span>
                 <span class="text-slate-400 text-[11px]">Gateway Notifikasi Resmi</span>
             </div>
         </div>
@@ -125,7 +125,7 @@
 
                 {{-- Copyright untuk Layar Mobile --}}
                 <div class="lg:hidden mt-6 text-center text-xs text-muted-foreground">
-                    <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
+                    <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.</span>
                 </div>
             </div>
         </div>

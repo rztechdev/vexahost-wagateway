@@ -150,7 +150,7 @@ class SeoMetadataTest extends TestCase
         // Vendor pengembang bukan bagian dari identitas entitas; kreditnya tetap
         // boleh tampil sebagai teks biasa, tapi tidak sebagai relasi.
         $this->assertStringNotContainsStringIgnoringCase(
-            'RZ Digital',
+            'Created by',
             json_encode($organization),
         );
     }

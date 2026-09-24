@@ -247,9 +247,9 @@ class PergantianMerekTest extends TestCase
         $this->assertSame(0, User::count());
     }
 
-    public function test_copyright_footer_menampilkan_vexahost_dan_rz_digital_creative(): void
+    public function test_copyright_footer_menampilkan_vexahost_dan_vexahostcloud(): void
     {
-        $expected = 'VexaHost. All rights reserved. Created by RZ Digital Creative.';
+        $expected = 'VexaHost. All rights reserved. Created by vexahostcloud.';
         $lama = 'PT DESTINARA CHAKRAWALA ARTHA. Hak cipta dilindungi undang-undang.';
 
         $this->get('/')

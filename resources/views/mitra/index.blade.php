@@ -401,7 +401,7 @@
     <footer class="border-t border-border bg-background py-10">
         <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
             <p class="text-xs text-muted-foreground">
-                &copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.
+                &copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.
             </p>
         </div>
     </footer>

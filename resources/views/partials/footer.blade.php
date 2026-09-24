@@ -130,7 +130,7 @@
                  bagian pengadaan calon pelanggan menggulung sampai bawah persis
                  untuk menemukan keenamnya berjajar. --}}
             <div class="text-center sm:text-left">
-                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by RZ Digital Creative.</span>
+                <span>&copy; {{ date('Y') }} VexaHost. All rights reserved. Created by vexahostcloud.</span>
             </div>
 
             {{-- Dokumen hukum & Kanal resmi VexaHost --}}
