@@ -76,6 +76,7 @@ class Workspace extends Model
         return [
             'balance' => 'integer',
             'is_internal' => 'boolean',
+            'partner_since' => 'datetime',
             'service_until' => 'datetime',
             'max_sessions' => 'integer',
             'monthly_message_quota' => 'integer',
@@ -156,7 +157,7 @@ class Workspace extends Model
      */
     public function messageRetentionDays(): int
     {
-        return $this->is_internal
+        return $this->isExempt()
             ? (int) config('gateway.retention.messages_days')
             : $this->plan()->messageRetentionDays();
     }
@@ -323,7 +324,7 @@ class Workspace extends Model
 
     public function hasQuotaRemaining(): bool
     {
-        if ($this->is_internal || $this->monthly_message_quota === 0) {
+        if ($this->isExempt() || $this->monthly_message_quota === 0) {
             return true;
         }
 
@@ -347,6 +348,18 @@ class Workspace extends Model
     public function isExempt(): bool
     {
         return (bool) $this->is_internal || (bool) $this->owner?->is_exempt;
+    }
+
+    /**
+     * Paketnya diberikan admin tanpa tagihan (rekanan).
+     *
+     * Bukan pengecualian: batas paket dan tanggal berakhirnya tetap berlaku
+     * penuh. Yang berbeda cuma dua hal — tagihan perpanjangan tidak diterbitkan
+     * otomatis, dan perpanjangannya dilakukan admin dari halaman Rekanan.
+     */
+    public function isPartner(): bool
+    {
+        return $this->partner_since !== null;
     }
 
     /**
@@ -396,7 +409,7 @@ class Workspace extends Model
     {
         $batas = $this->plan()->maxApiKeys();
 
-        if ($this->is_internal || $batas === 0) {
+        if ($this->isExempt() || $batas === 0) {
             return true;
         }
 
@@ -407,7 +420,7 @@ class Workspace extends Model
     {
         $batas = $this->plan()->maxMembers();
 
-        if ($this->is_internal || $batas === 0) {
+        if ($this->isExempt() || $batas === 0) {
             return true;
         }
 

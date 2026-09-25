@@ -151,6 +151,17 @@ class MessageDispatcher
         }
 
         /*
+         | Workspace yang dibebaskan tidak tunduk pada batas pesan APA PUN —
+         | jatah coba gratis, saldo PAYG, maupun kuota bulanan. Pemeriksaan ini
+         | harus berada di depan ketiga cabang di bawah: dulu ia baru diperiksa
+         | di cabang kuota bulanan, sehingga akun bebas yang workspace-nya masih
+         | berpaket coba gratis tetap berhenti di pesan kelima.
+        */
+        if ($workspace->isExempt()) {
+            return;
+        }
+
+        /*
          | Jatah coba gratis dihitung seumur hidup workspace, bukan per bulan.
          |
          | Kalau ia ikut jalur kuota bulanan di bawah, angkanya kembali penuh
@@ -187,7 +198,7 @@ class MessageDispatcher
          | masing-masing sudah lolos pemeriksaan ini. Itu sebabnya saldo
          | diperiksa dua kali — di sini saat antre, dan sekali lagi saat kirim.
         */
-        if ($workspace->isPayg() && ! $workspace->isExempt()) {
+        if ($workspace->isPayg()) {
             $harga = (int) config('billing.payg.price_per_message');
 
             if ((int) $workspace->balance < $harga) {
@@ -203,7 +214,7 @@ class MessageDispatcher
 
         $kuota = (int) $workspace->monthly_message_quota;
 
-        if ($workspace->isExempt() || $kuota === 0) {
+        if ($kuota === 0) {
             return;
         }
 

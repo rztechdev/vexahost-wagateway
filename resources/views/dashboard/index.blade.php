@@ -6,7 +6,7 @@
 
     @php
         $terhubung = $sessions->where('status', 'connected')->count();
-        $kuota = $currentWorkspace->is_internal ? null : (int) $currentWorkspace->monthly_message_quota;
+        $kuota = $currentWorkspace->isExempt() ? null : (int) $currentWorkspace->monthly_message_quota;
         $persen = $kuota ? min(100, round($usage->messages_sent / max($kuota, 1) * 100)) : null;
     @endphp
 

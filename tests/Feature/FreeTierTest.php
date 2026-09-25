@@ -117,6 +117,21 @@ class FreeTierTest extends TestCase
     }
 
     /**
+     * Akun bebas yang workspace-nya masih berpaket coba gratis tidak boleh
+     * berhenti di pesan kelima. Dulu cabang jatah coba gratis diperiksa lebih
+     * dulu daripada pembebasan, jadi tanda "bebas tagihan" tidak berpengaruh
+     * apa pun terhadap batas lima pesan.
+     */
+    public function test_akun_bebas_tidak_dibatasi_jatah_coba_gratis(): void
+    {
+        $this->owner->forceFill(['is_exempt' => true])->save();
+
+        $this->kirim(8);
+
+        $this->assertSame(8, Message::where('workspace_id', $this->workspace->id)->count());
+    }
+
+    /**
      * Nomor 1 di daftar atas: jatah tidak boleh pulih saat bulan berganti.
      */
     public function test_jatah_tidak_pulih_di_bulan_berikutnya(): void

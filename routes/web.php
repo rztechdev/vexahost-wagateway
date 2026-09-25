@@ -379,6 +379,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('workspaces/{id}/perpanjang', [AdminWorkspaceController::class, 'extend'])->name('workspaces.extend');
     Route::post('workspaces/{id}/tangguhkan', [AdminWorkspaceController::class, 'toggleSuspend'])->name('workspaces.suspend');
     Route::post('workspaces/{id}/batas', [AdminWorkspaceController::class, 'overrideLimits'])->name('workspaces.limits');
+    // Rekanan: paket berbayar tanpa pembayaran. Tunduk pada batas paket dan
+    // tanggal berakhirnya — berbeda dari akun bebas tagihan yang tanpa batas.
+    Route::post('workspaces/{id}/rekanan', [AdminWorkspaceController::class, 'grantPartner'])->name('workspaces.partner');
+    Route::delete('workspaces/{id}/rekanan', [AdminWorkspaceController::class, 'revokePartner'])->name('workspaces.partner.revoke');
 
     Route::get('tagihan', [AdminInvoiceController::class, 'index'])->name('invoices');
     Route::post('tagihan/{id}/lunas', [AdminInvoiceController::class, 'markPaid'])->name('invoices.paid');

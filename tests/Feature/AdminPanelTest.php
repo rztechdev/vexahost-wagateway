@@ -219,11 +219,19 @@ class AdminPanelTest extends TestCase
 
     public function test_perpanjangan_manual_menambah_hari_tanpa_tagihan(): void
     {
+        // Langganan berbayar yang punya periode — tombol ini sengaja menolak
+        // workspace coba gratis dan PAYG, yang tidak punya periode untuk ditambah.
         $subscription = app(SubscriptionService::class)->ensureFor($this->workspace);
-        $subscription->forceFill(['current_period_end' => now()->addDays(2)])->save();
+        $subscription->forceFill([
+            'plan_slug' => 'essentials',
+            'status' => 'active',
+            'current_period_end' => now()->addDays(2),
+        ])->save();
+        $this->workspace->forceFill(['plan_slug' => 'essentials'])->save();
 
         $this->actingAs($this->admin)
-            ->post(route('admin.workspaces.extend', $this->workspace->id), ['hari' => 10]);
+            ->post(route('admin.workspaces.extend', $this->workspace->id), ['hari' => 10])
+            ->assertSessionHasNoErrors();
 
         $this->assertTrue(
             $subscription->fresh()->current_period_end->isSameDay(now()->addDays(12))

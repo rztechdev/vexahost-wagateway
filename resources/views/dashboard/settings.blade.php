@@ -43,7 +43,7 @@
             <tr class="transition hover:bg-muted/40">
                 <td class="px-4 py-2.5 sm:px-3">Kuota pesan per bulan</td>
                 <td class="px-4 py-2.5 text-right font-medium tabular-nums sm:px-3">
-                    {{ $currentWorkspace->is_internal ? 'Tanpa batas (internal)' : number_format($currentWorkspace->monthly_message_quota) }}
+                    {{ $currentWorkspace->isExempt() ? 'Tanpa batas (bebas tagihan)' : number_format($currentWorkspace->monthly_message_quota) }}
                 </td>
             </tr>
             <tr class="transition hover:bg-muted/40">

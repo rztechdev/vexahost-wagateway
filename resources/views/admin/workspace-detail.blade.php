@@ -23,6 +23,9 @@
                 @if ($workspace->is_internal)
                     <x-badge warna="biru">internal</x-badge>
                 @endif
+                @if ($workspace->isPartner())
+                    <x-badge warna="kuning">rekanan</x-badge>
+                @endif
             </div>
             <p class="mt-1 text-sm text-muted-foreground">
                 <code>{{ $workspace->slug }}</code> ·
@@ -72,18 +75,85 @@
         <div class="space-y-5">
 
             {{-- ===================== Tindakan langganan ===================== --}}
+            @php
+                $pilihKelas = 'w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary';
+                // Pindah paket dan tambah hari hanya masuk akal untuk workspace
+                // yang punya periode. Coba gratis, belum bayar, dan PAYG diarahkan
+                // ke "Aktifkan tanpa pembayaran" — controller menolaknya juga.
+                $punyaPeriode = ! $workspace->isPayg() && ! $workspace->isFreeTier() && $subscription->current_period_end !== null;
+            @endphp
             <x-section judul="Langganan" sub="Perubahan di sini tidak menerbitkan tagihan." rapat>
-                <div class="grid gap-5 sm:grid-cols-2">
+
+                {{-- Rekanan: paket berbayar tanpa pembayaran. Satu form untuk
+                     mengaktifkan dan memperpanjang, karena keduanya satu
+                     tindakan yang sama — sisa masa yang belum lewat tetap
+                     dihitung, dan paketnya boleh diganti sekaligus. --}}
+                <form method="POST" action="{{ route('admin.workspaces.partner', $workspace->id) }}"
+                      class="rounded-lg border border-border bg-card p-4" data-validasi
+                      data-konfirmasi="{{ $workspace->isPartner()
+                          ? 'Perpanjang paket '.$workspace->name.' tanpa pembayaran? Sisa masa yang belum lewat tetap dihitung.'
+                          : 'Aktifkan paket untuk '.$workspace->name.' tanpa pembayaran? Paket langsung aktif dengan tanggal berakhir, dan tidak ada tagihan yang dibuat.' }}">
+                    @csrf
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {{ $workspace->isPartner() ? 'Perpanjang rekanan' : 'Aktifkan tanpa pembayaran (rekanan)' }}
+                        </label>
+                        @if ($workspace->isPartner())
+                            <span class="text-xs text-muted-foreground">
+                                rekanan sejak {{ $workspace->partner_since->translatedFormat('j M Y') }}
+                                @if ($subscription->current_period_end)
+                                    · sampai {{ $subscription->current_period_end->translatedFormat('j M Y') }}
+                                @endif
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                        <select name="plan" required aria-label="Paket" class="{{ $pilihKelas }}">
+                            @foreach ($plans as $plan)
+                                <option value="{{ $plan->slug }}" @selected($workspace->plan()->slug === $plan->slug)>{{ $plan->name() }}</option>
+                            @endforeach
+                        </select>
+                        <select name="period" required aria-label="Durasi" class="{{ $pilihKelas }}">
+                            <option value="monthly" @selected($subscription->period !== 'yearly')>{{ $workspace->isPartner() ? '+1 bulan' : '1 bulan' }}</option>
+                            <option value="yearly" @selected($subscription->period === 'yearly')>{{ $workspace->isPartner() ? '+12 bulan' : '12 bulan' }}</option>
+                        </select>
+                        <button class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                            {{ $workspace->isPartner() ? 'Perpanjang' : 'Aktifkan' }}
+                        </button>
+                    </div>
+
+                    <input name="note" maxlength="255" value="{{ old('note', $workspace->partner_note) }}"
+                           placeholder="Catatan (opsional) — misalnya: mitra agensi, kesepakatan 12 Sep"
+                           class="mt-2 {{ $pilihKelas }}">
+                    @error('period') <p class="mt-1 text-xs text-destructive">{{ $message }}</p> @enderror
+
+                    <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        Batas dan tanggal berakhirnya sama persis seperti paket yang dibayar. Tagihan perpanjangan
+                        tidak terbit otomatis — perpanjang dari sini, atau biarkan habis. Harga perkenalan dan kode
+                        referal pemiliknya tetap berlaku kalau suatu saat ia membayar sendiri.
+                    </p>
+                </form>
+
+                @if ($workspace->isPartner())
+                    <form method="POST" action="{{ route('admin.workspaces.partner.revoke', $workspace->id) }}" class="mt-2 text-right"
+                          data-konfirmasi="Cabut status rekanan {{ $workspace->name }}? Workspace langsung kembali ke paket coba gratis, dan pengirimannya berhenti sampai pemiliknya membeli paket."
+                          data-konfirmasi-ya="Ya, cabut">
+                        @csrf
+                        @method('DELETE')
+                        <button class="text-sm text-destructive hover:underline">Cabut status rekanan</button>
+                    </form>
+                @endif
+
+                <div class="mt-5 grid gap-5 border-t border-border pt-5 sm:grid-cols-2">
                     <form method="POST" action="{{ route('admin.workspaces.plan', $workspace->id) }}" class="space-y-2">
                         @csrf
                         <label class="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pindah paket</label>
-                        <select name="plan" class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                        <select name="plan" @disabled(! $punyaPeriode) class="{{ $pilihKelas }} disabled:opacity-50">
                             {{-- Paket coba gratis tidak ada di daftar yang bisa
                                  dipilih. Tanpa baris ini pilihan pertama
                                  (Essentials) tampak terpilih untuk workspace
-                                 yang sebenarnya masih coba gratis, dan admin
-                                 yang menekan Terapkan tanpa curiga memindahkan
-                                 pelanggan ke paket yang tidak pernah dibeli. --}}
+                                 yang sebenarnya masih coba gratis. --}}
                             @unless ($workspace->plan()->isSellable())
                                 <option value="" selected disabled>{{ $workspace->plan()->name() }} — sekarang</option>
                             @endunless
@@ -91,21 +161,30 @@
                                 <option value="{{ $plan->slug }}" @selected($workspace->plan()->slug === $plan->slug)>{{ $plan->name() }}</option>
                             @endforeach
                         </select>
-                        <button class="w-full rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted">Terapkan paket</button>
+                        <button @disabled(! $punyaPeriode) class="w-full rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">Terapkan paket</button>
                         <p class="text-xs leading-relaxed text-muted-foreground">Batasnya langsung berlaku; periodenya tidak berubah.</p>
+                        @error('plan') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </form>
 
                     <form method="POST" action="{{ route('admin.workspaces.extend', $workspace->id) }}" class="space-y-2" data-validasi>
                         @csrf
-                        <label for="hari" class="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Perpanjang tanpa bayar</label>
+                        <label for="hari" class="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tambah hari</label>
                         <div class="flex gap-2">
-                            <input id="hari" type="number" name="hari" min="1" max="365" value="7" required
-                                   class="w-full rounded-lg border-border bg-background text-sm focus:border-primary focus:ring-primary">
+                            <input id="hari" type="number" name="hari" min="1" max="365" value="7" required @disabled(! $punyaPeriode)
+                                   class="{{ $pilihKelas }} disabled:opacity-50">
                             <span class="grid shrink-0 place-items-center px-1 text-sm text-muted-foreground">hari</span>
                         </div>
-                        <button class="w-full rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted">Perpanjang</button>
+                        <button @disabled(! $punyaPeriode) class="w-full rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">Perpanjang</button>
                         <p class="text-xs leading-relaxed text-muted-foreground">Untuk uang yang sudah masuk tapi buktinya belum sampai.</p>
+                        @error('hari') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </form>
+
+                    @unless ($punyaPeriode)
+                        <p class="text-xs leading-relaxed text-muted-foreground sm:col-span-2">
+                            {{ $workspace->isPayg() ? 'Workspace PAYG dibatasi saldo, bukan tanggal' : 'Workspace ini belum punya masa berlangganan' }}
+                            — kedua tombol ini baru bisa dipakai setelah paketnya aktif. Pakai <strong>Aktifkan tanpa pembayaran</strong> di atas.
+                        </p>
+                    @endunless
                 </div>
 
                 <form method="POST" action="{{ route('admin.workspaces.limits', $workspace->id) }}" class="mt-5 border-t border-border pt-5" data-validasi>

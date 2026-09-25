@@ -95,15 +95,25 @@ class WorkspaceController extends Controller
      * Dipakai untuk memperbaiki kesalahan dan untuk kesepakatan di luar
      * halaman harga. Batas paket langsung berlaku, dan periodenya tidak
      * disentuh — memindahkan paket bukan memperpanjang langganan.
+     *
+     * Karena periodenya tidak disentuh, tombol ini hanya aman untuk workspace
+     * yang MEMANG punya periode. Dulu ia menerima workspace coba gratis juga,
+     * dan hasilnya paket berbayar berstatus `trialing` tanpa tanggal berakhir —
+     * alias gratis selamanya tanpa ada yang memutuskannya. Workspace seperti
+     * itu diarahkan ke "Aktifkan tanpa pembayaran".
      */
     public function changePlan(Request $request, int $id): RedirectResponse
     {
         $data = $request->validate([
-            'plan' => ['required', Rule::in(array_keys(config('plans.catalog')))],
+            'plan' => ['required', Rule::in($this->paketBoleh())],
         ]);
 
         $workspace = Workspace::findOrFail($id);
         $subscription = $this->subscriptions->ensureFor($workspace);
+
+        if ($alasan = $this->alasanTanpaPeriode($workspace)) {
+            return back()->withErrors(['plan' => $alasan]);
+        }
 
         $subscription->forceFill(['plan_slug' => $data['plan']])->save();
 
@@ -117,6 +127,15 @@ class WorkspaceController extends Controller
         return back()->with('status', "Paket {$workspace->name} diubah ke ".Plan::get($data['plan'])->name().'.');
     }
 
+    /**
+     * Menambah hari pada periode yang sudah ada.
+     *
+     * Dijaga dengan aturan yang sama seperti `changePlan()`: memperpanjang
+     * workspace coba gratis memberinya tanggal berakhir tanpa paket berbayar
+     * (tetap lima pesan, lalu ditandai menunggak saat tanggalnya lewat), dan
+     * memperpanjang workspace PAYG memberinya tanggal berakhir yang mematikan
+     * layanan yang seharusnya hanya dibatasi saldo.
+     */
     public function extend(Request $request, int $id): RedirectResponse
     {
         $data = $request->validate([
@@ -124,14 +143,84 @@ class WorkspaceController extends Controller
         ]);
 
         $workspace = Workspace::findOrFail($id);
+        $subscription = $this->subscriptions->ensureFor($workspace);
 
-        $this->subscriptions->extend(
-            $this->subscriptions->ensureFor($workspace),
-            $data['hari'],
-            $request->user(),
-        );
+        if ($alasan = $this->alasanTanpaPeriode($workspace)) {
+            return back()->withErrors(['hari' => $alasan]);
+        }
+
+        $this->subscriptions->extend($subscription, $data['hari'], $request->user());
 
         return back()->with('status', "Langganan {$workspace->name} diperpanjang {$data['hari']} hari.");
+    }
+
+    /**
+     * Mengaktifkan — atau memperpanjang — paket berbayar tanpa pembayaran
+     * (rekanan). Hasilnya sama persis dengan langganan yang dibayar: status
+     * aktif, tanggal berakhir, batas paket. Bedanya cuma tidak ada tagihan,
+     * dan tagihan perpanjangan tidak terbit otomatis.
+     */
+    public function grantPartner(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'plan' => ['required', Rule::in($this->paketBoleh())],
+            'period' => ['required', Rule::in(['monthly', 'yearly'])],
+            'note' => ['nullable', 'string', 'max:255'],
+        ], [], ['plan' => 'paket', 'period' => 'durasi']);
+
+        $workspace = Workspace::findOrFail($id);
+        $perpanjang = $workspace->isPartner();
+
+        $subscription = $this->subscriptions->grantPartner(
+            $workspace, $data['plan'], $data['period'], $request->user(), $data['note'] ?? null,
+        );
+
+        return back()->with('swal', [
+            'tipe' => 'success',
+            'judul' => $perpanjang ? 'Rekanan diperpanjang' : 'Paket diaktifkan tanpa pembayaran',
+            'pesan' => "{$workspace->name} memakai paket {$subscription->plan()->name()} sampai "
+                .$subscription->current_period_end->translatedFormat('j F Y').'. Tidak ada tagihan yang dibuat.',
+        ]);
+    }
+
+    public function revokePartner(Request $request, int $id): RedirectResponse
+    {
+        $workspace = Workspace::whereNotNull('partner_since')->findOrFail($id);
+
+        $this->subscriptions->revokePartner($workspace, $request->user());
+
+        return back()->with('swal', [
+            'tipe' => 'success',
+            'judul' => 'Status rekanan dicabut',
+            'pesan' => "{$workspace->name} kembali ke paket coba gratis. Untuk mengirim lagi, pemiliknya perlu membeli paket.",
+        ]);
+    }
+
+    /**
+     * Paket yang boleh dipilih admin: yang dijual per bulan saja. Coba gratis,
+     * PAYG, dan Enterprise punya jalurnya sendiri — memindahkan ke sana lewat
+     * sekadar mengganti slug menghasilkan keadaan setengah jadi (PAYG tanpa
+     * `billing_mode`, Enterprise tanpa kesepakatan).
+     *
+     * @return array<int, string>
+     */
+    private function paketBoleh(): array
+    {
+        return array_map(fn (Plan $plan) => $plan->slug, Plan::all());
+    }
+
+    /** Kenapa workspace ini tidak punya periode yang bisa diubah, atau `null`. */
+    private function alasanTanpaPeriode(Workspace $workspace): ?string
+    {
+        if ($workspace->isPayg()) {
+            return 'Workspace ini memakai PAYG (dibatasi saldo, bukan tanggal). Pakai "Aktifkan tanpa pembayaran" untuk memindahkannya ke paket bulanan.';
+        }
+
+        if ($workspace->isFreeTier() || $workspace->subscription?->current_period_end === null) {
+            return 'Workspace ini belum punya masa berlangganan. Pakai "Aktifkan tanpa pembayaran" supaya paketnya punya tanggal berakhir.';
+        }
+
+        return null;
     }
 
     /**

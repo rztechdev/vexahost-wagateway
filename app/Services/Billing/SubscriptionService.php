@@ -21,6 +21,7 @@ use App\Support\Plan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use RuntimeException;
 
 /**
@@ -87,13 +88,7 @@ class SubscriptionService
          | Workspace kedua dan seterusnya lahir `unpaid`: terlihat penuh, bisa
          | disiapkan, tapi baru hidup setelah tagihannya lunas.
         */
-        $sudahPernahCoba = Workspace::query()
-            ->where('owner_id', $workspace->owner_id)
-            ->whereKeyNot($workspace->getKey())
-            ->whereHas('subscription', fn ($q) => $q->where('plan_slug', $gratis->slug))
-            ->exists();
-
-        if ($sudahPernahCoba) {
+        if ($this->pemilikSudahPernahCoba($workspace, $gratis)) {
             $subscription = $workspace->subscription()->create([
                 'plan_slug' => config('plans.default'),
                 'period' => 'monthly',
@@ -561,9 +556,15 @@ class SubscriptionService
 
             // Tanggalnya ikut turun ke baris workspace supaya penolakan setelah
             // masa berlaku habis terjadi seketika, bukan menunggu job pukul 08:00.
+            // Membayar sendiri mengakhiri status rekanan: mulai sekarang ia
+            // pelanggan biasa, dan tagihan perpanjangannya harus terbit
+            // otomatis lagi — kalau tidak, langganan yang baru dibayarnya
+            // berakhir tanpa tagihan apa pun yang bisa dibayar.
             $workspace->forceFill([
                 'status' => 'active',
                 'service_until' => $subscription->current_period_end,
+                'partner_since' => null,
+                'partner_note' => null,
             ])->save();
 
             /*
@@ -779,6 +780,139 @@ class SubscriptionService
             'hari' => $days,
             'oleh' => $admin?->email,
         ], $subscription->workspace_id);
+    }
+
+    /**
+     * Memberi (atau memperpanjang) paket berbayar tanpa tagihan — rekanan.
+     *
+     * Sengaja meniru `markPaid()` sedekat mungkin, karena hasilnya harus tidak
+     * bisa dibedakan dari langganan yang dibayar: status `active`, tanggal
+     * berakhir yang nyata, batas paket tersalin, dan `service_until` ikut
+     * turun. Tombol "ubah paket" di detail workspace TIDAK cukup untuk ini —
+     * ia cuma mengganti slug, sehingga workspace coba gratis yang dipindah ke
+     * Prime tetap `trialing` tanpa tanggal berakhir, alias Prime selamanya.
+     *
+     * Tidak ada tagihan yang dibuat, dan itu menjaga dua hal: harga perkenalan
+     * dan kode referal pemiliknya tetap utuh (keduanya dibaca dari tagihan
+     * LUNAS), dan laporan pendapatan tidak memuat uang yang tidak pernah masuk.
+     */
+    public function grantPartner(Workspace $workspace, string $planSlug, string $period, User $admin, ?string $note = null): Subscription
+    {
+        $plan = Plan::get($planSlug);
+
+        if (! $plan->isSellable() || $plan->isPayg() || $plan->isFree() || $plan->slug === 'enterprise') {
+            throw new InvalidArgumentException("Paket '{$planSlug}' tidak bisa diberikan sebagai paket rekanan.");
+        }
+
+        if (! in_array($period, ['monthly', 'yearly'], true)) {
+            throw new InvalidArgumentException("Periode '{$period}' tidak dikenal.");
+        }
+
+        $subscription = $this->ensureFor($workspace);
+
+        DB::transaction(function () use ($workspace, $subscription, $plan, $period, $admin, $note) {
+            // Aturan yang sama dengan `markPaid()`: sisa masa yang belum lewat
+            // tidak boleh hangus, entah itu dari perpanjangan rekanan
+            // sebelumnya atau dari langganan yang dulu dibayar sendiri.
+            $mulai = $subscription->current_period_end && $subscription->current_period_end->isFuture()
+                ? $subscription->current_period_end->copy()
+                : now();
+
+            $subscription->forceFill([
+                'plan_slug' => $plan->slug,
+                'period' => $period,
+                'status' => 'active',
+                'current_period_start' => $mulai,
+                'current_period_end' => $mulai->copy()->addMonths($period === 'yearly' ? 12 : 1),
+                'past_due_at' => null,
+                'suspended_at' => null,
+                'canceled_at' => null,
+            ])->save();
+
+            $this->applyPlanLimits($workspace, $plan);
+
+            $workspace->forceFill([
+                'status' => 'active',
+                'service_until' => $subscription->current_period_end,
+                // Workspace PAYG berpindah ke langganan, persis seperti saat
+                // tagihan paket dibayar. Saldonya tidak disentuh — tetap milik
+                // pelanggan dan terpakai lagi kalau suatu saat kembali ke PAYG.
+                'billing_mode' => 'subscription',
+                'partner_since' => $workspace->partner_since ?? now(),
+                'partner_note' => filled($note) ? $note : $workspace->partner_note,
+            ])->save();
+
+            AuditLog::record('partner.granted', $subscription, [
+                'plan' => $plan->slug,
+                'period' => $period,
+                'sampai' => $subscription->current_period_end->toDateString(),
+                'oleh' => $admin->email,
+            ], $workspace->id);
+        });
+
+        return $subscription->refresh();
+    }
+
+    /**
+     * Mencabut status rekanan: workspace kembali ke paket coba gratis.
+     *
+     * Berlaku seketika, bukan menunggu periodenya habis — yang dicabut adalah
+     * pemberian, dan pemberian yang tetap berjalan setelah dicabut bukan
+     * pencabutan. Aturan "masa coba sekali per pemilik" dari `ensureFor()`
+     * ikut berlaku: kalau pemiliknya sudah memakai masa coba di workspace lain,
+     * yang ini jatuh ke `unpaid`, bukan mendapat lima pesan gratis lagi.
+     *
+     * Pesan yang terkirim selama menjadi rekanan tetap terhitung ke jatah coba
+     * (`freeMessagesUsed()` menjumlahkan seluruh periode), jadi biasanya
+     * pengirimannya langsung berhenti sampai pemiliknya membeli paket.
+     */
+    public function revokePartner(Workspace $workspace, User $admin): void
+    {
+        if (! $workspace->isPartner()) {
+            return;
+        }
+
+        $subscription = $this->ensureFor($workspace);
+        $gratis = Plan::free();
+        $sudahPernahCoba = $this->pemilikSudahPernahCoba($workspace, $gratis);
+
+        DB::transaction(function () use ($workspace, $subscription, $gratis, $sudahPernahCoba, $admin) {
+            $subscription->forceFill([
+                'plan_slug' => $sudahPernahCoba ? config('plans.default') : $gratis->slug,
+                'period' => 'monthly',
+                'status' => $sudahPernahCoba ? 'unpaid' : 'trialing',
+                'current_period_start' => $sudahPernahCoba ? null : now(),
+                'current_period_end' => null,
+                'past_due_at' => null,
+                'suspended_at' => null,
+                'canceled_at' => null,
+            ])->save();
+
+            $this->applyPlanLimits($workspace, $sudahPernahCoba ? Plan::find(config('plans.default')) : $gratis);
+
+            $workspace->forceFill([
+                'status' => $sudahPernahCoba ? 'suspended' : 'active',
+                'service_until' => null,
+                'billing_mode' => 'subscription',
+                'partner_since' => null,
+                'partner_note' => null,
+            ])->save();
+
+            AuditLog::record('partner.revoked', $subscription, [
+                'jatuh_ke' => $sudahPernahCoba ? 'unpaid' : $gratis->slug,
+                'oleh' => $admin->email,
+            ], $workspace->id);
+        });
+    }
+
+    /** Pemilik workspace ini sudah memakai masa coba di workspace lain. */
+    private function pemilikSudahPernahCoba(Workspace $workspace, Plan $gratis): bool
+    {
+        return Workspace::query()
+            ->where('owner_id', $workspace->owner_id)
+            ->whereKeyNot($workspace->getKey())
+            ->whereHas('subscription', fn ($q) => $q->where('plan_slug', $gratis->slug))
+            ->exists();
     }
 
     /**

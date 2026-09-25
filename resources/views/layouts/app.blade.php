@@ -332,7 +332,7 @@
                      tidak masuk akal bagi orang yang belum pernah mengirim apa pun,
                      dan kalimat yang salah di layar pertama membuat pendaftar baru
                      mengira ada yang rusak. --}}
-                @if ($currentSubscription->isFreeTier())
+                @if ($currentSubscription->isFreeTier() && ! $currentWorkspace->isExempt())
                     {{-- Sisa jatah, bukan sisa hari. Masa coba ini tidak punya
                          tanggal berakhir; yang menghabiskannya adalah pesan
                          kelima, dan angka itulah yang harus terlihat sebelum

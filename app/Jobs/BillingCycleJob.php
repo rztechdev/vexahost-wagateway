@@ -102,6 +102,13 @@ class BillingCycleJob implements ShouldQueue
                         continue;
                     }
 
+                    // Rekanan diperpanjang admin, bukan lewat tagihan. Tagihan
+                    // yang terbit untuknya cuma membuat pemiliknya mengira
+                    // pemberian itu sudah berakhir dan ia harus membayar.
+                    if ($workspace->isPartner()) {
+                        continue;
+                    }
+
                     // Sudah ada tagihan terbuka: menerbitkan yang kedua berarti
                     // dua nominal berbeda beredar untuk satu perpanjangan.
                     $adaTerbuka = $workspace->invoices()
